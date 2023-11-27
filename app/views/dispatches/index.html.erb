@@ -1,0 +1,62 @@
+<p style="color: green"><%= notice %></p>
+<div class="button-container">
+  <%= link_to "New dispatch", new_dispatch_path, { :class=>"btn btn-primary" } %>
+  <button id="updateDriverNotes" class="btn btn-warning">Update Driver Notes</button>
+</div>
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-2">
+      <div class="dispatches">
+        <% @new_dispatches.each do |dispatch| %>
+        <div class="driver-note" data-card-id="<%= dispatch.id %>">
+            <%= link_to dispatch, class: "links" do %>
+              <% if dispatch.driver_id.blank? %>
+                <h5> Unassigned </h5>
+              <% else %>
+                <h5> <%= User.find_by(id: dispatch.driver_id).full_name %> </h5>
+              <% end %>
+              <h5> Dispatch Date: <%= dispatch.dispatch_date %> </h5>
+              <h5> Info: <%= dispatch.info %> </h5>
+            <% end %>
+        </div>
+        <% end %>
+      </div>
+    </div>
+    <div class="col">
+      <!-- Drivers' columns section -->
+      <div class="row column-container">
+        <% @workers.each do |driver| %>
+          <div class="col">
+            <h3 class="text-center"><%= driver.first_name %></h3>
+            <div class="custom-column custom-gutter" data-driver-id="<%= driver.id %>">
+              <ul class="dispatch-list">
+                <% driver_dispatches = @dispatches.select do |dispatch|
+                  user = User.find_by(id: dispatch.driver_id)
+                  user.present? && user.full_name == driver.full_name
+                end %>
+                <% driver_dispatches.each do |dispatch| %>
+                <div class="driver-note" data-card-id="<%= dispatch.id %>">
+                  <%= link_to '', class: "links" do %>
+                    <% if dispatch.driver_id.blank? %>
+                      <h5>Unassigned</h5>
+                    <% else %>
+                      <h5><%= User.find_by(id: dispatch.driver_id).full_name %></h5>
+                    <% end %>
+                    <h5>Dispatch Date: <%= dispatch.dispatch_date %></h5>
+                    <h5>Info: <%= dispatch.info %></h5>
+                  <% end %>
+                </div>
+              <% end %>
+              </ul>
+            </div>
+          </div>
+        <% end %>
+      </div>
+      <div id="sticky-trash-can">
+        <span>🗑️</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+

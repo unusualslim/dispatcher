@@ -1,5 +1,14 @@
 class Dispatch < ApplicationRecord
-    has_and_belongs_to_many :customer_orders
+    before_validation :set_default_status, on: :create
+    belongs_to :customer_order
+    has_many :dispatch_customer_orders
+    has_many :customer_orders, through: :dispatch_customer_orders
+    enum dispatch_status: { New: "New", sent_to_driver: "Sent to Driver", complete: "Complete", billed: "Billed", deleted: "Deleted" }
 
-    enum status: { new: "New", sent_to_driver: "Sent to Driver", complete: "Complete", billed: "Billed" }
+    private
+
+    def set_default_status
+      self.dispatch_status = 'New'
+    end
+
 end

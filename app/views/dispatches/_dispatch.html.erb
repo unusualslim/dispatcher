@@ -1,0 +1,59 @@
+<div id="<%= dom_id dispatch %>">
+  <p>
+    <strong>ID:</strong>
+    <%= dispatch.id %>
+  </p>
+  <p>
+    <strong>Driver name:</strong>
+    <% if dispatch.driver_id %>
+      <%= User.find_by(id: dispatch.driver_id).full_name %>
+    <% else %>
+      Unassigned
+    <% end %> 
+  </p>
+
+  <p>
+    <strong>Origin:</strong>
+    <%= dispatch.origin %>
+  </p>
+
+  <p>
+    <strong>Destination:</strong>
+    <%= dispatch.destination %>
+  </p>
+
+  <p>
+    <strong>Info:</strong>
+    <%= dispatch.info %>
+  </p>
+
+  <p>
+    <strong>Dispatch date:</strong>
+    <%= dispatch.dispatch_date %>
+  </p>
+
+  <p>
+    <strong>Status:</strong>
+    <%= dispatch.status %>
+  </p>
+
+  <p>
+    <strong>Notes:</strong>
+    <%= dispatch.notes %>
+  </p>
+
+  <% if dispatch.customer_order.present? %>
+    <h3>Associated Customer Orders</h3>
+    <%= link_to customer_order_path(dispatch.customer_order), class: "card-link" do %>
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Customer Order ID: <%= dispatch.customer_order.id %></h5>
+          <p class="card-text">Location: <%= dispatch.customer_order.location.company_name %></p>
+        </div>
+      </div>
+    <% end %>
+  <% else %>
+    <p>No associated customer order found.</p>
+  <% end %>
+
+</div>

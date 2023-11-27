@@ -1,0 +1,23 @@
+<div id="<%= dom_id location %>">
+
+  <p>
+    <strong>City:</strong>
+    <%= location.name %>
+  </p>
+
+  <p>
+    <strong>Company:</strong>
+    <%= location.company_name %>
+  </p>
+
+  <p>
+    <strong>Address:</strong>
+    <%= location.address %>
+  </p>
+
+  <p>
+    <strong>Category:</strong>
+    <%= LocationCategory.find(location.location_category_id).name %>
+  </p>
+
+</div>

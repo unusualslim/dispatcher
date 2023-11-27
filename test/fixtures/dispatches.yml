@@ -1,7 +1,7 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  driver_name: MyString
+  driver_id: MyString
   origin: MyString
   info: MyText
   dispatch_date: 2023-11-07
@@ -9,7 +9,7 @@ one:
   notes: MyText
 
 two:
-  driver_name: MyString
+  driver_id: MyString
   origin: MyString
   info: MyText
   dispatch_date: 2023-11-07

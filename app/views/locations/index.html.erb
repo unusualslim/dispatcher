@@ -1,0 +1,25 @@
+<p style="color: green"><%= notice %></p>
+<div class="button-container">
+  <h1>Locations</h1>
+  <%= link_to "New location", new_location_path, { :class=>"btn btn-primary" } %>
+</div>
+<table>
+  <thead>
+    <tr>
+      <th>City</th>
+      <th>Company</th>
+      <th>Address</th>
+      <th>Category</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @locations.each do |location| %>
+      <tr onclick="location.href='/locations/<%= location.id %>';">
+        <td><%= location.name %></td>
+        <td><%= location.company_name %></td>
+        <td><%= location.address %></td>
+        <td><%= LocationCategory.find(location.location_category_id).name %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
