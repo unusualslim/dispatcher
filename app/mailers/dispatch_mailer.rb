@@ -3,7 +3,7 @@ class DispatchMailer < ApplicationMailer
 
     def send_dispatch_email(dispatch)
         
-        @user = User.find_by(id: dispatch.driver_id)
+        @user = User.find_by(id: dispatch.driver.id)
         @dispatch = dispatch
         mail(
             to: @user.email,

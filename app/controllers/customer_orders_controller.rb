@@ -1,4 +1,5 @@
 class CustomerOrdersController < ApplicationController
+  before_action :authenticate_user!
 
     def index
         @customer_orders = CustomerOrder.all
@@ -31,7 +32,17 @@ class CustomerOrdersController < ApplicationController
     end
 
     def update
-
+      @customer_order = CustomerOrder.find(params[:id])
+    
+      if @customer_order.update(customer_order_params)
+        respond_to do |format|
+          format.html { redirect_to @customer_order, notice: 'Customer Order was successfully updated.' }
+          format.json { render :show, status: :ok, location: @customer_order }
+        end
+      else
+        format.html { render :edit, status: :unprocessable_entity }
+        format.json { render json: @customer_order.errors, status: :unprocessable_entity }
+      end
     end
 
     def destroy

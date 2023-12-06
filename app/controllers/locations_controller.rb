@@ -1,4 +1,5 @@
 class LocationsController < ApplicationController
+  before_action :authenticate_user!
 
     def index
         @locations = Location.all
@@ -10,6 +11,10 @@ class LocationsController < ApplicationController
 
     def new
       @location = Location.new
+    end
+
+    def edit
+      @location = Location.find(params[:id])
     end
   
     def create
@@ -26,6 +31,20 @@ class LocationsController < ApplicationController
       end
     end
 
+    def update
+      @location = Location.find(params[:id])
+    
+      if @location.update(location_params)
+        respond_to do |format|
+          format.html { redirect_to @location, notice: 'Location was successfully updated.' }
+          format.json { render :show, status: :ok, location: @location }
+        end
+      else
+        format.html { render :new, status: :unprocessable_entity }
+        format.json { render json: @location.errors, status: :unprocessable_entity }
+      end
+    end
+
     def destroy
         @location = Location.find(params[:id])
         if @location.destroy
@@ -38,6 +57,6 @@ class LocationsController < ApplicationController
     private
   
     def location_params
-      params.require(:location).permit(:name, :address, :location_category_id, :company_name)
+      params.require(:location).permit(:name, :address, :location_category_id, :company_name, :phone_number)
     end
 end

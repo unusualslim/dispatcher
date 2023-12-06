@@ -9,22 +9,33 @@
       <div class="dispatches">
         <% @new_dispatches.each do |dispatch| %>
         <div class="driver-note" data-card-id="<%= dispatch.id %>">
-            <%= link_to dispatch, class: "links" do %>
-              <% if dispatch.driver_id.blank? %>
-                <h5> Unassigned </h5>
-              <% else %>
-                <h5> <%= User.find_by(id: dispatch.driver_id).full_name %> </h5>
-              <% end %>
-              <h5> Dispatch Date: <%= dispatch.dispatch_date %> </h5>
-              <h5> Info: <%= dispatch.info %> </h5>
-            <% end %>
-        </div>
+                  <div class="note-header">
+                      <% if dispatch.dispatch_customer_order.any? %>
+                        <% if dispatch.dispatch_customer_order.size == 1 %>
+                          <p><%= dispatch.dispatch_customer_order.first.customer_order.location.company_name %></p>
+                          <p><%= dispatch.dispatch_customer_order.first.customer_order.location.name %></p>
+                        <% else %>
+                          <p><%= dispatch.dispatch_customer_order.first.customer_order.location.company_name %>...</p>
+                          <p><%= dispatch.dispatch_customer_order.first.customer_order.location.name %>...</p>
+                        <% end %>
+                      <% else %>
+                        <p>No associated customer order found.</p>
+                      <% end %>
+                  </div>
+                  <hr class="line">
+                  <div class="note-body">
+                    <%= link_to '', class: "links" do %>
+                      <h5>Dispatch Date: <%= dispatch.dispatch_date %></h5>
+                      <h5><%= dispatch.notes %></h5>
+                    <% end %>
+                  </div>
+                </div>
         <% end %>
       </div>
     </div>
     <div class="col">
       <!-- Drivers' columns section -->
-      <div class="row column-container">
+      <div class="row column-container" id="driver-columns">
         <% @workers.each do |driver| %>
           <div class="col">
             <h3 class="text-center"><%= driver.first_name %></h3>
@@ -36,15 +47,27 @@
                 end %>
                 <% driver_dispatches.each do |dispatch| %>
                 <div class="driver-note" data-card-id="<%= dispatch.id %>">
-                  <%= link_to '', class: "links" do %>
-                    <% if dispatch.driver_id.blank? %>
-                      <h5>Unassigned</h5>
-                    <% else %>
-                      <h5><%= User.find_by(id: dispatch.driver_id).full_name %></h5>
+                  <div class="note-header">
+                      <% if dispatch.dispatch_customer_order.any? %>
+                        <% if dispatch.dispatch_customer_order.size == 1 %>
+                          <p><%= dispatch.dispatch_customer_order.first.customer_order.location.company_name %></p>
+                          <p><%= dispatch.dispatch_customer_order.first.customer_order.location.name %></p>
+                        <% else %>
+                          <p><%= dispatch.dispatch_customer_order.first.customer_order.location.company_name %>...</p>
+                          <p><%= dispatch.dispatch_customer_order.first.customer_order.location.name %>...</p>
+                        <% end %>
+                      <% else %>
+                        <p>Unassigned</p>
+                      <% end %>
+                  </div>
+                  <hr class="line">
+                  <div class="note-body">
+                    <%= link_to '', class: "links" do %>
+                      <h5>Dispatch Date: <%= dispatch.dispatch_date %></h5>
+                      <h5>From: <%= dispatch.origin %></h5>
+                      <h5><%= dispatch.notes %></h5>
                     <% end %>
-                    <h5>Dispatch Date: <%= dispatch.dispatch_date %></h5>
-                    <h5>Info: <%= dispatch.info %></h5>
-                  <% end %>
+                  </div>
                 </div>
               <% end %>
               </ul>

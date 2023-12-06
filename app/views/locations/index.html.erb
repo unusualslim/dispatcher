@@ -9,6 +9,7 @@
       <th>City</th>
       <th>Company</th>
       <th>Address</th>
+      <th>Phone</th>
       <th>Category</th>
     </tr>
   </thead>
@@ -18,6 +19,7 @@
         <td><%= location.name %></td>
         <td><%= location.company_name %></td>
         <td><%= location.address %></td>
+        <td><%= location.phone_number %></td>
         <td><%= LocationCategory.find(location.location_category_id).name %></td>
       </tr>
     <% end %>

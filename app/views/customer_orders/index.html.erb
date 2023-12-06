@@ -1,27 +1,29 @@
-<p style="color: green"><%= notice %></p>
-<h1>Customer Orders</h1>
-<%= link_to "New Order", new_customer_order_path, { :class=>"btn btn-primary" } %>
-<div class="row">
-  <% @customer_orders.each do |customer_order| %>
-    <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-      <%= link_to customer_order_path(customer_order), class: "card-link" do %>
-        <div class="card" style="background-color: <%= customer_order.card_color %>;">
-          <div class="card-body">
-            <h5 class="card-title"><%= Location.find(customer_order.location_id).name %></h5>
-            <% if customer_order.required_delivery_date? %>
-              <p class="card-text">required by: <%= customer_order.required_delivery_date %></p>
-            <% else %>
-              <p class="card-text">No delivery date</p>
-            <% end %>
-            <% if customer_order.approximate_product_amount? %>
-              <p class="card-text"><%= customer_order.approximate_product_amount %> gallons <%= customer_order.product %></p>
-            <% else %>
-              <p class="card-text">Missing product amount</p>
-            <% end %>
-            <p class="card-text">Created on: <%= customer_order.created_at.in_time_zone('Eastern Time (US & Canada)').strftime('%Y-%m-%d') %></p>
+<div class="content">
+  <p style="color: green"><%= notice %></p>
+  <h1>Customer Orders</h1>
+  <%= link_to "New Order", new_customer_order_path, { :class=>"btn btn-primary" } %>
+  <div class="row">
+    <% @customer_orders.each do |customer_order| %>
+      <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+        <%= link_to customer_order_path(customer_order), class: "card-link" do %>
+          <div class="card" style="background-color: <%= customer_order.card_color %>;">
+            <div class="card-body">
+              <h5 class="card-title"><%= Location.find(customer_order.location_id).name %></h5>
+              <% if customer_order.required_delivery_date? %>
+                <p class="card-text">required by: <%= customer_order.required_delivery_date %></p>
+              <% else %>
+                <p class="card-text">No delivery date</p>
+              <% end %>
+              <% if customer_order.approximate_product_amount? %>
+                <p class="card-text"><%= customer_order.approximate_product_amount %> gallons <%= customer_order.product %></p>
+              <% else %>
+                <p class="card-text">Missing product amount</p>
+              <% end %>
+              <p class="card-text">Created on: <%= customer_order.created_at.in_time_zone('Eastern Time (US & Canada)').strftime('%Y-%m-%d') %></p>
+            </div>
           </div>
-        </div>
-      <% end %>
-    </div>
-  <% end %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
 </div>

@@ -31,6 +31,16 @@
     <%= f.password_field :current_password, autocomplete: "current-password" %>
   </div>
 
+  <div class="field">
+    <%= f.label "Recieve Text Alerts" %>
+    <%= f.check_box :sms_opt_in %>
+  </div>
+
+  <div class="field">
+    <%= f.label "Recieve Email Alerts" %>
+    <%= f.check_box :email_opt_in%>
+  </div>
+
   <div class="actions">
     <%= f.submit "Update" %>
   </div>

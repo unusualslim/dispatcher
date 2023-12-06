@@ -1,5 +1,6 @@
 class DispatchesController < ApplicationController
   before_action :set_dispatch, only: %i[ show edit update destroy ]
+  before_action :authenticate_user!
 
   # GET /dispatches or /dispatches.json
   def index
@@ -24,16 +25,19 @@ class DispatchesController < ApplicationController
   # GET /dispatches/1/edit
   def edit
     @locations = Location.all
+    @recent_customer_orders = CustomerOrder.order(created_at: :desc).limit(5)
+    @origin_locations = Location.where(location_category_id: 1)
   end
 
   # POST /dispatches or /dispatches.json
   def create
+    @origin_locations = Location.where(location_category_id: 1)
+    @recent_customer_orders = CustomerOrder.order(created_at: :desc).limit(5)
     @dispatch = Dispatch.new(dispatch_params)
-    customer_order = CustomerOrder.find(params[:dispatch][:customer_order_id])
-    @dispatch.destination = customer_order.location.name
-
+  
     respond_to do |format|
       if @dispatch.save
+        update_destination_from_customer_orders(@dispatch)
         format.html { redirect_to dispatch_url(@dispatch), notice: "Dispatch was successfully created." }
         format.json { render :show, status: :created, location: @dispatch }
       else
@@ -42,20 +46,32 @@ class DispatchesController < ApplicationController
       end
     end
   end
+  
 
   # PATCH/PUT /dispatches/1 or /dispatches/1.json
   def update
     previous_driver_id = @dispatch.driver_id
-    
+  
     respond_to do |format|
       if @dispatch.update(dispatch_params)
-        new_driver_id = @dispatch.driver_id
+        update_destination_from_customer_orders(@dispatch)
   
-        # Check if the dispatch was unassigned before or the assigned driver has changed
-        if (previous_driver_id.nil? && !new_driver_id.nil?) || (previous_driver_id != new_driver_id)
-          DispatchMailer.send_dispatch_email(@dispatch).deliver
+        if @dispatch.driver_id.present? && previous_driver_id != @dispatch.driver_id
+          @dispatch.update(status: "Sent to driver")
+          
+          # Check if the associated user has opted in for emails
+          if @dispatch.driver.present? && @dispatch.driver.email_opt_in?
+            DispatchMailer.send_dispatch_email(@dispatch).deliver
+          end
+          if @dispatch.driver.present? && @dispatch.driver.sms_opt_in?
+            send_text_to_driver(@dispatch.driver.phone_number) if @dispatch.driver.phone_number.present?
+          end
+        elsif @dispatch.driver_id.blank? && previous_driver_id.present?
+          # This condition checks if the dispatch is moved back to the new column from a driver column
+          @dispatch.update(status: "New")
         end
-        
+  
+        format.html { redirect_to dispatch_url(@dispatch), notice: "Dispatch was successfully updated." }
         format.json { render :show, status: :ok, location: @dispatch }
       else
         format.html { render :edit, status: :unprocessable_entity }
@@ -63,6 +79,8 @@ class DispatchesController < ApplicationController
       end
     end
   end
+  
+  
 
   def view_dispatches
     @statuses = Dispatch.distinct.pluck(:status) # Fetch all unique statuses
@@ -89,11 +107,40 @@ class DispatchesController < ApplicationController
   end
 
   private
+
+    def boot_twilio
+      account_sid = Rails.application.credentials.twilio_sid
+      auth_token = Rails.application.credentials.twilio_token
+      @client = Twilio::REST::Client.new account_sid, auth_token
+    end
+
+    def send_text_to_driver(driver_phone_number)
+      boot_twilio
+      @client.messages.create(
+        from: Rails.application.credentials.twilio_number,
+        to: driver_phone_number,
+        body: "You have been assigned a new dispatch. Check your Dispatcher app for details."
+      )
+    end
+
+    def update_destination_from_customer_orders(dispatch)
+      if dispatch.customer_orders.any?
+        first_customer_order = dispatch.customer_orders.first
+        location_name = Location.find(first_customer_order.location_id).name
+        destination_count = dispatch.customer_orders.size - 1
+        if destination_count > 0
+          dispatch.update(destination: "#{location_name} + #{destination_count}")
+        else
+          dispatch.update(destination: location_name)
+        end
+      end
+    end
+
     def set_dispatch
       @dispatch = Dispatch.find(params[:id])
     end
 
     def dispatch_params
-      params.require(:dispatch).permit(:driver_id, :origin, :destination, :info, :dispatch_date, :status, :notes, :customer_order_id)
+      params.require(:dispatch).permit(:driver_id, :origin, :destination, :info, :dispatch_date, :status, :notes, :customer_order_ids => [])
     end
 end

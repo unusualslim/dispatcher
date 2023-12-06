@@ -1,11 +1,8 @@
 <div class="customer-order">
   <p><strong>Required Delivery Date:</strong> <%= customer_order.required_delivery_date %></p>
-  <p><strong>Product:</strong> <%= customer_order.product %></p>
-  <p><strong>Location ID:</strong> <%= customer_order.location_id %></p>
-  <p><strong>Approximate Product Amount:</strong> <%= customer_order.approximate_product_amount %></p>
-  <p><strong>Notes:</strong> <%= customer_order.notes %></p>
+  <p><strong>Location:</strong> <%= Location.find(customer_order.location_id).name %></p>
   <p><strong>Order Status:</strong> <%= customer_order.order_status %></p>
-  <p><strong>Card Color:</strong> <%= customer_order.card_color %></p>
+  <p><strong>Notes:</strong> <%= customer_order.notes %></p>
 
     <% if @customer_order.dispatches.any? %>
     <h3>Associated Dispatches</h3>

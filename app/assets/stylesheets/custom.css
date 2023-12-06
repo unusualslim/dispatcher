@@ -9,6 +9,11 @@
     background-color: #375a7f;
     margin-right: 0px;
     margin-left: 0px;
+    padding-left: 0%;
+    padding-right: 0%;
+    position: sticky;
+    left: 0;
+    margin-top: 1px;
 }
 .custom-gutter {
     margin-right: 0px;
@@ -41,16 +46,15 @@
 .note{
     background-color: green;
     padding-left: 0px;
-    border-radius: 5%;
+    border-radius: 0%;
     padding-top: 10px;
     padding-bottom: 10px;
     margin-top: 10px;
     cursor: grab;
 }
 .driver-note{
-    background-color: #2fa95c;
-    border-radius: 5%;
-
+    background-color: #de7411;
+    border-radius: 0%;
     cursor: grab;
     transition: all 0.3s ease;
 }
@@ -61,9 +65,11 @@
     display: inline-block;
     vertical-align: top;
     width: 184px;
-    background-color: #7a779d;
+    background-color: #527AA5;
     margin: 0;
-    padding-left: 0;
+    padding-left: 0px;
+    border-left-style: solid;
+    border-left-color: #5A85B2;
     height: 95%;
 }
 .text-center{
@@ -74,14 +80,15 @@
 .col{
     margin-top: -1.2%;
     width: 184px;
-    margin-left: 0%;
+    margin-left: 0px;
     margin-right: 0%;
-    padding-left: 10px;
+    padding-left: 0px;
 }
 .dispatch-list{
     height: 100%;
     padding-left: 0%;
-    padding-bottom: 10px;
+    margin-left: 0%;
+    padding-bottom: 0px;
 }
 .row{
     height: 100%;
@@ -90,13 +97,19 @@
   margin-left: 8px;
   display: flex;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
+  padding-top: 50px;
 }
 #updateDriverNotes{
     margin-left: 5px;
 }
 .navbar{
     background-color: #375a7f !important;
+    position: fixed;
+    top: 0;
+    left: 0; /* Adjust left position as needed */
+    width: 100%; /* Ensure it spans the entire viewport width */
+    z-index: 1000; /* Ensure it's above other elements */
 }
 .navbar-brand{
     color: white;
@@ -141,3 +154,46 @@
     text-decoration: none;
   }
   
+  #driver-columns {
+    display: flex;
+    flex-wrap: nowrap; /* Prevent columns from wrapping to the next row */
+    margin-left: 0px;
+  }
+
+  .driver-column {
+    flex: 1; /* Each driver column takes up equal space */
+    margin-right: 0px; /* Adjust margin for the gutter between columns */
+  }
+
+  .edit_user {
+    margin-top: 30px;
+  }
+
+  .content {
+    padding-top: 50px;
+  }
+
+  .note-header {
+    padding-top: 10px;
+    margin-bottom: 5px;
+    font-size: 22px;
+    line-height: 40%;
+    size: 40px;
+    font-weight: bold;
+    text-align: center;
+  }
+  
+  .note-body {
+    font-size: 100px !important;
+    line-height: 1.5;
+    text-align: center;
+    margin-bottom: 5px;
+    margin-top: -10px;
+  }
+
+  .line {
+    border-width: 2px;
+    height: 2px;
+    padding-top: 0%;
+    color: #f1a359;
+  }

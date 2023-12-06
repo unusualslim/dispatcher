@@ -16,8 +16,18 @@
   </p>
 
   <p>
+    <strong>Phone:</strong>
+    <%= location.phone_number %>
+  </p>
+
+  <p>
     <strong>Category:</strong>
     <%= LocationCategory.find(location.location_category_id).name %>
+  </p>
+
+  <p>
+    <strong>Notes:</strong>
+    <%= location.notes %>
   </p>
 
 </div>

@@ -144,14 +144,17 @@ document.addEventListener('DOMContentLoaded', () => {
     
   });
 
-  trashCan.addEventListener('drop', (event) => {
+  trashCan.addEventListener('drop', async (event) => {
     event.preventDefault();
     const dispatchId = event.dataTransfer.getData('dispatchId');
-
+  
     // Perform an action to delete the dispatch with the ID
     console.log('Drop Event:', event);
     console.log('Dispatch ID:', dispatchId);
-    deleteDispatch(dispatchId);
+    await deleteDispatch(dispatchId);
+  
+    // Reload the page after the action is completed
+    location.reload();
   });
 
   function deleteDispatch(dispatchId) {

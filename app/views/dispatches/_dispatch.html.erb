@@ -1,4 +1,4 @@
-<div id="<%= dom_id dispatch %>">
+<div id="<%= dom_id dispatch %>" class="content">
   <p>
     <strong>ID:</strong>
     <%= dispatch.id %>
@@ -23,11 +23,6 @@
   </p>
 
   <p>
-    <strong>Info:</strong>
-    <%= dispatch.info %>
-  </p>
-
-  <p>
     <strong>Dispatch date:</strong>
     <%= dispatch.dispatch_date %>
   </p>
@@ -41,19 +36,20 @@
     <strong>Notes:</strong>
     <%= dispatch.notes %>
   </p>
-
-  <% if dispatch.customer_order.present? %>
-    <h3>Associated Customer Orders</h3>
-    <%= link_to customer_order_path(dispatch.customer_order), class: "card-link" do %>
+<% if dispatch.dispatch_customer_order.any? %>
+  <h3>Associated Customer Orders</h3>
+  <% dispatch.dispatch_customer_order.each do |dispatch_customer_order| %>
+    <%= link_to customer_order_path(dispatch_customer_order.customer_order), class: "card-link" do %>
       <div class="card">
         <div class="card-body">
-          <h5 class="card-title">Customer Order ID: <%= dispatch.customer_order.id %></h5>
-          <p class="card-text">Location: <%= dispatch.customer_order.location.company_name %></p>
+          <h5 class="card-title">Customer Order ID: <%= dispatch_customer_order.customer_order.id %></h5>
+          <p class="card-text">Location: <%= dispatch_customer_order.customer_order.location.company_name %></p>
         </div>
       </div>
     <% end %>
-  <% else %>
-    <p>No associated customer order found.</p>
   <% end %>
+<% else %>
+  <p>Unassigned.</p>
+<% end %>
 
 </div>

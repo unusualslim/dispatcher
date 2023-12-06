@@ -1,11 +1,12 @@
-<div class="content">  
-  <h1>Creating location</h1>
+<div class="content">
+  <h1>Editing location</h1>
 
   <%= render "form", location: @location %>
 
   <br>
 
   <div>
+    <%= link_to "Show this location", @location %> |
     <%= link_to "Back to locations", locations_path %>
   </div>
 </div>

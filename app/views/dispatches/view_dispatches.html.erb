@@ -1,31 +1,31 @@
-<%= form_tag view_dispatches_path, method: :get do %>
-  <%= select_tag :status, options_for_select(@statuses, @selected_status), onchange: 'this.form.submit();', class: "btn btn-secondary dropdown-toggle" %>
-<% end %>
+<div class="content">
+  <%= form_tag view_dispatches_path, method: :get do %>
+    <%= select_tag :status, options_for_select(@statuses, @selected_status), onchange: 'this.form.submit();', class: "btn btn-secondary dropdown-toggle" %>
+  <% end %>
 
-<!-- Display orders based on selected status -->
-<table>
-  <thead>
-    <tr>
-      <th>ID</th>
-      <th>Assigned To</th>
-      <th>Dispatch Date</th>
-      <th>Info</th>
-      <th>Notes</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @dispatches.each do |dispatch| %>
-      <tr onclick="location.href='/dispatches/<%= dispatch.id %>';">
-        <td><%= dispatch.id %></td>
-        <% if dispatch.driver_id %>
-          <td><%= User.find_by(id: dispatch.driver_id).full_name %></td>
-        <% else %>
-          <td>Unassigned</td>
-        <% end %>
-        <td><%= dispatch.dispatch_date %></td>
-        <td><%= dispatch.info %></td>
-        <td><%= dispatch.notes %></td>
+  <!-- Display orders based on selected status -->
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Assigned To</th>
+        <th>Dispatch Date</th>
+        <th>Notes</th>
       </tr>
-    <% end %>
-  </tbody>
-</table>
+    </thead>
+    <tbody>
+      <% @dispatches.each do |dispatch| %>
+        <tr onclick="location.href='/dispatches/<%= dispatch.id %>';">
+          <td><%= dispatch.id %></td>
+          <% if dispatch.driver_id %>
+            <td><%= User.find_by(id: dispatch.driver_id).full_name %></td>
+          <% else %>
+            <td>Unassigned</td>
+          <% end %>
+          <td><%= dispatch.dispatch_date %></td>
+          <td><%= dispatch.notes %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

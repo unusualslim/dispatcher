@@ -1,9 +1,15 @@
 Rails.application.routes.draw do
+  get 'messages/reply'
   devise_for :users
   resources :users
   resources :dispatches
   resources :locations
   resources :customer_orders
+  resource :messages do
+    collection do
+      post 'reply'
+    end
+  end
   delete '/dispatches/:id', to: 'dispatches#destroy', as: 'destroy_dispatch'
   get '/view_dispatches', to: 'dispatches#view_dispatches', as: 'view_dispatches'
   get '/search', to: 'customer_orders#search', as: 'search'

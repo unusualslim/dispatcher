@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_11_27_201518) do
+ActiveRecord::Schema[7.0].define(version: 2023_12_01_162607) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -85,8 +85,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_27_201518) do
     t.integer "position"
     t.integer "driver_id"
     t.string "destination"
-    t.bigint "customer_order_id"
-    t.index ["customer_order_id"], name: "index_dispatches_on_customer_order_id"
   end
 
   create_table "location_categories", force: :cascade do |t|
@@ -112,6 +110,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_27_201518) do
     t.datetime "updated_at", null: false
     t.bigint "location_category_id"
     t.string "company_name"
+    t.string "phone_number"
+    t.text "notes"
     t.index ["location_category_id"], name: "index_locations_on_location_category_id"
   end
 
@@ -129,6 +129,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_27_201518) do
     t.datetime "updated_at", null: false
     t.boolean "email_opt_in"
     t.boolean "sms_opt_in"
+    t.boolean "consent_to_text"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
@@ -138,7 +139,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_27_201518) do
   add_foreign_key "customer_orders", "locations"
   add_foreign_key "dispatch_customer_orders", "customer_orders"
   add_foreign_key "dispatch_customer_orders", "dispatches"
-  add_foreign_key "dispatches", "customer_orders"
   add_foreign_key "location_contacts", "locations"
   add_foreign_key "locations", "location_categories"
 end

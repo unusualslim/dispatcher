@@ -1,52 +1,39 @@
-<%= form_with(model: @customer_order) do |form| %>
-  <% if @customer_order.errors.any? %>
-    <div style="color: red">
-      <h2><%= pluralize(customer_order.errors.count, "error") %> prohibited this customer_order from being saved:</h2>
+<div class="content">
+  <%= form_with(model: @customer_order) do |form| %>
+    <% if @customer_order.errors.any? %>
+      <div style="color: red">
+        <h2><%= pluralize(customer_order.errors.count, "error") %> prohibited this customer_order from being saved:</h2>
 
-      <ul>
-        <% customer_order.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
+        <ul>
+          <% customer_order.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div>
+      <%= form.label :required_delivery_date, style: "display: block" %>
+      <%= form.date_field :required_delivery_date %>
+    </div>
+
+    <div class="field">
+      <%= form.label :location_id, 'Order Location:', style: "display: block" %>
+      <%= form.collection_select :location_id, Location.where(location_category_id: 2), :id, :name, prompt: "Select Destination Location" %>
+    </div>
+
+    <div>
+      <%= form.label :order_status, style: "display: block" %>
+      <%= form.collection_select :order_status, CustomerOrder.order_statuses.keys, :to_s, :humanize, { class: "form-control" } %>
+    </div>
+
+    <div>
+      <%= form.label :notes, style: "display: block" %>
+      <%= form.text_area :notes %>
+    </div>
+
+    <div>
+      <%= form.submit %>
     </div>
   <% end %>
-
-  <div>
-    <%= form.label :required_delivery_date, style: "display: block" %>
-    <%= form.date_field :required_delivery_date %>
-  </div>
-
-  <div class="field">
-    <%= form.label :product, style: "display: block" %>
-    <%= form.collection_select :product, CustomerOrder.products.keys, :to_s, :humanize, { class: "form-control" } %>
-  </div>
-
-  <div class="field">
-    <%= form.label :location_id, 'Order Location:', style: "display: block" %>
-    <%= form.collection_select :location_id, Location.where(location_category_id: 2), :id, :name, prompt: "Select Destination Location" %>
-  </div>
-
-  <div class="field">
-    <%= form.label :approximate_product_amount, style: "display: block" %>
-    <%= form.text_field :approximate_product_amount %>
-  </div>
-
-  <div>
-    <%= form.label :info, style: "display: block" %>
-    <%= form.text_area :info %>
-  </div>
-
-  <div>
-    <%= form.label :order_status, style: "display: block" %>
-    <%= form.collection_select :order_status, CustomerOrder.order_statuses.keys, :to_s, :humanize, { class: "form-control" } %>
-  </div>
-
-  <div>
-    <%= form.label :notes, style: "display: block" %>
-    <%= form.text_area :notes %>
-  </div>
-
-  <div>
-    <%= form.submit %>
-  </div>
-<% end %>
+</div>
