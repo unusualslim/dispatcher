@@ -1,6 +1,5 @@
 class DispatchesController < ApplicationController
   before_action :set_dispatch, only: %i[ show edit update destroy ]
-  before_action :authenticate_user!
 
   # GET /dispatches or /dispatches.json
   def index

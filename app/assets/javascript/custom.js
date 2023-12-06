@@ -204,21 +204,3 @@ function updateDispatchDriver(dispatchId, newDriverId) {
       console.error('Error updating dispatch:', error);
     });
 }
-
-$(function() {
-  $('#customer_order_input').autocomplete({
-    source: function(request, response) {
-      $.ajax({
-        url: '/customer_orders/search',
-        dataType: 'json',
-        data: {
-          term: request.term // The term being typed by the user
-        },
-        success: function(data) {
-          response(data); // Respond with the matching customer orders
-        }
-      });
-    },
-    minLength: 2 // Minimum characters before autocomplete suggestions trigger
-  });
-});
