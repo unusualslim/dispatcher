@@ -3,5 +3,6 @@
 //= require rails-ujs
 
 import "@hotwired/turbo-rails"
-import "./controllers"import "trix"
+import "./controllers"
+import "trix"
 import "@rails/actiontext"
