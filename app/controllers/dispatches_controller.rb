@@ -108,8 +108,8 @@ class DispatchesController < ApplicationController
   private
 
     def boot_twilio
-      account_sid = Rails.application.credentials.twilio_sid
-      auth_token = Rails.application.credentials.twilio_token
+      account_sid = ENV[TWILIO_SID]
+      auth_token = ENV[TWILIO_TOKEN]
       @client = Twilio::REST::Client.new account_sid, auth_token
     end
 
