@@ -108,15 +108,16 @@ class DispatchesController < ApplicationController
   private
 
     def boot_twilio
-      account_sid = ENV[TWILIO_SID]
-      auth_token = ENV[TWILIO_TOKEN]
+      account_sid = ENV['TWILIO_SID']
+      auth_token = ENV['TWILIO_TOKEN']
+
       @client = Twilio::REST::Client.new account_sid, auth_token
     end
 
     def send_text_to_driver(driver_phone_number)
       boot_twilio
       @client.messages.create(
-        from: ENV[TWILIO_NUMBER],
+        from: ENV['TWILIO_NUMBER'],
         to: driver_phone_number,
         body: "You have been assigned a new dispatch. Check your Dispatcher app for details."
       )

@@ -102,6 +102,10 @@ GEM
       railties (>= 4.1.0)
       responders
       warden (~> 1.2.3)
+    dotenv (2.8.1)
+    dotenv-rails (2.8.1)
+      dotenv (= 2.8.1)
+      railties (>= 3.2)
     erubi (1.12.0)
     execjs (2.9.1)
     faraday (2.7.12)
@@ -272,6 +276,7 @@ DEPENDENCIES
   cssbundling-rails
   debug
   devise
+  dotenv-rails
   image_processing (~> 1.2)
   jbuilder
   jsbundling-rails
