@@ -116,7 +116,7 @@ class DispatchesController < ApplicationController
     def send_text_to_driver(driver_phone_number)
       boot_twilio
       @client.messages.create(
-        from: Rails.application.credentials.twilio_number,
+        from: ENV[TWILIO_NUMBER],
         to: driver_phone_number,
         body: "You have been assigned a new dispatch. Check your Dispatcher app for details."
       )
