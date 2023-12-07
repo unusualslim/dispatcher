@@ -66,6 +66,7 @@ class DispatchesController < ApplicationController
           end
           if @dispatch.driver.present? && @dispatch.driver.sms_opt_in?
             send_text_to_driver(@dispatch.driver.phone_number) if @dispatch.driver.phone_number.present?
+            puts "driver phone number: #{@dispatch.driver.phone_number}"
           end
         elsif @dispatch.driver_id.blank? && previous_driver_id.present?
           # This condition checks if the dispatch is moved back to the new column from a driver column
