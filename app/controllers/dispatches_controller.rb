@@ -63,6 +63,8 @@ class DispatchesController < ApplicationController
             DispatchMailer.send_dispatch_email(@dispatch).deliver
             puts "EMAIL USERNAME: #{ENV['SENDGRID_USERNAME']}"
             puts "EMAIL PWORD: #{ENV['SENDGRID_PASSWORD']}"
+            send_text_to_driver(@dispatch.driver.phone_number) if @dispatch.driver.phone_number.present?
+            puts "driver phone number: #{@dispatch.driver.phone_number}"
           end
           if @dispatch.driver.present? && @dispatch.driver.sms_opt_in?
             send_text_to_driver(@dispatch.driver.phone_number) if @dispatch.driver.phone_number.present?
