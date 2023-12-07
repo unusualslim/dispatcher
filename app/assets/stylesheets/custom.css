@@ -14,6 +14,7 @@
     position: sticky;
     left: 0;
     margin-top: 1px;
+    height: 99.68vh;
 }
 .custom-gutter {
     margin-right: 0px;
@@ -27,7 +28,8 @@
 }
 .container-fluid{
     flex: 0 1 auto;
-    height: 90vh;
+    height: 100vh;
+    padding-top: 100px;
 }
 .html{
     display: flex;
@@ -41,10 +43,10 @@
 .links{
     color:azure;
     text-decoration: none;
-    background-color: green !important;
+    background-color: transparent !important;
 }
 .note{
-    background-color: green;
+    background-color:transparent;
     padding-left: 0px;
     border-radius: 0%;
     padding-top: 10px;
@@ -53,8 +55,11 @@
     cursor: grab;
 }
 .driver-note{
-    background-color: #de7411;
-    border-radius: 0%;
+    background-color: #fa7900;
+    border-radius: 4%;
+    border-style: solid;
+    border-color: #3f3f3f;
+    margin-bottom: 5px;
     cursor: grab;
     transition: all 0.3s ease;
 }
@@ -98,7 +103,9 @@
   display: flex;
   align-items: center;
   margin-bottom: 10px;
-  padding-top: 50px;
+  padding-top: 67px;
+  position: fixed;
+  top: 0;
 }
 #updateDriverNotes{
     margin-left: 5px;
@@ -158,6 +165,7 @@
     display: flex;
     flex-wrap: nowrap; /* Prevent columns from wrapping to the next row */
     margin-left: 0px;
+    height: 103vh;
   }
 
   .driver-column {
@@ -193,7 +201,7 @@
 
   .line {
     border-width: 2px;
-    height: 2px;
+    border-width: 3px;
     padding-top: 0%;
-    color: #f1a359;
+    color: #3f3f3f;
   }

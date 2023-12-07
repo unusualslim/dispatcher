@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
           evt.item.style.backgroundColor = 'lightgreen';
         },
         onEnd(evt) {
-          evt.item.style.backgroundColor = 'green';
+          evt.item.style.backgroundColor = 'lightgreen';
           const driverNote = evt.item.closest('.driver-note');
           // if (driverNote) {
           //   driverNote.classList.add('driver-note');
@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
         evt.item.style.backgroundColor = 'lightgreen';
       },
       onEnd(evt){
-        evt.item.style.backgroundColor = 'green';
+        evt.item.style.backgroundColor = 'lightgreen';
         evt.item.classList.add('.driver-note');
         console.log(`Column with driver ID: ${dispatch.dataset.driverId}`);
         console.log(`Card with dispatch ID: ${dispatch.dataset.cardId}`);
