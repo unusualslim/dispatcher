@@ -1,6 +1,6 @@
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
   <div class="container">
-    <%= link_to "Dispatcher", dispatches_path, class: "navbar-brand", data: { turbo: false } %>
+    <%= link_to "LoadNTrucks", dispatches_path, class: "navbar-brand", data: { turbo: false } %>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
       aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
@@ -8,6 +8,7 @@
     <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
       <ul class="navbar-nav">
         <% if user_signed_in? %>
+          <%= link_to "New Order", new_customer_order_path, { :class=>"btn btn-success" } %>
           <li class="nav-item">
             <%= link_to 'Orders', customer_orders_path, class: 'nav-link' %>
           </li>

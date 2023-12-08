@@ -1,5 +1,4 @@
-<div class="content">
-  <%= form_with(model: @customer_order) do |form| %>
+<%= form_with(model: @customer_order) do |form| %>
     <% if @customer_order.errors.any? %>
       <div style="color: red">
         <h2><%= pluralize(customer_order.errors.count, "error") %> prohibited this customer_order from being saved:</h2>
@@ -35,5 +34,4 @@
     <div>
       <%= form.submit %>
     </div>
-  <% end %>
-</div>
+<% end %>

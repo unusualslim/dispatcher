@@ -27,9 +27,9 @@
     background-color: #f0f0f0 !important;
 }
 .container-fluid{
-    flex: 0 1 auto;
+    
     height: 100vh;
-    padding-top: 100px;
+    padding-top: 95px;
 }
 .html{
     display: flex;
@@ -114,8 +114,8 @@
     background-color: #375a7f !important;
     position: fixed;
     top: 0;
-    left: 0; /* Adjust left position as needed */
-    width: 100%; /* Ensure it spans the entire viewport width */
+    left: 0;
+    width: 100%;
     z-index: 1000; /* Ensure it's above other elements */
 }
 .navbar-brand{
@@ -185,7 +185,7 @@
     padding-top: 10px;
     margin-bottom: 5px;
     font-size: 22px;
-    line-height: 80%;
+    line-height: 100%;
     size: 40px;
     font-weight: bold;
     text-align: center;
