@@ -46,6 +46,11 @@
     <%= f.check_box :email_opt_in%>
   </div>
 
+  <div class="field dropdown">
+    <%= f.label :role %>
+    <%= f.select :role, options_for_select([['Worker', 'worker'], ['Admin', 'admin']]), {}, class: 'btn btn-secondary dropdown-toggle' %>
+  </div>
+
   <div class="actions">
     <%= f.submit "Update" %>
   </div>

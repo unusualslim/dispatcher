@@ -55,18 +55,7 @@ class DispatchesController < ApplicationController
       if @dispatch.update(dispatch_params)
         update_destination_from_customer_orders(@dispatch)
   
-        if @dispatch.driver_id.present? && previous_driver_id != @dispatch.driver_id
-          @dispatch.update(status: "Sent to driver")
-          
-          # Check if the associated user has opted in for emails
-          if @dispatch.driver.present? && @dispatch.driver.email_opt_in?
-            DispatchMailer.send_dispatch_email(@dispatch).deliver
-          end
-          if @dispatch.driver.present? && @dispatch.driver.sms_opt_in?
-            send_text_to_driver(@dispatch.driver.phone_number) if @dispatch.driver.phone_number.present?
-            puts "driver phone number: #{@dispatch.driver.phone_number}"
-          end
-        elsif @dispatch.driver_id.blank? && previous_driver_id.present?
+        if @dispatch.driver_id.blank? && previous_driver_id.present?
           # This condition checks if the dispatch is moved back to the new column from a driver column
           @dispatch.update(status: "New")
         end
@@ -106,6 +95,18 @@ class DispatchesController < ApplicationController
     end
   end
 
+  def send_notification
+    @dispatch = Dispatch.find(params[:id])
+    @dispatch.update(status: "Sent to driver")
+    if @dispatch.driver.present? && @dispatch.driver.email_opt_in?
+      DispatchMailer.send_dispatch_email(@dispatch).deliver_now
+    end
+  
+    if @dispatch.driver.present? && @dispatch.driver.sms_opt_in?
+      send_text_to_driver(@dispatch) if @dispatch.driver.phone_number.present?
+    end
+  end
+
   private
 
     def boot_twilio
@@ -115,12 +116,24 @@ class DispatchesController < ApplicationController
       @client = Twilio::REST::Client.new account_sid, auth_token
     end
 
-    def send_text_to_driver(driver_phone_number)
+    def send_text_to_driver(dispatch)
       boot_twilio
+      product = "N/A"
+      amount = "N/A"
+
+      if dispatch.customer_orders.size == 1
+        product = "#{dispatch.customer_orders.first.product}"
+        amount = "#{dispatch.customer_orders.first.approximate_product_amount}"
+      elsif dispatch.customer_orders.size > 1
+        product = "#{dispatch.customer_orders.first.product}"
+        amount = "#{dispatch.customer_orders.first.approximate_product_amount}"
+      end
+
+      customer_order_info = 
       @client.messages.create(
         from: ENV['TWILIO_NUMBER'],
-        to: driver_phone_number,
-        body: "You have been assigned a new dispatch. Check your Dispatcher app for details."
+        to: dispatch.driver.phone_number,
+        body: "You have been assigned a new dispatch.\nDispatch ID: #{dispatch.id}\nOrigin: #{dispatch.origin}\nDestination: #{dispatch.destination}\nProduct: #{product}\nAmount: #{amount} gal\nNotes: #{dispatch.notes}\nCheck loadntrucks.com for more information"
       )
     end
 

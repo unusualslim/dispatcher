@@ -11,6 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const dispatchId = note.dataset.cardId;
       event.dataTransfer.setData('text/plain', 'dragging');
       event.dataTransfer.setData('dispatchId', dispatchId);
+      console.log("Card dragged: ", note)
+      note.dataset.needs_updating = true;
     });
 
     // Update href attribute with the dispatch ID
@@ -81,45 +83,17 @@ document.addEventListener('DOMContentLoaded', () => {
       // Update notes in the first column (dispatches)
       const firstColumnDispatches = document.querySelectorAll('.dispatches .driver-note');
       firstColumnDispatches.forEach((note) => {
-          const dispatchId = note.dataset.cardId;
-  
-          // Send a PATCH request to update the note's driverId in the database to null
-          fetch(`/dispatches/${dispatchId}`, {
-              method: 'PATCH',
-              headers: {
-                  'Content-Type': 'application/json',
-                  'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
-              },
-              body: JSON.stringify({ driver_id: null }),
-          })
-          .then((response) => {
-              if (!response.ok) {
-                  throw new Error('Network response was not ok');
-              }
-          })
-          .catch((error) => {
-              console.error('Error updating dispatch:', error);
-          });
-      });
-
-      const columns = document.querySelectorAll('.custom-column');
-
-      columns.forEach((column) => {
-          const driverId = column.dataset.driverId;
-
-          const driverNotes = column.querySelectorAll('.driver-note');
-          driverNotes.forEach((note) => {
-              note.dataset.driverId = driverId;
-
-              // Send a PATCH request to update the note's driverId in the database
+          if (note.dataset.needsUpdating === 'true') {
               const dispatchId = note.dataset.cardId;
+
+              // Send a PATCH request to update the note's driverId in the database to null
               fetch(`/dispatches/${dispatchId}`, {
                   method: 'PATCH',
                   headers: {
                       'Content-Type': 'application/json',
                       'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
                   },
-                  body: JSON.stringify({ driver_id: driverId }),
+                  body: JSON.stringify({ driver_id: null }),
               })
               .then((response) => {
                   if (!response.ok) {
@@ -129,6 +103,39 @@ document.addEventListener('DOMContentLoaded', () => {
               .catch((error) => {
                   console.error('Error updating dispatch:', error);
               });
+          }
+      });
+
+
+      const columns = document.querySelectorAll('.custom-column');
+      console.log("How many custom-columns: ",columns)
+      columns.forEach((column) => {
+          const driverId = column.dataset.driverId;
+
+          const driverNotes = column.querySelectorAll('.driver-note');
+          driverNotes.forEach((note) => {
+              const needsUpdating = note.dataset.needs_updating === 'true';
+              if (needsUpdating) {
+                  note.dataset.driverId = driverId;
+
+                  const dispatchId = note.dataset.cardId;
+                  fetch(`/dispatches/${dispatchId}`, {
+                      method: 'PATCH',
+                      headers: {
+                          'Content-Type': 'application/json',
+                          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
+                      },
+                      body: JSON.stringify({ driver_id: driverId }),
+                  })
+                  .then((response) => {
+                      if (!response.ok) {
+                          throw new Error('Network response was not ok');
+                      }
+                  })
+                  .catch((error) => {
+                      console.error('Error updating dispatch:', error);
+                  });
+              }
           });
       });
       setTimeout(() => {

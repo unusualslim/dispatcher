@@ -2,7 +2,11 @@ Rails.application.routes.draw do
   get 'messages/reply'
   devise_for :users
   resources :users
-  resources :dispatches
+  resources :dispatches do 
+    member do
+      post 'send_notification'
+    end
+  end
   resources :locations
   resources :customer_orders
   resource :messages do

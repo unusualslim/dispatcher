@@ -8,8 +8,9 @@
     <div class="col-2">
       <div class="dispatches">
         <% @new_dispatches.each do |dispatch| %>
-        <div class="driver-note" data-card-id="<%= dispatch.id %>">
+        <div class="driver-note <%= dispatch.status.downcase.gsub(/\s+/, "") %>" data-card-id="<%= dispatch.id %>">
                   <div class="note-header">
+                    ID: <%= dispatch.id %>
                       <% if dispatch.dispatch_customer_order.any? %>
                         <% if dispatch.dispatch_customer_order.size == 1 %>
                           <p><%= dispatch.dispatch_customer_order.first.customer_order.location.company_name %></p>
@@ -26,7 +27,7 @@
                   <div class="note-body">
                     <%= link_to '', class: "links" do %>
                       <h5>Dispatch Date: <%= dispatch.dispatch_date %></h5>
-                      <h5><%= dispatch.notes %></h5>
+                      <h5>From: <%= dispatch.origin %></h5>
                     <% end %>
                   </div>
                 </div>
@@ -46,8 +47,9 @@
                   user.present? && user.full_name == driver.full_name
                 end %>
                 <% driver_dispatches.each do |dispatch| %>
-                <div class="driver-note" data-card-id="<%= dispatch.id %>">
+                <div class="driver-note <%= dispatch.status.downcase.gsub(/\s+/, "") %>" data-card-id="<%= dispatch.id %>">
                   <div class="note-header">
+                    ID: <%= dispatch.id %>
                       <% if dispatch.dispatch_customer_order.any? %>
                         <% if dispatch.dispatch_customer_order.size == 1 %>
                           <p><%= dispatch.dispatch_customer_order.first.customer_order.location.company_name %></p>
@@ -65,7 +67,6 @@
                     <%= link_to '', class: "links" do %>
                       <h5>Dispatch Date: <%= dispatch.dispatch_date %></h5>
                       <h5>From: <%= dispatch.origin %></h5>
-                      <h5><%= dispatch.notes %></h5>
                     <% end %>
                   </div>
                 </div>
