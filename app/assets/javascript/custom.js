@@ -175,6 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
       body: JSON.stringify({ status: 'deleted' }), // Update the status to 'deleted'
     })
     .then((response) => {
+      location.reload();
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }

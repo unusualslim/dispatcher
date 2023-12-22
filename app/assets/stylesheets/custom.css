@@ -13,8 +13,9 @@
     padding-right: 0%;
     position: sticky;
     left: 0;
-    margin-top: 4.5px;
+    margin-top: 0px;
     height: 99.68vh;
+    z-index: 1000;
 }
 .custom-gutter {
     margin-right: 0px;
@@ -38,7 +39,7 @@
 .dispatches{
     /*background-color: #63a01d;*/
     height: 100%;
-
+    z-index: 1000;
 }
 .links{
     color:azure;
@@ -210,4 +211,5 @@
     border-width: 3px;
     padding-top: 0%;
     color: #3f3f3f;
+    z-index: 5;
   }
