@@ -1,27 +1,35 @@
-<p style="color: green"><%= notice %></p>
-<div class="button-container">
-  <h1>Locations</h1>
-  <%= link_to "New location", new_location_path, { :class=>"btn btn-primary" } %>
+<div class="content">
+  <p style="color: green"><%= notice %></p>
+  <div class="button-container">
+    <h1>Locations</h1>
+    <%= link_to "New location", new_location_path, { :class=>"btn btn-primary" } %>
+  </div>
+  <div class="locations">
+    <table>
+      <thead>
+        <tr>
+          <th>City</th>
+          <th>Company</th>
+          <th>Address</th>
+          <th>State</th>
+          <th>Zip</th>
+          <th>Phone</th>
+          <th>Category</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @locations.each do |location| %>
+          <tr onclick="location.href='/locations/<%= location.id %>';">
+            <td><%= location.city %></td>
+            <td><%= location.company_name %></td>
+            <td><%= location.address %></td>
+            <td><%= location.state %></td>
+            <td><%= location.zip %></td>
+            <td><%= location.phone_number %></td>
+            <td><%= LocationCategory.find(location.location_category_id).name %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
 </div>
-<table>
-  <thead>
-    <tr>
-      <th>City</th>
-      <th>Company</th>
-      <th>Address</th>
-      <th>Phone</th>
-      <th>Category</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @locations.each do |location| %>
-      <tr onclick="location.href='/locations/<%= location.id %>';">
-        <td><%= location.name %></td>
-        <td><%= location.company_name %></td>
-        <td><%= location.address %></td>
-        <td><%= location.phone_number %></td>
-        <td><%= LocationCategory.find(location.location_category_id).name %></td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>

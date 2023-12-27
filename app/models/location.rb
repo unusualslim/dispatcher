@@ -7,4 +7,8 @@ class Location < ApplicationRecord
   belongs_to :location_category
  
   has_many :location_contacts
+
+  def city_with_company
+    "#{company_name} - #{city}"
+  end
 end
