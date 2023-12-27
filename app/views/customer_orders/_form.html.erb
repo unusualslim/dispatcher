@@ -18,7 +18,7 @@
 
     <div class="field">
       <%= form.label :location_id, 'Order Location:', style: "display: block" %>
-      <%= form.collection_select :location_id, Location.where(location_category_id: 2), :id, :company_name, prompt: "Select Destination Location" %>
+      <%= form.collection_select :location_id, Location.where(location_category_id: 2), :id, :city_with_company, prompt: "Select Destination Location" %>
     </div>
 
     <div class="field">
