@@ -140,7 +140,7 @@ class DispatchesController < ApplicationController
     def update_destination_from_customer_orders(dispatch)
       if dispatch.customer_orders.any?
         first_customer_order = dispatch.customer_orders.first
-        location_name = Location.find(first_customer_order.location_id).name
+        location_name = Location.find(first_customer_order.location_id).city
         destination_count = dispatch.customer_orders.size - 1
         if destination_count > 0
           dispatch.update(destination: "#{location_name} + #{destination_count}")

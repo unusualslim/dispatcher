@@ -1,6 +1,6 @@
 <div class="customer-order">
   <p><strong>Required Delivery Date:</strong> <%= customer_order.required_delivery_date %></p>
-  <p><strong>Location:</strong> <%= Location.find(customer_order.location_id).name %></p>
+  <p><strong>Location:</strong> <%= Location.find(customer_order.location_id).city %></p>
   <p><strong>Order Status:</strong> <%= customer_order.order_status %></p>
   <p><strong>Product:</strong> <%= customer_order.product %></p>
   <p><strong>Amount:</strong> <%= customer_order.approximate_product_amount %> gal</p>
