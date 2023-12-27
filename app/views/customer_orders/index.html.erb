@@ -8,7 +8,7 @@
         <%= link_to customer_order_path(customer_order), class: "card-link" do %>
           <div class="card" style="background-color: <%= customer_order.card_color %>;">
             <div class="card-body">
-              <h5 class="card-title"><%= Location.find(customer_order.location_id).name %></h5>
+              <h5 class="card-title"><%= Location.find(customer_order.location_id).city %></h5>
               <% if customer_order.required_delivery_date? %>
                 <p class="card-text">required by: <%= customer_order.required_delivery_date %></p>
               <% else %>
