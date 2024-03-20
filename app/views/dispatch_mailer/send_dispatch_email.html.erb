@@ -13,8 +13,8 @@
       </tr>
       <tr>
         <td><%= @dispatch.id %></td>
-        <td><%= @dispatch.customer_order.product %></td>
-        <td><%= @dispatch.customer_order.approximate_product_amount %></td>
+        <td><%= @dispatch.customer_orders.first.product %></td>
+        <td><%= @dispatch.customer_orders.first.approximate_product_amount %></td>
         <td><%= @dispatch.origin %></td>
         <td><%= @dispatch.destination %></td>
       </tr>
