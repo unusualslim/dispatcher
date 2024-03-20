@@ -72,6 +72,8 @@ class DispatchesController < ApplicationController
   
 
   def view_dispatches
+    @origin
+    @destination = 
     @statuses = Dispatch.distinct.pluck(:status) # Fetch all unique statuses
     @selected_status = params[:status] || @statuses.first # Get selected status or default
 
@@ -96,6 +98,8 @@ class DispatchesController < ApplicationController
   end
 
   def send_notification
+    @origin_locations = Location.where(location_category_id: 1)
+    @destination_locations = Location.where(location_category_id: 2)
     @dispatch = Dispatch.find(params[:id])
     @dispatch.update(status: "Sent to driver")
     if @dispatch.driver.present? && @dispatch.driver.email_opt_in?
