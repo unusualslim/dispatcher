@@ -3,20 +3,20 @@
     <meta content='text/html; charset=UTF-8' http-equiv='Content-Type' />
   </head>
   <body>
-    <table style="border: 1px solid black;">
+    <table style="border: 1px solid black; border-collapse: collapse; width: 100%;">
       <tr style="background-color: lightgrey;">
-        <th style="border: 1px solid black;">Dispatch #</th>
-        <th style="border: 1px solid black;">Product</th>
-        <th style="border: 1px solid black;">Quantity(Gals)</th>
-        <th style="border: 1px solid black;">Origin</th>
-        <th style="border: 1px solid black;">Destination</th>
+        <th style="border: 1px solid black; padding: 10px;">Dispatch #</th>
+        <th style="border: 1px solid black; padding: 10px;">Product</th>
+        <th style="border: 1px solid black; padding: 10px;">Quantity(Gals)</th>
+        <th style="border: 1px solid black; padding: 10px;">Origin</th>
+        <th style="border: 1px solid black; padding: 10px;">Destination</th>
       </tr>
       <tr>
-        <td style="border: 1px solid black;"><%= @dispatch.id %></td>
-        <td style="border: 1px solid black;"><%= @dispatch.customer_orders.first.product %></td>
-        <td style="border: 1px solid black;"><%= @dispatch.customer_orders.first.approximate_product_amount %></td>
-        <td style="border: 1px solid black;"><%= @dispatch.origin %></td>
-        <td style="border: 1px solid black;"><%= @dispatch.destination %></td>
+        <td style="border: 1px solid black; padding: 10px;"><%= @dispatch.id %></td>
+        <td style="border: 1px solid black; padding: 10px;"><%= @dispatch.customer_orders.first.product %></td>
+        <td style="border: 1px solid black; padding: 10px;"><%= @dispatch.customer_orders.first.approximate_product_amount %></td>
+        <td style="border: 1px solid black; padding: 10px;"><%= @dispatch.origin %></td>
+        <td style="border: 1px solid black; padding: 10px;"><%= @dispatch.destination %></td>
       </tr>
     </table>
   </body>
