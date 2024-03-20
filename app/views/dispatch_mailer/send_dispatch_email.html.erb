@@ -3,14 +3,21 @@
     <meta content='text/html; charset=UTF-8' http-equiv='Content-Type' />
   </head>
   <body>
-    <h1>Dispatch <%= @dispatch.id %> has been assigned to you</h1>
-    <p>
-        <div>Origin: <%= @dispatch.origin %></div>
-        <div>Info: <%= @dispatch.info %></div>
-        <div>Dispatch Date: <%= @dispatch.dispatch_date %></div>
-        <div>Status: <%= @dispatch.status %></div>
-        <div>Notes: <%= @dispatch.notes %></div>
-        <div>Created On: <%= @dispatch.created_at %></div>
-    </p>
+    <table style="border:1px">
+      <tr>
+        <th>Dispatch #</th>
+        <th>Product</th>
+        <th>Quantity(Gals)</th>
+        <th>Origin</th>
+        <th>Destination</th>
+      </tr>
+      <tr>
+        <td><%= @dispatch.id %></td>
+        <td><%= @dispatch.customer_order.product %></td>
+        <td><%= @dispatch.customer_order.approximate_product_amount %></td>
+        <td><%= @dispatch.origin %></td>
+        <td><%= @dispatch.destination %></td>
+      </tr>
+    </table>
   </body>
 </html>

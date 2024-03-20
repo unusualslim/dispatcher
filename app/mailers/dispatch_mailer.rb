@@ -7,7 +7,7 @@ class DispatchMailer < ApplicationMailer
         @dispatch = dispatch
         mail(
             to: @user.email,
-            subject: "Dispatch No. #{dispatch.id}"
+            subject: "Dispatch # #{dispatch.id}"
         )
     end
 end

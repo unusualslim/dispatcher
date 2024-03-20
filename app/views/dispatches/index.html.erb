@@ -53,7 +53,7 @@
                       <% if dispatch.dispatch_customer_order.any? %>
                         <% if dispatch.dispatch_customer_order.size == 1 %>
                           <p><%= dispatch.dispatch_customer_order.first.customer_order.location.company_name %></p>
-                          <p><%= dispatch.dispatch_customer_order.first.customer_order.location.city %></p>
+                          <p><%# dispatch.dispatch_customer_order.first.customer_order.location.city %></p>
                         <% else %>
                           <p><%= dispatch.dispatch_customer_order.first.customer_order.location.company_name %>...</p>
                           <p><%= dispatch.dispatch_customer_order.first.customer_order.location.city %>...</p>
