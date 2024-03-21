@@ -4,12 +4,14 @@
   </head>
   <body>
     <table style="border: 1px solid black; border-collapse: collapse; width: 100%;">
+      <tr>
+        <th style="border: 1px solid black; padding: 10px;">Dispatch Info</th>
+      </tr>
       <tr style="background-color: lightgrey;">
         <th style="border: 1px solid black; padding: 10px;">Dispatch #</th>
         <th style="border: 1px solid black; padding: 10px;">Product</th>
         <th style="border: 1px solid black; padding: 10px;">Quantity(Gals)</th>
         <th style="border: 1px solid black; padding: 10px;">Origin</th>
-        <th style="border: 1px solid black; padding: 10px;">Destination</th>
       </tr>
       <tr>
         <td style="border: 1px solid black; padding: 10px;"><%= @dispatch.id %></td>
@@ -23,6 +25,20 @@
             No origin location found
           <% end %>
         </td>
+      </tr>
+    </table>
+    <%= link_to "Click here to view the dispatch", dispatch_url(@dispatch) %>
+    <table style="border: 1px solid black; border-collapse: collapse; width: 100%;">
+      <tr>
+        <th style="border: 1px solid black; padding: 10px;">Customer Info</th>
+      </tr>
+      <tr style="background-color: lightgrey;">
+        <th style="border: 1px solid black; padding: 10px;">Order #</th>
+        <th style="border: 1px solid black; padding: 10px;">Destination</th>
+        <th style="border: 1px solid black; padding: 10px;">Delivery Date</th>
+      </tr>
+      <tr>
+        <td style="border: 1px solid black; padding: 10px;"><%= @dispatch.customer_orders.first.id %></td>
         <td style="border: 1px solid black; padding: 10px;">
           <% destination_location = @destination_locations.find_by(city: @dispatch.destination) %>
           <% if destination_location %>
@@ -31,8 +47,9 @@
             No destination location found
           <% end %>
         </td>
+        <td style="border: 1px solid black; padding: 10px;"><%= @dispatch.customer_orders.first.required_delivery_date %></td>
       </tr>
     </table>
-    <%= link_to "Click here to view the dispatch", dispatch_url(@dispatch) %>
+    <%= link_to "Click to view the order", customer_order_url(@dispatch.customer_order) %>
   </body>
 </html>
