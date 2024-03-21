@@ -18,12 +18,19 @@
         <td style="border: 1px solid black; padding: 10px;">
           <% origin_location = @origin_locations.find_by(city: @dispatch.origin) %>
           <% if origin_location %>
-            <%= "#{origin_location.address}, #{origin_location.city}, #{origin_location.state} #{origin_location.zip}" %>
+            <%= "#{origin_location.address} #{origin_location.city}, #{origin_location.state} #{origin_location.zip}" %>
           <% else %>
-            No matching location found
+            No origin location found
           <% end %>
         </td>
-        <td style="border: 1px solid black; padding: 10px;"><%= @destination_locations.find_by(city: @dispatch.destination).address %></td>
+        <td style="border: 1px solid black; padding: 10px;">
+          <% destination_location = @destination_locations.find_by(city: @dispatch.destination) %>
+          <% if destination_location %>
+            <%= "#{destination_location.address} #{destination_location.city}, #{destination_location.state} #{destination_location.zip}" %>
+          <% else %>
+            No destination location found
+          <% end %>
+        </td>
       </tr>
     </table>
   </body>
