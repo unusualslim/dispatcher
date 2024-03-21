@@ -15,7 +15,14 @@
         <td style="border: 1px solid black; padding: 10px;"><%= @dispatch.id %></td>
         <td style="border: 1px solid black; padding: 10px;"><%= @dispatch.customer_orders.first.product %></td>
         <td style="border: 1px solid black; padding: 10px;"><%= @dispatch.customer_orders.first.approximate_product_amount %></td>
-        <td style="border: 1px solid black; padding: 10px;"><%= @origin_locations.find_by(city: @dispatch.origin).address @origin_locations.find_by(city: @dispatch.origin).city %>,<%= @origin_locations.find_by(city: @dispatch.origin).state @origin_locations.find_by(city: @dispatch.origin).zip %></td>
+        <td style="border: 1px solid black; padding: 10px;">
+          <% origin_location = @origin_locations.find_by(city: @dispatch.origin) %>
+          <% if origin_location %>
+            <%= "#{origin_location.address}, #{origin_location.city}, #{origin_location.state} #{origin_location.zip}" %>
+          <% else %>
+            No matching location found
+          <% end %>
+        </td>
         <td style="border: 1px solid black; padding: 10px;"><%= @destination_locations.find_by(city: @dispatch.destination).address %></td>
       </tr>
     </table>
