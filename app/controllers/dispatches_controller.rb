@@ -11,6 +11,8 @@ class DispatchesController < ApplicationController
 
   # GET /dispatches/1 or /dispatches/1.json
   def show
+    @origin_locations = Location.where(location_category_id: 1)
+    @destination_locations = Location.where(location_category_id: 2)
   end
 
   # GET /dispatches/new

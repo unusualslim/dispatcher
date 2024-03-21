@@ -1,6 +1,6 @@
 <div class="content">
   <%= form_tag view_dispatches_path, method: :get do %>
-    <%= select_tag :status, options_for_select(@statuses, @selected_status), onchange: 'this.form.submit();', class: "btn btn-secondary dropdown-toggle" %>
+    <%= select_tag :status, options_for_select(@statuses, @selected_status), onchange: 'this.form.submit();', class: "btn btn-secondary dropdown-toggle", style: "margin-bottom: 10px; margin-top: 10px;" %>
   <% end %>
 
   <!-- Display orders based on selected status -->

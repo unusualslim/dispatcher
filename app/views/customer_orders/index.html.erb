@@ -1,7 +1,7 @@
 <div class="content">
   <p style="color: green"><%= notice %></p>
   <h1>Customer Orders</h1>
-  <%= link_to "New Order", new_customer_order_path, { :class=>"btn btn-primary" } %>
+  <%= link_to "New Order", new_customer_order_path, class: "btn btn-primary", style: "margin-bottom: 10px;" %>
   <div class="row">
     <% @customer_orders.each do |customer_order| %>
       <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
