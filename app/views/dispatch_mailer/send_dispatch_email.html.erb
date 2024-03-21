@@ -50,6 +50,6 @@
         <td style="border: 1px solid black; padding: 10px;"><%= @dispatch.customer_orders.first.required_delivery_date %></td>
       </tr>
     </table>
-    <%= link_to "Click to view the order", customer_order_url(@dispatch.customer_order) %>
+    <%= link_to "Click to view the order", customer_order_url(@dispatch.customer_orders.first) %>
   </body>
 </html>
