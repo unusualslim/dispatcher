@@ -6,6 +6,7 @@ class CustomerOrdersController < ApplicationController
 
     def show
         @customer_order = CustomerOrder.find(params[:id])
+        @locations = Location.where(location_category_id: 2)
     end
 
     def new

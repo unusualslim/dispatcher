@@ -1,6 +1,14 @@
 <div class="customer-order">
   <p><strong>Required Delivery Date:</strong> <%= customer_order.required_delivery_date %></p>
-  <p><strong>Location:</strong> <%= Location.find(customer_order.location_id).city %></p>
+  <p>
+    <strong>Location:</strong>
+    <% location = Location.find(customer_order.location_id) %>
+    <% if location %>
+      <%= "#{location.address} #{location.city}, #{location.state} #{location.zip}" %>
+    <% else %>
+      No destination location found
+    <% end %>
+  </p>
   <p><strong>Order Status:</strong> <%= customer_order.order_status %></p>
   <p><strong>Product:</strong> <%= customer_order.product %></p>
   <p><strong>Amount:</strong> <%= customer_order.approximate_product_amount %> gal</p>
@@ -12,7 +20,8 @@
       <%= link_to dispatch_path(dispatch), class: "card-link" do %>
         <div class="card">
           <div class="card-body">
-            <h5 class="card-title">Dispatch ID: <%= dispatch.id %></h5>
+            <h5 class="card-title">Dispatch ID: <%= dispatch.id %> </h5>
+            <p class="card-text">Driver: <%= User.find(dispatch.driver_id).first_name %> <%= User.find(dispatch.driver_id).last_name %></p>
           </div>
         </div>
       <% end %>
