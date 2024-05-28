@@ -1,4 +1,5 @@
 class LocationsController < ApplicationController
+    before_action :set_products, only: [:new, :edit, :create, :update]
 
     def index
         @locations = Location.all
@@ -56,6 +57,9 @@ class LocationsController < ApplicationController
     private
   
     def location_params
-      params.require(:location).permit(:city, :address, :location_category_id, :company_name, :phone_number, :state, :notes, :zip)
+      params.require(:location).permit(:city, :address, :location_category_id, :company_name, :phone_number, :state, :notes, :zip, :max_capacity, :uleage_90, :cutoff_percent, product_ids: [])
+    end
+    def set_products
+      @products = Product.all
     end
 end

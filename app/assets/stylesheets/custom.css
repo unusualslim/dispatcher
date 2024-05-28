@@ -38,8 +38,9 @@
 }
 .dispatches{
     /*background-color: #63a01d;*/
+    position: relative;
     height: 100%;
-    z-index: 1000;
+    z-index: 0;
 }
 .links{
     color:azure;
@@ -57,13 +58,16 @@
 }
 .driver-note{
     background-color: #fa7900;
-    border-radius: 4%;
-    border-style: solid;
-    border-color: #3f3f3f;
+    margin-top: 10px;
+    border-radius: 6%;
+    border-style: none;
+    /*border-color: #3f3f3f;*/
     margin-bottom: 5px;
     cursor: grab;
     transition: all 0.3s ease;
-    box-shadow: 1px 2px 5px black;
+    box-shadow: 1px 2px 8px black;
+    margin-left: 5px;
+    margin-right: 5px;
 }
 .driver-note:active{
     cursor: grabbing;
@@ -72,7 +76,7 @@
   background-color: #5c9c42;
 }
 .driver-note.senttodriver {
-  background-color: #e46f03; /* Example color for "Sent to driver" status */
+  background-color: #e46f03;
 }
 .custom-column {
     display: inline-block;
@@ -94,7 +98,7 @@
     margin-top: -1.2%;
     width: 184px;
     margin-left: 0px;
-    margin-right: 0%;
+    margin-right: 0px;
     padding-left: 0px;
 }
 .dispatch-list{
@@ -102,6 +106,7 @@
     padding-left: 0%;
     margin-left: 0%;
     padding-bottom: 0px;
+    margin-bottom: 0px;
 }
 .row{
     height: 100%;
@@ -114,6 +119,7 @@
   padding-top: 67px;
   position: fixed;
   top: 0;
+  z-index: 1000;
 }
 #updateDriverNotes{
     margin-left: 5px;
@@ -124,7 +130,7 @@
     top: 0;
     left: 0;
     width: 100%;
-    z-index: 1000; /* Ensure it's above other elements */
+    z-index: 1000;
 }
 .navbar-brand{
     color: white;
@@ -203,8 +209,8 @@
     font-size: 100px !important;
     line-height: 1.5;
     text-align: center;
-    margin-bottom: 5px;
-    margin-top: -10px;
+    padding-bottom: 5px;
+    margin-top: -5px;
   }
 
   .line {

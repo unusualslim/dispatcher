@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_12_27_133418) do
+ActiveRecord::Schema[7.0].define(version: 2024_05_23_142236) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -115,7 +115,23 @@ ActiveRecord::Schema[7.0].define(version: 2023_12_27_133418) do
     t.text "notes"
     t.string "state"
     t.string "zip"
+    t.integer "max_capacity"
+    t.integer "uleage_90"
+    t.integer "cutoff_percent"
     t.index ["location_category_id"], name: "index_locations_on_location_category_id"
+  end
+
+  create_table "locations_products", id: false, force: :cascade do |t|
+    t.bigint "location_id", null: false
+    t.bigint "product_id", null: false
+    t.index ["location_id"], name: "index_locations_products_on_location_id"
+    t.index ["product_id"], name: "index_locations_products_on_product_id"
+  end
+
+  create_table "products", force: :cascade do |t|
+    t.string "name"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "users", force: :cascade do |t|

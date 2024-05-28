@@ -1,6 +1,6 @@
 <div id="<%= dom_id dispatch %>" class="content">
 
-  <% if dispatch.driver_id %>
+  <% if dispatch.driver_id && dispatch.dispatch_customer_order.any? %>
     <%= button_to 'Send Notification', send_notification_dispatch_path(@dispatch), method: :post, class: 'btn btn-primary', remote: true %>
   <% end %>
 

@@ -28,9 +28,30 @@
         <%= f.label :location_category_id, style: "display: block" %>
         <%= f.collection_select :location_category_id, LocationCategory.all, :id, :name, prompt: "Select Location Category" %>
     </div>
+    <div class="field">
+        <%= f.label :max_capacity, style: "display: block" %>
+        <%= f.number_field :max_capacity %>gal
+    </div>
+    <div class="field">
+        <%= f.label "Upper Cutoff", style: "display: block" %>
+        <%= f.number_field :uleage_90 %>%
+    </div>
+    <div class="field">
+        <%= f.label "Lower Cutoff", style: "display: block" %>
+        <%= f.number_field :cutoff_percent %>%
+    </div>
     <div>
         <%= f.label :notes, style: "display: block" %>
         <%= f.text_area :notes %>
+    </div>
+    <div class="field">
+        <%= f.label :product_ids, 'Products' %><br>
+        <%= f.collection_check_boxes(:product_ids, @products, :id, :name) do |b| %>
+        <div>
+            <%= b.check_box %>
+            <%= b.label %>
+        </div>
+        <% end %>
     </div>
   <%= f.submit class: "btn btn-primary" %>
 <% end %>

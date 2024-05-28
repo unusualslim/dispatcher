@@ -8,6 +8,8 @@ class Location < ApplicationRecord
  
   has_many :location_contacts
 
+  has_and_belongs_to_many :products
+
   def city_with_company
     "#{company_name} - #{city}"
   end
