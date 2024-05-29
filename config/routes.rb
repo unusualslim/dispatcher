@@ -7,7 +7,9 @@ Rails.application.routes.draw do
       post 'send_notification'
     end
   end
-  resources :locations
+  resources :locations do
+    resources :location_products, only: [:new, :create, :edit, :update, :destroy]
+  end
   resources :customer_orders
   resource :messages do
     collection do

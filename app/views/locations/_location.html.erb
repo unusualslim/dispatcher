@@ -53,21 +53,11 @@
 
   <% end %>
 
-  <p>
-    <strong>Products:</strong>
-    <% if @location.products.any? %>
-      <ul>
-        <% @location.products.each do |product| %>
-          <li><%= product.name %></li>
-        <% end %>
-      </ul>
-    <% else %>
-      <p>No products available for this location.</p>
-    <% end %>
-  </p>
+  <% if location.notes? %>
+    <p>
+      <strong>Notes:</strong>
+      <%= location.notes %>
+    </p>
+  <% end %>
 
-  <p>
-    <strong>Notes:</strong>
-    <%= location.notes %>
-  </p>
 </div>

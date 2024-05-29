@@ -44,14 +44,27 @@
         <%= f.label :notes, style: "display: block" %>
         <%= f.text_area :notes %>
     </div>
+<%= f.fields_for :location_products do |lp_form| %>
     <div class="field">
-        <%= f.label :product_ids, 'Products' %><br>
-        <%= f.collection_check_boxes(:product_ids, @products, :id, :name) do |b| %>
-        <div>
-            <%= b.check_box %>
-            <%= b.label %>
-        </div>
-        <% end %>
+      <%= lp_form.label :product_id %>
+      <%= lp_form.collection_select :product_id, @products, :id, :name, include_blank: true %>
     </div>
+    <div class="field">
+      <%= lp_form.label :max_capacity %>
+      <%= lp_form.number_field :max_capacity %>
+    </div>
+    <div class="field">
+      <%= lp_form.label :uleage_90 %>
+      <%= lp_form.number_field :uleage_90 %>
+    </div>
+    <div class="field">
+      <%= lp_form.label :cutoff %>
+      <%= lp_form.number_field :cutoff %>
+    </div>
+    <div class="field">
+      <%= lp_form.check_box :_destroy %>
+      <%= lp_form.label :_destroy, "Remove product" %>
+    </div>
+  <% end %>
   <%= f.submit class: "btn btn-primary" %>
 <% end %>

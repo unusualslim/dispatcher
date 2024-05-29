@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_05_23_142236) do
+ActiveRecord::Schema[7.0].define(version: 2024_05_28_184132) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -104,6 +104,18 @@ ActiveRecord::Schema[7.0].define(version: 2024_05_23_142236) do
     t.index ["location_id"], name: "index_location_contacts_on_location_id"
   end
 
+  create_table "location_products", force: :cascade do |t|
+    t.bigint "location_id", null: false
+    t.bigint "product_id", null: false
+    t.integer "max_capacity"
+    t.integer "uleage_90"
+    t.integer "cutoff"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["location_id"], name: "index_location_products_on_location_id"
+    t.index ["product_id"], name: "index_location_products_on_product_id"
+  end
+
   create_table "locations", force: :cascade do |t|
     t.string "city"
     t.text "address"
@@ -158,5 +170,7 @@ ActiveRecord::Schema[7.0].define(version: 2024_05_23_142236) do
   add_foreign_key "dispatch_customer_orders", "customer_orders"
   add_foreign_key "dispatch_customer_orders", "dispatches"
   add_foreign_key "location_contacts", "locations"
+  add_foreign_key "location_products", "locations"
+  add_foreign_key "location_products", "products"
   add_foreign_key "locations", "location_categories"
 end

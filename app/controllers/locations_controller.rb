@@ -1,5 +1,6 @@
 class LocationsController < ApplicationController
     before_action :set_products, only: [:new, :edit, :create, :update]
+    before_action :set_location, only: [:show, :edit, :update, :destroy]
 
     def index
         @locations = Location.all
@@ -61,5 +62,8 @@ class LocationsController < ApplicationController
     end
     def set_products
       @products = Product.all
+    end
+    def set_location
+      @location = Location.includes(:products).find(params[:id])
     end
 end

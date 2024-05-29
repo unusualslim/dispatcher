@@ -1,0 +1,15 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  location: one
+  product: one
+  max_capacity: 1
+  uleage_90: 1
+  cutoff: 1
+
+two:
+  location: two
+  product: two
+  max_capacity: 1
+  uleage_90: 1
+  cutoff: 1
