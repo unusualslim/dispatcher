@@ -24,8 +24,8 @@
         <td><%= (location_product.cutoff.to_f / 100) * location_product.max_capacity %> gal <strong>(<%= location_product.cutoff %>%)</strong></td>
         <td>
           <div class="btn-group" role="group">
-            <%= link_to 'Edit', edit_location_location_product_path(@location, location_product), class: 'btn btn-primary btn-sm' %>
-            <%= button_to 'Delete', location_location_product_path(@location, location_product), method: :delete, data: { confirm: 'Are you sure?' }, class: 'btn btn-danger btn-sm' %>
+            <%= link_to 'Edit', edit_location_location_product_path(@location, location_product), class: 'btn btn-primary btn-sm', style: 'width:60px; margin-right:10px;' %>
+            <%= button_to 'Delete', location_location_product_path(@location, location_product), method: :delete, data: { confirm: 'Are you sure?' }, class: 'btn btn-danger btn-sm'%>
           </div>
         </td>
       </tr>

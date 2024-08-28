@@ -1,17 +1,14 @@
 <div id="<%= dom_id location %>">
+  <h1><%= location.company_name %></h1>
 
   <p>
     <strong>ID:</strong>
     <%= location.id %>
   </p>
+  
   <p>
     <strong>City:</strong>
     <%= location.city %>
-  </p>
-
-  <p>
-    <strong>Company:</strong>
-    <%= location.company_name %>
   </p>
 
   <p>
@@ -33,25 +30,6 @@
     <strong>Category:</strong>
     <%= LocationCategory.find(location.location_category_id).name %>
   </p>
-
-  <% if location.max_capacity %>
-
-    <p>
-      <strong>Max Capacity:</strong>
-      <%= location.max_capacity %> gal
-    </p>
-
-    <p>
-      <strong>Upper Cutoff (<%= location.uleage_90 %>%):</strong>
-      <%= (location.uleage_90.to_f / 100) * location.max_capacity %> gal
-    </p>
-
-    <p>
-      <strong>Lower Cutoff (<%= location.cutoff_percent %>%):</strong>
-      <%= (location.cutoff_percent.to_f / 100) * location.max_capacity %> gal
-    </p>
-
-  <% end %>
 
   <% if location.notes? %>
     <p>

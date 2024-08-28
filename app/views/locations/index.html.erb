@@ -1,20 +1,20 @@
 <div class="content">
   <p style="color: green"><%= notice %></p>
-  <div class="button-container">
-    <h1>Locations</h1>
-    <%= link_to "New location", new_location_path, { :class=>"btn btn-primary" } %>
-  </div>
+<div class="d-flex align-items-center mb-3">
+  <h1 class="mb-0 mr-3">Locations</h1>
+  <%= link_to "New location", new_location_path, class: "btn btn-primary", style: "margin-left: 15px;" %>
+</div>
   <div class="locations">
-    <table>
-      <thead>
+    <table class="table table-hover table-bordered">
+      <thead class="thead-dark">
         <tr>
-          <th>City</th>
-          <th>Company</th>
-          <th>Address</th>
-          <th>State</th>
-          <th>Zip</th>
-          <th>Phone</th>
-          <th>Category</th>
+          <th style="width: 14.28%;">City</th>
+          <th style="width: 14.28%;">Company</th>
+          <th style="width: 14.28%;">Address</th>
+          <th style="width: 14.28%;">State</th>
+          <th style="width: 14.28%;">Zip</th>
+          <th style="width: 14.28%;">Phone</th>
+          <th style="width: 14.28%;">Category</th>
         </tr>
       </thead>
       <tbody>

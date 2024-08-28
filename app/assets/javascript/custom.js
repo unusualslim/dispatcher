@@ -212,3 +212,33 @@ function updateDispatchDriver(dispatchId, newDriverId) {
       console.error('Error updating dispatch:', error);
     });
 }
+
+document.addEventListener("DOMContentLoaded", function() {
+  document.querySelectorAll('.clickable-row').forEach(function(row) {
+    row.addEventListener('click', function() {
+      window.location.href = this.dataset.href;
+    });
+  });
+});
+
+document.addEventListener("DOMContentLoaded", function() {
+  const selectAllCheckbox = document.getElementById('select_all');
+  const checkboxes = document.querySelectorAll('input[name="driver_ids[]"]');
+
+  selectAllCheckbox.addEventListener('change', function() {
+    checkboxes.forEach(checkbox => {
+      checkbox.checked = selectAllCheckbox.checked;
+    });
+  });
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('.clickable-row').forEach(row => {
+    row.addEventListener('click', function (event) {
+      // Check if the click was on a link with the 'location-link' class
+      if (!event.target.closest('[data-no-row-click]')) {
+        window.location.href = this.getAttribute('data-href');
+      }
+    });
+  });
+});

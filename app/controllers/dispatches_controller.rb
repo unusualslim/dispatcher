@@ -3,7 +3,12 @@ class DispatchesController < ApplicationController
 
   # GET /dispatches or /dispatches.json
   def index
-    @dispatches = Dispatch.where.not(status: "deleted")
+    if params[:driver_ids].present?
+      @dispatches = Dispatch.where(driver_id: params[:driver_ids]).where.not(status: "deleted")
+    else
+      @dispatches = Dispatch.where.not(status: "deleted")
+    end
+    
     @new_dispatches = Dispatch.where(status: "New", driver_id: nil)
     @drivers = User.all
     @workers = User.where(role: "worker")

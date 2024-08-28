@@ -1,4 +1,6 @@
-<div id="<%= dom_id dispatch %>" class="content">
+<!DOCTYPE html>
+<html lang="en">
+<div id="<%= dom_id dispatch %>" class="content" style="padding-left:20px;">
 
   <% if dispatch.driver_id && dispatch.dispatch_customer_order.any? %>
     <%= button_to 'Send Notification', send_notification_dispatch_path(@dispatch), method: :post, class: 'btn btn-primary', remote: true %>
@@ -22,7 +24,7 @@
     <strong>Origin:</strong>
     <% origin_location = @origin_locations.find_by(city: @dispatch.origin) %>
     <% if origin_location %>
-      <%= "#{origin_location.address} #{origin_location.city}, #{origin_location.state} #{origin_location.zip}" %>
+      <%= link_to origin_location.company_name, location_path(origin_location) %>
     <% else %>
       No origin location found
     <% end %>
@@ -32,7 +34,7 @@
     <strong>Destination:</strong>
     <% destination_location = @destination_locations.find_by(city: @dispatch.destination) %>
     <% if destination_location %>
-      <%= "#{destination_location.address} #{destination_location.city}, #{destination_location.state} #{destination_location.zip}" %>
+      <%= "#{destination_location.company_name}" %>
     <% else %>
       No destination location found
     <% end %>

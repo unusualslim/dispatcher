@@ -1,132 +1,9 @@
-.gutter-color {
-    background-color: #63a01d;
-}
-.col-1 {
-    background-color: rgb(35, 160, 143) !important;
-    height: 90vh;
-}
-.col-2{
-    background-color: #375a7f;
-    margin-right: 0px;
-    margin-left: 0px;
-    padding-left: 0%;
-    padding-right: 0%;
-    position: sticky;
-    left: 0;
-    margin-top: 0px;
-    height: 99.68vh;
-    z-index: 1000;
-}
-.custom-gutter {
-    margin-right: 0px;
-}
-.body{
-    margin: 0;
-    padding: 0;
-    display: flex;
-    min-height: 100%;
-    background-color: #f0f0f0 !important;
-}
-.container-fluid{
-    
-    height: 100vh;
-    padding-top: 95px;
-}
 .html{
     display: flex;
     height: 1400px !important;
 }
-.dispatches{
-    /*background-color: #63a01d;*/
-    position: relative;
-    height: 100%;
-    z-index: 0;
-}
-.links{
-    color:azure;
-    text-decoration: none;
-    background-color: transparent !important;
-}
-.note{
-    background-color:transparent;
-    padding-left: 0px;
-    border-radius: 0%;
-    padding-top: 10px;
-    padding-bottom: 10px;
-    margin-top: 10px;
-    cursor: grab;
-}
-.driver-note{
-    background-color: #fa7900;
-    margin-top: 10px;
-    border-radius: 6%;
-    border-style: none;
-    /*border-color: #3f3f3f;*/
-    margin-bottom: 5px;
-    cursor: grab;
-    transition: all 0.3s ease;
-    box-shadow: 1px 2px 8px black;
-    margin-left: 5px;
-    margin-right: 5px;
-}
-.driver-note:active{
-    cursor: grabbing;
-}
-.driver-note.new {
-  background-color: #5c9c42;
-}
-.driver-note.senttodriver {
-  background-color: #e46f03;
-}
-.custom-column {
-    display: inline-block;
-    vertical-align: top;
-    width: 184px;
-    background-color: #527AA5;
-    margin: 0;
-    padding-left: 0px;
-    border-left-style: solid;
-    border-left-color: #5A85B2;
-    height: 95%;
-}
-.text-center{
-    text-align: center;
-    width: 184px;
-    color: #375a7f;
-}
-.col{
-    margin-top: -1.2%;
-    width: 184px;
-    margin-left: 0px;
-    margin-right: 0px;
-    padding-left: 0px;
-}
-.dispatch-list{
-    height: 100%;
-    padding-left: 0%;
-    margin-left: 0%;
-    padding-bottom: 0px;
-    margin-bottom: 0px;
-}
-.row{
-    height: 100%;
-}
-.button-container {
-  margin-left: 8px;
-  display: flex;
-  align-items: center;
-  margin-bottom: 10px;
-  padding-top: 67px;
-  position: fixed;
-  top: 0;
-  z-index: 1000;
-}
-#updateDriverNotes{
-    margin-left: 5px;
-}
 .navbar{
     background-color: #375a7f !important;
-    position: fixed;
     top: 0;
     left: 0;
     width: 100%;
@@ -138,93 +15,16 @@
 .nav-link{
     color: white;
 }
-#sticky-trash-can {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background-color: #f44336;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    z-index: 9999;
-  }
-  
-  #sticky-trash-can span {
-    font-size: 28px;
-    line-height: 1;
-  }
-  table {
-    border-collapse: collapse;
-    width: 100%;
-  }
-  
-  th, td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    text-align: left;
-  }
-  
-  th {
-    background-color: #f2f2f2;
-  }
-  .card-link {
-    text-decoration: none;
-  }
-  
-  #driver-columns {
-    display: flex;
-    flex-wrap: nowrap; /* Prevent columns from wrapping to the next row */
-    margin-left: 0px;
-    height: 103vh;
-  }
-
-  .driver-column {
-    flex: 1; /* Each driver column takes up equal space */
-    margin-right: 0px; /* Adjust margin for the gutter between columns */
-  }
-
-  .edit_user {
-    margin-top: 30px;
-  }
-
-  .content {
-    padding-top: 50px;
-  }
-
-  .note-header {
-    padding-top: 10px;
-    margin-bottom: 5px;
-    font-size: 22px;
-    line-height: 100%;
-    size: 40px;
-    font-weight: bold;
-    text-align: center;
-  }
-  
-  .note-body {
-    font-size: 100px !important;
-    line-height: 1.5;
-    text-align: center;
-    padding-bottom: 5px;
-    margin-top: -5px;
-  }
-
-  .line {
-    border-width: 2px;
-    border-width: 3px;
-    padding-top: 0%;
-    color: #3f3f3f;
-    z-index: 5;
-  }
-
-  .locations{
-    margin-top: 4%;
-  }
-
-  .form_field{
-    margin-bottom: 10px;
-  }
+.index-table-head{
+    background-color: red;
+}
+.bi-gear-fill{
+    padding-left: 100px;
+}
+.table th, .table td {
+    width: 15%;
+}
+.content {
+    padding-left: 40px;
+    padding-right: 40px;
+}
