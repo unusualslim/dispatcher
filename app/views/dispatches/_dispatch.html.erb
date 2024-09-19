@@ -62,6 +62,7 @@
         <div class="card-body">
           <h5 class="card-title">Customer Order ID: <%= dispatch_customer_order.customer_order.id %></h5>
           <p class="card-text">Location: <%= dispatch_customer_order.customer_order.location.company_name %></p>
+          Product: <%= dispatch_customer_order.customer_order.product %>
         </div>
       </div>
     <% end %>

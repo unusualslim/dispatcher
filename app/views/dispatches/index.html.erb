@@ -3,45 +3,32 @@
 <table class="index-table table table-hover">
   <thead class="index-table-head">
     <tr>
-      <th style="background-color:#f8f9fa; color:#375a7f; padding: 12px 20px;">ID</th>
-      <th style="background-color:#f8f9fa; color:#375a7f; padding: 12px 20px;">Driver</th>
-      <th style="background-color:#f8f9fa; color:#375a7f; padding: 12px 20px;">Origin</th>
-      <th style="background-color:#f8f9fa; color:#375a7f; padding: 12px 20px;">Destination</th>
+      <th style="background-color:#f8f9fa; color:#375a7f; padding: 12px 20px;">Order ID</th>
+      <th style="background-color:#f8f9fa; color:#375a7f; padding: 12px 20px;">Product</th>
+      <th style="background-color:#f8f9fa; color:#375a7f; padding: 12px 20px;">Delivery Date</th>
+      <th style="background-color:#f8f9fa; color:#375a7f; padding: 12px 20px;">Location</th>
+      <th style="background-color:#f8f9fa; color:#375a7f; padding: 12px 20px;">Amount</th>
       <th style="background-color:#f8f9fa; color:#375a7f; padding: 12px 20px;">Status</th>
-      <th style="background-color:#f8f9fa; color:#375a7f; padding: 12px 20px;">Dispatch Date <i class="bi bi-gear-fill" style="font-size: 1.5rem; cursor: pointer;" data-bs-toggle="modal" data-bs-target="#settingsModal"></i></th>
+      <th style="background-color:#f8f9fa; color:#375a7f; padding: 12px 20px;">Notes </th>
+      <th style="background-color:#f8f9fa; color:#375a7f; padding: 12px 20px;"><i class="bi bi-gear-fill" style="font-size: 1.5rem; cursor: pointer; line-height: 10%;" data-bs-toggle="modal" data-bs-target="#settingsModal"></i></th>
     </tr>
   </thead>
   <tbody>
-    <% @dispatches.each do |dispatch| %>
-    <tr class="clickable-row" data-href="<%= dispatch_path(dispatch) %>">
-      <td style="font-weight: bold; padding: 12px 20px;"><%= dispatch.id %></td>
-      <td style="padding: 12px 20px;"><%= dispatch.driver ? dispatch.driver.first_name : "Unassigned" %></td>
-      <td style="padding: 12px 20px;">
-        <% origin_location = Location.find_by(city: dispatch.origin) %>
-        <% if origin_location %>
-          <a href="<%= location_path(origin_location) %>" onclick="event.stopPropagation();" class="location-link">
-            <%= origin_location.company_name %>
-          </a>
-        <% else %>
-          No origin location found
-        <% end %>
-      </td>
-      <td style="padding: 12px 20px;">
-        <% destination_location = Location.find_by(city: dispatch.destination) %>
-        <% if destination_location %>
-          <a href="<%= location_path(destination_location) %>" onclick="event.stopPropagation();" class="location-link">
-            <%= destination_location.company_name %>
-          </a>
-        <% else %>
-          No destination location found
-        <% end %>
-      </td>
-      <td style="padding: 12px 20px;"><%= dispatch.status %></td>
-      <td style="padding: 12px 20px;"><%= dispatch.dispatch_date %></td>
+    <% @unassigned_open_orders.each do |order| %>
+    <tr class="clickable-row" data-href="<%= customer_order_path(order) %>">
+      <td style="font-weight: bold; padding: 12px 20px;"><%= order.id %></td>
+      <td style="padding: 12px 20px;"><%= order.product %></td>
+      <td style="padding: 12px 20px;"><%= order.required_delivery_date %></td>
+      <td style="padding: 12px 20px;"><%= order.location.company_name if order.location %></td>
+      <td style="padding: 12px 20px;"><%= order.approximate_product_amount %> gals</td>
+      <td style="padding: 12px 20px;"><%= order.order_status %></td>
+      <td style="padding: 12px 20px;"><%= order.notes.truncate(20) if order.notes.present? %></td>
+      <td></td>
     </tr>
     <% end %>
   </tbody>
 </table>
+
 
 <!-- Settings Modal -->
 <div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">

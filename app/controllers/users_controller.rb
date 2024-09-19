@@ -1,9 +1,11 @@
 class UsersController < ApplicationController
   before_action :set_user, only: %i[ show edit update destroy ]
+  before_action :authenticate_user!
+  before_action :authorize_admin!
 
   # GET /users or /users.json
   def index
-    @users = User.all
+    @users = User.where(role: 'worker')
   end
 
   # GET /users/1 or /users/1.json
@@ -59,7 +61,10 @@ class UsersController < ApplicationController
   end
 
   private
-    # Use callbacks to share common setup or constraints between actions.
+    def authorize_admin!
+      redirect_to root_path, alert: 'You are not authorized to view this page.' unless current_user.role='admin'
+    end
+
     def set_user
       @user = User.find(params[:id])
     end

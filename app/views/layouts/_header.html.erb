@@ -19,6 +19,11 @@
           <li class="nav-item">
             <%= link_to 'Locations', locations_path, class: 'nav-link' %>
           </li>
+          <% if current_user.role == 'admin' %>
+            <li class="nav-item">
+              <%= link_to 'Drivers', users_path, class: 'nav-link' %>
+            </li>
+          <% end %>
           <li class="nav-item">
             <%= link_to 'Profile', edit_user_registration_path, class: 'nav-link' %>
           </li>

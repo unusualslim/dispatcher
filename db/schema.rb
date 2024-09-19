@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_08_28_131619) do
+ActiveRecord::Schema[7.0].define(version: 2024_09_13_175205) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -52,6 +52,15 @@ ActiveRecord::Schema[7.0].define(version: 2024_08_28_131619) do
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
+  create_table "customer_locations", force: :cascade do |t|
+    t.bigint "customer_id", null: false
+    t.bigint "location_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["customer_id"], name: "index_customer_locations_on_customer_id"
+    t.index ["location_id"], name: "index_customer_locations_on_location_id"
+  end
+
   create_table "customer_orders", force: :cascade do |t|
     t.date "required_delivery_date"
     t.string "product"
@@ -63,6 +72,12 @@ ActiveRecord::Schema[7.0].define(version: 2024_08_28_131619) do
     t.datetime "updated_at", null: false
     t.string "card_color"
     t.index ["location_id"], name: "index_customer_orders_on_location_id"
+  end
+
+  create_table "customers", force: :cascade do |t|
+    t.string "name"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "dispatch_customer_orders", force: :cascade do |t|
@@ -166,6 +181,8 @@ ActiveRecord::Schema[7.0].define(version: 2024_08_28_131619) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "customer_locations", "customers"
+  add_foreign_key "customer_locations", "locations"
   add_foreign_key "customer_orders", "locations", on_delete: :cascade
   add_foreign_key "dispatch_customer_orders", "customer_orders", on_delete: :cascade
   add_foreign_key "dispatch_customer_orders", "dispatches"

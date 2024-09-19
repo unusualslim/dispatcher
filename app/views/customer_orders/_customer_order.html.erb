@@ -22,6 +22,8 @@
           <div class="card-body">
             <h5 class="card-title">Dispatch ID: <%= dispatch.id %> </h5>
             <p class="card-text">Driver: <%= User.find(dispatch.driver_id).first_name %> <%= User.find(dispatch.driver_id).last_name %></p>
+            <p class="card-text"> Origin: <%= dispatch.origin %> </p>
+            <p class="card-text"> Destination: <%= dispatch.destination %> </p>
           </div>
         </div>
       <% end %>

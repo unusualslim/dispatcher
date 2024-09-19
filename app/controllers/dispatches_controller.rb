@@ -3,6 +3,9 @@ class DispatchesController < ApplicationController
 
   # GET /dispatches or /dispatches.json
   def index
+    @unassigned_open_orders = CustomerOrder.where(order_status: 'New')
+                                           .left_joins(:dispatch_customer_orders)
+                                           .where(dispatch_customer_orders: { id: nil })
     if params[:driver_ids].present?
       @dispatches = Dispatch.where(driver_id: params[:driver_ids]).where.not(status: "deleted")
     else
@@ -24,7 +27,11 @@ class DispatchesController < ApplicationController
   def new
     @dispatch = Dispatch.new
     @locations = Location.all
-    @recent_customer_orders = CustomerOrder.order(created_at: :desc).limit(5)
+    @recent_customer_orders = CustomerOrder
+    .joins("LEFT JOIN dispatch_customer_orders ON dispatch_customer_orders.customer_order_id = customer_orders.id")
+    .where(dispatch_customer_orders: { id: nil })
+    .order(created_at: :desc)
+    .limit(5)
     @origin_locations = Location.where(location_category_id: 1)
   end
 
