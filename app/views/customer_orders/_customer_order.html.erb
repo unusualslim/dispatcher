@@ -18,14 +18,23 @@
     <h3>Associated Dispatches</h3>
     <% @customer_order.dispatches.each do |dispatch| %>
       <%= link_to dispatch_path(dispatch), class: "card-link" do %>
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title">Dispatch ID: <%= dispatch.id %> </h5>
-            <p class="card-text">Driver: <%= User.find(dispatch.driver_id).first_name %> <%= User.find(dispatch.driver_id).last_name %></p>
-            <p class="card-text"> Origin: <%= dispatch.origin %> </p>
-            <p class="card-text"> Destination: <%= dispatch.destination %> </p>
-          </div>
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Dispatch ID: <%= dispatch.id %> </h5>
+          <% if dispatch.driver_id.present? %>
+            <% driver = User.find_by(id: dispatch.driver_id) %>
+            <% if driver %>
+              <p class="card-text">Driver: <%= driver.first_name %> <%= driver.last_name %></p>
+            <% else %>
+              <p class="card-text">Driver: Not found</p>
+            <% end %>
+          <% else %>
+            <p class="card-text">Driver: Not assigned</p>
+          <% end %>
+          <p class="card-text">Origin: <%= dispatch.origin %> </p>
+          <p class="card-text">Destination: <%= dispatch.destination %> </p>
         </div>
+      </div>
       <% end %>
     <% end %>
   <% else %>
