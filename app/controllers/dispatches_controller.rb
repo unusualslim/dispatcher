@@ -3,19 +3,62 @@ class DispatchesController < ApplicationController
 
   # GET /dispatches or /dispatches.json
   def index
+    # Base query for unassigned open orders
     @unassigned_open_orders = CustomerOrder.where(order_status: 'New')
                                            .left_joins(:dispatch_customer_orders)
                                            .where(dispatch_customer_orders: { id: nil })
-    if params[:driver_ids].present?
-      @dispatches = Dispatch.where(driver_id: params[:driver_ids]).where.not(status: "deleted")
-    else
-      @dispatches = Dispatch.where.not(status: "deleted")
+  
+    # Collect filter parameters
+    @filters = {
+      product: params[:product],
+      delivery_date: params[:delivery_date],
+      delivery_date_condition: params[:delivery_date_condition],
+      location: params[:location],
+      amount: params[:amount],
+      status: params[:status]
+    }
+  
+    # Filter by product
+    if @filters[:product].present?
+      @unassigned_open_orders = @unassigned_open_orders.where('product LIKE ?', "%#{@filters[:product]}%")
     end
-    
+  
+    # Filter by location
+    if @filters[:location].present?
+      @unassigned_open_orders = @unassigned_open_orders.joins(:location)
+                                                       .where('locations.company_name LIKE ?', "%#{@filters[:location]}%")
+    end
+  
+    # Filter by amount
+    if @filters[:amount].present?
+      @unassigned_open_orders = @unassigned_open_orders.where(approximate_product_amount: @filters[:amount])
+    end
+  
+    # Filter by status
+    if @filters[:status].present?
+      @unassigned_open_orders = @unassigned_open_orders.where(order_status: @filters[:status])
+    end
+  
+    # Apply delivery date filter with condition
+    if @filters[:delivery_date].present? && @filters[:delivery_date_condition].present?
+      delivery_date = @filters[:delivery_date]
+  
+      case @filters[:delivery_date_condition]
+      when 'before'
+        @unassigned_open_orders = @unassigned_open_orders.where("required_delivery_date < ?", delivery_date)
+      when 'after'
+        @unassigned_open_orders = @unassigned_open_orders.where("required_delivery_date > ?", delivery_date)
+      when 'on'
+        @unassigned_open_orders = @unassigned_open_orders.where(required_delivery_date: delivery_date)
+      end
+    end
+  
+    # Other necessary data for the page
     @new_dispatches = Dispatch.where(status: "New", driver_id: nil)
     @drivers = User.all
     @workers = User.where(role: "worker")
   end
+  
 
   # GET /dispatches/1 or /dispatches/1.json
   def show

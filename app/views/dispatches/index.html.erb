@@ -10,7 +10,7 @@
       <th style="background-color:#f8f9fa; color:#375a7f; padding: 12px 20px;">Amount</th>
       <th style="background-color:#f8f9fa; color:#375a7f; padding: 12px 20px;">Status</th>
       <th style="background-color:#f8f9fa; color:#375a7f; padding: 12px 20px;">Notes </th>
-      <th style="background-color:#f8f9fa; color:#375a7f; padding: 12px 20px;"><i class="bi bi-gear-fill" style="font-size: 1.5rem; cursor: pointer; line-height: 10%;" data-bs-toggle="modal" data-bs-target="#settingsModal"></i></th>
+      <th style="background-color:#f8f9fa; color:#375a7f; padding: 12px 20px;"><i class="bi bi-funnel-fill" style="font-size: 1.5rem; cursor: pointer; line-height: 10%;" data-bs-toggle="modal" data-bs-target="#settingsModal"></i></th>
     </tr>
   </thead>
   <tbody>
@@ -35,26 +35,49 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="settingsModalLabel">Filter Dispatches by Driver</h5>
+        <h5 class="modal-title" id="settingsModalLabel">Filter Orders</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <%= form_with url: dispatches_path, method: :get, local: true, data: { turbo: false } do |form| %>
-          <div class="form-group">
-            <input type="checkbox" id="select_all"> Select All<br>
-            <% @drivers.each do |driver| %>
-              <div class="form-check">
-                <%= form.check_box :driver_ids, { multiple: true, class: "form-check-input" }, driver.id %>
-                <%= form.label :driver_ids, driver.first_name, class: "form-check-label" %>
-              </div>
-            <% end %>
+        <%= form_with url: dispatches_path, method: :get, local: true do |form| %>
+          <!-- Your form fields here -->
+          <div class="form-group mt-3">
+            <label for="product">Product:</label>
+            <%= form.text_field :product, value: @filters[:product], class: "form-control" %>
           </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-          <%= form.submit "Apply", class: "btn btn-primary" %>
-        </div>
+
+          <div class="row">
+            <div class="col-md-4">
+              <div class="form-group">
+                <label for="delivery_date_condition">Condition:</label>
+                <%= form.select :delivery_date_condition, options_for_select([['Before', 'before'], ['After', 'after'], ['On', 'on']], @filters&.[](:delivery_date_condition)), { include_blank: 'Select' }, class: "form-control" %>
+              </div>
+            </div>
+            
+            <div class="col-md-8">
+              <div class="form-group">
+                <label for="delivery_date">Delivery Date:</label>
+                <%= form.date_field :delivery_date, value: @filters&.[](:delivery_date), class: "form-control" %>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group mt-3">
+            <label for="location">Location:</label>
+            <%= form.text_field :location, value: @filters[:location], class: "form-control" %>
+          </div>
+
+          <div class="form-group mt-3">
+            <label for="amount">Amount:</label>
+            <%= form.number_field :amount, value: @filters[:amount], class: "form-control" %>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <%= form.submit "Apply", class: "btn btn-primary" %>
+          </div>
         <% end %>
+      </div>
     </div>
   </div>
 </div>
