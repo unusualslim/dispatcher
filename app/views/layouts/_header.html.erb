@@ -17,6 +17,9 @@
             <%= link_to 'View Dispatches', view_dispatches_path, class: 'nav-link' %>
           </li>
           <li class="nav-item">
+            <%= link_to 'Customers', customers_path, class: 'nav-link' %>
+          </li>
+          <li class="nav-item">
             <%= link_to 'Locations', locations_path, class: 'nav-link' %>
           </li>
           <% if current_user.role == 'admin' %>

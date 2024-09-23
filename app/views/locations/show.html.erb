@@ -3,43 +3,72 @@
 
   <%= render @location %>
 
-<% if @location.location_products.any? %>
-<strong>Products:</strong>
-<table class="table table-striped">
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Max Capacity</th>
-      <th>Upper Cutoff</th>
-      <th>Lower Cutoff</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @location.location_products.each do |location_product| %>
-      <tr>
-        <td><%= location_product.product.name %></td>
-        <td><%= location_product.max_capacity %> gal</td>
-        <td><%= (location_product.uleage_90.to_f / 100) * location_product.max_capacity %> gal <strong>(<%= location_product.uleage_90 %>%)</strong></td>
-        <td><%= (location_product.cutoff.to_f / 100) * location_product.max_capacity %> gal <strong>(<%= location_product.cutoff %>%)</strong></td>
-        <td>
-          <div class="btn-group" role="group">
-            <%= link_to 'Edit', edit_location_location_product_path(@location, location_product), class: 'btn btn-primary btn-sm', style: 'width:60px; margin-right:10px;' %>
-            <%= button_to 'Delete', location_location_product_path(@location, location_product), method: :delete, data: { confirm: 'Are you sure?' }, class: 'btn btn-danger btn-sm'%>
-          </div>
-        </td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>
-<% end %>
+  <% if @location.location_products.any? %>
+    <strong>Products:</strong>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Max Capacity</th>
+          <th>Upper Cutoff</th>
+          <th>Lower Cutoff</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @location.location_products.each do |location_product| %>
+          <tr>
+            <td><%= location_product.product.name %></td>
+            <td><%= location_product.max_capacity %> gal</td>
+            <td><%= (location_product.uleage_90.to_f / 100) * location_product.max_capacity %> gal <strong>(<%= location_product.uleage_90 %>%)</strong></td>
+            <td><%= (location_product.cutoff.to_f / 100) * location_product.max_capacity %> gal <strong>(<%= location_product.cutoff %>%)</strong></td>
+            <td>
+              <div class="btn-group" role="group">
+                <%= link_to 'Edit', edit_location_location_product_path(@location, location_product), class: 'btn btn-primary btn-sm', style: 'width:60px; margin-right:10px;' %>
+                <%= button_to 'Delete', location_location_product_path(@location, location_product), method: :delete, data: { confirm: 'Are you sure?' }, class: 'btn btn-danger btn-sm' %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
 
-<%= link_to 'Add Product', new_location_location_product_path(@location), class: 'btn btn-success' %>
+  <%= link_to 'Add Product', new_location_location_product_path(@location), class: 'btn btn-success' %>
+
+  <!-- Associated Customers Section -->
+  <h3 class="mt-4">Associated Customers:</h3>
+  <% if @location.customers.any? %>
+    <div class="row">
+      <% @location.customers.each do |customer| %>
+        <div class="col-md-6">
+          <div class="card mb-3">
+            <div class="card-body">
+              <h5 class="card-title">
+                <%= link_to customer.name, customer_path(customer), class: "text-decoration-none" %>
+              </h5>
+              <p class="card-text">
+                <strong>Email:</strong> <%= customer.email.presence || "No email provided" %><br>
+                <strong>Phone:</strong> <%= customer.phone.presence || "No phone provided" %>
+              </p>
+              <p class="text-muted">
+                <strong>Preferred Contact Method:</strong> <%= customer.preferred_contact_method %>
+              </p>
+              <%= link_to 'View Customer', customer_path(customer), class: 'btn btn-primary btn-sm' %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="text-muted">No customers associated with this location.</p>
+  <% end %>
+
+  <hr>
 
   <div>
-    <%= link_to "Edit this location", edit_location_path(@location) %> |
-    <%= link_to "Back to locations", locations_path, data: { turbo: false } %>
-
+    <%= link_to "Edit this location", edit_location_path(@location), class: 'btn btn-warning' %>
+    <%= link_to "Back to locations", locations_path, class: 'btn btn-secondary', data: { turbo: false } %>
     <%= button_to "Destroy this location", @location, method: :delete, data: { confirm: 'Are you sure you want to delete this location?', turbo: false }, class: "btn btn-danger" %>
   </div>
 </div>

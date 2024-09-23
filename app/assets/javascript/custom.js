@@ -245,7 +245,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
 document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("ajax:success", (event) => {
-    console.log("HELOOOOOOOOOOOOOOOOOOOOOOOOOOO2")
     const [data, status, xhr] = event.detail;
 
     // Update the content of a specific part of the page with the response data
@@ -266,5 +265,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.addEventListener("ajax:error", (event) => {
     console.error("AJAX error:", event.detail);
+  });
+});
+
+document.addEventListener('turbo:load', function() {
+  document.querySelectorAll('tr[data-link]').forEach((row) => {
+    row.addEventListener('click', function() {
+      window.location.href = this.dataset.link;
+    });
   });
 });

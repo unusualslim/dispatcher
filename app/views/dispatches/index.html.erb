@@ -40,7 +40,6 @@
       </div>
       <div class="modal-body">
         <%= form_with url: dispatches_path, method: :get, local: true do |form| %>
-          <!-- Your form fields here -->
           <div class="form-group mt-3">
             <label for="product">Product:</label>
             <%= form.text_field :product, value: @filters[:product], class: "form-control" %>

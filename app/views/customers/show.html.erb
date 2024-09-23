@@ -1,0 +1,42 @@
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <h1 class="text-center mb-4">Customer Details</h1>
+      <p class="text-center text-muted">View and manage customer information and associated locations.</p>
+      
+      <!-- Customer Info Card -->
+      <div class="card shadow-sm border-primary">
+        <div class="card-header bg-primary text-white">
+          <h2><%= @customer.name %></h2>
+        </div>
+        <div class="card-body">
+          <!-- Additional Customer Info -->
+          <p><strong>Email:</strong> <%= @customer.email %></p>
+          <p><strong>Phone:</strong> <%= @customer.phone %></p>
+          <p><strong>Preferred Contact Method:</strong> <%= @customer.preferred_contact_method %></p>
+
+          <!-- Associated Locations Section -->
+          <h4>Locations</h4>
+          <% if @customer.locations.any? %>
+            <ul class="list-group mb-4">
+              <% @customer.locations.each do |location| %>
+                <li class="list-group-item">
+                  <%= link_to location.company_name, location_path(location) %>
+                  <span class="text-muted float-end"><%= location.city %>, <%= location.state %></span>
+                </li>
+              <% end %>
+            </ul>
+          <% else %>
+            <p class="text-muted">No locations associated.</p>
+          <% end %>
+
+          <!-- Action Buttons -->
+          <div class="mt-3">
+            <%= link_to 'Edit Customer', edit_customer_path(@customer), class: 'btn btn-warning' %>
+            <%= link_to 'Back to Customers', customers_path, class: 'btn btn-secondary' %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

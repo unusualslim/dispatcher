@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_09_13_175205) do
+ActiveRecord::Schema[7.0].define(version: 2024_09_23_143746) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -78,6 +78,9 @@ ActiveRecord::Schema[7.0].define(version: 2024_09_13_175205) do
     t.string "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "email"
+    t.string "phone"
+    t.string "preferred_contact_method", default: "no preference"
   end
 
   create_table "dispatch_customer_orders", force: :cascade do |t|

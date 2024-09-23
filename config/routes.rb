@@ -19,6 +19,7 @@ Rails.application.routes.draw do
     resources :location_products, only: [:new, :create, :edit, :update, :destroy]
   end
   
+  resources :customers
   resources :customer_orders
   
   resource :messages do

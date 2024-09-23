@@ -1,0 +1,37 @@
+<h1>Customers</h1>
+
+<table class="table table-hover table-bordered">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Phone</th>
+      <th>Email</th>
+      <th>Locations</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @customers.each do |customer| %>
+      <tr data-link="<%= customer_path(customer) %>">
+        <td><%= customer.name %></td>
+        <td><%= customer.phone %></td>
+        <td><%= customer.email %></td>
+        <td>
+          <% if customer.locations.any? %>
+            <ul>
+              <% customer.locations.each do |location| %>
+                <li><%= location.company_name %></li>
+              <% end %>
+            </ul>
+          <% else %>
+            No locations associated.
+          <% end %>
+        </td>
+        <td>
+          <%= link_to 'Edit', edit_customer_path(customer), class: 'btn btn-sm btn-secondary' %>
+          <%= link_to 'Delete', customer_path(customer), method: :delete, data: { confirm: 'Are you sure?' }, class: 'btn btn-sm btn-danger' %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

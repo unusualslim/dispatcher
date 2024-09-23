@@ -1,0 +1,41 @@
+<%= form_with(model: @customer, local: true) do |form| %>
+  <% if @customer.errors.any? %>
+    <div class="alert alert-danger">
+      <h4>Form submission errors:</h4>
+      <ul>
+        <% @customer.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="form-group">
+    <%= form.label :name %>
+    <%= form.text_field :name, class: 'form-control' %>
+  </div>
+
+  <div class="form-group mt-3">
+    <%= form.label :locations %>
+    <%= form.collection_select :location_ids, Location.all, :id, :company_name, {}, { multiple: true, class: 'form-control' } %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :email %>
+    <%= form.email_field :email, class: "form-control" %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :phone %>
+    <%= form.telephone_field :phone, class: "form-control" %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :preferred_contact_method %>
+    <%= form.select :preferred_contact_method, options_for_select(['no preference', 'phone', 'email'], @customer.preferred_contact_method), { prompt: 'Select Contact Method' }, class: "form-control" %>
+  </div>
+
+  <div class="form-group mt-3">
+    <%= form.submit 'Save', class: 'btn btn-primary' %>
+  </div>
+<% end %>
