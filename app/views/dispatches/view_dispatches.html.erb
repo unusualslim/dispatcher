@@ -1,6 +1,6 @@
 <div class="content">
   <%= form_tag view_dispatches_path, method: :get do %>
-    <%= select_tag :status, options_for_select(@statuses, @selected_status), onchange: 'this.form.submit();', class: "btn btn-secondary dropdown-toggle mb-3 mt-3" %>
+    <%= select_tag :status, options_for_select([['All', 'all'], ['Incomplete', 'exclude_complete_deleted']] + @statuses.map { |s| [s.titleize, s] }, @selected_status), onchange: 'this.form.submit();', class: "btn btn-secondary dropdown-toggle mb-3 mt-3" %>
   <% end %>
 
   <table class="table table-hover">
@@ -9,6 +9,7 @@
         <th>ID</th>
         <th>Assigned To</th>
         <th>Dispatch Date</th>
+        <th>Status</th>
         <th>Notes</th>
       </tr>
     </thead>
@@ -22,6 +23,7 @@
             <td>Unassigned</td>
           <% end %>
           <td><%= dispatch.dispatch_date %></td>
+          <td><%= dispatch.status %></td>
           <td><%= dispatch.notes %></td>
         </tr>
       <% end %>

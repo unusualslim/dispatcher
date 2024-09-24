@@ -3,46 +3,47 @@ class DispatchesController < ApplicationController
 
   # GET /dispatches or /dispatches.json
   def index
-    # Base query for unassigned open orders
-    @unassigned_open_orders = CustomerOrder.where(order_status: 'New')
-                                           .left_joins(:dispatch_customer_orders)
-                                           .where(dispatch_customer_orders: { id: nil })
-  
-    # Collect filter parameters
+    # Collect filter parameters, setting default for status
     @filters = {
       product: params[:product],
       delivery_date: params[:delivery_date],
       delivery_date_condition: params[:delivery_date_condition],
       location: params[:location],
       amount: params[:amount],
-      status: params[:status]
+      status: params[:status] || 'unassigned'  # Default to 'unassigned' if not provided
     }
   
-    # Filter by product
+    # Base query depending on the selected status
+    case @filters[:status]
+    when 'unassigned'
+      @unassigned_open_orders = CustomerOrder.where(order_status: 'New')
+                                             .left_joins(:dispatch_customer_orders)
+                                             .where(dispatch_customer_orders: { id: nil })
+    when 'assigned'
+      @unassigned_open_orders = CustomerOrder.joins(:dispatch_customer_orders).distinct
+    else
+      @unassigned_open_orders = CustomerOrder.all.distinct
+    end
+  
+    # Apply filters for product
     if @filters[:product].present?
       @unassigned_open_orders = @unassigned_open_orders.where('product LIKE ?', "%#{@filters[:product]}%")
     end
   
-    # Filter by location
+    # Apply filters for location
     if @filters[:location].present?
       @unassigned_open_orders = @unassigned_open_orders.joins(:location)
                                                        .where('locations.company_name LIKE ?', "%#{@filters[:location]}%")
     end
   
-    # Filter by amount
+    # Apply filters for amount
     if @filters[:amount].present?
       @unassigned_open_orders = @unassigned_open_orders.where(approximate_product_amount: @filters[:amount])
-    end
-  
-    # Filter by status
-    if @filters[:status].present?
-      @unassigned_open_orders = @unassigned_open_orders.where(order_status: @filters[:status])
     end
   
     # Apply delivery date filter with condition
     if @filters[:delivery_date].present? && @filters[:delivery_date_condition].present?
       delivery_date = @filters[:delivery_date]
-  
       case @filters[:delivery_date_condition]
       when 'before'
         @unassigned_open_orders = @unassigned_open_orders.where("required_delivery_date < ?", delivery_date)
@@ -130,9 +131,18 @@ class DispatchesController < ApplicationController
 
   def view_dispatches
     @statuses = Dispatch.distinct.pluck(:status) # Fetch all unique statuses
-    @selected_status = params[:status] || @statuses.first # Get selected status or default
-
-    @dispatches = Dispatch.where(status: @selected_status).order(created_at: :desc)
+    @selected_status = params[:status] || 'exclude_complete_deleted' # Get selected status or default to 'all'
+  
+    if @selected_status == 'all'
+      # Show all dispatches
+      @dispatches = Dispatch.all.order(created_at: :desc)
+    elsif @selected_status == 'exclude_complete_deleted'
+      # Exclude dispatches with status "complete" or "deleted"
+      @dispatches = Dispatch.where.not(status: ['complete', 'deleted']).order(dispatch_date: :asc)
+    else
+      # Filter by the selected status
+      @dispatches = Dispatch.where(status: @selected_status).order(created_at: :desc)
+    end
   end
 
   def search

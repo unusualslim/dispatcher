@@ -1,29 +1,33 @@
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"></script>
+
+  <!-- Filter Dropdown -->
 <table class="index-table table table-hover">
   <thead class="index-table-head">
     <tr>
+      <th style="background-color:#f8f9fa; color:#375a7f; padding: 12px 20px; text-align:right;">
+        <%= form_with(url: dispatches_path, method: :get, local: true) do %>
+          <%= select_tag :status, options_for_select([['Unassigned Orders', 'unassigned'], ['Assigned Orders', 'assigned'], ['All Orders', 'all']], params[:status]), class: 'form-select', onchange: 'this.form.submit();', style: 'display:inline-block; width:auto; font-size: 14px;' %>
+        <% end %>
+      </th>
       <th style="background-color:#f8f9fa; color:#375a7f; padding: 12px 20px;">Order ID</th>
       <th style="background-color:#f8f9fa; color:#375a7f; padding: 12px 20px;">Product</th>
       <th style="background-color:#f8f9fa; color:#375a7f; padding: 12px 20px;">Delivery Date</th>
       <th style="background-color:#f8f9fa; color:#375a7f; padding: 12px 20px;">Location</th>
       <th style="background-color:#f8f9fa; color:#375a7f; padding: 12px 20px;">Amount</th>
       <th style="background-color:#f8f9fa; color:#375a7f; padding: 12px 20px;">Status</th>
-      <th style="background-color:#f8f9fa; color:#375a7f; padding: 12px 20px;">Notes </th>
-      <th style="background-color:#f8f9fa; color:#375a7f; padding: 12px 20px;"><i class="bi bi-funnel-fill" style="font-size: 1.5rem; cursor: pointer; line-height: 10%;" data-bs-toggle="modal" data-bs-target="#settingsModal"></i></th>
     </tr>
   </thead>
   <tbody>
     <% @unassigned_open_orders.each do |order| %>
     <tr class="clickable-row" data-href="<%= customer_order_path(order) %>">
+    <td></td>
       <td style="font-weight: bold; padding: 12px 20px;"><%= order.id %></td>
       <td style="padding: 12px 20px;"><%= order.product %></td>
       <td style="padding: 12px 20px;"><%= order.required_delivery_date %></td>
       <td style="padding: 12px 20px;"><%= order.location.company_name if order.location %></td>
       <td style="padding: 12px 20px;"><%= order.approximate_product_amount %> gals</td>
       <td style="padding: 12px 20px;"><%= order.order_status %></td>
-      <td style="padding: 12px 20px;"><%= order.notes.truncate(20) if order.notes.present? %></td>
-      <td></td>
     </tr>
     <% end %>
   </tbody>
