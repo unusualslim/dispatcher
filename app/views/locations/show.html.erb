@@ -3,36 +3,65 @@
 
   <%= render @location %>
 
-  <% if @location.location_products.any? %>
-    <strong>Products:</strong>
-    <table class="table table-striped">
-      <thead>
+<% if @location.location_products.any? %>
+  <strong>Products:</strong>
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Max Capacity</th>
+        <th>Upper Cutoff</th>
+        <th>Lower Cutoff</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @location.location_products.each do |location_product| %>
         <tr>
-          <th>Name</th>
-          <th>Max Capacity</th>
-          <th>Upper Cutoff</th>
-          <th>Lower Cutoff</th>
-          <th>Actions</th>
+          <td><%= location_product.product.name %></td>
+
+          <!-- Check if max_capacity is present -->
+          <td>
+            <% if location_product.max_capacity.present? %>
+              <%= location_product.max_capacity %> gal
+            <% else %>
+              N/A
+            <% end %>
+          </td>
+
+          <!-- Check if uleage_90 and max_capacity are present for the upper cutoff -->
+          <td>
+            <% if location_product.uleage_90.present? && location_product.max_capacity.present? %>
+              <%= (location_product.uleage_90.to_f / 100) * location_product.max_capacity %> gal 
+              <strong>(<%= location_product.uleage_90 %>%)</strong>
+            <% else %>
+              N/A
+            <% end %>
+          </td>
+
+          <!-- Check if cutoff and max_capacity are present for the lower cutoff -->
+          <td>
+            <% if location_product.cutoff.present? && location_product.max_capacity.present? %>
+              <%= (location_product.cutoff.to_f / 100) * location_product.max_capacity %> gal 
+              <strong>(<%= location_product.cutoff %>%)</strong>
+            <% else %>
+              N/A
+            <% end %>
+          </td>
+
+          <!-- Actions for edit and delete -->
+          <td>
+            <div class="btn-group" role="group">
+              <%= link_to 'Edit', edit_location_location_product_path(@location, location_product), class: 'btn btn-primary btn-sm', style: 'width:60px; margin-right:10px;' %>
+              <%= button_to 'Delete', location_location_product_path(@location, location_product), method: :delete, data: { confirm: 'Are you sure?' }, class: 'btn btn-danger btn-sm' %>
+            </div>
+          </td>
         </tr>
-      </thead>
-      <tbody>
-        <% @location.location_products.each do |location_product| %>
-          <tr>
-            <td><%= location_product.product.name %></td>
-            <td><%= location_product.max_capacity %> gal</td>
-            <td><%= (location_product.uleage_90.to_f / 100) * location_product.max_capacity %> gal <strong>(<%= location_product.uleage_90 %>%)</strong></td>
-            <td><%= (location_product.cutoff.to_f / 100) * location_product.max_capacity %> gal <strong>(<%= location_product.cutoff %>%)</strong></td>
-            <td>
-              <div class="btn-group" role="group">
-                <%= link_to 'Edit', edit_location_location_product_path(@location, location_product), class: 'btn btn-primary btn-sm', style: 'width:60px; margin-right:10px;' %>
-                <%= button_to 'Delete', location_location_product_path(@location, location_product), method: :delete, data: { confirm: 'Are you sure?' }, class: 'btn btn-danger btn-sm' %>
-              </div>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-  <% end %>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
+
 
   <%= link_to 'Add Product', new_location_location_product_path(@location), class: 'btn btn-success' %>
 
