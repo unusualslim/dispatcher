@@ -9,7 +9,7 @@
     <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
       <ul class="navbar-nav">
         <% if user_signed_in? %>
-          <%= link_to "New Order", new_customer_order_path, { :class=>"btn btn-success" } %>
+          <%= link_to "New Order", new_customer_order_path, class: "btn btn-success", data: { turbo: "false" } %>
           <li class="nav-item">
             <%= link_to 'Orders', customer_orders_path, class: 'nav-link' %>
           </li>

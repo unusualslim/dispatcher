@@ -18,7 +18,8 @@
 
     <div class="field">
       <%= form.label :location_id, 'Order Location:', style: "display: block" %>
-      <%= form.collection_select :location_id, Location.where(location_category_id: 2), :id, :city_with_company, prompt: "Select Destination Location" %>
+      <input type="hidden" id="location_id" name="customer_order[location_id]" value="<%= @customer_order.location_id %>">
+      <select id="location_search" style="width: 300px;"></select>
     </div>
 
     <div class="field">
@@ -44,4 +45,46 @@
     <div>
       <%= form.submit %>
     </div>
+
+    <!-- Include jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Include Select2 -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+  document.addEventListener("turbo:load", function() {
+  $('#location_search').select2({
+    placeholder: 'Search for a location',
+    ajax: {
+      url: '/locations/search',
+      dataType: 'json',
+      delay: 250,
+      data: function(params) {
+        return {
+          query: params.term // search term
+        };
+      },
+      processResults: function(data) {
+        return {
+          results: data.map(function(location) {
+            return {
+              id: location.id,
+              text: location.city_with_company // adjust this according to how you want it displayed
+            };
+          })
+        };
+      },
+      cache: true
+    }
+  });
+
+  // Set the hidden field with the selected location's ID
+  $('#location_search').on('select2:select', function(e) {
+    var data = e.params.data;
+    $('#location_id').val(data.id); // Set the hidden field
+  });
+});
+</script>
 <% end %>

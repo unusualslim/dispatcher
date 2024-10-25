@@ -7,6 +7,8 @@ gem "bootstrap"
 
 gem 'sassc-rails'
 
+gem 'select2-rails'
+
 gem 'devise'
 
 gem 'twilio-ruby'

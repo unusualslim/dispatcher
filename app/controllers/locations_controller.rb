@@ -54,6 +54,13 @@ class LocationsController < ApplicationController
           redirect_to locations_path, alert: 'Failed to delete location.'
         end
     end
+
+    def search
+      query = params[:query]
+      locations = Location.where(location_category_id: 2)
+                          .where("city LIKE ?", "%#{query}%") # Search locations by city or another attribute
+      render json: locations.map { |location| { id: location.id, city_with_company: location.city_with_company } }
+    end
   
     private
   

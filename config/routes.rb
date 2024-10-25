@@ -17,6 +17,9 @@ Rails.application.routes.draw do
   
   resources :locations do
     resources :location_products, only: [:new, :create, :edit, :update, :destroy]
+    collection do
+      get :search
+    end
   end
   
   resources :customers
