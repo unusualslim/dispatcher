@@ -4,6 +4,7 @@ class DispatchesController < ApplicationController
   # GET /dispatches or /dispatches.json
   def index
     # Collect filter parameters, setting default for status
+    @filtered_dispatches = Dispatch.where(status: ['New', 'sent_to_driver']).order(:dispatch_date)
     @filters = {
       product: params[:product],
       delivery_date: params[:delivery_date],

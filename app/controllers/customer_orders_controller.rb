@@ -46,7 +46,9 @@ class CustomerOrdersController < ApplicationController
     end
 
     def destroy
-
+      @customer_order = CustomerOrder.find(params[:id])
+      @customer_order.destroy
+      redirect_to dispatches_path, notice: 'Order was successfully deleted.'
     end
 
     private
