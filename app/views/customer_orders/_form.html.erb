@@ -1,10 +1,17 @@
-<%= form_with(model: @customer_order) do |form| %>
+<!-- Include jQuery, Bootstrap CSS, and Select2 CSS in the head -->
+<head>
+  
+  <!-- Include Select2 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+</head>
+<body>
+  <!-- Your existing form -->
+  <%= form_with(model: @customer_order) do |form| %>
     <% if @customer_order.errors.any? %>
       <div style="color: red">
-        <h2><%= pluralize(customer_order.errors.count, "error") %> prohibited this customer_order from being saved:</h2>
-
+        <h2><%= pluralize(@customer_order.errors.count, "error") %> prohibited this customer_order from being saved:</h2>
         <ul>
-          <% customer_order.errors.each do |error| %>
+          <% @customer_order.errors.each do |error| %>
             <li><%= error.full_message %></li>
           <% end %>
         </ul>
@@ -17,9 +24,10 @@
     </div>
 
     <div class="field">
-      <%= form.label :location_id, 'Order Location:', style: "display: block" %>
+      <%= form.label :location_id, 'Order Destination:', style: "display: block" %>
       <input type="hidden" id="location_id" name="customer_order[location_id]" value="<%= @customer_order.location_id %>">
       <select id="location_search" style="width: 300px;"></select>
+      <button type="button" class="btn btn-secondary" id="new-location-btn">New Destination</button>
     </div>
 
     <div class="field">
@@ -46,45 +54,122 @@
       <%= form.submit %>
     </div>
 
-    <!-- Include jQuery -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <% end %>
 
-<!-- Include Select2 -->
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<!-- Bootstrap Modal for Creating a New Location -->
+<div class="modal fade" id="locationModal" tabindex="-1" role="dialog" aria-labelledby="locationModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="locationModalLabel">Create New Destination</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="new-company-name">Company Name:</label>
+          <input type="text" class="form-control" id="new-company-name" required>
+        </div>
+        <div class="form-group">
+          <label for="new-city">City:</label>
+          <input type="text" class="form-control" id="new-city" required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="submit-location">Create Location</button>
+      </div>
+    </div>
+  </div>
+</div>
 
-<script>
+  <!-- Include jQuery, Bootstrap JS, and Select2 JS at the end of the body -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+  <script>
   document.addEventListener("turbo:load", function() {
-  $('#location_search').select2({
-    placeholder: 'Search for a location',
-    ajax: {
-      url: '/locations/search',
-      dataType: 'json',
-      delay: 250,
-      data: function(params) {
-        return {
-          query: params.term // search term
-        };
-      },
-      processResults: function(data) {
-        return {
-          results: data.map(function(location) {
-            return {
-              id: location.id,
-              text: location.city_with_company // adjust this according to how you want it displayed
-            };
-          })
-        };
-      },
-      cache: true
-    }
-  });
+    // Initialize Select2 for location search
+    $('#location_search').select2({
+      placeholder: 'Search for a location',
+      ajax: {
+        url: '/locations/search',
+        dataType: 'json',
+        delay: 250,
+        data: function(params) {
+          return {
+            query: params.term // search term
+          };
+        },
+        processResults: function(data) {
+          return {
+            results: data.map(function(location) {
+              return {
+                id: location.id,
+                text: location.city_with_company // adjust as needed
+              };
+            })
+          };
+        },
+        cache: true
+      }
+    });
 
-  // Set the hidden field with the selected location's ID
-  $('#location_search').on('select2:select', function(e) {
-    var data = e.params.data;
-    $('#location_id').val(data.id); // Set the hidden field
+    // Set hidden field with selected location ID
+    $('#location_search').on('select2:select', function(e) {
+      var data = e.params.data;
+      $('#location_id').val(data.id); // Update hidden field with selected location ID
+    });
+
+    // Show the modal when the new location button is clicked
+    $('#new-location-btn').on('click', function() {
+      $('#locationModal').modal('show'); // Show the Bootstrap modal
+    });
+
+    // Handle form submission
+    $('#submit-location').on('click', function() {
+      var newLocationName = $('#new-company-name').val();
+      var newCity = $('#new-city').val();
+
+      // Check if both fields are filled
+      if (!newLocationName || !newCity) {
+        alert("Please fill in both fields.");
+        return;
+      }
+
+      // Proceed with AJAX request
+      $.ajax({
+        url: '/locations',
+        type: 'POST',
+        dataType: 'json',
+        headers: {
+          'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content') // Include the CSRF token
+        },
+        data: {
+          location: {
+            city: newCity,
+            company_name: newLocationName,
+            location_category_id: 2 // Include selected category ID
+          }
+        },
+        success: function(response) {
+          // Add the new location to the Select2 dropdown and select it
+          var newOption = new Option(response.city_with_company, response.id, false, true);
+          $('#location_search').append(newOption).trigger('change'); // Dynamically update the Select2 dropdown
+          $('#location_id').val(response.id); // Update the hidden input with the new location ID
+
+          // Hide the modal after successful creation
+          $('#locationModal').modal('hide');
+          $('#new-company-name').val(''); // Reset the input fields
+        },
+        error: function(xhr, status, error) {
+          console.error('Error creating location:', error);
+          alert('There was an error creating the location. Please try again.');
+        }
+      });
+    });
   });
-});
-</script>
-<% end %>
+  </script>
+</body>

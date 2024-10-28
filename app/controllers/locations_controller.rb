@@ -20,17 +20,18 @@ class LocationsController < ApplicationController
   
     def create
       @location = Location.new(location_params)
-
+    
       respond_to do |format|
         if @location.save
           format.html { redirect_to location_url(@location), notice: "Location was successfully created." }
-          format.json { render :show, status: :created, location: @location }
+          format.json { render json: { id: @location.id, city_with_company: @location.city_with_company }, status: :created }
         else
           format.html { render :new, status: :unprocessable_entity }
           format.json { render json: @location.errors, status: :unprocessable_entity }
         end
       end
     end
+    
 
     def update
       @location = Location.find(params[:id])
