@@ -17,6 +17,19 @@ class CustomerOrdersController < ApplicationController
         @customer_order = CustomerOrder.find(params[:id])
     end
 
+    def create_dispatch
+      @customer_order = CustomerOrder.find(params[:id])
+    
+      # Assign a user and create a dispatch for the order here.
+      # Adjust based on your app's logic; e.g., you might create a new Dispatch record.
+    
+      if @customer_order.assign_user_and_create_dispatch
+        redirect_to @customer_order, notice: 'User assigned and dispatch created successfully.'
+      else
+        redirect_to @customer_order, alert: 'There was an error creating the dispatch.'
+      end
+    end
+
     def create
         @customer_order = CustomerOrder.new(customer_order_params)
     

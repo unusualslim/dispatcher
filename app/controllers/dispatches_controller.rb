@@ -71,14 +71,28 @@ class DispatchesController < ApplicationController
   # GET /dispatches/new
   def new
     @dispatch = Dispatch.new
+    
+    # Check if a customer_order_id was passed and set default values based on that
+    if params[:customer_order_id]
+      customer_order = CustomerOrder.find(params[:customer_order_id])
+      
+      # Set default values in @dispatch from the customer_order
+      @dispatch.customer_order_ids = [customer_order.id]
+      @dispatch.origin = customer_order.location.city if customer_order.location
+      @dispatch.dispatch_date = Date.today
+      
+      # Assign for pre-selecting in the form
+      @selected_customer_order_id = customer_order.id
+    end
+    
+    # Load data needed for form options
     @locations = Location.all
     @recent_customer_orders = CustomerOrder
-    .joins("LEFT JOIN dispatch_customer_orders ON dispatch_customer_orders.customer_order_id = customer_orders.id")
-    .where(dispatch_customer_orders: { id: nil })
-    .order(created_at: :desc)
-    .limit(5)
+      .where.not(order_status: ['complete'])
+      .order(created_at: :desc)
+      .limit(5)   
     @origin_locations = Location.where(location_category_id: 1)
-  end
+  end  
 
   # GET /dispatches/1/edit
   def edit

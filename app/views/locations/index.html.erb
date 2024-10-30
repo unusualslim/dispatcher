@@ -8,9 +8,9 @@
     <table class="table table-hover table-bordered">
       <thead class="thead-dark">
         <tr>
-          <th style="width: 14.28%;">City</th>
-          <th style="width: 14.28%;">Company</th>
+          <th style="width: 14.28%;">Name</th>
           <th style="width: 14.28%;">Address</th>
+          <th style="width: 14.28%;">City</th>
           <th style="width: 14.28%;">State</th>
           <th style="width: 14.28%;">Zip</th>
           <th style="width: 14.28%;">Phone</th>
@@ -20,9 +20,9 @@
       <tbody>
         <% @locations.each do |location| %>
           <tr onclick="location.href='/locations/<%= location.id %>';">
-            <td><%= location.city %></td>
             <td><%= location.company_name %></td>
             <td><%= location.address %></td>
+            <td><%= location.city %></td>
             <td><%= location.state %></td>
             <td><%= location.zip %></td>
             <td><%= location.phone_number %></td>

@@ -1,7 +1,7 @@
 <p style="color: green"><%= notice %></p>
 <%= form_for @location do |f| %>
     <div>
-        <%= f.label :company_name, style: "display: block" %>
+        <%= f.label "Name", style: "display: block" %>
         <%= f.text_field :company_name %>
     </div>
     <div>
@@ -25,7 +25,7 @@
         <%= f.text_field :phone_number %>
     </div>
     <div class="field">
-        <%= f.label :location_category_id, style: "display: block" %>
+        <%= f.label "Category", style: "display: block" %>
         <%= f.collection_select :location_category_id, LocationCategory.all, :id, :name, prompt: "Select Location Category" %>
     </div>
     <div>

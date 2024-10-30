@@ -1,4 +1,7 @@
 <div class="customer-order">
+  <% if @customer_order.order_status = "New"  %>
+    <%= link_to 'Create Dispatch and Assign User', new_dispatch_path(customer_order_id: @customer_order.id), class: 'btn btn-primary' %>
+  <% end %>
   <p><strong>Required Delivery Date:</strong> <%= customer_order.required_delivery_date %></p>
   <p>
     <strong>Location:</strong>

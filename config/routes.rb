@@ -23,7 +23,9 @@ Rails.application.routes.draw do
   end
   
   resources :customers
-  resources :customer_orders
+  resources :customer_orders do
+    post 'create_dispatch', on: :member
+  end
   
   resource :messages do
     collection do

@@ -18,10 +18,8 @@
 
   <div class="field">
     <%= form.label 'Customer Orders:', style: "display: block" %>
-    <%# form.select :customer_order_ids, options_for_select(@recent_customer_orders.map { |co| ["#{co.id} - #{co.location.name}", co.id] }), { include_hidden: false }, { id: 'customer_order_ids', multiple: true, prompt: 'Select Customer Orders' } %>
-    <%# form.collection_select :customer_order_ids, @recent_customer_orders, :id, :id,{:prompt => false, include_hidden: false}, {:multiple => true, :required => true, class: "form-control" } %>
-    <%= form.select :customer_order_ids, options_for_select(@recent_customer_orders.map { |co| ["#{co.id} - #{co.location.company_name}", co.id] }), {include_hidden: false}, { id: 'customer_order_ids', multiple: true, prompt: 'Select Customer Orders' } %>
-     <small id="selectHelp" class="form-text text-muted">Try ctrl+click to select multiple.(Use cmd+click on OSX.)</small>
+    <%= form.select :customer_order_ids, options_for_select(@recent_customer_orders.map { |co| ["#{co.id} - #{co.location.company_name}", co.id] }, @selected_customer_order_id), { include_hidden: false }, { id: 'customer_order_ids', multiple: true, prompt: 'Select Customer Orders' } %>
+    <small id="selectHelp" class="form-text text-muted">Try ctrl+click to select multiple. (Use cmd+click on OSX.)</small>
   </div>
 
   <div class="field">
