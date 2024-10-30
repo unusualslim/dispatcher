@@ -14,6 +14,8 @@
           <th style="width: 14.28%;">State</th>
           <th style="width: 14.28%;">Zip</th>
           <th style="width: 14.28%;">Phone</th>
+          <th style="width: 14.28%;">Latitude</th>
+          <th style="width: 14.28%;">Longitude</th>
           <th style="width: 14.28%;">Category</th>
         </tr>
       </thead>
@@ -26,6 +28,8 @@
             <td><%= location.state %></td>
             <td><%= location.zip %></td>
             <td><%= location.phone_number %></td>
+            <td><%= location.latitude %></td>
+            <td><%= location.longitude %></td>
             <td><%= LocationCategory.find(location.location_category_id).name %></td>
           </tr>
         <% end %>

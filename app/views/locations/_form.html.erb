@@ -24,6 +24,14 @@
         <%= f.label :phone_number, style: "display: block" %>
         <%= f.text_field :phone_number %>
     </div>
+    <div>
+        <%= f.label :latitude, style: "display: block" %>
+        <%= f.text_field :latitude %>
+    </div>
+    <div>
+        <%= f.label :longitude, style: "display: block" %>
+        <%= f.text_field :longitude %>
+    </div>
     <div class="field">
         <%= f.label "Category", style: "display: block" %>
         <%= f.collection_select :location_category_id, LocationCategory.all, :id, :name, prompt: "Select Location Category" %>

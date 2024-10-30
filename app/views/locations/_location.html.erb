@@ -27,6 +27,16 @@
   </p>
 
   <p>
+    <strong>Latitude:</strong>
+    <%= location.latitude %>
+  </p>
+
+  <p>
+    <strong>Longitude:</strong>
+    <%= location.longitude %>
+  </p>
+
+  <p>
     <strong>Category:</strong>
     <%= LocationCategory.find(location.location_category_id).name %>
   </p>

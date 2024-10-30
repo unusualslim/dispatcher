@@ -15,6 +15,7 @@ Rails.application.routes.draw do
     end
   end
   
+  get 'locations/map', to: 'locations#map', as: :locations_map
   resources :locations do
     resources :location_products, only: [:new, :create, :edit, :update, :destroy]
     collection do

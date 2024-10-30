@@ -30,8 +30,7 @@ class LocationsController < ApplicationController
           format.json { render json: @location.errors, status: :unprocessable_entity }
         end
       end
-    end
-    
+    end    
 
     def update
       @location = Location.find(params[:id])
@@ -62,11 +61,15 @@ class LocationsController < ApplicationController
                           .where("city LIKE ?", "%#{query}%") # Search locations by city or another attribute
       render json: locations.map { |location| { id: location.id, city_with_company: location.city_with_company } }
     end
+
+    def map
+      @locations = Location.includes(:location_category).where.not(latitude: nil, longitude: nil)
+    end
   
     private
   
     def location_params
-      params.require(:location).permit(:city, :address, :location_category_id, :company_name, :phone_number, :state, :notes, :zip, :max_capacity, :uleage_90, :cutoff_percent, product_ids: [])
+      params.require(:location).permit(:city, :address, :location_category_id, :company_name, :phone_number, :state, :notes, :zip, :max_capacity, :uleage_90, :latitude, :longitude, :cutoff_percent, product_ids: [])
     end
     def set_products
       @products = Product.all

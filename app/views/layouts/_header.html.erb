@@ -14,6 +14,9 @@
             <%= link_to 'Orders', customer_orders_path, class: 'nav-link' %>
           </li>
           <li class="nav-item">
+            <%= link_to 'Map', locations_map_path, class: 'nav-link', data: { turbo: "false" } %>
+          </li>
+          <li class="nav-item">
             <%= link_to 'Dispatches', view_dispatches_path, class: 'nav-link' %>
           </li>
           <li class="nav-item">
