@@ -26,40 +26,43 @@
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 
     <script>
-    const map = L.map('map').setView([33.7490, -84.3880], 6); // Centered on Georgia
+        const map = L.map('map').setView([33.7490, -84.3880], 6); // Centered on Georgia
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
-
-    // Pass locations from Rails to JavaScript
-    const locations = <%= raw @locations.to_json(only: [:id, :latitude, :longitude, :city, :location_category_id]) %>;
-
-    locations.forEach(location => {
-        let markerColor;
-
-        // Set colors based on location_category_id
-        if (location.location_category_id === 1) {
-        markerColor = 'blue'; // Replace with actual ID for origins
-        } else if (location.location_category_id === 2) {
-        markerColor = 'red'; // Replace with actual ID for destinations
-        }
-
-        // Create a circle marker with the specified color
-        const marker = L.circleMarker([location.latitude, location.longitude], {
-        radius: 8, // Adjust the size of the marker if needed
-        fillColor: markerColor,
-        color: markerColor,
-        fillOpacity: 0.8,
-        stroke: false
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors'
         }).addTo(map);
 
-        // Create a popup with a link to the location
-        const popupContent = `<a href="/locations/${location.id}">${location.city}</a>`;
-        marker.bindPopup(popupContent);
-    });
+        // Pass locations from Rails to JavaScript
+        const locations = <%= raw @locations.to_json(only: [:id, :latitude, :longitude, :city, :company_name, :location_category_id]) %>;
+
+        locations.forEach(location => {
+            let markerColor;
+
+            // Set colors based on location_category_id
+            if (location.location_category_id === 1) {
+                markerColor = 'blue'; // Origin
+            } else if (location.location_category_id === 2) {
+                markerColor = 'red'; // Destination
+            } else if (location.location_category_id === 3) { // Update to the ID for "Prospective"
+                markerColor = 'gray'; // Prospective
+            }
+
+            // Create a circle marker with the specified color
+            const marker = L.circleMarker([location.latitude, location.longitude], {
+                radius: 8, // Adjust the size of the marker if needed
+                fillColor: markerColor,
+                color: markerColor,
+                fillOpacity: 0.8,
+                stroke: false
+            }).addTo(map);
+
+            // Create a popup with a link to the location
+            const popupContent = `<a href="/locations/${location.id}">${location.company_name}</a>`;
+            marker.bindPopup(popupContent);
+        });
     </script>
+
 
 
 </body>
