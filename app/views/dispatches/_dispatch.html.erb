@@ -1,9 +1,15 @@
 <!DOCTYPE html>
+
+<!-- Include Bootstrap JavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 <html lang="en">
 <div id="<%= dom_id dispatch %>" class="content" style="padding-left:20px;">
 
   <% if dispatch.driver_id && dispatch.dispatch_customer_order.any? %>
-    <%= button_to 'Send Notification', send_notification_dispatch_path(@dispatch), method: :post, class: 'btn btn-primary', remote: true %>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editNotificationModal-<%= dispatch.id %>">
+      Send Notification
+    </button>
   <% end %>
 
   <p>
@@ -71,4 +77,32 @@
   <p>Unassigned.</p>
 <% end %>
 
+</div>
+
+<div class="modal fade" id="editNotificationModal-<%= dispatch.id %>" tabindex="-1" aria-labelledby="editNotificationModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editNotificationModalLabel">Edit Notification</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <%= form_with url: send_notification_dispatch_path(dispatch), method: :post, local: false, id: "notificationForm-#{dispatch.id}" do |f| %>
+          <div class="mb-3">
+            <%= f.label :email_message, "Email Message" %>
+            <%= f.text_area :email_message, rows: 3, class: "form-control", value: "Default email content for #{dispatch.id}" %>
+          </div>
+          <div class="mb-3">
+            <%= f.label :sms_message, "SMS Message" %>
+            <%= f.text_area :sms_message, rows: 2, class: "form-control", value: "Default SMS content for #{dispatch.id}" %>
+          </div>
+          <%= f.hidden_field :id, value: dispatch.id %>
+        <% end %>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="submit" form="notificationForm-<%= dispatch.id %>" class="btn btn-primary">Send Notification</button>
+      </div>
+    </div>
+  </div>
 </div>

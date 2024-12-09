@@ -179,15 +179,24 @@ class DispatchesController < ApplicationController
 
   def send_notification
     @dispatch = Dispatch.find(params[:id])
+    email_message = params[:email_message]
+    sms_message = params[:sms_message]
+  
     @dispatch.update(status: "Sent to driver")
+    
     if @dispatch.driver.present? && @dispatch.driver.email_opt_in?
-      DispatchMailer.send_dispatch_email(@dispatch).deliver_now
+      DispatchMailer.send_dispatch_email(@dispatch, email_message).deliver_now
+    end
+    
+    if @dispatch.driver.present? && @dispatch.driver.sms_opt_in?
+      send_text_to_driver(@dispatch, sms_message) if @dispatch.driver.phone_number.present?
     end
   
-    if @dispatch.driver.present? && @dispatch.driver.sms_opt_in?
-      send_text_to_driver(@dispatch) if @dispatch.driver.phone_number.present?
+    respond_to do |format|
+      format.js { render js: "alert('Notification sent successfully!');" }
+      format.html { redirect_to dispatch_path(@dispatch), notice: "Notification sent successfully." }
     end
-  end
+  end  
 
   private
 

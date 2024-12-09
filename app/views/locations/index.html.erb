@@ -1,39 +1,93 @@
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"></script>
+
 <div class="content">
   <p style="color: green"><%= notice %></p>
-<div class="d-flex align-items-center mb-3">
-  <h1 class="mb-0 mr-3">Locations</h1>
-  <%= link_to "New location", new_location_path, class: "btn btn-primary", style: "margin-left: 15px;" %>
-</div>
-  <div class="locations">
-    <table class="table table-hover table-bordered">
-      <thead class="thead-dark">
-        <tr>
-          <th style="width: 14.28%;">Name</th>
-          <th style="width: 14.28%;">Address</th>
-          <th style="width: 14.28%;">City</th>
-          <th style="width: 14.28%;">State</th>
-          <th style="width: 14.28%;">Zip</th>
-          <th style="width: 14.28%;">Phone</th>
-          <th style="width: 14.28%;">Latitude</th>
-          <th style="width: 14.28%;">Longitude</th>
-          <th style="width: 14.28%;">Category</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @locations.each do |location| %>
-          <tr onclick="location.href='/locations/<%= location.id %>';">
-            <td><%= location.company_name %></td>
-            <td><%= location.address %></td>
-            <td><%= location.city %></td>
-            <td><%= location.state %></td>
-            <td><%= location.zip %></td>
-            <td><%= location.phone_number %></td>
-            <td><%= location.latitude %></td>
-            <td><%= location.longitude %></td>
-            <td><%= LocationCategory.find(location.location_category_id).name %></td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
+  <div class="d-flex align-items-center mb-3">
+    <h1 class="mb-0 mr-3">Locations</h1>
+    <%= link_to "New location", new_location_path, class: "btn btn-primary", style: "margin-left: 15px;" %>
+  </div>
+
+  <!-- Accordion Structure -->
+  <div class="accordion" id="locationsAccordion">
+
+    <!-- Origin Locations -->
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="headingOrigin">
+        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOrigin" aria-expanded="true" aria-controls="collapseOrigin" style="font-weight: 600;">
+          Origin Locations
+        </button>
+      </h2>
+      <div id="collapseOrigin" class="accordion-collapse collapse show" aria-labelledby="headingOrigin" data-bs-parent="#locationsAccordion">
+        <div class="accordion-body">
+          <table class="table table-hover table-bordered">
+            <thead class="thead-dark">
+              <tr>
+                <th>Name</th>
+                <th>Address</th>
+                <th>City</th>
+                <th>State</th>
+                <th>Zip</th>
+                <th>Phone</th>
+                <th>Category</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @locations.where(location_category_id: LocationCategory.find_by(name: 'Origin').id).each do |location| %>
+                <tr onclick="location.href='/locations/<%= location.id %>';">
+                  <td><%= location.company_name %></td>
+                  <td><%= location.address %></td>
+                  <td><%= location.city %></td>
+                  <td><%= location.state %></td>
+                  <td><%= location.zip %></td>
+                  <td><%= location.phone_number %></td>
+                  <td><%= LocationCategory.find(location.location_category_id).name %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Destination Locations -->
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="headingDestination">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDestination" aria-expanded="false" aria-controls="collapseDestination" style="font-weight: 600;">
+          Destination Locations
+        </button>
+      </h2>
+      <div id="collapseDestination" class="accordion-collapse collapse" aria-labelledby="headingDestination" data-bs-parent="#locationsAccordion">
+        <div class="accordion-body">
+          <table class="table table-hover table-bordered">
+            <thead class="thead-dark">
+              <tr>
+                <th>Name</th>
+                <th>Address</th>
+                <th>City</th>
+                <th>State</th>
+                <th>Zip</th>
+                <th>Phone</th>
+                <th>Category</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @locations.where(location_category_id: LocationCategory.find_by(name: 'Destination').id).each do |location| %>
+                <tr onclick="location.href='/locations/<%= location.id %>';">
+                  <td><%= location.company_name %></td>
+                  <td><%= location.address %></td>
+                  <td><%= location.city %></td>
+                  <td><%= location.state %></td>
+                  <td><%= location.zip %></td>
+                  <td><%= location.phone_number %></td>
+                  <td><%= LocationCategory.find(location.location_category_id).name %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
