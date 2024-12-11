@@ -39,7 +39,7 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <%= form_with model: [@customer_order, CustomerOrderProduct.new], local: true do |form| %>
+          <%= form_with model: [@customer_order, CustomerOrderProduct.new], local: true, data: { turbo: false } do |form| %>
             <div class="mb-3">
               <label for="product" class="form-label">Product</label>
               <%= form.collection_select :product_id, Product.all, :id, :name, { prompt: "Select a Product" }, class: "form-select" %>
@@ -76,25 +76,27 @@
   </thead>
   <tbody>
     <% total_sum = 0 %>
-    <% @customer_order.customer_order_products.each do |cop| %>
-      <tr>
-        <%= form_with model: [@customer_order, cop], method: :patch, local: true, data: { turbo: false } do |form| %>
-          <td><%= cop.product.name %></td>
-          <td><%= form.number_field :quantity, value: cop.quantity, class: 'form-control', min: 1 %></td>
-          <td><%= form.number_field :price, value: cop.price, class: 'form-control', step: 0.01 %></td>
-          <% item_total = cop.quantity * cop.price %>
-          <td><%= number_to_currency(item_total) %></td>
-          <% total_sum += item_total %>
-          <td>
-            <%= form.submit "Update", class: "btn btn-success btn-sm" %>
-            <%= button_to "Remove", customer_order_customer_order_product_path(@customer_order, cop), 
-            method: :delete, 
-            data: { confirm: "Are you sure?" }, 
-            class: "btn btn-danger btn-sm" %>
-          </td>
-        <% end %>
-      </tr>
+<% @customer_order.customer_order_products.each do |cop| %>
+  <tr>
+    <%= form_with model: [@customer_order, cop], method: :patch, local: true, data: { turbo: false } do |form| %>
+      <td><%= cop.product.name %></td>
+      <td><%= form.number_field :quantity, value: cop.quantity, class: 'form-control', min: 1 %></td>
+      <td><%= form.number_field :price, value: cop.price, class: 'form-control', step: 0.01 %></td>
+      <td><%= number_to_currency(cop.quantity * cop.price) %></td>
+      <td>
+        <%= form.submit "Update", class: "btn btn-success btn-sm" %>
+      </td>
     <% end %>
+
+    <td>
+      <%= button_to "Remove", customer_order_customer_order_product_path(@customer_order, cop), 
+                    method: :delete, 
+                    data: { confirm: "Are you sure?" }, 
+                    class: "btn btn-danger btn-sm" %>
+    </td>
+  </tr>
+<% end %>
+
   </tbody>
   <tfoot>
     <tr>
