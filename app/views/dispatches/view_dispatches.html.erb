@@ -17,14 +17,16 @@
       <% @dispatches.each do |dispatch| %>
         <tr style="cursor: pointer;" onclick="location.href='/dispatches/<%= dispatch.id %>';">
           <td><%= dispatch.id %></td>
-          <% if dispatch.driver_id %>
-            <td><%= User.find_by(id: dispatch.driver_id).full_name %></td>
+          
+          <% if dispatch.driver %>
+            <td><%= dispatch.driver.full_name %></td>
           <% else %>
             <td>Unassigned</td>
           <% end %>
-          <td><%= dispatch.dispatch_date %></td>
-          <td><%= dispatch.status %></td>
-          <td><%= dispatch.notes %></td>
+
+          <td><%= dispatch.dispatch_date || "No date set" %></td>
+          <td><%= dispatch.status || "No status" %></td>
+          <td><%= dispatch.notes.presence || "No notes" %></td>
         </tr>
       <% end %>
     </tbody>

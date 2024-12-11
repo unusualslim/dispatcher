@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_10_30_144747) do
+ActiveRecord::Schema[7.0].define(version: 2024_12_10_190913) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -59,6 +59,17 @@ ActiveRecord::Schema[7.0].define(version: 2024_10_30_144747) do
     t.datetime "updated_at", null: false
     t.index ["customer_id"], name: "index_customer_locations_on_customer_id"
     t.index ["location_id"], name: "index_customer_locations_on_location_id"
+  end
+
+  create_table "customer_order_products", force: :cascade do |t|
+    t.bigint "customer_order_id", null: false
+    t.bigint "product_id", null: false
+    t.integer "quantity"
+    t.decimal "price"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["customer_order_id"], name: "index_customer_order_products_on_customer_order_id"
+    t.index ["product_id"], name: "index_customer_order_products_on_product_id"
   end
 
   create_table "customer_orders", force: :cascade do |t|
@@ -188,6 +199,8 @@ ActiveRecord::Schema[7.0].define(version: 2024_10_30_144747) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "customer_locations", "customers"
   add_foreign_key "customer_locations", "locations"
+  add_foreign_key "customer_order_products", "customer_orders"
+  add_foreign_key "customer_order_products", "products"
   add_foreign_key "customer_orders", "locations", on_delete: :cascade
   add_foreign_key "dispatch_customer_orders", "customer_orders", on_delete: :cascade
   add_foreign_key "dispatch_customer_orders", "dispatches"

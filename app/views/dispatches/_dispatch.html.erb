@@ -19,8 +19,9 @@
 
   <p>
     <strong>Driver name:</strong>
-    <% if dispatch.driver_id %>
-      <%= User.find_by(id: dispatch.driver_id).full_name %>
+    <% driver = User.find_by(id: dispatch.driver_id) %>
+    <% if driver %>
+      <%= driver.full_name %>
     <% else %>
       Unassigned
     <% end %> 

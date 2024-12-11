@@ -26,6 +26,7 @@ Rails.application.routes.draw do
   resources :customers
   resources :customer_orders do
     post 'create_dispatch', on: :member
+    resources :customer_order_products, only: [:create, :update, :destroy]
   end
   
   resource :messages do

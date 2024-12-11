@@ -1,43 +1,134 @@
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"></script>
+
 <div class="customer-order">
-  <% if @customer_order.order_status = "New"  %>
+  <% if @customer_order.order_status == "New" %>
     <%= link_to 'Create Dispatch and Assign User', new_dispatch_path(customer_order_id: @customer_order.id), class: 'btn btn-primary' %>
   <% end %>
-  <p><strong>Required Delivery Date:</strong> <%= customer_order.required_delivery_date %></p>
+
+  <p><strong>Required Delivery Date:</strong> <%= @customer_order.required_delivery_date %></p>
+  
   <p>
     <strong>Location:</strong>
-    <% location = Location.find(customer_order.location_id) %>
+    <% location = Location.find_by(id: @customer_order.location_id) %>
     <% if location %>
       <%= "#{location.address} #{location.city}, #{location.state} #{location.zip}" %>
     <% else %>
       No destination location found
     <% end %>
   </p>
-  <p><strong>Order Status:</strong> <%= customer_order.order_status %></p>
-  <p><strong>Product:</strong> <%= customer_order.product %></p>
-  <p><strong>Amount:</strong> <%= customer_order.approximate_product_amount %> gal</p>
-  <p><strong>Notes:</strong> <%= customer_order.notes %></p>
 
-    <% if @customer_order.dispatches.any? %>
+  <p><strong>Order Status:</strong> <%= @customer_order.order_status %></p>
+  <p><strong>Product:</strong> <%= @customer_order.product %></p>
+  <p><strong>Amount:</strong> <%= @customer_order.approximate_product_amount %> gal</p>
+  <p><strong>Notes:</strong> <%= @customer_order.notes %></p>
+
+  <!-- Edit Existing Products -->
+  <h3 class="d-flex justify-content-between align-items-center">
+    Products in Order
+    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addProductModal">
+      Add Product
+    </button>
+  </h3>
+
+  <div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addProductModalLabel">Add Product to Order</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <%= form_with model: [@customer_order, CustomerOrderProduct.new], local: true do |form| %>
+            <div class="mb-3">
+              <label for="product" class="form-label">Product</label>
+              <%= form.collection_select :product_id, Product.all, :id, :name, { prompt: "Select a Product" }, class: "form-select" %>
+            </div>
+
+            <div class="mb-3">
+              <label for="quantity" class="form-label">Quantity</label>
+              <%= form.number_field :quantity, class: "form-control", min: 1 %>
+            </div>
+
+            <div class="mb-3">
+              <label for="price" class="form-label">Price</label>
+              <%= form.number_field :price, class: "form-control", step: 0.01 %>
+            </div>
+
+            <div class="d-flex justify-content-end">
+              <%= form.submit "Add Product", class: "btn btn-primary" %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Product</th>
+      <th>Quantity (Gal)</th>
+      <th>Price</th>
+      <th>Total</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% total_sum = 0 %>
+    <% @customer_order.customer_order_products.each do |cop| %>
+      <tr>
+        <%= form_with model: [@customer_order, cop], method: :patch, local: true, data: { turbo: false } do |form| %>
+          <td><%= cop.product.name %></td>
+          <td><%= form.number_field :quantity, value: cop.quantity, class: 'form-control', min: 1 %></td>
+          <td><%= form.number_field :price, value: cop.price, class: 'form-control', step: 0.01 %></td>
+          <% item_total = cop.quantity * cop.price %>
+          <td><%= number_to_currency(item_total) %></td>
+          <% total_sum += item_total %>
+          <td>
+            <%= form.submit "Update", class: "btn btn-success btn-sm" %>
+            <%= button_to "Remove", customer_order_customer_order_product_path(@customer_order, cop), 
+            method: :delete, 
+            data: { confirm: "Are you sure?" }, 
+            class: "btn btn-danger btn-sm" %>
+          </td>
+        <% end %>
+      </tr>
+    <% end %>
+  </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="3" class="text-end"><strong>Total:</strong></td>
+      <td><%= number_to_currency(total_sum) %></td>
+      <td></td>
+    </tr>
+  </tfoot>
+</table>
+
+
+
+  <!-- Associated Dispatches -->
+  <% if @customer_order.dispatches.any? %>
     <h3>Associated Dispatches</h3>
     <% @customer_order.dispatches.each do |dispatch| %>
       <%= link_to dispatch_path(dispatch), class: "card-link" do %>
-      <div class="card">
-        <div class="card-body">
-          <h5 class="card-title">Dispatch ID: <%= dispatch.id %> </h5>
-          <% if dispatch.driver_id.present? %>
-            <% driver = User.find_by(id: dispatch.driver_id) %>
-            <% if driver %>
-              <p class="card-text">Driver: <%= driver.first_name %> <%= driver.last_name %></p>
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Dispatch ID: <%= dispatch.id %></h5>
+            <% if dispatch.driver_id.present? %>
+              <% driver = User.find_by(id: dispatch.driver_id) %>
+              <% if driver %>
+                <p class="card-text">Driver: <%= driver.first_name %> <%= driver.last_name %></p>
+              <% else %>
+                <p class="card-text">Driver: Not found</p>
+              <% end %>
             <% else %>
-              <p class="card-text">Driver: Not found</p>
+              <p class="card-text">Driver: Not assigned</p>
             <% end %>
-          <% else %>
-            <p class="card-text">Driver: Not assigned</p>
-          <% end %>
-          <p class="card-text">Origin: <%= dispatch.origin %> </p>
-          <p class="card-text">Destination: <%= dispatch.destination %> </p>
+            <p class="card-text">Origin: <%= dispatch.origin %></p>
+            <p class="card-text">Destination: <%= dispatch.destination %></p>
+          </div>
         </div>
-      </div>
       <% end %>
     <% end %>
   <% else %>
