@@ -64,50 +64,49 @@
     </div>
   </div>
 
-<table class="table">
-  <thead>
-    <tr>
-      <th>Product</th>
-      <th>Quantity (Gal)</th>
-      <th>Price</th>
-      <th>Total</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% total_sum = 0 %>
-<% @customer_order.customer_order_products.each do |cop| %>
-  <tr>
-    <%= form_with model: [@customer_order, cop], method: :patch, local: true, data: { turbo: false } do |form| %>
-      <td><%= cop.product.name %></td>
-      <td><%= form.number_field :quantity, value: cop.quantity, class: 'form-control', min: 1 %></td>
-      <td><%= form.number_field :price, value: cop.price, class: 'form-control', step: 0.01 %></td>
-      <td><%= number_to_currency(cop.quantity * cop.price) %></td>
-      <td>
-        <%= form.submit "Update", class: "btn btn-success btn-sm" %>
-      </td>
-    <% end %>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Product</th>
+        <th>Quantity (Gal)</th>
+        <th>Price</th>
+        <th>Total</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% total_sum = 0 %>
+      <% @customer_order.customer_order_products.each do |cop| %>
+        <tr>
+          <%= form_with model: [@customer_order, cop], method: :patch, local: true, data: { turbo: false } do |form| %>
+            <td><%= cop.product.name %></td>
+            <td><%= form.number_field :quantity, value: cop.quantity, class: 'form-control', min: 1 %></td>
+            <td><%= form.number_field :price, value: cop.price, class: 'form-control', step: 0.01 %></td>
+            <td><%= number_to_currency(cop.quantity * cop.price) %></td>
+            <td>
+              <%= form.submit "Update", class: "btn btn-success btn-sm" %>
+            </td>
+          <% end %>
 
-    <td>
-      <%= button_to "Remove", customer_order_customer_order_product_path(@customer_order, cop), 
-                    method: :delete, 
-                    data: { confirm: "Are you sure?" }, 
-                    class: "btn btn-danger btn-sm" %>
-    </td>
-  </tr>
-<% end %>
+          <td>
+            <%= button_to "Remove", customer_order_customer_order_product_path(@customer_order, cop), 
+                          method: :delete, 
+                          data: { confirm: "Are you sure?" }, 
+                          class: "btn btn-danger btn-sm" %>
+          </td>
+        </tr>
 
-  </tbody>
-  <tfoot>
-    <tr>
-      <td colspan="3" class="text-end"><strong>Total:</strong></td>
-      <td><%= number_to_currency(total_sum) %></td>
-      <td></td>
-    </tr>
-  </tfoot>
-</table>
-
-
+        <% total_sum += cop.quantity * cop.price %> <!-- Add this line to sum up the total -->
+      <% end %>
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="3" class="text-end"><strong>Total:</strong></td>
+        <td><%= number_to_currency(total_sum) %></td>
+        <td></td>
+      </tr>
+    </tfoot>
+  </table>
 
   <!-- Associated Dispatches -->
   <% if @customer_order.dispatches.any? %>
