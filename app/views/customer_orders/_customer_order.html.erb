@@ -19,8 +19,6 @@
   </p>
 
   <p><strong>Order Status:</strong> <%= @customer_order.order_status %></p>
-  <p><strong>Product:</strong> <%= @customer_order.product %></p>
-  <p><strong>Amount:</strong> <%= @customer_order.approximate_product_amount %> gal</p>
   <p><strong>Notes:</strong> <%= @customer_order.notes %></p>
 
   <!-- Edit Existing Products -->
@@ -46,7 +44,7 @@
             </div>
 
             <div class="mb-3">
-              <label for="quantity" class="form-label">Quantity</label>
+              <label for="quantity" class="form-label">Quantity (Gals)</label>
               <%= form.number_field :quantity, class: "form-control", min: 1 %>
             </div>
 
@@ -72,29 +70,39 @@
         <th>Price</th>
         <th>Total</th>
         <th>Actions</th>
+        <th></th>
       </tr>
     </thead>
     <tbody>
       <% total_sum = 0 %>
       <% @customer_order.customer_order_products.each do |cop| %>
-        <tr>
-          <%= form_with model: [@customer_order, cop], method: :patch, local: true, data: { turbo: false } do |form| %>
-            <td><%= cop.product.name %></td>
-            <td><%= form.number_field :quantity, value: cop.quantity, class: 'form-control', min: 1 %></td>
-            <td><%= form.number_field :price, value: cop.price, class: 'form-control', step: 0.01 %></td>
-            <td><%= number_to_currency(cop.quantity * cop.price) %></td>
-            <td>
-              <%= form.submit "Update", class: "btn btn-success btn-sm" %>
-            </td>
-          <% end %>
-
+      <tr>
+        <%= form_with model: [@customer_order, cop], method: :patch, local: true, data: { turbo: false } do |form| %>
           <td>
-            <%= button_to "Remove", customer_order_customer_order_product_path(@customer_order, cop), 
-                          method: :delete, 
-                          data: { confirm: "Are you sure?" }, 
-                          class: "btn btn-danger btn-sm" %>
+            <%= form.collection_select(
+              :product_id, 
+              Product.all, # Adjust scope if necessary to limit the products shown
+              :id, 
+              :name, 
+              { prompt: "Select a Product", selected: cop.product_id },
+              { class: 'form-select' } # Add styling class if you're using a CSS framework like Bootstrap
+            ) %>
           </td>
-        </tr>
+          <td><%= form.number_field :quantity, value: cop.quantity, class: 'form-control', min: 1 %></td>
+          <td><%= form.number_field :price, value: cop.price, class: 'form-control', step: 0.01 %></td>
+          <td><%= number_to_currency(cop.quantity * cop.price) %></td>
+          <td>
+            <%= form.submit "Update", class: "btn btn-success btn-sm" %>
+          </td>
+        <% end %>
+
+        <td>
+          <%= button_to "Remove", customer_order_customer_order_product_path(@customer_order, cop), 
+                        method: :delete, 
+                        data: { confirm: "Are you sure?" }, 
+                        class: "btn btn-danger btn-sm" %>
+        </td>
+      </tr>
 
         <% total_sum += cop.quantity * cop.price %> <!-- Add this line to sum up the total -->
       <% end %>
@@ -103,6 +111,7 @@
       <tr>
         <td colspan="3" class="text-end"><strong>Total:</strong></td>
         <td><%= number_to_currency(total_sum) %></td>
+        <td></td>
         <td></td>
       </tr>
     </tfoot>

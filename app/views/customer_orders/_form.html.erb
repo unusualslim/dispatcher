@@ -6,7 +6,7 @@
 </head>
 <body>
   <!-- Your existing form -->
-  <%= form_with(model: @customer_order) do |form| %>
+  <%= form_with(model: @customer_order, data: { turbo: false }) do |form| %>
     <% if @customer_order.errors.any? %>
       <div style="color: red">
         <h2><%= pluralize(@customer_order.errors.count, "error") %> prohibited this customer_order from being saved:</h2>
@@ -28,16 +28,6 @@
       <input type="hidden" id="location_id" name="customer_order[location_id]" value="<%= @customer_order.location_id %>">
       <select id="location_search" style="width: 300px;"></select>
       <button type="button" class="btn btn-secondary" id="new-location-btn">New Destination</button>
-    </div>
-
-    <div class="field">
-      <%= form.label :product, style: "display: block" %>
-      <%= form.collection_select :product, CustomerOrder::PRODUCTS, :itself, :itself, { class: "form-control" } %>
-    </div>
-
-    <div class="field">
-      <%= form.label :approximate_product_amount, style: "display: block" %>
-      <%= form.text_field :approximate_product_amount %> gallons
     </div>
 
     <div>
