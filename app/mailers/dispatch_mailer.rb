@@ -1,14 +1,15 @@
 class DispatchMailer < ApplicationMailer
     default from: 'no_reply@loadntrucks.com'
 
-    def send_dispatch_email(dispatch)
-        @origin_locations = Location.where(location_category_id: 1)
-        @destination_locations = Location.where(location_category_id: 2)
-        @user = User.find_by(id: dispatch.driver.id)
+    def send_dispatch_email(dispatch, email_message)
         @dispatch = dispatch
+        @user = dispatch.driver
+        @email_message = email_message
+    
         mail(
-            to: @user.email,
-            subject: "Dispatch # #{dispatch.id}"
+          to: @user.email,
+          subject: "Dispatch # #{@dispatch.id}",
+          body: @email_message # This is the custom message passed from the controller
         )
-    end
+      end
 end

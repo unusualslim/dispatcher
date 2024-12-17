@@ -181,17 +181,21 @@ class DispatchesController < ApplicationController
     @dispatch = Dispatch.find(params[:id])
     email_message = params[:email_message]
     sms_message = params[:sms_message]
-  
-    @dispatch.update(status: "Sent to driver")
     
+    # Update dispatch status to "Sent to driver"
+    @dispatch.update(status: "Sent to driver")
+  
+    # Send email if driver has opted in for email notifications
     if @dispatch.driver.present? && @dispatch.driver.email_opt_in?
       DispatchMailer.send_dispatch_email(@dispatch, email_message).deliver_now
     end
     
-    if @dispatch.driver.present? && @dispatch.driver.sms_opt_in?
-      send_text_to_driver(@dispatch, sms_message) if @dispatch.driver.phone_number.present?
+    # Send SMS if driver has opted in for SMS notifications and has a phone number
+    if @dispatch.driver.present? && @dispatch.driver.sms_opt_in? && @dispatch.driver.phone_number.present?
+      send_text_to_driver(@dispatch, sms_message)
     end
   
+    # Respond to JS or HTML format
     respond_to do |format|
       format.js { render js: "alert('Notification sent successfully!');" }
       format.html { redirect_to dispatch_path(@dispatch), notice: "Notification sent successfully." }
@@ -207,26 +211,32 @@ class DispatchesController < ApplicationController
       @client = Twilio::REST::Client.new account_sid, auth_token
     end
 
-    def send_text_to_driver(dispatch)
-      boot_twilio
+    def send_text_to_driver(dispatch, sms_message)
+      boot_twilio # Ensure this method correctly initializes Twilio's client.
+    
+      # Set default values for product and amount
       product = "N/A"
       amount = "N/A"
-
+    
+      # If there is only one customer order, use its product and amount
       if dispatch.customer_orders.size == 1
-        product = "#{dispatch.customer_orders.first.product}"
-        amount = "#{dispatch.customer_orders.first.approximate_product_amount}"
+        product = dispatch.customer_orders.first.product
+        amount = dispatch.customer_orders.first.approximate_product_amount
+      # If there are multiple customer orders, you might want to loop over them
       elsif dispatch.customer_orders.size > 1
-        product = "#{dispatch.customer_orders.first.product}"
-        amount = "#{dispatch.customer_orders.first.approximate_product_amount}"
+        product = dispatch.customer_orders.map(&:product).join(", ") # Joining product names if there are multiple
+        amount = dispatch.customer_orders.map(&:approximate_product_amount).join(", ") # Joining amounts if multiple orders exist
       end
-
-      customer_order_info = 
+    
+      # Now send the SMS with the correct product and amount
       @client.messages.create(
         from: ENV['TWILIO_NUMBER'],
         to: dispatch.driver.phone_number,
-        body: "You have been assigned a new dispatch.\nDispatch ID: #{dispatch.id}\nOrigin: #{dispatch.origin}\nDestination: #{dispatch.destination}\nProduct: #{product}\nAmount: #{amount} gal\nNotes: #{dispatch.notes}\nCheck loadntrucks.com for more information"
+        body: sms_message || "You have been assigned a new dispatch.\nDispatch ID: #{dispatch.id}\nOrigin: #{dispatch.origin}\nDestination: #{dispatch.destination}\nProduct: #{product}\nAmount: #{amount} gal\nNotes: #{dispatch.notes}"
       )
     end
+    
+    
 
     def update_destination_from_customer_orders(dispatch)
       if dispatch.customer_orders.any?

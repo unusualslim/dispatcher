@@ -88,7 +88,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <%= form_with url: send_notification_dispatch_path(dispatch), method: :post, local: false, id: "notificationForm-#{dispatch.id}" do |f| %>
+        <%= form_with url: send_notification_dispatch_path(dispatch), method: :post, local: true, id: "notificationForm-#{dispatch.id}" do |f| %>
           <div class="mb-3">
             <%= f.label :email_message, "Email Message" %>
             <%= f.text_area :email_message, rows: 3, class: "form-control", value: "Default email content for #{dispatch.id}" %>
@@ -98,6 +98,7 @@
             <%= f.text_area :sms_message, rows: 2, class: "form-control", value: "Default SMS content for #{dispatch.id}" %>
           </div>
           <%= f.hidden_field :id, value: dispatch.id %>
+          <%= f.submit "Send Notification", class: "btn btn-primary" %>
         <% end %>
       </div>
       <div class="modal-footer">
