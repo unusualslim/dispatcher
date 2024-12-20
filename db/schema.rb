@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_12_10_190913) do
+ActiveRecord::Schema[7.0].define(version: 2024_12_20_200211) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -82,6 +82,8 @@ ActiveRecord::Schema[7.0].define(version: 2024_12_10_190913) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "card_color"
+    t.bigint "customer_id"
+    t.index ["customer_id"], name: "index_customer_orders_on_customer_id"
     t.index ["location_id"], name: "index_customer_orders_on_location_id"
   end
 
@@ -201,6 +203,7 @@ ActiveRecord::Schema[7.0].define(version: 2024_12_10_190913) do
   add_foreign_key "customer_locations", "locations"
   add_foreign_key "customer_order_products", "customer_orders"
   add_foreign_key "customer_order_products", "products"
+  add_foreign_key "customer_orders", "customers"
   add_foreign_key "customer_orders", "locations", on_delete: :cascade
   add_foreign_key "dispatch_customer_orders", "customer_orders", on_delete: :cascade
   add_foreign_key "dispatch_customer_orders", "dispatches"

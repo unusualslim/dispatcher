@@ -6,8 +6,8 @@
     <%= link_to 'Create Dispatch and Assign User', new_dispatch_path(customer_order_id: @customer_order.id), class: 'btn btn-primary' %>
   <% end %>
 
-  <p><strong>Required Delivery Date:</strong> <%= @customer_order.required_delivery_date %></p>
-  
+  <p><strong>Required Delivery Date:</strong> <%= @customer_order.required_delivery_date || "Not Selected"%></p>
+  <p><strong>Customer: </strong><%= @customer_order.customer&.name || "Not Assigned" %></p>
   <p>
     <strong>Location:</strong>
     <% location = Location.find_by(id: @customer_order.location_id) %>

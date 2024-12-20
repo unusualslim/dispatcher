@@ -23,6 +23,11 @@
       <%= form.date_field :required_delivery_date %>
     </div>
 
+    <div>
+      <%= form.label :customer_id, "Customer" %>
+      <%= form.collection_select :customer_id, Customer.all, :id, :name, { prompt: "Select a customer" }, class: "form-control" %>
+    </div>
+
     <div class="field">
       <%= form.label :location_id, 'Order Destination:', style: "display: block" %>
       <input type="hidden" id="location_id" name="customer_order[location_id]" value="<%= @customer_order.location_id %>">

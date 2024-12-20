@@ -1,5 +1,6 @@
 class CustomerOrder < ApplicationRecord
   belongs_to :location
+  belongs_to :customer, optional: true
   has_many :dispatch_customer_orders
   has_many :dispatches, through: :dispatch_customer_orders
   has_many :customer_order_products, dependent: :destroy
