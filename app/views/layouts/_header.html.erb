@@ -25,6 +25,9 @@
           <li class="nav-item">
             <%= link_to 'Locations', locations_path, class: 'nav-link' %>
           </li>
+          <li class="nav-item">
+            <%= link_to 'Products', products_path, class: 'nav-link' %>
+          </li>
           <% if current_user.role == 'admin' %>
             <li class="nav-item">
               <%= link_to 'Drivers', users_path, class: 'nav-link' %>

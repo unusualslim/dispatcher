@@ -3,14 +3,16 @@ class CustomerOrderProductsController < ApplicationController
   
     # Create a new product for a customer order
     def create
-        @customer_order_product = @customer_order.customer_order_products.new(customer_order_product_params)
+      @customer_order_product = @customer_order.customer_order_products.new(customer_order_product_params)
     
-        if @customer_order_product.save
-          redirect_to @customer_order, notice: 'Product was successfully added.'
-        else
-          render :new, status: :unprocessable_entity
-        end
+      if @customer_order_product.save
+        redirect_to @customer_order, notice: 'Product was successfully added.'
+      else
+        flash[:alert] = 'There was an error adding the product.'
+        redirect_to @customer_order  # Redirect to the customer order show page on failure
       end
+    end
+    
   
     # Update an existing product in a customer order
     def update
