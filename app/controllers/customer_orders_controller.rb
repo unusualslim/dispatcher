@@ -66,6 +66,6 @@ class CustomerOrdersController < ApplicationController
 
     private
     def customer_order_params
-      params.require(:customer_order).permit(:required_delivery_date, :product, :customer_id, :location_id, :approximate_product_amount, :notes, :order_status, customer_order_products_attributes: [:id, :product_id, :quantity, :price, :_destroy])
+      params.require(:customer_order).permit(:required_delivery_date, :product, :freight_only, :customer_id, :location_id, :approximate_product_amount, :notes, :order_status, customer_order_products_attributes: [:id, :product_id, :quantity, :price, :_destroy])
     end
 end

@@ -23,7 +23,7 @@
       <%= form.date_field :required_delivery_date %>
     </div>
 
-    <div>
+    <div style="max-width: 300px;">
       <%= form.label :customer_id, "Customer" %>
       <%= form.collection_select :customer_id, Customer.all, :id, :name, { prompt: "Select a customer" }, class: "form-control" %>
     </div>
@@ -43,6 +43,11 @@
     <div>
       <%= form.label :notes, style: "display: block" %>
       <%= form.text_area :notes %>
+    </div>
+
+    <div>
+      <%= form.label :freight_only, "Freight Only" %>
+      <%= form.check_box :freight_only %>
     </div>
 
     <div>

@@ -2,6 +2,13 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"></script>
 
 <div class="customer-order">
+
+  <% if @customer_order.freight_only %>
+    <div class="alert alert-warning" role="alert">
+      <strong>Freight Only:</strong> This order is marked as freight only.
+    </div>
+  <% end %>
+  
   <% if @customer_order.order_status == "New" %>
     <%= link_to 'Create Dispatch and Assign User', new_dispatch_path(customer_order_id: @customer_order.id), class: 'btn btn-primary' %>
   <% end %>

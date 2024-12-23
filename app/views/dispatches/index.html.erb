@@ -34,7 +34,13 @@
             <% @unassigned_open_orders.each do |order| %>
             <tr class="clickable-row" data-href="<%= customer_order_path(order) %>">
             <td></td>
-              <td style="font-weight: bold; padding: 12px 20px;"><%= order.id %></td>
+              <td style="font-weight: bold; padding: 12px 20px;">
+  <%= order.id %>
+  <% if order.freight_only %>
+    <span class="badge bg-warning text-dark">Freight Only</span>
+  <% end %>
+</td>
+
               <td style="padding: 12px 20px;"><%= order.product %></td>
               <td style="padding: 12px 20px;"><%= order.required_delivery_date %></td>
               <td style="padding: 12px 20px;"><%= order.location.company_name if order.location %></td>
