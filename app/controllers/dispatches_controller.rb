@@ -143,24 +143,32 @@ class DispatchesController < ApplicationController
       end
     end
   end
-  
-  
 
   def view_dispatches
     @statuses = Dispatch.distinct.pluck(:status) # Fetch all unique statuses
-    @selected_status = params[:status] || 'exclude_complete_deleted' # Get selected status or default to 'all'
+    @selected_status = params[:status] || 'all' # Default to 'all' to show all statuses
+    @sort_by = params[:sort_by] || 'dispatch_date' # Default sorting by dispatch date
   
-    if @selected_status == 'all'
-      # Show all dispatches
-      @dispatches = Dispatch.all.order(created_at: :desc)
-    elsif @selected_status == 'exclude_complete_deleted'
-      # Exclude dispatches with status "complete" or "deleted"
-      @dispatches = Dispatch.where.not(status: ['complete', 'deleted']).order(dispatch_date: :asc)
-    else
-      # Filter by the selected status
-      @dispatches = Dispatch.where(status: @selected_status).order(created_at: :desc)
+    # Filter by selected status
+    @dispatches = Dispatch.all
+    if @selected_status == 'exclude_complete_deleted'
+      @dispatches = @dispatches.where.not(status: ['complete', 'deleted'])
+    elsif @selected_status != 'all'
+      @dispatches = @dispatches.where(status: @selected_status)
     end
-  end
+  
+    # Apply sorting
+    @dispatches = case @sort_by
+                  when 'newest'
+                    @dispatches.order(created_at: :desc)
+                  when 'oldest'
+                    @dispatches.order(created_at: :asc)
+                  when 'dispatch_date'
+                    @dispatches.order(dispatch_date: :asc)
+                  else
+                    @dispatches
+                  end
+  end  
 
   def search
     query = params[:query]

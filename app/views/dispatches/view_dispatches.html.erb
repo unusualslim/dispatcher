@@ -1,8 +1,38 @@
 <div class="content">
-  <%= form_tag view_dispatches_path, method: :get do %>
-    <%= select_tag :status, options_for_select([['All', 'all'], ['Incomplete', 'exclude_complete_deleted']] + @statuses.map { |s| [s.titleize, s] }, @selected_status), onchange: 'this.form.submit();', class: "btn btn-secondary dropdown-toggle mb-3 mt-3" %>
-  <% end %>
+  <h1>Dispatches</h1>
 
+  <!-- Filter and Sorting Form -->
+  <div class="mb-4">
+    <%= form_with(url: view_dispatches_path, method: :get, local: true, data: { turbo: false }) do %>
+      <div class="row mb-3">
+        <!-- Status Filter -->
+        <div class="col-md-4">
+          <%= label_tag :status, 'Status' %>
+          <%= select_tag :status, options_for_select(
+            [['All', 'all'], ['Incomplete', 'exclude_complete_deleted']] +
+            @statuses.map { |s| [s.titleize, s] }, 
+            selected: params[:status]
+          ), class: "form-control" %>
+        </div>
+
+        <!-- Sort By -->
+        <div class="col-md-4">
+          <%= label_tag :sort_by, 'Sort By' %>
+          <%= select_tag :sort_by, options_for_select(
+            [['Newest', 'newest'], ['Oldest', 'oldest'], ['Dispatch Date', 'dispatch_date']], 
+            selected: params[:sort_by]
+          ), class: "form-control" %>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="col-md-4" style="padding-top: 25px;">
+          <%= submit_tag 'Apply Filters', class: 'btn btn-primary w-100' %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Dispatches Table -->
   <table class="table table-hover">
     <thead>
       <tr>
@@ -11,22 +41,18 @@
         <th>Dispatch Date</th>
         <th>Status</th>
         <th>Notes</th>
+        <th>Created On</th>
       </tr>
     </thead>
     <tbody>
       <% @dispatches.each do |dispatch| %>
         <tr style="cursor: pointer;" onclick="location.href='/dispatches/<%= dispatch.id %>';">
           <td><%= dispatch.id %></td>
-          
-          <% if dispatch.driver %>
-            <td><%= dispatch.driver.full_name %></td>
-          <% else %>
-            <td>Unassigned</td>
-          <% end %>
-
-          <td><%= dispatch.dispatch_date || "No date set" %></td>
-          <td><%= dispatch.status || "No status" %></td>
-          <td><%= dispatch.notes.presence || "No notes" %></td>
+          <td><%= dispatch.driver&.full_name || 'Unassigned' %></td>
+          <td><%= dispatch.dispatch_date || 'No date set' %></td>
+          <td><%= dispatch.status || 'No status' %></td>
+          <td><%= dispatch.notes.presence || 'No notes' %></td>
+          <td><%= dispatch.created_at.in_time_zone('Eastern Time (US & Canada)').strftime('%Y-%m-%d %I:%M %p') %></td>
         </tr>
       <% end %>
     </tbody>
