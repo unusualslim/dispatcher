@@ -15,4 +15,10 @@ class Location < ApplicationRecord
   def city_with_company
     "#{company_name} - #{city}"
   end
+  def full_address_with_company
+    "#{company_name} - #{address} #{city}, #{state} #{zip}"
+  end
+  def full_address
+    "#{address} #{city}, #{state} #{zip}"
+  end
 end

@@ -64,6 +64,8 @@ class DispatchesController < ApplicationController
 
   # GET /dispatches/1 or /dispatches/1.json
   def show
+    @dispatch = Dispatch.find(params[:id]) 
+    @customer_orders = @dispatch.customer_orders
     @origin_locations = Location.where(location_category_id: 1)
     @destination_locations = Location.where(location_category_id: 2)
   end

@@ -31,7 +31,7 @@
     <strong>Origin:</strong>
     <% origin_location = @origin_locations.find_by(city: @dispatch.origin) %>
     <% if origin_location %>
-      <%= link_to origin_location.company_name, location_path(origin_location) %>
+      <%= link_to origin_location.full_address_with_company, location_path(origin_location) %>
     <% else %>
       No origin location found
     <% end %>
@@ -41,7 +41,7 @@
     <strong>Destination:</strong>
     <% destination_location = @destination_locations.find_by(city: @dispatch.destination) %>
     <% if destination_location %>
-      <%= "#{destination_location.company_name}" %>
+      <%= link_to destination_location.full_address_with_company, location_path(destination_location) %>
     <% else %>
       No destination location found
     <% end %>
@@ -89,22 +89,24 @@
       </div>
       <div class="modal-body">
         <%= form_with url: send_notification_dispatch_path(dispatch), method: :post, local: true, id: "notificationForm-#{dispatch.id}" do |f| %>
-          <div class="mb-3">
-            <%= f.label :email_message, "Email Message" %>
-            <%= f.text_area :email_message, 
-                rows: 3, 
-                class: "form-control", 
-                value: "You have been assigned a new dispatch.\nDispatch ID: #{dispatch.id}\nOrigin: #{dispatch.origin}\nDestination: #{dispatch.destination}\nDispatch Date: #{dispatch.dispatch_date}\nNotes: #{dispatch.notes}\nView Details: loadntrucks.com/dispatches/#{dispatch.id}" %>
-          </div>
+        <% origin_location = @origin_locations.find_by(city: @dispatch.origin) %>
+        <% destination_location = @destination_locations.find_by(city: @dispatch.destination) %>
+        <div class="mb-3">
+          <%= f.label :email_message, "Email Message" %>
+          <%= f.text_area :email_message, 
+              rows: 3, 
+              class: "form-control", 
+              value: "You have been assigned a new dispatch.\nOrigin: #{origin_location&.full_address_with_company || 'Unknown Origin'}\nDestination: #{destination_location&.full_address_with_company || 'Unknown Destination'}\nRequired Dispatch Date: #{dispatch.dispatch_date}\nNotes: #{dispatch.notes}\nProducts: #{dispatch.customer_orders.map { |order| order.products.map(&:name).join(', ') }.join("\n")}\nView Details: loadntrucks.com/dispatches/#{dispatch.id}" %>
+        </div>
           <div class="mb-3">
             <%= f.label :sms_message, "SMS Message" %>
             <%= f.text_area :sms_message, 
                 rows: 2, 
                 class: "form-control", 
-                value: "You have been assigned a new dispatch.\nDispatch ID: #{dispatch.id}\nOrigin: #{dispatch.origin}\nDestination: #{dispatch.destination}\nDispatch Date: #{dispatch.dispatch_date}\nNotes: #{dispatch.notes}\nView Details: loadntrucks.com/dispatches/#{dispatch.id}" %>
+                value: "You have been assigned a new dispatch.\nOrigin: #{origin_location&.full_address_with_company || 'Unknown Origin'}\nDestination: #{destination_location&.full_address_with_company || 'Unknown Destination'}\nRequired Dispatch Date: #{dispatch.dispatch_date}\nNotes: #{dispatch.notes}\nProducts: #{dispatch.customer_orders.map { |order| order.products.map(&:name).join(', ') }.join("\n")}\nView Details: loadntrucks.com/dispatches/#{dispatch.id}" %>
           </div>
           <%= f.hidden_field :id, value: dispatch.id %>
-          <%= f.submit "Send Notification", class: "btn btn-primary" %>
+          <%# f.submit "Send Notification", class: "btn btn-primary" %>
         <% end %>
       </div>
       <div class="modal-footer">

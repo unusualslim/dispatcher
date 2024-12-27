@@ -1,0 +1,43 @@
+<table class="table table-striped table-bordered">
+  <thead>
+    <tr>
+      <th>Order ID</th>
+      <th>Address</th>
+      <th>Product</th>
+      <th>Amount</th>
+      <th>Delivery Date</th>
+      <th>Created On</th>
+      <th>Freight Only</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% customer_orders.each do |customer_order| %>
+      <tr>
+        <td><%= link_to customer_order.id, customer_order_path(customer_order) %></td>
+        <td>
+          <%= Location.find(customer_order.location_id).address %>, 
+          <%= Location.find(customer_order.location_id).city %>, 
+          <%= Location.find(customer_order.location_id).state %> 
+          <%= Location.find(customer_order.location_id).zip %>
+        </td>
+        <td><%= customer_order.product %></td>
+        <td>
+          <%= customer_order.approximate_product_amount.present? ? "#{customer_order.approximate_product_amount} gallons" : "" %>
+        </td>
+        <td>
+          <%= customer_order.required_delivery_date? ? customer_order.required_delivery_date : 'No delivery date' %>
+        </td>
+        <td>
+          <%= customer_order.created_at.in_time_zone('Eastern Time (US & Canada)').strftime('%Y-%m-%d') %>
+        </td>
+        <td>
+          <% if customer_order.freight_only %>
+            <span class="badge bg-warning text-dark">Yes</span>
+          <% else %>
+            No
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

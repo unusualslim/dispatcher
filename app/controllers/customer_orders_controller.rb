@@ -1,9 +1,31 @@
 class CustomerOrdersController < ApplicationController
 
     def index
-        @customer_orders = CustomerOrder.all
+      @view = params[:view] || 'card' # Default to card view if no view is specified
+    
+      @customer_orders = CustomerOrder.includes(:location, customer_order_products: :product)
+    
+      if params[:product].present?
+        @customer_orders = @customer_orders.joins(customer_order_products: :product)
+                                          .where('products.name ILIKE ?', "%#{params[:product]}%")
+      end
+    
+      if params[:location].present?
+        if params[:location].to_i.to_s == params[:location]
+          @customer_orders = @customer_orders.where(location_id: params[:location])
+        else
+          @customer_orders = @customer_orders.joins(:location)
+                                            .where('locations.city ILIKE ?', "%#{params[:location]}%")
+        end
+      end
+    
+      if params[:freight_only].present?
+        @customer_orders = @customer_orders.where(freight_only: true)
+      end
     end
-
+  
+  
+  
     def show
         @customer_order = CustomerOrder.find(params[:id])
         @locations = Location.where(location_category_id: 2)

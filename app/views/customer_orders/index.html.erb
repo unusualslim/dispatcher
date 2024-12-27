@@ -1,35 +1,72 @@
+<head>
+  <!-- Include jQuery first -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+  <!-- Include Select2 after jQuery -->
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+  <!-- Include Select2 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+</head>
+
 <div class="content">
   <p style="color: green"><%= notice %></p>
   <h1>Customer Orders</h1>
   <%= link_to "New Order", new_customer_order_path, class: "btn btn-primary", style: "margin-bottom: 10px;" %>
+
+  <!-- Search Form -->
+  <div class="mb-4">
+<%= form_with(url: customer_orders_path, method: :get, local: true, data: { turbo: false }) do |f| %>
   <div class="row">
-  <% @customer_orders.each do |customer_order| %>
-    <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-      <%= link_to customer_order_path(customer_order), class: "card-link" do %>
-        <div class="card" style="background-color: <%= customer_order.card_color %>;">
-          <div class="card-body">
-            <h5 class="card-title">
-              <%= Location.find(customer_order.location_id).city %>
-              <% if customer_order.freight_only %>
-                <span class="badge bg-warning text-dark">Freight Only</span>
-              <% end %>
-            </h5>
-            <% if customer_order.required_delivery_date? %>
-              <p class="card-text">required by: <%= customer_order.required_delivery_date %></p>
-            <% else %>
-              <p class="card-text">No delivery date</p>
-            <% end %>
-            <% if customer_order.approximate_product_amount? %>
-              <p class="card-text"><%= customer_order.approximate_product_amount %> gallons <%= customer_order.product %></p>
-            <% else %>
-              <p class="card-text">Missing product amount</p>
-            <% end %>
-            <p class="card-text">Created on: <%= customer_order.created_at.in_time_zone('Eastern Time (US & Canada)').strftime('%Y-%m-%d') %></p>
-          </div>
-        </div>
-      <% end %>
+  <div class="col-md-4">
+    <%= f.label :product, 'Product' %>
+    <%= f.select :product, options_from_collection_for_select(Product.all, :name, :name, params[:product]), { include_blank: 'Select a Product' }, class: 'form-control' %>
+  </div>
+  <div class="col-md-4">
+    <%= f.label :location, 'Location' %>
+    <%= f.select :location, options_from_collection_for_select(Location.all, 
+    :id, 
+    lambda { |location| "#{location.address}, #{location.city}, #{location.state} #{location.zip}" }, 
+    selected: params[:location]), { include_blank: 'Select Location' }, class: 'form-control location-select' %>
+  </div>
+  <div class="col-md-4" style="padding-top: 30px;">
+      <%= f.label :freight_only, 'Freight Only' %>
+      <%= f.check_box :freight_only, { checked: params[:freight_only].present? }, true, false %>
+  </div>
+  </div>
+    <%= f.hidden_field :view, value: params[:view] || 'card' %>
+    <div class="row">
+    <div class="col-md-1">
+      <%= f.submit 'Search', class: 'btn btn-primary' %>
     </div>
+    <div class="col-md-1">
+      <%= link_to 'Reset', customer_orders_path, class: 'btn btn-secondary' %>
+    </div>
+  </div>
+<% end %>
+
+  </div>
+
+  <!-- Toggle View Buttons -->
+  <div class="mb-4">
+    <%= link_to "Card View", customer_orders_path(view: "card"), class: "btn btn-secondary me-2" %>
+    <%= link_to "Table View", customer_orders_path(view: "table"), class: "btn btn-secondary" %>
+  </div>
+
+  <!-- Display Content -->
+  <% if params[:view] == "table" %>
+    <%= render partial: "customer_orders_table", locals: { customer_orders: @customer_orders } %>
+  <% else %>
+    <%= render partial: "customer_orders_cards", locals: { customer_orders: @customer_orders } %>
   <% end %>
 </div>
 
-</div>
+<script>
+  $(document).ready(function() {
+    // Apply Select2 to the location select dropdown
+    $('.location-select').select2({
+      placeholder: 'Search for a location',
+      allowClear: true // Allow clearing the selection
+    });
+  });
+</script>

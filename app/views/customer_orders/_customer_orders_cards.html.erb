@@ -1,0 +1,30 @@
+<div class="row">
+  <% customer_orders.each do |customer_order| %>
+    <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+      <%= link_to customer_order_path(customer_order), class: "card-link" do %>
+        <div class="card" style="background-color: <%= customer_order.card_color %>;">
+          <div class="card-body">
+            <h5 class="card-title">
+              <%= Location.find(customer_order.location_id).company_name %>
+              <% if customer_order.freight_only %>
+                <span class="badge bg-warning text-dark">Freight Only</span>
+              <% end %>
+            </h5>
+            <p><%= Location.find(customer_order.location_id).full_address %></p>
+            <% if customer_order.required_delivery_date? %>
+              <p class="card-text">Required by: <%= customer_order.required_delivery_date %></p>
+            <% else %>
+              <p class="card-text">No delivery date</p>
+            <% end %>
+            <% if customer_order.approximate_product_amount? %>
+              <p class="card-text"><%= customer_order.approximate_product_amount %> gallons <%= customer_order.product %></p>
+            <% else %>
+              <p class="card-text">Missing product amount</p>
+            <% end %>
+            <p class="card-text">Created on: <%= customer_order.created_at.in_time_zone('Eastern Time (US & Canada)').strftime('%Y-%m-%d') %></p>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>
