@@ -10,6 +10,7 @@
     </div>
   <% end %>
 
+  <!-- Basic Customer Information -->
   <div class="form-group">
     <%= form.label :name %>
     <%= form.text_field :name, class: 'form-control' %>
@@ -25,17 +26,73 @@
     <%= form.email_field :email, class: "form-control" %>
   </div>
 
-  <div class="form-group">
-    <%= form.label :phone %>
-    <%= form.telephone_field :phone, class: "form-control" %>
-  </div>
-
-  <div class="form-group">
+  <!-- Preferred Contact Method -->
+  <div class="form-group mt-3">
     <%= form.label :preferred_contact_method %>
     <%= form.select :preferred_contact_method, options_for_select(['no preference', 'phone', 'email'], @customer.preferred_contact_method), { prompt: 'Select Contact Method' }, class: "form-control" %>
   </div>
 
+  <!-- Submit Button -->
   <div class="form-group mt-3">
     <%= form.submit 'Save', class: 'btn btn-primary' %>
   </div>
+
+  <!-- Phone Numbers Section (moved below the Save button) -->
+  <div class="form-group mt-3">
+    <h5>Phone Numbers</h5>
+    <div id="phone-numbers-container">
+      <% @customer.phone_numbers.each do |phone_number| %>
+        <%= form.fields_for :phone_numbers, phone_number do |phone_form| %>
+          <%= render 'phone_number_fields', f: phone_form %>
+        <% end %>
+      <% end %>
+    </div>
+    <%= link_to "Add Phone Number", "#", class: "btn btn-secondary add-phone-number" %>
+  </div>
+
+  <!-- Hidden Template for New Phone Numbers -->
+  <div style="display: none" id="phone-number-template">
+    <%= form.fields_for :phone_numbers, PhoneNumber.new, child_index: 'new_phone_numbers' do |phone_form| %>
+      <%= render 'phone_number_fields', f: phone_form %>
+    <% end %>
+  </div>
+
 <% end %>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("JavaScript is loaded");
+
+  const phoneNumbersContainer = document.querySelector('#phone-numbers-container');
+  const addPhoneNumberButton = document.querySelector('.add-phone-number');
+  const phoneNumberTemplate = document.querySelector('#phone-number-template').innerHTML;
+
+  // Handle adding new phone number fields
+  addPhoneNumberButton.addEventListener("click", (event) => {
+    event.preventDefault();
+    const time = new Date().getTime(); // Generate a unique index for the new phone number field
+    const newPhoneNumberField = phoneNumberTemplate.replace(/new_phone_numbers/g, time);
+    phoneNumbersContainer.insertAdjacentHTML("beforeend", newPhoneNumberField);
+  });
+
+  // Event delegation to handle removing phone number fields
+  phoneNumbersContainer.addEventListener("click", (event) => {
+    if (event.target.classList.contains("remove-phone-number")) {
+      event.preventDefault();
+
+      const phoneNumberRow = event.target.closest(".row");
+      const destroyField = phoneNumberRow.querySelector('[name*="_destroy"]');
+
+      if (destroyField) {
+        // Mark for destruction
+        destroyField.value = '1';
+        phoneNumberRow.style.display = 'none'; // Hide the row visually
+      } else {
+        // For unsaved phone numbers (no _destroy field), just remove the row from the DOM
+        phoneNumberRow.remove();
+      }
+    }
+  });
+});
+
+</script>

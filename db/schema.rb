@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_12_23_143033) do
+ActiveRecord::Schema[7.0].define(version: 2025_01_02_133005) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -174,6 +174,14 @@ ActiveRecord::Schema[7.0].define(version: 2024_12_23_143033) do
     t.index ["product_id"], name: "index_locations_products_on_product_id"
   end
 
+  create_table "phone_numbers", force: :cascade do |t|
+    t.bigint "customer_id", null: false
+    t.string "number", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["customer_id"], name: "index_phone_numbers_on_customer_id"
+  end
+
   create_table "products", force: :cascade do |t|
     t.string "name"
     t.datetime "created_at", null: false
@@ -212,4 +220,5 @@ ActiveRecord::Schema[7.0].define(version: 2024_12_23_143033) do
   add_foreign_key "location_products", "locations", on_delete: :cascade
   add_foreign_key "location_products", "products"
   add_foreign_key "locations", "location_categories"
+  add_foreign_key "phone_numbers", "customers"
 end

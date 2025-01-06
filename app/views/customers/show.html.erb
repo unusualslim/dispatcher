@@ -12,7 +12,6 @@
         <div class="card-body">
           <!-- Additional Customer Info -->
           <p><strong>Email:</strong> <%= @customer.email %></p>
-          <p><strong>Phone:</strong> <%= @customer.phone %></p>
           <p><strong>Preferred Contact Method:</strong> <%= @customer.preferred_contact_method %></p>
 
           <!-- Associated Locations Section -->
@@ -32,11 +31,82 @@
 
           <!-- Action Buttons -->
           <div class="mt-3">
-            <%= link_to 'Edit Customer', edit_customer_path(@customer), class: 'btn btn-warning' %>
+            <%= link_to 'Edit Customer', edit_customer_path(@customer), class: 'btn btn-warning', data: { turbo: false } %>
             <%= link_to 'Back to Customers', customers_path, class: 'btn btn-secondary' %>
           </div>
         </div>
       </div>
+
+      <!-- Phone Numbers Table -->
+      <div class="mt-5">
+        <h4 class="text-center mb-3">Phone Numbers</h4>
+        <% if @customer.phone_numbers.any? %>
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <table class="table table-bordered table-striped mt-3">
+                <thead class="table-info">
+                  <tr>
+                    <th>Phone Number</th>
+                    <th>Date Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @customer.phone_numbers.each do |phone_number| %>
+                    <tr>
+                      <td><%= phone_number.number %></td>
+                      <td><%= phone_number.created_at.strftime("%B %d, %Y %I:%M %p") %></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        <% else %>
+          <p class="text-muted text-center">No phone numbers associated.</p>
+        <% end %>
+      </div>
+
+      <!-- Orders Table -->
+      <div class="mt-5">
+        <h4 class="text-center mb-3">Associated Orders</h4>
+        <% if @customer.customer_orders.any? %>
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <table class="table table-bordered table-striped mt-3">
+                <thead class="table-success">
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Order Date</th>
+                    <th>Products</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @customer.customer_orders.each do |order| %>
+                    <tr>
+                      <td><%= link_to order.id, customer_order_path(order) %></td>
+                      <td><%= order.created_at.strftime("%B %d, %Y") %></td>
+                      <td>
+                        <% if order.products.any? %>
+                          <ul>
+                            <% order.products.each do |product| %>
+                              <li><%= product.name %> (Quantity: <%= order.customer_order_products.find_by(product_id: product.id).quantity %>)</li>
+                            <% end %>
+                          </ul>
+                        <% else %>
+                          <p>No products associated with this order.</p>
+                        <% end %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        <% else %>
+          <p class="text-muted text-center">No orders associated with this customer.</p>
+        <% end %>
+      </div>
+
     </div>
   </div>
 </div>

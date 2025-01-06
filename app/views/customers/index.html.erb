@@ -1,22 +1,30 @@
 <h1>Customers</h1>
-<%= link_to "New Customer", new_customer_path, class: "btn btn-primary", style: "margin-bottom: 10px;" %>
+<%= link_to "New Customer", new_customer_path, class: "btn btn-primary mb-4" %>
 
+<!-- Search Form -->
+<div class="row mb-4">
+  <div class="col-md-8 offset-md-2">
+    <%= form_with(url: customers_path, method: :get, class: "d-flex") do %>
+      <%= text_field_tag :search, params[:search], placeholder: "Search customers...", class: "form-control me-2" %>
+      <%= submit_tag "Search", class: "btn btn-primary" %>
+    <% end %>
+  </div>
+</div>
+
+<!-- Customers Table -->
 <table class="table table-hover table-bordered">
   <thead>
     <tr>
       <th>Name</th>
-      <th>Phone</th>
-      <th>Email</th>
       <th>Locations</th>
-      <th>Actions</th>
     </tr>
   </thead>
   <tbody>
     <% @customers.each do |customer| %>
       <tr data-link="<%= customer_path(customer) %>">
-        <td><%= customer.name %></td>
-        <td><%= customer.phone %></td>
-        <td><%= customer.email %></td>
+        <td>
+          <%= link_to customer.name, customer_path(customer), class: "customer-name-link" %>
+        </td>
         <td>
           <% if customer.locations.any? %>
             <ul>
@@ -28,11 +36,22 @@
             No locations associated.
           <% end %>
         </td>
-        <td>
-          <%= link_to 'Edit', edit_customer_path(customer), class: 'btn btn-sm btn-secondary' %>
-          <%= link_to 'Delete', customer_path(customer), method: :delete, data: { confirm: 'Are you sure?' }, class: 'btn btn-sm btn-danger' %>
-        </td>
       </tr>
     <% end %>
   </tbody>
 </table>
+
+<!-- Pagination -->
+<%# will_paginate @customers, renderer: BootstrapPagination::Rails %>
+
+<!-- Add this CSS to remove the link styles -->
+<style>
+  .customer-name-link {
+    text-decoration: none;
+    color: inherit;
+  }
+  
+  .customer-name-link:hover {
+    text-decoration: none;
+  }
+</style>

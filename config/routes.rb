@@ -23,7 +23,12 @@ Rails.application.routes.draw do
     end
   end
   
-  resources :customers
+  resources :customers do
+    collection do
+      get :search
+    end
+  end
+  
   resources :customer_orders do
     post 'create_dispatch', on: :member
     resources :customer_order_products, only: [:create, :update, :destroy]
@@ -36,6 +41,8 @@ Rails.application.routes.draw do
   end
 
   resources :products
+
+  resources :phone_numbers, only: [:destroy]
   
   delete '/dispatches/:id', to: 'dispatches#destroy', as: 'destroy_dispatch'
   get '/view_dispatches', to: 'dispatches#view_dispatches', as: 'view_dispatches'

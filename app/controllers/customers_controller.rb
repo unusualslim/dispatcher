@@ -3,8 +3,14 @@ class CustomersController < ApplicationController
   
     # GET /customers
     def index
-      @customers = Customer.all
-    end
+      if params[:search].present?
+        @customers = Customer.where("name LIKE ?", "%#{params[:search]}%")
+      elsif params[:sort] == 'name'
+        @customers = Customer.order(:name)
+      else
+        @customers = Customer.all
+      end
+    end    
 
     def show
         @customer = Customer.find(params[:id])
@@ -27,22 +33,39 @@ class CustomersController < ApplicationController
   
     # GET /customers/:id/edit
     def edit
+      @customer = Customer.find(params[:id])
+      @customer.phone_numbers.build if @customer.phone_numbers.empty?  # Initialize phone numbers if none exist
     end
   
     # PATCH/PUT /customers/:id
     def update
-        @customer = Customer.find(params[:id])
-        if @customer.update(customer_params)
-          redirect_to @customer, notice: 'Customer was successfully updated.'
-        else
-          render :edit
-        end
+      Rails.logger.debug("Updating customer with params: #{params.inspect}")
+      @customer = Customer.find(params[:id])
+      
+      if @customer.update(customer_params)
+        Rails.logger.debug("Successfully updated customer")
+        redirect_to @customer, notice: 'Customer was successfully updated.'
+      else
+        Rails.logger.debug("Failed to update customer")
+        render :edit
       end
+    end    
   
     # DELETE /customers/:id
     def destroy
       @customer.destroy
       redirect_to customers_path, notice: 'Customer was successfully deleted.'
+    end
+
+    def search
+      if params[:query].present?
+        @customers = Customer.joins(:phone_numbers)
+                             .where('phone_numbers.number LIKE ?', "%#{params[:query]}%")
+                             .distinct
+      else
+        @customers = Customer.none
+      end
+      render :search # Or a specific view for search results
     end
   
     private
@@ -52,6 +75,6 @@ class CustomersController < ApplicationController
     end
   
     def customer_params
-      params.require(:customer).permit(:name, :email, :phone, :preferred_contact_method, location_ids: [])
+      params.require(:customer).permit(:name, :email, :phone, :preferred_contact_method, location_ids: [], phone_numbers_attributes: [:id, :number, :_destroy])
     end
 end  

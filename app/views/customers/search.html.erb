@@ -1,0 +1,35 @@
+<h1 class="text-center mb-4">Search Results</h1>
+
+<% if @customers.any? %>
+  <div class="table-responsive">
+    <table class="table table-hover table-striped align-middle">
+      <thead class="table-primary">
+        <tr>
+          <th>Name</th>
+          <th>Phone Numbers</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @customers.each do |customer| %>
+          <tr class="clickable-row" data-href="<%= customer_path(customer) %>">
+            <td><%= customer.name %></td>
+            <td><%= customer.phone_numbers.pluck(:number).join(', ') %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% else %>
+  <p class="text-center text-muted">No customers found matching your query.</p>
+<% end %>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const rows = document.querySelectorAll(".clickable-row");
+    rows.forEach(row => {
+      row.addEventListener("click", () => {
+        window.location.href = row.dataset.href;
+      });
+    });
+  });
+</script>

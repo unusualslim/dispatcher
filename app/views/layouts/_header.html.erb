@@ -6,10 +6,10 @@
       aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
-    <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+    <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
       <ul class="navbar-nav">
         <% if user_signed_in? %>
-          <%= link_to "New Order", new_customer_order_path, class: "btn btn-success", data: { turbo: "false" } %>
+          <%= link_to "New Order", new_customer_order_path, class: "btn btn-success me-3", data: { turbo: "false" } %>
           <li class="nav-item">
             <%= link_to 'Orders', customer_orders_path, class: 'nav-link' %>
           </li>
@@ -48,6 +48,11 @@
           </li>
         <% end %>
       </ul>
+      <!-- Search Bar -->
+      <%= form_with url: search_customers_path, method: :get, class: "d-flex", local: true, data: { turbo: "false" }  do |form| %>
+        <%= form.text_field :query, placeholder: "Search phone numbers...", class: "form-control me-2" %>
+        <%= form.submit "Search", class: "btn btn-outline-primary" %>
+      <% end %>
     </div>
   </div>
 </nav>
