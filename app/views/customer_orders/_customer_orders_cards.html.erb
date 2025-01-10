@@ -16,11 +16,14 @@
             <% else %>
               <p class="card-text">No delivery date</p>
             <% end %>
-            <% if customer_order.approximate_product_amount? %>
-              <p class="card-text"><%= customer_order.approximate_product_amount %> gallons <%= customer_order.product %></p>
-            <% else %>
-              <p class="card-text">Missing product amount</p>
-            <% end %>
+<% if customer_order.customer_order_products.any? %>
+  <p class="card-text">
+    <%= customer_order.customer_order_products.limit(3).map { |order_product| "#{order_product.quantity} gallons #{order_product.product.name}" }.join(', ') %>
+  </p>
+<% else %>
+  <p class="card-text">Missing product amounts</p>
+<% end %>
+
             <p class="card-text">Created on: <%= customer_order.created_at.in_time_zone('Eastern Time (US & Canada)').strftime('%Y-%m-%d') %></p>
           </div>
         </div>
