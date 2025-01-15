@@ -123,6 +123,7 @@
             <th>Driver</th>
             <th>Dispatch Date</th>
             <th>Origin</th>
+            <th>Destination</th>
             <th>Notes</th>
           </tr>
         </thead>
@@ -133,7 +134,22 @@
               <td><%= dispatch.status.present? ? dispatch.status.humanize : "N/A" %></td>
               <td><%= dispatch.driver&.first_name || "N/A" %></td>
               <td><%= dispatch.dispatch_date.present? ? dispatch.dispatch_date.strftime("%B %d, %Y") : "N/A" %></td>
-              <td><%= dispatch.origin.present? ? dispatch.origin : "N/A" %></td>
+              <td>
+                <% origin_location = @origin_locations.find_by(city: dispatch.origin) if @origin_locations.present? %>
+                <% if origin_location %>
+                  <%= link_to origin_location.city_with_company, location_path(origin_location), class: "prevent-row-click" %>
+                <% else %>
+                  No origin location found
+                <% end %>
+              </td>
+              <td>
+                <% destination_location = @destination_locations.find_by(city: dispatch.destination) %>
+                <% if destination_location %>
+                  <%= link_to destination_location.city_with_company, location_path(destination_location), class: "prevent-row-click" %>
+                <% else %>
+                  No Customer Orders
+                <% end %>
+              </td>
               <td><%= dispatch.notes.presence || "No notes available" %></td>
             </tr>
           <% end %>
@@ -147,13 +163,17 @@
 </div>
 
 <script>
-  // Add click event to make rows clickable
-  document.addEventListener('DOMContentLoaded', function() {
-    const rows = document.querySelectorAll('.clickable-row');
-    rows.forEach(row => {
-      row.addEventListener('click', function() {
-        window.location.href = this.dataset.href;
-      });
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.clickable-row').forEach(row => {
+    row.addEventListener('click', function (event) {
+      // Prevent row click if a link inside the row is clicked
+      if (event.target.closest('.prevent-row-click')) {
+        event.stopPropagation();
+      } else {
+        window.location = this.dataset.href;
+      }
     });
   });
+});
+
 </script>

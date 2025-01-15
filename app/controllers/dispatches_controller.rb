@@ -5,6 +5,8 @@ class DispatchesController < ApplicationController
   def index
     # Collect filter parameters, setting default for status
     @filtered_dispatches = Dispatch.where(status: ['New', 'sent_to_driver', 'Sent to driver']).order(:dispatch_date)
+    @destination_locations = Location.all
+    @origin_locations = Location.all
     @filters = {
       product: params[:product],
       delivery_date: params[:delivery_date],
