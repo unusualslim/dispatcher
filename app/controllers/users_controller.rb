@@ -1,11 +1,10 @@
 class UsersController < ApplicationController
   before_action :set_user, only: %i[ show edit update destroy ]
-  before_action :authenticate_user!
-  before_action :authorize_admin!
 
   # GET /users or /users.json
   def index
-    @users = User.where(role: 'worker')
+    @users = User.all
+    @user = User.new
   end
 
   # GET /users/1 or /users/1.json
@@ -25,17 +24,13 @@ class UsersController < ApplicationController
   # POST /users or /users.json
   def create
     @user = User.new(user_params)
-
-    respond_to do |format|
-      if @user.save
-        format.html { redirect_to user_url(@user), notice: "User was successfully created." }
-        format.json { render :show, status: :created, location: @user }
-      else
-        format.html { render :new, status: :unprocessable_entity }
-        format.json { render json: @user.errors, status: :unprocessable_entity }
-      end
+  
+    if @user.save
+      redirect_to user_path(@user), notice: "User created successfully!"
+    else
+      render :new
     end
-  end
+  end  
 
   # PATCH/PUT /users/1 or /users/1.json
   def update
@@ -70,6 +65,6 @@ class UsersController < ApplicationController
     end
 
     def user_params
-      params.require(:user).permit(:email, :encrypted_password, :reset_password_token, :reset_password_sent_at, :remember_created_at, :first_name, :last_name, :phone_number, :role, :sms_opt_in)
-    end
+      params.require(:user).permit(:email, :first_name, :last_name, :phone_number, :role, :sms_opt_in, :email_opt_in)
+    end    
 end

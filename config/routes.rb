@@ -1,14 +1,14 @@
 Rails.application.routes.draw do
   get 'messages/reply'
-  
+
   devise_for :users, controllers: {
     registrations: 'users/registrations',
-    sessions: 'users/sessions',  # Add other controllers if needed
-    passwords: 'users/passwords' # Example for password resets
+    sessions: 'users/sessions', 
+    passwords: 'users/passwords'
   }
   
   resources :users
-  
+
   resources :dispatches do 
     member do
       post 'send_notification'

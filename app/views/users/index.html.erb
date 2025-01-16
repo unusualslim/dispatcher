@@ -1,7 +1,8 @@
-<p class="text-success"><%= notice %></p>
-
 <div class="container mt-4">
-  <h1>Drivers</h1>
+  <h1>Users</h1>
+
+
+<%= link_to 'Add New User', new_user_registration_path, class: 'btn btn-primary' %>
 
   <table class="table table-bordered">
     <thead>
@@ -19,41 +20,33 @@
           <td><%= user.email %></td>
           <td><%= user.phone_number %></td>
           <td>
-<% if current_user.role == "admin" %>
-  <%= link_to 'Edit', edit_user_path(user), class: 'btn btn-primary btn-sm' %>
-  
-  <%= form_with url: user_path(user), method: :delete, class: 'd-inline' do %>
-    <%= submit_tag 'Delete', class: 'btn btn-danger btn-sm', 
-                    data: { user_id: user.id, confirm: 'Are you sure you want to delete this user?' } %>
-  <% end %>
-<% end %>
+            <%= link_to 'Edit', edit_user_path(user), class: 'btn btn-primary btn-sm' %>
+            <%= form_with url: user_path(user), method: :delete, class: 'd-inline' do %>
+              <%= submit_tag 'Delete', class: 'btn btn-danger btn-sm', data: { confirm: 'Are you sure?' } %>
+            <% end %>
           </td>
         </tr>
       <% end %>
     </tbody>
   </table>
 </div>
-
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // Get all delete buttons (in case there are multiple)
-    const deleteButtons = document.querySelectorAll('.btn-danger');
-    
-    deleteButtons.forEach(function(button) {
-      button.addEventListener('click', function(e) {
-        const userId = button.getAttribute('data-user_id');
-        const confirmationMessage = button.getAttribute('data-confirm');
-        
-        // Show confirmation prompt
-        const confirmed = confirm(confirmationMessage);
-        
-        // If not confirmed, prevent the form from submitting
-        if (!confirmed) {
-          e.preventDefault();
-        }
-      });
-    });
-  });
-</script>
+document.addEventListener('DOMContentLoaded', function() {
+  const toggleButton = document.getElementById('toggleFormButton');
+  const form = document.getElementById('newUserForm');
 
-<%# link_to "New user", new_user_path %>
+  toggleButton.addEventListener('click', function() {
+    if (form.style.display === 'none') {
+      form.style.display = 'block';
+      toggleButton.textContent = 'Cancel';
+      toggleButton.classList.remove('btn-success');
+      toggleButton.classList.add('btn-danger');
+    } else {
+      form.style.display = 'none';
+      toggleButton.textContent = 'Add New User';
+      toggleButton.classList.remove('btn-danger');
+      toggleButton.classList.add('btn-success');
+    }
+  });
+});
+</script>
