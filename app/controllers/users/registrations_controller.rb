@@ -47,10 +47,11 @@ class Users::RegistrationsController < Devise::RegistrationsController
 
   # POST /users
   def create
-    @user = User.new(sign_up_params)
-    if @user.save
-      redirect_to users_path, notice: 'User created successfully!'
+    if user_signed_in? || verify_recaptcha(model: resource)
+      super
     else
+      flash[:alert] = "reCAPTCHA verification failed, please try again."
+      self.resource = resource_class.new sign_up_params
       render :new
     end
   end

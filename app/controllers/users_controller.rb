@@ -23,14 +23,14 @@ class UsersController < ApplicationController
 
   # POST /users or /users.json
   def create
-    @user = User.new(user_params)
-  
-    if @user.save
-      redirect_to user_path(@user), notice: "User created successfully!"
-    else
-      render :new
+    super do |user|
+      if user.errors.any?
+        Rails.logger.debug "User creation failed: #{user.errors.full_messages.join(', ')}"
+      end
     end
-  end  
+  end
+  
+   
 
   # PATCH/PUT /users/1 or /users/1.json
   def update

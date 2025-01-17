@@ -102,6 +102,10 @@ GEM
       railties (>= 4.1.0)
       responders
       warden (~> 1.2.3)
+    dotenv (3.1.7)
+    dotenv-rails (3.1.7)
+      dotenv (= 3.1.7)
+      railties (>= 6.1)
     erubi (1.12.0)
     execjs (2.9.1)
     faraday (2.7.12)
@@ -197,6 +201,7 @@ GEM
     rake (13.1.0)
     rdoc (6.6.0)
       psych (>= 4.0.0)
+    recaptcha (5.19.0)
     regexp_parser (2.8.2)
     reline (0.3.9)
       io-console (~> 0.5)
@@ -273,12 +278,14 @@ DEPENDENCIES
   cssbundling-rails
   debug
   devise
+  dotenv-rails
   image_processing (~> 1.2)
   jbuilder
   jsbundling-rails
   pg (~> 1.1)
   puma (~> 5.0)
   rails (~> 7.0.3, >= 7.0.3.1)
+  recaptcha
   sassc-rails
   select2-rails
   selenium-webdriver
