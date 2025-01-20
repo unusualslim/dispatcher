@@ -58,9 +58,9 @@ class LocationsController < ApplicationController
     def search
       query = params[:query]
       locations = Location.where(location_category_id: 2)
-                          .where("city LIKE ?", "%#{query}%") # Search locations by city or another attribute
+                          .where("city ILIKE :query OR company_name ILIKE :query", query: "%#{query}%") # Search by city or company_name
       render json: locations.map { |location| { id: location.id, city_with_company: location.city_with_company } }
-    end
+    end    
 
     def map
       @locations = Location.includes(:location_category).where.not(latitude: nil, longitude: nil)
