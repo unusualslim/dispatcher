@@ -10,7 +10,7 @@
   <% end %>
   
   <% if @customer_order.order_status == "New" %>
-    <%= link_to 'Create Dispatch and Assign User', new_dispatch_path(customer_order_id: @customer_order.id), class: 'btn btn-primary' %>
+    <%= link_to 'Create Dispatch and Assign Driver', new_dispatch_path(customer_order_id: @customer_order.id), class: 'btn btn-primary' %>
   <% end %>
 
   <p><strong>Required Delivery Date:</strong> <%= @customer_order.required_delivery_date || "Not Selected"%></p>
@@ -105,7 +105,7 @@
           </td>
           <td><%= number_to_currency((cop.quantity || 0) * (cop.price || 0.0)) %></td>
           <td>
-            <%= form.submit "Update", class: "btn btn-success btn-sm" %>
+            <%= form.submit "Save", class: "btn btn-success btn-sm" %>
           </td>
         <% end %>
 
