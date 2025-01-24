@@ -1,5 +1,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
 
 <div class="accordion" id="homePageAccordion">
 
@@ -10,170 +13,217 @@
         Unassigned Orders
       </button>
     </h2>
-    <div id="collapseOrders" class="accordion-collapse collapse show" aria-labelledby="headingOrders" data-bs-parent="#homePageAccordion">
+    <div id="collapseOrders" class="accordion-collapse collapse show" aria-labelledby="headingOrders">
       <div class="accordion-body">
-        
-        <!-- Filter Dropdown -->
-        <table class="index-table table table-hover">
-          <thead class="index-table-head">
+        <table class="table table-hover">
+          <thead>
             <tr>
-              <th style="background-color:#f8f9fa; color:#375a7f; padding: 12px 20px; text-align:right;">
-                <%= form_with(url: dispatches_path, method: :get, local: true) do %>
-                  <%= select_tag :status, options_for_select([['Unassigned Orders', 'unassigned'], ['Assigned Orders', 'assigned'], ['All Orders', 'all']], params[:status]), class: 'form-select', onchange: 'this.form.submit();', style: 'display:inline-block; width:auto; font-size: 14px;' %>
-                <% end %>
-              </th>
-              <th style="background-color:#f8f9fa; color:#375a7f; padding: 12px 20px;">Order ID</th>
-              <th style="background-color:#f8f9fa; color:#375a7f; padding: 12px 20px;">Product</th>
-              <th style="background-color:#f8f9fa; color:#375a7f; padding: 12px 20px;">Delivery Date</th>
-              <th style="background-color:#f8f9fa; color:#375a7f; padding: 12px 20px;">Location</th>
-              <th style="background-color:#f8f9fa; color:#375a7f; padding: 12px 20px;">Amount</th>
-              <th style="background-color:#f8f9fa; color:#375a7f; padding: 12px 20px;">Status</th>
+              <th>Order ID</th>
+              <th>Product</th>
+              <th>Delivery Date</th>
+              <th>Location</th>
+              <th>Amount</th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody>
             <% @unassigned_open_orders.each do |order| %>
-            <tr class="clickable-row" data-href="<%= customer_order_path(order) %>">
-            <td></td>
-              <td style="font-weight: bold; padding: 12px 20px;">
-  <%= order.id %>
-  <% if order.freight_only %>
-    <span class="badge bg-warning text-dark">Freight Only</span>
-  <% end %>
-</td>
+              <% companyName = order.location&.company_name || "No Company Name Available" %>
+              
+              <% # Determine top product and total product count %>
+              <% top_product = order.customer_order_products.max_by { |cop| cop.quantity || 0 } %>
+              <% total_products_count = order.customer_order_products.count %>
+              <% product_display = if total_products_count == 1
+                                      top_product.product.name
+                                    elsif total_products_count > 1
+                                      "#{top_product.product.name} + #{total_products_count - 1}"
+                                    else
+                                      "No Products"
+                                    end %>
 
-              <td style="padding: 12px 20px;"><%= order.product %></td>
-              <td style="padding: 12px 20px;"><%= order.required_delivery_date %></td>
-              <td style="padding: 12px 20px;"><%= order.location.company_name if order.location %></td>
-              <td style="padding: 12px 20px;"><%= order.approximate_product_amount %> gals</td>
-              <td style="padding: 12px 20px;"><%= order.order_status %></td>
-            </tr>
+              <% # Calculate total quantity of products in the order %>
+              <% total_quantity = order.customer_order_products.sum { |cop| cop.quantity || 0 } %>
+              <% quantity_display = total_quantity.positive? ? "#{total_quantity} gals" : "Not Set" %>
+
+              <!-- Row to trigger collapse -->
+              <tr data-bs-toggle="collapse" data-bs-target="#detailsOrder<%= order.id %>">
+                <td><%= order.id %></td>
+                <td><%= product_display %></td>
+                <td><%= order.required_delivery_date %></td>
+                <td><%= companyName %></td>
+                <td><%= quantity_display %></td>
+                <td><%= order.order_status %></td>
+              </tr>
+
+              <!-- Collapsible Row -->
+              <tr class="collapse" id="detailsOrder<%= order.id %>">
+                <td colspan="6">
+                  <div class="border rounded bg-light p-4">
+                    <h5>Order Details</h5>
+                    <div class="row">
+                      <div class="col">
+                        <ul class="list-unstyled">
+                          <li><strong>Order ID:</strong> <%= order.id %></li>
+                          <li><strong>Delivery Date:</strong> <%= order.required_delivery_date %></li>
+                          <li><strong>Location:</strong> <%= companyName %></li>
+                        </ul>
+                      </div>
+                      <div class="col">
+                        <ul class="list-unstyled">
+                          <li><strong>Status:</strong> <%= order.order_status %></li>
+                        </ul>
+                      </div>
+                      <div class="col">
+                        <div id="map<%= order.id %>" style="height: 20vh;"></div>
+                      </div>
+                    </div>
+                    <div class="row mt-3">
+                      <div class="col">
+                        <h6>Products in Order</h6>
+                        <table class="table table-bordered">
+                          <thead>
+                            <tr>
+                              <th>Product Name</th>
+                              <th>Quantity</th>
+                              <th>Price</th>
+                              <th>Total</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <% order.customer_order_products.each do |cop| %>
+                              <tr>
+                                <td><%= cop.product.name %></td>
+                                <td><%= cop.quantity %></td>
+                                <td><%= number_to_currency(cop.price) %></td>
+                                <td><%= number_to_currency((cop.quantity || 0) * (cop.price || 0.0)) %></td>
+                              </tr>
+                            <% end %>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                    <div class="mt-3">
+                      <%= link_to 'View Order', customer_order_path(order), class: 'btn btn-primary' %>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- JavaScript for the Map -->
+              <script>
+                document.addEventListener('shown.bs.collapse', function (event) {
+                  if (event.target.id === 'detailsOrder<%= order.id %>') {
+                    const mapId = 'map<%= order.id %>';
+                    const latitude = <%= order.location&.latitude.to_json %>;
+                    const longitude = <%= order.location&.longitude.to_json %>;
+                    const companyName = "<%= j(companyName) %>";
+
+                    console.log("Latitude:", latitude);
+                    console.log("Longitude:", longitude);
+                    console.log("Company Name:", companyName);
+
+                    if (!document.getElementById(mapId).classList.contains('leaflet-container')) {
+                      const map = L.map(mapId).setView([latitude, longitude], 8);
+
+                      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        maxZoom: 19,
+                        attribution: '© OpenStreetMap contributors',
+                      }).addTo(map);
+
+                      const marker = L.marker([latitude, longitude]).addTo(map);
+                      marker.bindPopup('<b>' + companyName + '</b>').openPopup();
+                    }
+                  }
+                });
+              </script>
             <% end %>
           </tbody>
         </table>
-
-        <!-- Settings Modal (Keep as is) -->
-        <div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
-          <div class="modal-dialog">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title" id="settingsModalLabel">Filter Orders</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-              </div>
-              <div class="modal-body">
-                <%= form_with url: dispatches_path, method: :get, local: true do |form| %>
-                  <div class="form-group mt-3">
-                    <label for="product">Product:</label>
-                    <%= form.text_field :product, value: @filters[:product], class: "form-control" %>
-                  </div>
-
-                  <div class="row">
-                    <div class="col-md-4">
-                      <div class="form-group">
-                        <label for="delivery_date_condition">Condition:</label>
-                        <%= form.select :delivery_date_condition, options_for_select([['Before', 'before'], ['After', 'after'], ['On', 'on']], @filters&.[](:delivery_date_condition)), { include_blank: 'Select' }, class: "form-control" %>
-                      </div>
-                    </div>
-
-                    <div class="col-md-8">
-                      <div class="form-group">
-                        <label for="delivery_date">Delivery Date:</label>
-                        <%= form.date_field :delivery_date, value: @filters&.[](:delivery_date), class: "form-control" %>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="form-group mt-3">
-                    <label for="location">Location:</label>
-                    <%= form.text_field :location, value: @filters[:location], class: "form-control" %>
-                  </div>
-
-                  <div class="form-group mt-3">
-                    <label for="amount">Amount:</label>
-                    <%= form.number_field :amount, value: @filters[:amount], class: "form-control" %>
-                  </div>
-
-                  <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <%= form.submit "Apply", class: "btn btn-primary" %>
-                  </div>
-                <% end %>
-              </div>
-            </div>
-          </div>
-        </div>
-
       </div>
     </div>
   </div>
 
   <!-- Dispatches Section -->
-<div class="accordion-item">
-  <h2 class="accordion-header" id="headingDispatches">
-    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDispatches" aria-expanded="false" aria-controls="collapseDispatches" style="font-weight: 600;">
-      Dispatches (New & Sent to Driver)
-    </button>
-  </h2>
-  <div id="collapseDispatches" class="accordion-collapse collapse" aria-labelledby="headingDispatches" data-bs-parent="#homePageAccordion">
-    <div class="accordion-body">
-      <table class="index-table table table-hover">
-        <thead class="index-table-head">
-          <tr>
-            <th>Dispatch ID</th>
-            <th>Status</th>
-            <th>Driver</th>
-            <th>Dispatch Date</th>
-            <th>Origin</th>
-            <th>Destination</th>
-            <th>Notes</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @filtered_dispatches.each do |dispatch| %>
-            <tr class="clickable-row" data-href="<%= dispatch_path(dispatch) %>">
-              <td><%= dispatch.id %></td>
-              <td><%= dispatch.status.present? ? dispatch.status.humanize : "N/A" %></td>
-              <td><%= dispatch.driver&.first_name || "N/A" %></td>
-              <td><%= dispatch.dispatch_date.present? ? dispatch.dispatch_date.strftime("%B %d, %Y") : "N/A" %></td>
-              <td>
-                <% origin_location = @origin_locations.find_by(city: dispatch.origin) if @origin_locations.present? %>
-                <% if origin_location %>
-                  <%= link_to origin_location.city_with_company, location_path(origin_location), class: "prevent-row-click" %>
-                <% else %>
-                  No origin location found
-                <% end %>
-              </td>
-              <td>
-                <% destination_location = @destination_locations.find_by(city: dispatch.destination) %>
-                <% if destination_location %>
-                  <%= link_to destination_location.city_with_company, location_path(destination_location), class: "prevent-row-click" %>
-                <% else %>
-                  No Customer Orders
-                <% end %>
-              </td>
-              <td><%= dispatch.notes.presence || "No notes available" %></td>
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingDispatches">
+      <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDispatches" aria-expanded="true" aria-controls="collapseDispatches" style="font-weight: 600;">
+        Dispatches (New & Sent to Driver)
+      </button>
+    </h2>
+    <div id="collapseDispatches" class="accordion-collapse collapse show" aria-labelledby="headingDispatches">
+      <div class="accordion-body">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Dispatch ID</th>
+              <th>Status</th>
+              <th>Driver</th>
+              <th>Dispatch Date</th>
+              <th>Origin</th>
+              <th>Destination</th>
             </tr>
-          <% end %>
-        </tbody>
-      </table>
+          </thead>
+          <tbody id="dispatchAccordion">
+            <% @filtered_dispatches.each do |dispatch| %>
+              <!-- Row Header -->
+              <tr data-bs-toggle="collapse" data-bs-target="#detailsDispatch<%= dispatch.id %>" aria-expanded="false" aria-controls="detailsDispatch<%= dispatch.id %>">
+                <td><%= dispatch.id %></td>
+                <td><%= dispatch.status || "N/A" %></td>
+                <td><%= dispatch.driver&.first_name || "No Driver Assigned" %></td>
+                <td><%= dispatch.dispatch_date.present? ? dispatch.dispatch_date.strftime("%B %d, %Y") : "N/A" %></td>
+                <td><%= dispatch.origin || "No Origin" %></td>
+                <td><%= dispatch.destination || "No Destination" %></td>
+              </tr>
+              <!-- Collapsible Row -->
+              <tr class="collapse" id="detailsDispatch<%= dispatch.id %>" data-bs-parent="#dispatchAccordion">
+                <td colspan="7" class="p-3">
+                  <div class="border rounded bg-light p-4">
+                    <h5>Dispatch Details</h5>
+                    <div class="row">
+                      <div class="col-md-6">
+                        <ul class="list-unstyled">
+                          <li><strong>Dispatch ID:</strong> <%= dispatch.id %></li>
+                          <li><strong>Status:</strong> <%= dispatch.status || "N/A" %></li>
+                          <li><strong>Driver:</strong> <%= dispatch.driver&.first_name || "No Driver Assigned" %></li>
+                          <li><strong>Dispatch Date:</strong> <%= dispatch.dispatch_date || "No Date" %></li>
+                        </ul>
+                      </div>
+                      <div class="col-md-6">
+                        <ul class="list-unstyled">
+                          <li><strong>Origin:</strong> <%= dispatch.origin || "No Origin" %></li>
+                          <li><strong>Destination:</strong> <%= dispatch.destination || "No Destination" %></li>
+                          <li><strong>Notes:</strong> <%= dispatch.notes.presence || "No Notes Available" %></li>
+                        </ul>
+                      </div>
+                    </div>
+                    <div class="mt-3">
+                      <%= link_to 'View Dispatch', dispatch_path(dispatch), class: 'btn btn-primary' %>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
 
+<style>
+.collapse > div {
+  transition: all 0.3s ease;
+}
 
-</div>
+.table-hover tbody tr:hover {
+  background-color: #f8f9fa; /* Light gray hover effect */
+}
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.clickable-row').forEach(row => {
-    row.addEventListener('click', function (event) {
-      // Prevent row click if a link inside the row is clicked
-      if (event.target.closest('.prevent-row-click')) {
-        event.stopPropagation();
-      } else {
-        window.location = this.dataset.href;
-      }
-    });
-  });
-});
+.list-unstyled li {
+  margin-bottom: 10px;
+}
 
-</script>
+    #map {
+      height: 20vh; /* 100% of the viewport height */
+    }
+</style>

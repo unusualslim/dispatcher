@@ -213,13 +213,7 @@ function updateDispatchDriver(dispatchId, newDriverId) {
     });
 }
 
-document.addEventListener("DOMContentLoaded", function() {
-  document.querySelectorAll('.clickable-row').forEach(function(row) {
-    row.addEventListener('click', function() {
-      window.location.href = this.dataset.href;
-    });
-  });
-});
+
 
 document.addEventListener("DOMContentLoaded", function() {
   const selectAllCheckbox = document.getElementById('select_all');
@@ -232,16 +226,7 @@ document.addEventListener("DOMContentLoaded", function() {
   });
 });
 
-document.addEventListener('DOMContentLoaded', function () {
-  document.querySelectorAll('.clickable-row').forEach(row => {
-    row.addEventListener('click', function (event) {
-      // Check if the click was on a link with the 'location-link' class
-      if (!event.target.closest('[data-no-row-click]')) {
-        window.location.href = this.getAttribute('data-href');
-      }
-    });
-  });
-});
+
 
 document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("ajax:success", (event) => {
