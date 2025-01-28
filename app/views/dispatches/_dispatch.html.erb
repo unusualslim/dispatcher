@@ -5,18 +5,29 @@
 
 <html lang="en">
 <div id="<%= dom_id dispatch %>" class="content" style="padding-left:20px;">
+  <div class="d-flex justify-content-start">
+    <% if dispatch.driver_id && dispatch.dispatch_customer_order.any? %>
+      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editNotificationModal-<%= dispatch.id %>">
+        Send Notification
+      </button>
+    <% end %>
 
-  <% if dispatch.driver_id && dispatch.dispatch_customer_order.any? %>
-    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editNotificationModal-<%= dispatch.id %>">
-      Send Notification
-    </button>
-  <% end %>
+    <%# Add "Mark as Complete" button aligned to the right %>
+    <%= form_with url: mark_as_complete_dispatch_path(dispatch), method: :patch, local: true do |form| %>
+      <%= form.submit "Mark as Complete", class: "btn btn-success ms-auto" %>
+    <% end %>
 
+    <%= form_with url: mark_as_billed_dispatch_path(dispatch), method: :patch, local: true do |form| %>
+      <%= form.submit "Mark as Billed", class: "btn btn-warning ms-auto" %>
+    <% end %>
+
+  </div>
+
+  <!-- Rest of the dispatch details -->
   <p>
     <strong>ID:</strong>
     <%= dispatch.id %>
   </p>
-
   <p>
     <strong>Driver name:</strong>
     <% driver = User.find_by(id: dispatch.driver_id) %>
@@ -24,7 +35,7 @@
       <%= driver.full_name %>
     <% else %>
       Unassigned
-    <% end %> 
+    <% end %>
   </p>
 
   <p>

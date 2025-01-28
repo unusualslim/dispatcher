@@ -1,5 +1,6 @@
 class DispatchesController < ApplicationController
   before_action :set_dispatch, only: %i[ show edit update destroy ]
+  before_action :set_dispatch, only: [:mark_as_complete, :mark_as_billed]
 
   # GET /dispatches or /dispatches.json
   def index
@@ -100,6 +101,7 @@ class DispatchesController < ApplicationController
 
   # GET /dispatches/1/edit
   def edit
+    @dispatch = Dispatch.find(params[:id])
     @locations = Location.all
     @recent_customer_orders = CustomerOrder.order(created_at: :desc).limit(5)
     @origin_locations = Location.where(location_category_id: 1)
@@ -126,6 +128,7 @@ class DispatchesController < ApplicationController
 
   # PATCH/PUT /dispatches/1 or /dispatches/1.json
   def update
+    @dispatch = Dispatch.find(params[:id])
     previous_driver_id = @dispatch.driver_id
   
     respond_to do |format|
@@ -211,6 +214,22 @@ class DispatchesController < ApplicationController
     respond_to do |format|
       format.js { render js: "alert('Notification sent successfully!');" }
       format.html { redirect_to dispatch_path(@dispatch), notice: "Notification sent successfully." }
+    end
+  end
+
+  def mark_as_complete
+    if @dispatch.update(status: "complete")
+      redirect_to dispatch_path(@dispatch), notice: "Dispatch marked as complete."
+    else
+      redirect_to dispatch_path(@dispatch), alert: "Failed to mark dispatch as complete."
+    end
+  end
+
+  def mark_as_billed
+    if @dispatch.update(status: "Billed")
+      redirect_to dispatch_path(@dispatch), notice: "Dispatch marked as billed."
+    else
+      redirect_to dispatch_path(@dispatch), alert: "Failed to mark dispatch as billed."
     end
   end  
 

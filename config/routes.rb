@@ -12,6 +12,8 @@ Rails.application.routes.draw do
   resources :dispatches do 
     member do
       post 'send_notification'
+      patch :mark_as_complete
+      patch :mark_as_billed
     end
   end
   
