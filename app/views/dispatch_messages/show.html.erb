@@ -1,0 +1,8 @@
+<h1>Message Details</h1>
+<p><strong>ID:</strong> <%= @dispatch_message.id %></p>
+<p><strong>User:</strong> <%= @dispatch_message.user&.email || "Unknown User" %></p>
+<p><strong>Message Body:</strong> <%= @dispatch_message.message_body %></p>
+<p><strong>Delivery Method:</strong> <%= @dispatch_message.delivery_method.capitalize %></p>
+<p><strong>Sent At:</strong> <%= @dispatch_message.sent_at || "Not Sent" %></p>
+<p><strong>Status:</strong> <%= @dispatch_message.status.capitalize %></p>
+<p><strong>Reference ID:</strong> <%= @dispatch_message.reference_id || "N/A" %></p>

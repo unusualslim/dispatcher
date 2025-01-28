@@ -224,31 +224,63 @@ class DispatchesController < ApplicationController
     end
 
     def send_text_to_driver(dispatch, sms_message)
-      boot_twilio # Ensure this method correctly initializes Twilio's client.
+      boot_twilio # Ensure Twilio client is initialized correctly.
     
-      # Set default values for product and amount
+      # Default product and amount values.
       product = "N/A"
       amount = "N/A"
     
-      # If there is only one customer order, use its product and amount
+      # Populate product and amount based on customer orders.
       if dispatch.customer_orders.size == 1
         product = dispatch.customer_orders.first.product
         amount = dispatch.customer_orders.first.approximate_product_amount
-      # If there are multiple customer orders, you might want to loop over them
       elsif dispatch.customer_orders.size > 1
-        product = dispatch.customer_orders.map(&:product).join(", ") # Joining product names if there are multiple
-        amount = dispatch.customer_orders.map(&:approximate_product_amount).join(", ") # Joining amounts if multiple orders exist
+        product = dispatch.customer_orders.map(&:product).join(", ")
+        amount = dispatch.customer_orders.map(&:approximate_product_amount).join(", ")
       end
     
-      # Now send the SMS with the correct product and amount
-      @client.messages.create(
-        from: ENV['TWILIO_NUMBER'],
-        to: dispatch.driver.phone_number,
-        body: sms_message || "You have been assigned a new dispatch.\nDispatch ID: #{dispatch.id}\nOrigin: #{dispatch.origin}\nDestination: #{dispatch.destination}\nProduct: #{product}\nAmount: #{amount} gal\nNotes: #{dispatch.notes}"
-      )
-    end
+      # Construct the SMS body.
+      sms_body = sms_message.presence || <<~SMS
+        You have been assigned a new dispatch.
+        Dispatch ID: #{dispatch.id}
+        Origin: #{dispatch.origin}
+        Destination: #{dispatch.destination}
+        Product: #{product}
+        Amount: #{amount} gal
+        Notes: #{dispatch.notes}
+      SMS
     
+      begin
+        # Send the SMS.
+        sms = @client.messages.create(
+          from: ENV['TWILIO_NUMBER'],
+          to: dispatch.driver.phone_number,
+          body: sms_body.strip # Strip unnecessary whitespace from the body.
+        )
     
+        # Log the SMS in the database.
+        DispatchMessage.create!(
+          user_id: dispatch.driver.id, # Assuming `dispatch.driver` is a User.
+          message_body: sms_body,
+          delivery_method: "SMS",
+          reference_id: sms.sid,
+          status: "sent",
+          sent_at: Time.current
+        )
+      rescue Twilio::REST::RestError => e
+        # Log the error and create a failed message record.
+        Rails.logger.error("Failed to send SMS: #{e.message}")
+    
+        DispatchMessage.create!(
+          user_id: dispatch.driver.id,
+          message_body: sms_body,
+          delivery_method: "SMS",
+          reference_id: nil,
+          status: "failed",
+          sent_at: Time.current
+        )
+      end
+    end    
 
     def update_destination_from_customer_orders(dispatch)
       if dispatch.customer_orders.any?

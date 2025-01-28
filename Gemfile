@@ -17,6 +17,8 @@ gem 'recaptcha', require: 'recaptcha/rails'
 
 gem 'dotenv-rails'
 
+gem 'will_paginate'
+
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem "rails", "~> 7.0.3", ">= 7.0.3.1"
 

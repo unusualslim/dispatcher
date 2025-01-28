@@ -1,0 +1,78 @@
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"></script>
+
+<div class="container mt-5">
+  <h1 class="text-center mb-4">Logged Messages</h1>
+
+  <!-- User Filter Form -->
+  <div class="mb-4">
+    <%= form_with url: dispatch_messages_path, method: :get, local: true do |form| %>
+      <div class="row align-items-center">
+        <div class="col-md-8">
+          <%= form.label :user_id, "Filter by User", class: "form-label" %>
+          <%= form.collection_select :user_id, User.all, :id, :full_name, { prompt: "Select a User" }, class: "form-select" %>
+        </div>
+        <div class="col-md-4 text-end mt-3 mt-md-0">
+          <%= form.submit "Filter", class: "btn btn-primary" %>
+          <%= link_to "Clear Filter", dispatch_messages_path, class: "btn btn-secondary" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Messages Table -->
+  <div class="table-responsive">
+    <table class="table table-striped table-hover">
+      <thead class="thead-dark">
+        <tr>
+          <th scope="col">ID</th>
+          <th scope="col">User</th>
+          <th scope="col">Message Body</th>
+          <th scope="col">Delivery Method</th>
+          <th scope="col">Sent At</th>
+          <th scope="col">Status</th>
+          <th scope="col">Reference ID</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if @dispatch_messages.any? %>
+          <% @dispatch_messages.each do |message| %>
+            <tr onclick="window.location='<%= dispatch_message_path(message) %>'" style="cursor: pointer;">
+              <td><%= message.id %></td>
+              <td><%= message.user&.full_name || "Unknown User" %></td>
+              <td><%= truncate(message.message_body, length: 50) %></td>
+              <td><%= message.delivery_method.capitalize %></td>
+              <td><%= message.sent_at ? message.sent_at.strftime("%B %d, %Y %H:%M") : "Not Sent" %></td>
+              <td>
+                <%= case message.status
+                    when "pending" then "Pending"
+                    when "sent" then "Sent"
+                    when "failed" then "Failed"
+                    else "Issue"
+                end %>
+              </td>
+              <td><%= message.reference_id || "N/A" %></td>
+            </tr>
+          <% end %>
+        <% else %>
+          <tr>
+            <td colspan="7" class="text-center text-muted">No messages logged yet.</td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div class="d-flex justify-content-center">
+    <%= will_paginate @dispatch_messages, inner_window: 2, outer_window: 1 if @dispatch_messages.respond_to?(:total_pages) %>
+  </div>
+</div>
+
+<style>
+  .pagination {
+    gap: 10px; /* Adds spacing between pagination links */
+  }
+  .pagination li {
+    margin: 0 5px; /* Optional: Additional margin for finer control */
+  }
+</style>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_01_02_133005) do
+ActiveRecord::Schema[7.0].define(version: 2025_01_24_153203) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -104,6 +104,18 @@ ActiveRecord::Schema[7.0].define(version: 2025_01_02_133005) do
     t.datetime "updated_at", null: false
     t.index ["customer_order_id"], name: "index_dispatch_customer_orders_on_customer_order_id"
     t.index ["dispatch_id"], name: "index_dispatch_customer_orders_on_dispatch_id"
+  end
+
+  create_table "dispatch_messages", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.text "message_body", null: false
+    t.string "delivery_method", null: false
+    t.datetime "sent_at"
+    t.string "status", default: "pending"
+    t.string "reference_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_dispatch_messages_on_user_id"
   end
 
   create_table "dispatches", force: :cascade do |t|
@@ -216,6 +228,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_01_02_133005) do
   add_foreign_key "customer_orders", "locations", on_delete: :cascade
   add_foreign_key "dispatch_customer_orders", "customer_orders", on_delete: :cascade
   add_foreign_key "dispatch_customer_orders", "dispatches"
+  add_foreign_key "dispatch_messages", "users"
   add_foreign_key "location_contacts", "locations"
   add_foreign_key "location_products", "locations", on_delete: :cascade
   add_foreign_key "location_products", "products"

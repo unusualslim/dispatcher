@@ -42,6 +42,8 @@ Rails.application.routes.draw do
 
   resources :products
 
+  resources :dispatch_messages, only: [:index, :show]
+
   resources :phone_numbers, only: [:destroy]
   
   delete '/dispatches/:id', to: 'dispatches#destroy', as: 'destroy_dispatch'
