@@ -1,6 +1,5 @@
 class DispatchesController < ApplicationController
-  before_action :set_dispatch, only: %i[ show edit update destroy ]
-  before_action :set_dispatch, only: [:mark_as_complete, :mark_as_billed]
+  before_action :set_dispatch, only: %i[show edit update destroy mark_as_complete mark_as_billed]
 
   # GET /dispatches or /dispatches.json
   def index
