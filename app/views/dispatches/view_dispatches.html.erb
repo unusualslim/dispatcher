@@ -2,35 +2,55 @@
   <h1>Dispatches</h1>
 
   <!-- Filter and Sorting Form -->
-  <div class="mb-4">
-    <%= form_with(url: view_dispatches_path, method: :get, local: true, data: { turbo: false }) do %>
-      <div class="row mb-3">
-        <!-- Status Filter -->
-        <div class="col-md-4">
-          <%= label_tag :status, 'Status' %>
-          <%= select_tag :status, options_for_select(
-            [['All', 'all'], ['Incomplete', 'exclude_complete_deleted']] +
-            @statuses.map { |s| [s.titleize, s] }, 
-            selected: params[:status]
-          ), class: "form-control" %>
-        </div>
+<div class="mb-4">
+<%= form_with(url: view_dispatches_path, method: :get, local: true, data: { turbo: false }) do %>
+  <div class="row mb-3">
+    
+    <!-- Status Filter -->
+    <div class="col-md-4">
+      <%= label_tag :status, 'Status' %>
+      <%= select_tag :status, options_for_select(
+        [['All', 'all'], ['Incomplete', 'exclude_complete_deleted']] +
+        Dispatch.dispatch_statuses.keys.map { |status| [status.humanize, status] },
+        selected: params[:status].presence || 'all' # Default to 'all' if no status is selected
+      ), class: "form-control" %>
+    </div>
 
-        <!-- Sort By -->
-        <div class="col-md-4">
-          <%= label_tag :sort_by, 'Sort By' %>
-          <%= select_tag :sort_by, options_for_select(
-            [['Newest', 'newest'], ['Oldest', 'oldest'], ['Dispatch Date', 'dispatch_date']], 
-            selected: params[:sort_by]
-          ), class: "form-control" %>
-        </div>
+    <!-- Driver Filter -->
+    <div class="col-md-4">
+      <%= label_tag :driver, 'Assigned To' %>
+      <%= select_tag :driver, options_for_select(
+        [['All Drivers', '']] + 
+        User.all.map { |user| [user.full_name, user.id] },
+        selected: params[:driver].presence || '' # Default to '' (no driver) if no driver is selected
+      ), class: "form-control" %>
+    </div>
 
-        <!-- Submit Button -->
-        <div class="col-md-4" style="padding-top: 25px;">
-          <%= submit_tag 'Apply Filters', class: 'btn btn-primary w-100' %>
-        </div>
+    <!-- Sort By -->
+    <div class="col-md-4">
+      <%= label_tag :sort_by, 'Sort By' %>
+      <%= select_tag :sort_by, options_for_select(
+        [['Newest', 'newest'], ['Oldest', 'oldest'], ['Dispatch Date', 'dispatch_date']], 
+        selected: params[:sort_by].presence || 'newest' # Default to 'newest' if no sort_by is selected
+      ), class: "form-control" %>
+    </div>
+
+    <!-- Buttons -->
+    <div class="d-flex justify-content-center" style="gap: 15px; padding-top: 20px;">
+      <div style="width: 150px;">
+        <%= submit_tag 'Apply Filters', class: 'btn btn-primary btn-md w-100' %>
       </div>
-    <% end %>
+      <div style="width: 150px;">
+        <%= link_to 'Clear Filters', view_dispatches_path, class: 'btn btn-secondary btn-md w-100' %>
+      </div>
+    </div>
   </div>
+<% end %>
+
+
+</div>
+
+
 
   <!-- Dispatches Table -->
   <table class="table table-hover">

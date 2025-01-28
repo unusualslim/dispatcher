@@ -151,6 +151,7 @@ class DispatchesController < ApplicationController
   def view_dispatches
     @statuses = Dispatch.distinct.pluck(:status) # Fetch all unique statuses
     @selected_status = params[:status] || 'all' # Default to 'all' to show all statuses
+    @selected_driver = params[:driver] # Selected driver ID
     @sort_by = params[:sort_by] || 'dispatch_date' # Default sorting by dispatch date
   
     # Filter by selected status
@@ -159,6 +160,11 @@ class DispatchesController < ApplicationController
       @dispatches = @dispatches.where.not(status: ['complete', 'deleted'])
     elsif @selected_status != 'all'
       @dispatches = @dispatches.where(status: @selected_status)
+    end
+  
+    # Filter by selected driver (if any)
+    if @selected_driver.present?
+      @dispatches = @dispatches.where(driver_id: @selected_driver)
     end
   
     # Apply sorting
@@ -172,7 +178,8 @@ class DispatchesController < ApplicationController
                   else
                     @dispatches
                   end
-  end  
+  end
+  
 
   def search
     query = params[:query]
