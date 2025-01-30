@@ -72,23 +72,50 @@
     <strong>Notes:</strong>
     <%= dispatch.notes %>
   </p>
-<% if dispatch.dispatch_customer_order.any? %>
-  <h3>Associated Customer Orders</h3>
-  <% dispatch.dispatch_customer_order.each do |dispatch_customer_order| %>
-    <%= link_to customer_order_path(dispatch_customer_order.customer_order), class: "card-link" do %>
-      <div class="card">
+  <% if dispatch.dispatch_customer_order.any? %>
+    <h3>Associated Customer Orders</h3>
+    
+    <% dispatch.dispatch_customer_order.each do |dispatch_customer_order| %>
+      <div class="card mb-3">
         <div class="card-body">
           <h5 class="card-title">Customer Order ID: <%= dispatch_customer_order.customer_order.id %></h5>
-          <p class="card-text">Location: <%= dispatch_customer_order.customer_order.location.company_name %></p>
-          Product: <%= dispatch_customer_order.customer_order.product %>
+          <p class="card-text"><strong>Location:</strong> <%= dispatch_customer_order.customer_order.location.company_name %></p>
+
+          <!-- Table for Displaying Products (No Edit/Update) -->
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Quantity (Gal)</th>
+                <th>Price</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% total_sum = 0 %>
+              <% dispatch_customer_order.customer_order.customer_order_products.each do |cop| %>
+                <tr>
+                  <td><%= Product.find_by(id: cop.product_id)&.name || "Unknown Product" %></td>
+                  <td><%= cop.quantity || "Not Set" %></td>
+                  <td><%= cop.price ? number_to_currency(cop.price) : "Not Set" %></td>
+                  <td><%= cop.price ? number_to_currency(cop.quantity * cop.price) : "$0.00" %></td>
+                </tr>
+                <% total_sum += (cop.quantity || 0) * (cop.price || 0.0) %>
+              <% end %>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="3" class="text-end"><strong>Total:</strong></td>
+                <td><%= number_to_currency(total_sum) %></td>
+              </tr>
+            </tfoot>
+          </table>
         </div>
       </div>
     <% end %>
+  <% else %>
+    <p>No associated customer orders.</p>
   <% end %>
-<% else %>
-  <p>Unassigned.</p>
-<% end %>
-
 </div>
 
 <div class="modal fade" id="editNotificationModal-<%= dispatch.id %>" tabindex="-1" aria-labelledby="editNotificationModalLabel" aria-hidden="true">
