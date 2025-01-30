@@ -94,7 +94,6 @@ class DispatchesController < ApplicationController
     @recent_customer_orders = CustomerOrder
       .where.not(order_status: ['complete'])
       .order(created_at: :desc)
-      .limit(5)   
     @origin_locations = Location.where(location_category_id: 1)
   end  
 
@@ -102,7 +101,9 @@ class DispatchesController < ApplicationController
   def edit
     @dispatch = Dispatch.find(params[:id])
     @locations = Location.all
-    @recent_customer_orders = CustomerOrder.order(created_at: :desc).limit(5)
+    @recent_customer_orders = CustomerOrder
+    .where.not(order_status: ['complete'])
+    .order(created_at: :desc)
     @origin_locations = Location.where(location_category_id: 1)
   end
 
