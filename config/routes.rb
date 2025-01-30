@@ -14,6 +14,7 @@ Rails.application.routes.draw do
       post 'send_notification'
       patch :mark_as_complete
       patch :mark_as_billed
+      patch :mark_as_sent_to_driver
     end
   end
   

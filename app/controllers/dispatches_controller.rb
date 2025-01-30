@@ -110,7 +110,9 @@ class DispatchesController < ApplicationController
   # POST /dispatches or /dispatches.json
   def create
     @origin_locations = Location.where(location_category_id: 1)
-    @recent_customer_orders = CustomerOrder.order(created_at: :desc).limit(5)
+    @recent_customer_orders = CustomerOrder
+    .where.not(order_status: ['complete'])
+    .order(created_at: :desc)
     @dispatch = Dispatch.new(dispatch_params)
   
     respond_to do |format|
@@ -225,7 +227,7 @@ class DispatchesController < ApplicationController
   end
 
   def mark_as_complete
-    if @dispatch.update(status: "complete")
+    if @dispatch.update(status: "Complete")
       redirect_to dispatch_path(@dispatch), notice: "Dispatch marked as complete."
     else
       redirect_to dispatch_path(@dispatch), alert: "Failed to mark dispatch as complete."
@@ -237,6 +239,16 @@ class DispatchesController < ApplicationController
       redirect_to dispatch_path(@dispatch), notice: "Dispatch marked as billed."
     else
       redirect_to dispatch_path(@dispatch), alert: "Failed to mark dispatch as billed."
+    end
+  end
+
+  def mark_as_sent_to_driver
+    @dispatch = Dispatch.find(params[:id])
+    
+    if @dispatch.update(status: "Sent to Driver")
+      redirect_to dispatch_path(@dispatch), notice: "Dispatch marked as Sent to Driver."
+    else
+      redirect_to dispatch_path(@dispatch), alert: "Failed to update dispatch status."
     end
   end  
 

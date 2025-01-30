@@ -6,24 +6,27 @@
 <html lang="en">
 <div id="<%= dom_id dispatch %>" class="content" style="padding-left:20px;">
   <div class="d-flex justify-content-start">
-    <% if dispatch.driver_id && dispatch.dispatch_customer_order.any? %>
-      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editNotificationModal-<%= dispatch.id %>">
-        Send Notification
-      </button>
-    <% end %>
+    <div class="d-flex gap-3 mt-2">
+      <% if dispatch.driver_id && dispatch.dispatch_customer_order.any? %>
+        <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#editNotificationModal-<%= dispatch.id %>">
+          Send Notification
+        </button>
+      <% end %>
 
-    <%# Add "Mark as Complete" button aligned to the right %>
-    <%= form_with url: mark_as_complete_dispatch_path(dispatch), method: :patch, local: true do |form| %>
-      <%= form.submit "Mark as Complete", class: "btn btn-success ms-auto" %>
-    <% end %>
+      <%= form_with url: mark_as_sent_to_driver_dispatch_path(dispatch), method: :patch, local: true do |form| %>
+        <%= form.submit "Mark as Sent to Driver", class: "btn btn-primary" %>
+      <% end %>
 
-    <%= form_with url: mark_as_billed_dispatch_path(dispatch), method: :patch, local: true do |form| %>
-      <%= form.submit "Mark as Billed", class: "btn btn-warning ms-auto" %>
-    <% end %>
+      <%= form_with url: mark_as_complete_dispatch_path(dispatch), method: :patch, local: true do |form| %>
+        <%= form.submit "Mark as Complete", class: "btn btn-success" %>
+      <% end %>
 
+      <%= form_with url: mark_as_billed_dispatch_path(dispatch), method: :patch, local: true do |form| %>
+        <%= form.submit "Mark as Billed", class: "btn btn-warning" %>
+      <% end %>
+    </div>
   </div>
 
-  <!-- Rest of the dispatch details -->
   <p>
     <strong>ID:</strong>
     <%= dispatch.id %>
@@ -72,7 +75,7 @@
     <strong>Notes:</strong>
     <%= dispatch.notes %>
   </p>
-  
+
   <% if dispatch.dispatch_customer_order.any? %>
     <h3>Associated Customer Orders</h3>
     
