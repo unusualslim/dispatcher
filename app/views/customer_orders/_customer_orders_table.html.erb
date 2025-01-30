@@ -2,6 +2,7 @@
   <thead>
     <tr>
       <th>Order ID</th>
+      <th>Status</th>
       <th>Address</th>
       <th>Product</th>
       <th>Amount</th>
@@ -14,6 +15,7 @@
     <% customer_orders.each do |customer_order| %>
       <tr>
         <td><%= link_to customer_order.id, customer_order_path(customer_order) %></td>
+        <td><%= customer_order.order_status_before_type_cast %></td>
         <td>
           <%= Location.find(customer_order.location_id).address %>, 
           <%= Location.find(customer_order.location_id).city %>, 

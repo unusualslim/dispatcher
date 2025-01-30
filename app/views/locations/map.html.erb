@@ -21,49 +21,56 @@
   </style>
 </head>
 <body>
-    <div id="map"></div>
+  
+  <div id="map"></div>
 
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 
-    <script>
-        const map = L.map('map').setView([33.7490, -84.3880], 6); // Centered on Georgia
+  <script>
+    // Initialize the map
+    const map = L.map('map').setView([33.7490, -84.3880], 6); // Centered on Georgia
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
 
-        // Pass locations from Rails to JavaScript
-        const locations = <%= raw @locations.to_json(only: [:id, :latitude, :longitude, :city, :company_name, :location_category_id]) %>;
+    // Pass locations from Rails to JavaScript
+    const locations = <%= raw @locations.to_json(
+      only: [:id, :latitude, :longitude, :city, :company_name, :location_category_id],
+      methods: :has_active_order?
+    ) %>;
 
-        locations.forEach(location => {
-            let markerColor;
+    // Loop through locations and add markers
+    locations.forEach(location => {
+      let markerColor;
 
-            // Set colors based on location_category_id
-            if (location.location_category_id === 1) {
-                markerColor = 'blue'; // Origin
-            } else if (location.location_category_id === 2) {
-                markerColor = 'red'; // Destination
-            } else if (location.location_category_id === 3) { // Update to the ID for "Prospective"
-                markerColor = 'gray'; // Prospective
-            }
+      // Determine marker color based on active orders and location category
+      if (location.has_active_order) {  
+        markerColor = 'green'; // Active order
+      } else {
+        switch (location.location_category_id) {
+          case 1: markerColor = 'blue'; break;  // Origin
+          case 2: markerColor = 'red'; break;   // Destination
+          case 3: markerColor = 'gray'; break;  // Prospective
+          default: markerColor = 'black';       // Unknown categories
+        }
+      }
 
-            // Create a circle marker with the specified color
-            const marker = L.circleMarker([location.latitude, location.longitude], {
-                radius: 8, // Adjust the size of the marker if needed
-                fillColor: markerColor,
-                color: markerColor,
-                fillOpacity: 0.8,
-                stroke: false
-            }).addTo(map);
+      // Create a circle marker with the selected color
+      const marker = L.circleMarker([location.latitude, location.longitude], {
+        radius: 8,
+        fillColor: markerColor,
+        color: markerColor,
+        fillOpacity: 0.8,
+        stroke: false
+      }).addTo(map);
 
-            // Create a popup with a link to the location
-            const popupContent = `<a href="/locations/${location.id}">${location.company_name}</a>`;
-            marker.bindPopup(popupContent);
-        });
-    </script>
-
-
+      // Add a popup to the marker
+      marker.bindPopup(`<a href="/locations/${location.id}">${location.company_name}</a>`);
+    });
+  </script>
 
 </body>
 </html>

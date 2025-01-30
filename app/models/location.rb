@@ -12,6 +12,8 @@ class Location < ApplicationRecord
   has_many :location_products
   has_many :products, through: :location_products
 
+  has_many :customer_orders
+
   def city_with_company
     "#{company_name} - #{city}"
   end
@@ -20,5 +22,8 @@ class Location < ApplicationRecord
   end
   def full_address
     "#{address} #{city}, #{state} #{zip}"
+  end
+  def has_active_order?
+    customer_orders.exists?(order_status: "New")
   end
 end

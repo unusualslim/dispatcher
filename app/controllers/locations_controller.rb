@@ -63,8 +63,9 @@ class LocationsController < ApplicationController
     end    
 
     def map
-      @locations = Location.includes(:location_category).where.not(latitude: nil, longitude: nil)
-    end
+      @locations = Location.includes(:location_category, :customer_orders)
+                           .where.not(latitude: nil, longitude: nil)
+    end    
   
     private
   

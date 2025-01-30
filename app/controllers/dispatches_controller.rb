@@ -92,6 +92,7 @@ class DispatchesController < ApplicationController
     # Load data needed for form options
     @locations = Location.all
     @recent_customer_orders = CustomerOrder
+      .where(order_status: ['New', 'On Hold'])
       .where.not(order_status: ['complete'])
       .order(created_at: :desc)
     @origin_locations = Location.where(location_category_id: 1)

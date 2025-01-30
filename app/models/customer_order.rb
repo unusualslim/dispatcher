@@ -11,7 +11,7 @@ class CustomerOrder < ApplicationRecord
   accepts_nested_attributes_for :customer_order_products, allow_destroy: true
 
   attribute :freight_only, :boolean, default: false
-  enum order_status: { New: "New", complete: "Complete", deleted: "Deleted" }
+  enum order_status: { New: "New", complete: "Complete", deleted: "Deleted", on_hold: "On Hold" }
 
   PRODUCTS = [ "DEF", "Regular", "Plus", "Super", "Eth-Regular", "Eth-Plus", "Eth-Super", "Reg-E10", "Plus-E10", "Super-E10", "ULS", "Dyed ULS" ]
   scope :unassigned_open_orders, -> { where(order_status: 'open').where(dispatch_id: nil) }
