@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 
 <!-- Include Bootstrap JavaScript -->
+<%= javascript_include_tag "application", "data-turbo-track": "reload" %>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <html lang="en">
@@ -123,6 +124,41 @@
     <p>No associated customer orders.</p>
   <% end %>
 </div>
+
+<div class="container mt-3">
+  <h3>Attached Files</h3>
+
+  <% if @dispatch.files.attached? %>
+    <div class="row">
+      <% @dispatch.files.each do |file| %>
+        <div class="col-md-4 mb-3">
+          <div class="card shadow-sm">
+            <div class="card-body text-center">
+              <% if file.content_type.start_with?('image/') %>
+                <img src="<%= url_for(file) %>" class="img-fluid rounded" alt="Attached Image">
+              <% else %>
+                <i class="bi bi-file-earmark-text" style="font-size: 2rem;"></i>
+              <% end %>
+              <p class="mt-2 text-truncate" title="<%= file.filename.to_s %>"><%= file.filename.to_s %></p>
+
+              <!-- Button group to align View & Delete buttons -->
+              <div class="btn-group" role="group">
+                <a href="<%= url_for(file) %>" class="btn btn-primary btn-sm" target="_blank" style="margin-right: 10px;">View</a>
+                <%= button_to 'Delete', dispatch_file_path(@dispatch, file), method: :delete, class: "btn btn-danger btn-sm", data: { confirm: "Are you sure you want to delete this file?" } %>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="text-muted">No files attached.</p>
+  <% end %>
+</div>
+
+
+
 
 <div class="modal fade" id="editNotificationModal-<%= dispatch.id %>" tabindex="-1" aria-labelledby="editNotificationModalLabel" aria-hidden="true">
   <div class="modal-dialog">

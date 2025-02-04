@@ -134,12 +134,16 @@ class DispatchesController < ApplicationController
     @dispatch = Dispatch.find(params[:id])
     previous_driver_id = @dispatch.driver_id
   
+    # Check if new files are uploaded and append them instead of replacing
+    if params[:dispatch][:files].present?
+      @dispatch.files.attach(params[:dispatch][:files])
+    end
+  
     respond_to do |format|
-      if @dispatch.update(dispatch_params)
+      if @dispatch.update(dispatch_params.except(:files)) # Exclude :files to prevent overwrite
         update_destination_from_customer_orders(@dispatch)
   
         if @dispatch.driver_id.blank? && previous_driver_id.present?
-          # This condition checks if the dispatch is moved back to the new column from a driver column
           @dispatch.update(status: "New")
         end
   
@@ -151,6 +155,7 @@ class DispatchesController < ApplicationController
       end
     end
   end
+  
 
   def view_dispatches
     @statuses = Dispatch.distinct.pluck(:status) # Fetch all unique statuses
@@ -251,7 +256,19 @@ class DispatchesController < ApplicationController
     else
       redirect_to dispatch_path(@dispatch), alert: "Failed to update dispatch status."
     end
-  end  
+  end
+
+  def destroy_file
+    @dispatch = Dispatch.find_by(id: params[:dispatch_id]) # Use find_by to avoid an exception
+    return redirect_to dispatches_path, alert: "Dispatch not found." unless @dispatch
+  
+    file = @dispatch.files.find_by(id: params[:id]) # Use find_by to avoid an exception
+    return redirect_to dispatch_path(@dispatch), alert: "File not found." unless file
+  
+    file.purge # Deletes the file from Active Storage
+    redirect_to dispatch_path(@dispatch), notice: "File was successfully deleted."
+  end
+  
 
   private
 
@@ -339,6 +356,6 @@ class DispatchesController < ApplicationController
     end
 
     def dispatch_params
-      params.require(:dispatch).permit(:driver_id, :origin, :destination, :info, :dispatch_date, :status, :notes, :customer_order_ids => [])
+      params.require(:dispatch).permit(:driver_id, :origin, :destination, :info, :dispatch_date, :status, :notes, :customer_order_ids => [], files: [])
     end
 end
