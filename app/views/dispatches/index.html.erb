@@ -6,142 +6,129 @@
 
 <div class="accordion" id="homePageAccordion">
 
-  <!-- Unassigned Orders Section -->
-  <div class="accordion-item">
-    <h2 class="accordion-header" id="headingOrders">
-      <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOrders" aria-expanded="true" aria-controls="collapseOrders" style="font-weight: 600;">
-        Unassigned Orders
-      </button>
-    </h2>
-    <div id="collapseOrders" class="accordion-collapse collapse show" aria-labelledby="headingOrders">
-      <div class="accordion-body">
-        <table class="table table-hover">
-          <thead>
-            <tr>
-              <th>Order ID</th>
-              <th>Product</th>
-              <th>Delivery Date</th>
-              <th>Location</th>
-              <th>Amount</th>
-              <th>Status</th>
+ <!-- Unassigned Orders Section -->
+<div class="accordion-item">
+  <h2 class="accordion-header" id="headingOrders">
+    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOrders" aria-expanded="true" aria-controls="collapseOrders" style="font-weight: 600;">
+      Unassigned Orders
+    </button>
+  </h2>
+  <div id="collapseOrders" class="accordion-collapse collapse show" aria-labelledby="headingOrders">
+    <div class="accordion-body">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Order ID</th>
+            <th>Product</th>
+            <th>Delivery Date</th>
+            <th>Location</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th></th> <!-- New column for Freight Only -->
+          </tr>
+        </thead>
+        <tbody>
+          <% @unassigned_open_orders.each do |order| %>
+            <% companyName = order.location&.company_name || "No Company Name Available" %>
+
+            <% # Determine top product and total product count %>
+            <% top_product = order.customer_order_products.max_by { |cop| cop.quantity || 0 } %>
+            <% total_products_count = order.customer_order_products.count %>
+            <% product_display = if total_products_count == 1
+                                    top_product.product.name
+                                  elsif total_products_count > 1
+                                    "#{top_product.product.name} + #{total_products_count - 1}"
+                                  else
+                                    "No Products"
+                                  end %>
+
+            <% # Calculate total quantity of products in the order %>
+            <% total_quantity = order.customer_order_products.sum { |cop| cop.quantity || 0 } %>
+            <% quantity_display = total_quantity.positive? ? "#{total_quantity} gals" : "Not Set" %>
+
+            <!-- Row to trigger collapse -->
+            <tr data-bs-toggle="collapse" data-bs-target="#detailsOrder<%= order.id %>">
+              <td><%= order.id %></td>
+              <td><%= product_display %></td>
+              <td><%= order.required_delivery_date %></td>
+              <td><%= companyName %></td>
+              <td><%= quantity_display %></td>
+              <td><%= order.order_status %></td>
+              <td>
+                <% if order.freight_only? %>
+                  <span class="badge bg-warning text-dark">Freight Only</span>
+                <% end %>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            <% @unassigned_open_orders.each do |order| %>
-              <% companyName = order.location&.company_name || "No Company Name Available" %>
-              
-              <% # Determine top product and total product count %>
-              <% top_product = order.customer_order_products.max_by { |cop| cop.quantity || 0 } %>
-              <% total_products_count = order.customer_order_products.count %>
-              <% product_display = if total_products_count == 1
-                                      top_product.product.name
-                                    elsif total_products_count > 1
-                                      "#{top_product.product.name} + #{total_products_count - 1}"
-                                    else
-                                      "No Products"
-                                    end %>
 
-              <% # Calculate total quantity of products in the order %>
-              <% total_quantity = order.customer_order_products.sum { |cop| cop.quantity || 0 } %>
-              <% quantity_display = total_quantity.positive? ? "#{total_quantity} gals" : "Not Set" %>
-
-              <!-- Row to trigger collapse -->
-              <tr data-bs-toggle="collapse" data-bs-target="#detailsOrder<%= order.id %>">
-                <td><%= order.id %></td>
-                <td><%= product_display %></td>
-                <td><%= order.required_delivery_date %></td>
-                <td><%= companyName %></td>
-                <td><%= quantity_display %></td>
-                <td><%= order.order_status %></td>
-              </tr>
-
-              <!-- Collapsible Row -->
-              <tr class="collapse" id="detailsOrder<%= order.id %>">
-                <td colspan="6">
-                  <div class="border rounded bg-light p-4">
-                    <h5>Order Details</h5>
-                    <div class="row">
-                      <div class="col">
-                        <ul class="list-unstyled">
-                          <li><strong>Order ID:</strong> <%= order.id %></li>
-                          <li><strong>Delivery Date:</strong> <%= order.required_delivery_date %></li>
-                          <li><strong>Location:</strong> <%= companyName %></li>
-                        </ul>
-                      </div>
-                      <div class="col">
-                        <ul class="list-unstyled">
-                          <li><strong>Status:</strong> <%= order.order_status %></li>
-                        </ul>
-                      </div>
-                      <div class="col">
-                        <div id="map<%= order.id %>" style="height: 20vh;"></div>
-                      </div>
+            <!-- Collapsible Row -->
+            <tr class="collapse" id="detailsOrder<%= order.id %>">
+              <td colspan="7">
+                <div class="border rounded bg-light p-4">
+                  <h5>Order Details</h5>
+                  <div class="row">
+                    <div class="col">
+                      <ul class="list-unstyled">
+                        <li><strong>Order ID:</strong> <%= order.id %></li>
+                        <li><strong>Delivery Date:</strong> <%= order.required_delivery_date %></li>
+                        <li><strong>Location:</strong> <%= companyName %></li>
+                        <li>
+                          <strong>Freight Only:</strong> 
+                          <% if order.freight_only? %>
+                            <span class="badge bg-warning text-dark">Yes</span>
+                          <% else %>
+                            <span class="text-muted">No</span>
+                          <% end %>
+                        </li>
+                      </ul>
                     </div>
-                    <div class="row mt-3">
-                      <div class="col">
-                        <h6>Products in Order</h6>
-                        <table class="table table-bordered">
-                          <thead>
-                            <tr>
-                              <th>Product Name</th>
-                              <th>Quantity</th>
-                              <th>Price</th>
-                              <th>Total</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <% order.customer_order_products.each do |cop| %>
-                              <tr>
-                                <td><%= cop.product.name %></td>
-                                <td><%= cop.quantity %></td>
-                                <td><%= number_to_currency(cop.price) %></td>
-                                <td><%= number_to_currency((cop.quantity || 0) * (cop.price || 0.0)) %></td>
-                              </tr>
-                            <% end %>
-                          </tbody>
-                        </table>
-                      </div>
+                    <div class="col">
+                      <ul class="list-unstyled">
+                        <li><strong>Status:</strong> <%= order.order_status %></li>
+                      </ul>
                     </div>
-                    <div class="mt-3">
-                      <%= link_to 'View Order', customer_order_path(order), class: 'btn btn-primary' %>
+                    <div class="col">
+                      <div id="map<%= order.id %>" style="height: 20vh;"></div>
                     </div>
                   </div>
-                </td>
-              </tr>
-
-              <!-- JavaScript for the Map -->
-              <script>
-                document.addEventListener('shown.bs.collapse', function (event) {
-                  if (event.target.id === 'detailsOrder<%= order.id %>') {
-                    const mapId = 'map<%= order.id %>';
-                    const latitude = <%= order.location&.latitude.to_json %>;
-                    const longitude = <%= order.location&.longitude.to_json %>;
-                    const companyName = "<%= j(companyName) %>";
-
-                    console.log("Latitude:", latitude);
-                    console.log("Longitude:", longitude);
-                    console.log("Company Name:", companyName);
-
-                    if (!document.getElementById(mapId).classList.contains('leaflet-container')) {
-                      const map = L.map(mapId).setView([latitude, longitude], 8);
-
-                      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        maxZoom: 19,
-                        attribution: '© OpenStreetMap contributors',
-                      }).addTo(map);
-
-                      const marker = L.marker([latitude, longitude]).addTo(map);
-                      marker.bindPopup('<b>' + companyName + '</b>').openPopup();
-                    }
-                  }
-                });
-              </script>
-            <% end %>
-          </tbody>
-        </table>
-      </div>
+                  <div class="row mt-3">
+                    <div class="col">
+                      <h6>Products in Order</h6>
+                      <table class="table table-bordered">
+                        <thead>
+                          <tr>
+                            <th>Product Name</th>
+                            <th>Quantity</th>
+                            <th>Price</th>
+                            <th>Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <% order.customer_order_products.each do |cop| %>
+                            <tr>
+                              <td><%= cop.product.name %></td>
+                              <td><%= cop.quantity %></td>
+                              <td><%= number_to_currency(cop.price) %></td>
+                              <td><%= number_to_currency((cop.quantity || 0) * (cop.price || 0.0)) %></td>
+                            </tr>
+                          <% end %>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                  <div class="mt-3">
+                    <%= link_to 'View Order', customer_order_path(order), class: 'btn btn-primary' %>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
     </div>
   </div>
+</div>
+
 
   <!-- Dispatches Section -->
   <div class="accordion-item">
