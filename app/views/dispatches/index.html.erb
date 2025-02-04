@@ -195,7 +195,73 @@
       </div>
     </div>
   </div>
+   <div class="accordion-item">
+    <h2 class="accordion-header" id="headingCompletedDispatches">
+      <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCompletedDispatches" aria-expanded="true" aria-controls="collapseCompletedDispatches" style="font-weight: 600;">
+        Completed Dispatches
+      </button>
+    </h2>
+    <div id="collapseCompletedDispatches" class="accordion-collapse collapse show" aria-labelledby="headingCompletedDispatches">
+      <div class="accordion-body">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Dispatch ID</th>
+              <th>Status</th>
+              <th>Driver</th>
+              <th>Dispatch Date</th>
+              <th>Origin</th>
+              <th>Destination</th>
+            </tr>
+          </thead>
+          <tbody id="completedDispatchAccordion">
+            <% @completed_dispatches.each do |dispatch| %>
+              <!-- Row Header -->
+              <tr data-bs-toggle="collapse" data-bs-target="#detailsCompletedDispatch<%= dispatch.id %>" aria-expanded="false" aria-controls="detailsCompletedDispatch<%= dispatch.id %>">
+                <td><%= dispatch.id %></td>
+                <td><span class="badge bg-success">Completed</span></td>
+                <td><%= dispatch.driver&.full_name || "No Driver Assigned" %></td>
+                <td><%= dispatch.dispatch_date.present? ? dispatch.dispatch_date.strftime("%B %d, %Y") : "N/A" %></td>
+                <td><%= dispatch.origin || "No Origin" %></td>
+                <td><%= dispatch.destination || "No Destination" %></td>
+              </tr>
+              <!-- Collapsible Row -->
+              <tr class="collapse" id="detailsCompletedDispatch<%= dispatch.id %>" data-bs-parent="#completedDispatchAccordion">
+                <td colspan="7" class="p-3">
+                  <div class="border rounded bg-light p-4">
+                    <h5>Dispatch Details</h5>
+                    <div class="row">
+                      <div class="col-md-6">
+                        <ul class="list-unstyled">
+                          <li><strong>Dispatch ID:</strong> <%= dispatch.id %></li>
+                          <li><strong>Status:</strong> <span class="badge bg-success">Completed</span></li>
+                          <li><strong>Driver:</strong> <%= dispatch.driver&.full_name || "No Driver Assigned" %></li>
+                          <li><strong>Dispatch Date:</strong> <%= dispatch.dispatch_date || "No Date" %></li>
+                        </ul>
+                      </div>
+                      <div class="col-md-6">
+                        <ul class="list-unstyled">
+                          <li><strong>Origin:</strong> <%= dispatch.origin || "No Origin" %></li>
+                          <li><strong>Destination:</strong> <%= dispatch.destination || "No Destination" %></li>
+                          <li><strong>Notes:</strong> <%= dispatch.notes.presence || "No Notes Available" %></li>
+                        </ul>
+                      </div>
+                    </div>
+                    <div class="mt-3">
+                      <%= link_to 'View Dispatch', dispatch_path(dispatch), class: 'btn btn-primary' %>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
+
+
 
 <style>
 .collapse > div {

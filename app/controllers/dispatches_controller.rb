@@ -4,6 +4,7 @@ class DispatchesController < ApplicationController
   # GET /dispatches or /dispatches.json
   def index
     # Collect filter parameters, setting default for status
+    @completed_dispatches = Dispatch.where(status: ["Complete", "complete"]).order(dispatch_date: :desc)
     @filtered_dispatches = Dispatch.where(status: ['New', 'sent_to_driver', 'Sent to driver']).order(:dispatch_date)
     @destination_locations = Location.all
     @origin_locations = Location.all
