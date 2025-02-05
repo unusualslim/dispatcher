@@ -3,8 +3,16 @@ class LocationsController < ApplicationController
     before_action :set_location, only: [:show, :edit, :update, :destroy]
 
     def index
-        @locations = Location.all
-    end
+      @locations = Location.includes(:location_category)
+    
+      if params[:query].present?
+        search_term = "%#{params[:query]}%"
+        @locations = @locations.where(
+          "company_name ILIKE ? OR city ILIKE ? OR state ILIKE ? OR address ILIKE ? OR zip ILIKE ? OR phone_number ILIKE ?",
+          search_term, search_term, search_term, search_term, search_term, search_term
+        )
+      end
+    end    
 
     def show
         @location = Location.find(params[:id])
