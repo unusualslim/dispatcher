@@ -73,12 +73,25 @@ class LocationsController < ApplicationController
     def map
       @locations = Location.includes(:location_category, :customer_orders)
                            .where.not(latitude: nil, longitude: nil)
-    end    
+    
+      locations_json = @locations.as_json(
+        only: [:id, :latitude, :longitude, :city, :company_name, :location_category_id],
+        methods: [:has_active_order] # This MUST match the method name EXACTLY
+      )
+    
+      Rails.logger.debug "LOCATIONS JSON: #{locations_json}" # Debugging
+    
+      respond_to do |format|
+        format.html
+        format.json { render json: locations_json }
+      end
+    end
+      
   
     private
   
     def location_params
-      params.require(:location).permit(:city, :address, :location_category_id, :company_name, :phone_number, :state, :notes, :zip, :max_capacity, :uleage_90, :latitude, :longitude, :cutoff_percent, product_ids: [])
+      params.require(:location).permit(:city, :address, :location_category_id, :company_name, :phone_number, :state, :notes, :zip, :max_capacity, :uleage_90, :latitude, :longitude, :cutoff_percent, product_ids: [], methods: [:has_active_order?])
     end
     def set_products
       @products = Product.all

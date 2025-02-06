@@ -23,7 +23,8 @@ class Location < ApplicationRecord
   def full_address
     "#{address} #{city}, #{state} #{zip}"
   end
-  def has_active_order?
-    customer_orders.exists?(order_status: "New")
+  def has_active_order
+    customer_orders.exists?(order_status: ["New", "On Hold"]) ? true : false
   end
+  
 end
