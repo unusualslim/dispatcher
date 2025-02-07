@@ -31,6 +31,11 @@
     <%= link_to 'New Location', new_location_path, class: 'btn btn-primary' %>
   </div>
 
+  <div class="field">
+    <%= form.label :vendor_id, "Vendor" %>
+    <%= form.collection_select :vendor_id, Vendor.all, :id, :name, { include_blank: "Select a Vendor" }, class: "form-control" %>
+  </div>
+
   <div>
     <%= form.label :dispatch_date, style: "display: block" %>
     <%= form.date_field :dispatch_date %>

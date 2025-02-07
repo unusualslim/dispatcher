@@ -5,6 +5,7 @@ class Dispatch < ApplicationRecord
     has_many :customer_orders, through: :dispatch_customer_order
     has_many_attached :files
     belongs_to :driver, class_name: 'User', foreign_key: 'driver_id', optional: true
+    belongs_to :vendor, optional: true
     enum dispatch_status: { New: "New", sent_to_driver: "Sent to Driver", complete: "Complete", billed: "Billed", deleted: "Deleted" }
 
     private

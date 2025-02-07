@@ -63,6 +63,15 @@
   </p>
 
   <p>
+    <strong>Vendor:</strong>
+    <% if @dispatch.vendor.present? %>
+      <%= link_to @dispatch.vendor.name, vendor_path(@dispatch.vendor), class: "text-decoration-none fw-bold" %>
+    <% else %>
+      <span class="text-muted">No Vendor Assigned</span>
+    <% end %>
+  </p>
+
+  <p>
     <strong>Dispatch date:</strong>
     <%= dispatch.dispatch_date %>
   </p>

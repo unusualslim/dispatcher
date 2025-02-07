@@ -1,4 +1,8 @@
 Rails.application.routes.draw do
+  get 'vendors/index'
+  get 'vendors/new'
+  get 'vendors/create'
+  get 'vendors/destroy'
   get 'messages/reply'
 
   devise_for :users, controllers: {
@@ -46,6 +50,8 @@ Rails.application.routes.draw do
   resources :products
 
   resources :dispatch_messages, only: [:index, :show]
+
+  resources :vendors, only: [:index, :new, :create, :destroy, :show]
 
   delete 'dispatches/:dispatch_id/files/:id', to: 'dispatches#destroy_file', as: 'dispatch_file'
 

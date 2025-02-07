@@ -1,0 +1,35 @@
+<div class="container mt-4">
+  <h1><%= @vendor.name %></h1>
+
+  <hr>
+
+  <h3>Related Dispatches</h3>
+  <% if @vendor.dispatches.any? %>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Status</th>
+          <th>Dispatch Date</th>
+          <th>Destination</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @vendor.dispatches.each do |dispatch| %>
+          <tr>
+            <td><%= dispatch.id %></td>
+            <td><%= dispatch.status %></td>
+            <td><%= dispatch.dispatch_date || "Not Set" %></td>
+            <td><%= dispatch.destination || "No Destination" %></td>
+            <td><%= link_to "View Dispatch", dispatch_path(dispatch), class: "btn btn-primary btn-sm" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="text-muted">No dispatches associated with this vendor.</p>
+  <% end %>
+
+  <%= link_to "Back to Vendors", vendors_path, class: "btn btn-secondary mt-3" %>
+</div>

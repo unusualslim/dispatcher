@@ -1,0 +1,39 @@
+<div class="container mt-4">
+  <h1>Vendors</h1>
+
+  <div class="card p-3">
+    <h3>Add Vendor</h3>
+    <%= form_with model: @vendor, local: true do |form| %>
+      <div class="mb-3">
+        <%= form.label :name, "Vendor Name" %>
+        <%= form.text_field :name, class: "form-control", required: true %>
+      </div>
+      <%= form.submit "Add Vendor", class: "btn btn-success" %>
+    <% end %>
+  </div>
+
+  <hr>
+
+  <h3>Vendor List</h3>
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @vendors.each do |vendor| %>
+        <tr>
+          <td><%= vendor.name %></td>
+          <td>
+            <div class="btn-group">
+              <%= link_to "View", vendor_path(vendor), class: "btn btn-primary btn-sm" %>
+              <%= button_to "Delete", vendor_path(vendor), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger btn-sm" %>
+            </div>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

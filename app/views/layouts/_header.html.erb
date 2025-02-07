@@ -1,65 +1,46 @@
 <nav class="navbar navbar-expand-lg navbar-light bg-light w-100">
-  <div class="container">
-    <a class="btn btn-primary me-4" href="<%= new_dispatch_path %>">New Dispatch</a>
-    <%= link_to "LoadNTrucks", dispatches_path, class: "navbar-brand", data: { turbo: false } %>
+  <div class="container-fluid px-4">
+    <!-- Left-side buttons -->
+    <div class="d-flex align-items-center gap-3">
+      <a class="btn btn-primary" href="<%= new_dispatch_path %>">New Dispatch</a>
+      <%= link_to "LoadNTrucks", dispatches_path, class: "navbar-brand fw-bold", data: { turbo: false } %>
+    </div>
+
+    <!-- Navbar toggler for mobile -->
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
       aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
-    <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
-      <ul class="navbar-nav" style="vertical-align: middle;">
+
+    <!-- Navbar links -->
+    <div class="collapse navbar-collapse justify-content-center gap-3" id="navbarNav">
+      <ul class="navbar-nav d-flex align-items-center gap-3">
         <% if user_signed_in? %>
-          <%= link_to "New Order", new_customer_order_path, class: "btn btn-success me-3", data: { turbo: "false" } %>
-          <li class="nav-item">
-            <%= link_to 'Orders', customer_orders_path, class: 'nav-link' %>
-          </li>
-          <li class="nav-item">
-            <%= link_to 'Map', locations_map_path, class: 'nav-link', data: { turbo: "false" } %>
-          </li>
-          <li class="nav-item">
-            <%= link_to 'Dispatches', view_dispatches_path, class: 'nav-link' %>
-          </li>
-          <li class="nav-item">
-            <%= link_to 'Customers', customers_path, class: 'nav-link' %>
-          </li>
-          <li class="nav-item">
-            <%= link_to 'Locations', locations_path, class: 'nav-link' %>
-          </li>
-          <li class="nav-item">
-            <%= link_to 'Products', products_path, class: 'nav-link' %>
-          </li>
-          <li class="nav-item">
-            <%= link_to 'Drivers', users_path, class: 'nav-link' %>
-          </li>
-          <li class="nav-item">
-            <%= link_to 'Messages', dispatch_messages_path, class: 'nav-link' %>
-          </li>
-          <li class="nav-item">
-            <%= link_to 'Profile', edit_user_registration_path, class: 'nav-link' %>
-          </li>
-          <li class="nav-item">
-            <%= link_to 'Logout', destroy_user_session_path, method: :delete, class: 'nav-link' %>
-          </li>
+          <%= link_to "New Order", new_customer_order_path, class: "btn btn-success", data: { turbo: "false" } %>
+          <li class="nav-item"><%= link_to 'Orders', customer_orders_path, class: 'nav-link' %></li>
+          <li class="nav-item"><%= link_to 'Map', locations_map_path, class: 'nav-link', data: { turbo: "false" } %></li>
+          <li class="nav-item"><%= link_to 'Dispatches', view_dispatches_path, class: 'nav-link' %></li>
+          <li class="nav-item"><%= link_to 'Customers', customers_path, class: 'nav-link' %></li>
+          <li class="nav-item"><%= link_to 'Locations', locations_path, class: 'nav-link' %></li>
+          <li class="nav-item"><%= link_to 'Products', products_path, class: 'nav-link' %></li>
+          <li class="nav-item"><%= link_to "Vendors", vendors_path, class: "nav-link" %></li>
+          <li class="nav-item"><%= link_to 'Drivers', users_path, class: 'nav-link' %></li>
+          <li class="nav-item"><%= link_to 'Messages', dispatch_messages_path, class: 'nav-link' %></li>
+          <li class="nav-item"><%= link_to 'Profile', edit_user_registration_path, class: 'nav-link' %></li>
+          <li class="nav-item"><%= link_to 'Logout', destroy_user_session_path, method: :delete, class: 'nav-link' %></li>
         <% else %>
-          <li class="nav-item">
-            <%= link_to 'Sign Up', new_user_registration_path, class: 'nav-link' %>
-          </li>
-          <li class="nav-item">
-            <%= link_to 'Sign In', new_user_session_path, class: 'nav-link' %>
-          </li>
+          <li class="nav-item"><%= link_to 'Sign Up', new_user_registration_path, class: 'nav-link' %></li>
+          <li class="nav-item"><%= link_to 'Sign In', new_user_session_path, class: 'nav-link' %></li>
         <% end %>
       </ul>
-      <!-- Search Bar -->
-      <%= form_with url: search_customers_path, method: :get, class: "d-flex", local: true, data: { turbo: "false" }  do |form| %>
+    </div>
+
+    <!-- Search Bar (Right-aligned) -->
+    <div class="ms-auto">
+      <%= form_with url: search_customers_path, method: :get, class: "d-flex", local: true, data: { turbo: "false" } do |form| %>
         <%= form.text_field :query, placeholder: "Search phone numbers...", class: "form-control me-2" %>
         <%= form.submit "Search", class: "btn btn-outline-primary" %>
       <% end %>
     </div>
   </div>
 </nav>
-
-<style>
-.nav-link{
-  padding-top: 20px;
-}
-</style>
