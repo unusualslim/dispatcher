@@ -2,7 +2,7 @@
   <div class="container-fluid px-4">
     <!-- Left-side buttons -->
     <div class="d-flex align-items-center gap-3">
-      <a class="btn btn-primary" href="<%= new_dispatch_path %>">New Dispatch</a>
+      <a class="btn btn-primary" href="<%= new_dispatch_path %>" data-turbo="false">New Dispatch</a>
       <%= link_to "LoadNTrucks", dispatches_path, class: "navbar-brand fw-bold", data: { turbo: false } %>
     </div>
 
