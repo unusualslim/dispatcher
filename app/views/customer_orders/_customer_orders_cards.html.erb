@@ -10,19 +10,35 @@
                 <span class="badge bg-warning text-dark">Freight Only</span>
               <% end %>
             </h5>
+            
+            <!-- Order Status Badge -->
+            <% status_class = case customer_order.order_status.downcase %>
+              <% when "new" then "bg-primary" %>
+              <% when "complete" then "bg-success" %>
+              <% when "on hold" then "bg-warning text-dark" %>
+              <% when "deleted" then "bg-danger" %>
+              <% else "bg-secondary" %>
+            <% end %>
+
+            <span class="badge <%= status_class %>">
+              <%= customer_order.order_status.humanize %>
+            </span>
+
             <p><%= Location.find(customer_order.location_id).full_address %></p>
+            
             <% if customer_order.required_delivery_date? %>
               <p class="card-text">Required by: <%= customer_order.required_delivery_date %></p>
             <% else %>
               <p class="card-text">No delivery date</p>
             <% end %>
-<% if customer_order.customer_order_products.any? %>
-  <p class="card-text">
-    <%= customer_order.customer_order_products.limit(3).map { |order_product| "#{order_product.quantity} gallons #{order_product.product.name}" }.join(', ') %>
-  </p>
-<% else %>
-  <p class="card-text">Missing product amounts</p>
-<% end %>
+
+            <% if customer_order.customer_order_products.any? %>
+              <p class="card-text">
+                <%= customer_order.customer_order_products.limit(3).map { |order_product| "#{order_product.quantity} gallons #{order_product.product.name}" }.join(', ') %>
+              </p>
+            <% else %>
+              <p class="card-text">Missing product amounts</p>
+            <% end %>
 
             <p class="card-text">Created on: <%= customer_order.created_at.in_time_zone('Eastern Time (US & Canada)').strftime('%Y-%m-%d') %></p>
           </div>

@@ -19,11 +19,11 @@
         <thead>
           <tr>
             <th>Order ID</th>
+            <th>Status</th>
             <th>Product</th>
             <th>Delivery Date</th>
             <th>Location</th>
             <th>Amount</th>
-            <th>Status</th>
             <th></th> <!-- New column for Freight Only -->
           </tr>
         </thead>
@@ -49,11 +49,23 @@
             <!-- Row to trigger collapse -->
             <tr data-bs-toggle="collapse" data-bs-target="#detailsOrder<%= order.id %>">
               <td><%= order.id %></td>
+              <td>
+                <% status_class = case order.order_status.downcase %>
+                  <% when "new" then "bg-primary" %>
+                  <% when "complete" then "bg-success" %>
+                  <% when "on hold" then "bg-warning text-dark" %>
+                  <% when "deleted" then "bg-danger" %>
+                  <% else "bg-secondary" %>
+                <% end %>
+
+                <span class="badge <%= status_class %>">
+                  <%= order.order_status %>
+                </span>
+              </td>
               <td><%= product_display %></td>
               <td><%= order.required_delivery_date %></td>
               <td><%= companyName %></td>
               <td><%= quantity_display %></td>
-              <td><%= order.order_status %></td>
               <td>
                 <% if order.freight_only? %>
                   <span class="badge bg-warning text-dark">Freight Only</span>
@@ -84,7 +96,12 @@
                     </div>
                     <div class="col">
                       <ul class="list-unstyled">
-                        <li><strong>Status:</strong> <%= order.order_status %></li>
+                        <li><strong>Status:</strong> 
+                          <% status_classes = { "new" => "bg-primary", "complete" => "bg-success", "deleted" => "bg-danger", "on_hold" => "bg-warning text-dark" } %>
+                          <span class="badge <%= status_classes[order.order_status.downcase] || 'bg-secondary' %>">
+                            <%= order.order_status.humanize %>
+                          </span>
+                        </li>
                       </ul>
                     </div>
                     <div class="col">
@@ -155,7 +172,19 @@
               <!-- Row Header -->
               <tr data-bs-toggle="collapse" data-bs-target="#detailsDispatch<%= dispatch.id %>" aria-expanded="false" aria-controls="detailsDispatch<%= dispatch.id %>">
                 <td><%= dispatch.id %></td>
-                <td><%= dispatch.status || "N/A" %></td>
+                <td>
+                  <% status_classes = { 
+                    "New" => "bg-primary", 
+                    "Sent to Driver" => "bg-warning text-dark", 
+                    "Complete" => "bg-success", 
+                    "Billed" => "bg-info",
+                    "Cancelled" => "bg-danger"
+                  } %>
+                  <span class="badge <%= status_classes[dispatch.status.humanize.titleize] || 'bg-secondary' %>">
+                    <%= dispatch.status.humanize.titleize || "N/A" %>
+                  </span>
+                </td>
+
                 <td><%= dispatch.driver&.first_name || "No Driver Assigned" %></td>
                 <td><%= dispatch.dispatch_date.present? ? dispatch.dispatch_date.strftime("%B %d, %Y") : "N/A" %></td>
                 <td><%= dispatch.origin || "No Origin" %></td>
@@ -170,7 +199,19 @@
                       <div class="col-md-6">
                         <ul class="list-unstyled">
                           <li><strong>Dispatch ID:</strong> <%= dispatch.id %></li>
-                          <li><strong>Status:</strong> <%= dispatch.status || "N/A" %></li>
+                          <li>
+                            <strong>Status:</strong> 
+                            <% status_classes = { 
+                              "New" => "bg-primary", 
+                              "Sent to Driver" => "bg-warning text-dark", 
+                              "Complete" => "bg-success", 
+                              "Billed" => "bg-info",
+                              "Cancelled" => "bg-danger"
+                            } %>
+                            <span class="badge <%= status_classes[dispatch.status.humanize.titleize] || 'bg-secondary' %>">
+                              <%= dispatch.status.humanize.titleize || "N/A" %>
+                            </span>
+                          </li>
                           <li><strong>Driver:</strong> <%= dispatch.driver&.first_name || "No Driver Assigned" %></li>
                           <li><strong>Dispatch Date:</strong> <%= dispatch.dispatch_date || "No Date" %></li>
                         </ul>

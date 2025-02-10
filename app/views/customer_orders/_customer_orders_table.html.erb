@@ -15,7 +15,12 @@
     <% customer_orders.each do |customer_order| %>
       <tr>
         <td><%= link_to customer_order.id, customer_order_path(customer_order) %></td>
-        <td><%= customer_order.order_status_before_type_cast %></td>
+        <td>
+          <% status_classes = { "new" => "bg-primary", "complete" => "bg-success", "deleted" => "bg-danger", "on_hold" => "bg-warning text-dark" } %>
+          <span class="badge <%= status_classes[customer_order.order_status] || 'bg-secondary' %>">
+            <%= customer_order.order_status.humanize %>
+          </span>
+        </td>
         <td>
           <%= Location.find(customer_order.location_id).address %>, 
           <%= Location.find(customer_order.location_id).city %>, 
