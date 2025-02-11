@@ -13,89 +13,77 @@
   <p style="color: green"><%= notice %></p>
   <div class="d-flex align-items-center mb-3">
     <h1 class="mb-0 mr-3">Locations</h1>
-    <%= link_to "New location", new_location_path, class: "btn btn-primary", style: "margin-left: 15px;" %>
+    <%= link_to "New Location", new_location_path, class: "btn btn-primary ms-3" %>
   </div>
 
-  <!-- Accordion Structure -->
-  <div class="accordion" id="locationsAccordion">
-
-    <!-- Origin Locations -->
-    <div class="accordion-item">
-      <h2 class="accordion-header" id="headingOrigin">
-        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOrigin" aria-expanded="true" aria-controls="collapseOrigin" style="font-weight: 600;">
-          Origin Locations
-        </button>
-      </h2>
-      <div id="collapseOrigin" class="accordion-collapse collapse show" aria-labelledby="headingOrigin" data-bs-parent="#locationsAccordion">
-        <div class="accordion-body">
-          <table class="table table-hover table-bordered">
-            <thead class="thead-dark">
-              <tr>
-                <th>Name</th>
-                <th>Address</th>
-                <th>City</th>
-                <th>State</th>
-                <th>Zip</th>
-                <th>Phone</th>
-                <th>Category</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% @locations.where(location_category_id: LocationCategory.find_by(name: 'Origin').id).each do |location| %>
-                <tr onclick="location.href='/locations/<%= location.id %>';">
-                  <td><%= location.company_name %></td>
-                  <td><%= location.address %></td>
-                  <td><%= location.city %></td>
-                  <td><%= location.state %></td>
-                  <td><%= location.zip %></td>
-                  <td><%= location.phone_number %></td>
-                  <td><%= LocationCategory.find(location.location_category_id).name %></td>
-                </tr>
-              <% end %>
-            </tbody>
-          </table>
-        </div>
-      </div>
+  <!-- Origin Locations Section -->
+  <div class="location-section card mb-4">
+    <div class="card-header bg-light" style="font-weight: 600;">
+      Origin Locations
     </div>
-
-    <!-- Destination Locations -->
-    <div class="accordion-item">
-      <h2 class="accordion-header" id="headingDestination">
-        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDestination" aria-expanded="false" aria-controls="collapseDestination" style="font-weight: 600;">
-          Destination Locations
-        </button>
-      </h2>
-      <div id="collapseDestination" class="accordion-collapse collapse" aria-labelledby="headingDestination" data-bs-parent="#locationsAccordion">
-        <div class="accordion-body">
-          <table class="table table-hover table-bordered">
-            <thead class="thead-dark">
-              <tr>
-                <th>Name</th>
-                <th>Address</th>
-                <th>City</th>
-                <th>State</th>
-                <th>Zip</th>
-                <th>Phone</th>
-                <th>Category</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% @locations.where(location_category_id: LocationCategory.find_by(name: 'Destination').id).each do |location| %>
-                <tr onclick="location.href='/locations/<%= location.id %>';">
-                  <td><%= location.company_name %></td>
-                  <td><%= location.address %></td>
-                  <td><%= location.city %></td>
-                  <td><%= location.state %></td>
-                  <td><%= location.zip %></td>
-                  <td><%= location.phone_number %></td>
-                  <td><%= LocationCategory.find(location.location_category_id).name %></td>
-                </tr>
-              <% end %>
-            </tbody>
-          </table>
-        </div>
-      </div>
+    <div class="card-body">
+      <table class="table table-hover table-bordered">
+        <thead class="thead-dark">
+          <tr>
+            <th>Name</th>
+            <th>Address</th>
+            <th>City</th>
+            <th>State</th>
+            <th>Zip</th>
+            <th>Phone</th>
+            <th>Category</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @locations.where(location_category_id: LocationCategory.find_by(name: 'Origin').id).each do |location| %>
+            <tr onclick="location.href='/locations/<%= location.id %>'; style='cursor:pointer;'">
+              <td><%= location.company_name %></td>
+              <td><%= location.address %></td>
+              <td><%= location.city %></td>
+              <td><%= location.state %></td>
+              <td><%= location.zip %></td>
+              <td><%= location.phone_number %></td>
+              <td><%= LocationCategory.find(location.location_category_id).name %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
     </div>
-
   </div>
+
+  <!-- Destination & Prospective Locations Section -->
+  <div class="location-section card">
+    <div class="card-header bg-light" style="font-weight: 600;">
+      Destination & Prospective Locations
+    </div>
+    <div class="card-body">
+      <table class="table table-hover table-bordered">
+        <thead class="thead-dark">
+          <tr>
+            <th>Name</th>
+            <th>Address</th>
+            <th>City</th>
+            <th>State</th>
+            <th>Zip</th>
+            <th>Phone</th>
+            <th>Category</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @locations.where(location_category_id: LocationCategory.where(name: ['Destination', 'Prospective']).pluck(:id)).each do |location| %>
+            <tr onclick="location.href='/locations/<%= location.id %>'; style='cursor:pointer;'">
+              <td><%= location.company_name %></td>
+              <td><%= location.address %></td>
+              <td><%= location.city %></td>
+              <td><%= location.state %></td>
+              <td><%= location.zip %></td>
+              <td><%= location.phone_number %></td>
+              <td><%= LocationCategory.find(location.location_category_id).name %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
 </div>
