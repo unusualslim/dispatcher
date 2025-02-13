@@ -8,6 +8,7 @@ class DispatchesController < ApplicationController
     @filtered_dispatches = Dispatch.where(status: ['New', 'sent_to_driver', 'Sent to driver', 'Sent to Driver']).order(:dispatch_date)
     @destination_locations = Location.all
     @origin_locations = Location.all
+    @on_hold_orders = CustomerOrder.where(order_status: "On Hold")
     @filters = {
       product: params[:product],
       delivery_date: params[:delivery_date],

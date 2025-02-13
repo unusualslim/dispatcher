@@ -300,9 +300,128 @@
       </div>
     </div>
   </div>
+
+  <!-- On Hold Orders Section -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="headingDispatches">
+      <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOnHoldOrders" aria-expanded="true" aria-controls="collapseDispatches" style="font-weight: 600;">
+        On Hold Orders
+      </button>
+    </h2>
+    <div id="collapseOnHoldOrders" class="accordion-collapse collapse show" aria-labelledby="headingOnHoldOrders" >
+      <div class="accordion-body">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Status</th>
+              <th>Product</th>
+              <th>Delivery Date</th>
+              <th>Location</th>
+              <th>Amount</th>
+              <th></th> <!-- Freight Only Column -->
+            </tr>
+          </thead>
+          <tbody>
+            <% @on_hold_orders.each do |order| %>
+              <% companyName = order.location&.company_name || "No Company Name Available" %>
+
+              <% # Determine top product and total product count %>
+              <% top_product = order.customer_order_products.max_by { |cop| cop.quantity || 0 } %>
+              <% total_products_count = order.customer_order_products.count %>
+              <% product_display = total_products_count > 1 ? "#{top_product.product.name} + #{total_products_count - 1}" : top_product.product.name %>
+
+              <% # Calculate total quantity %>
+              <% total_quantity = order.customer_order_products.sum { |cop| cop.quantity || 0 } %>
+              <% quantity_display = total_quantity.positive? ? "#{total_quantity} gals" : "Not Set" %>
+
+              <!-- Row to trigger collapse -->
+              <tr data-bs-toggle="collapse" data-bs-target="#detailsOnHoldOrder<%= order.id %>">
+                <td><%= order.id %></td>
+                <td>
+                  <span class="badge bg-warning text-dark">On Hold</span>
+                </td>
+                <td><%= product_display %></td>
+                <td><%= order.required_delivery_date || "No Date" %></td>
+                <td><%= companyName %></td>
+                <td><%= quantity_display %></td>
+                <td>
+                  <% if order.freight_only? %>
+                    <span class="badge bg-warning text-dark">Freight Only</span>
+                  <% end %>
+                </td>
+              </tr>
+
+              <!-- Collapsible Row -->
+              <tr class="collapse" id="detailsOnHoldOrder<%= order.id %>">
+                <td colspan="7">
+                  <div class="border rounded bg-light p-4">
+                    <h5>Order Details</h5>
+                    <div class="row">
+                      <div class="col">
+                        <ul class="list-unstyled">
+                          <li><strong>Order ID:</strong> <%= order.id %></li>
+                          <li><strong>Delivery Date:</strong> <%= order.required_delivery_date || "No Date" %></li>
+                          <li><strong>Location:</strong> <%= companyName %></li>
+                          <li>
+                            <strong>Freight Only:</strong> 
+                            <% if order.freight_only? %>
+                              <span class="badge bg-warning text-dark">Yes</span>
+                            <% else %>
+                              <span class="text-muted">No</span>
+                            <% end %>
+                          </li>
+                        </ul>
+                      </div>
+                      <div class="col">
+                        <ul class="list-unstyled">
+                          <li><strong>Status:</strong> 
+                            <span class="badge bg-warning text-dark">On Hold</span>
+                          </li>
+                        </ul>
+                      </div>
+                      <div class="col">
+                        <div id="map<%= order.id %>" style="height: 20vh;"></div>
+                      </div>
+                    </div>
+                    <div class="row mt-3">
+                      <div class="col">
+                        <h6>Products in Order</h6>
+                        <table class="table table-bordered">
+                          <thead>
+                            <tr>
+                              <th>Product Name</th>
+                              <th>Quantity</th>
+                              <th>Price</th>
+                              <th>Total</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <% order.customer_order_products.each do |cop| %>
+                              <tr>
+                                <td><%= cop.product.name %></td>
+                                <td><%= cop.quantity %></td>
+                                <td><%= number_to_currency(cop.price) %></td>
+                                <td><%= number_to_currency((cop.quantity || 0) * (cop.price || 0.0)) %></td>
+                              </tr>
+                            <% end %>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                    <div class="mt-3">
+                      <%= link_to 'View Order', customer_order_path(order), class: 'btn btn-primary' %>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
-
-
 
 <style>
 .collapse > div {
