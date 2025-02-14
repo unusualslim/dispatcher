@@ -93,7 +93,12 @@
       <%= link_to customer_order_path(dispatch_customer_order.customer_order), class: "card-link", style: "text-decoration: none; color: inherit;" do %>
         <div class="card mb-3" style="cursor: pointer;">
           <div class="card-body">
-            <h5 class="card-title">Customer Order ID: <%= dispatch_customer_order.customer_order.id %></h5>
+            <h5 class="card-title">
+              Customer Order ID: <%= dispatch_customer_order.customer_order.id %>
+              <% if dispatch_customer_order.customer_order.freight_only? %>
+                <span class="badge bg-dark ms-2">Freight Only</span>
+              <% end %>
+            </h5>
             <p class="card-text"><strong>Location:</strong> <%= dispatch_customer_order.customer_order.location.company_name %></p>
 
             <!-- Table for Displaying Products (No Edit/Update) -->
