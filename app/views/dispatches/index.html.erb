@@ -188,7 +188,12 @@
                 <td><%= dispatch.driver&.first_name || "No Driver Assigned" %></td>
                 <td><%= dispatch.dispatch_date.present? ? dispatch.dispatch_date.strftime("%B %d, %Y") : "N/A" %></td>
                 <td><%= dispatch.origin || "No Origin" %></td>
-                <td><%= dispatch.destination || "No Destination" %></td>
+                <td>
+                  <%= dispatch.destination || "No Destination" %>
+                  <% if dispatch.freight_only? %>
+                    <span class="badge bg-dark">Freight Only</span>
+                  <% end %>
+                </td>
               </tr>
               <!-- Collapsible Row -->
               <tr class="collapse" id="detailsDispatch<%= dispatch.id %>" data-bs-parent="#dispatchAccordion">
@@ -264,7 +269,12 @@
                 <td><%= dispatch.driver&.full_name || "No Driver Assigned" %></td>
                 <td><%= dispatch.dispatch_date.present? ? dispatch.dispatch_date.strftime("%B %d, %Y") : "N/A" %></td>
                 <td><%= dispatch.origin || "No Origin" %></td>
-                <td><%= dispatch.destination || "No Destination" %></td>
+                <td>
+                  <%= dispatch.destination || "No Destination" %>
+                  <% if dispatch.freight_only? %>
+                    <span class="badge bg-dark">Freight Only</span>
+                  <% end %>
+                </td>
               </tr>
               <!-- Collapsible Row -->
               <tr class="collapse" id="detailsCompletedDispatch<%= dispatch.id %>" data-bs-parent="#completedDispatchAccordion">

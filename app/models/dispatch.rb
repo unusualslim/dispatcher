@@ -8,6 +8,10 @@ class Dispatch < ApplicationRecord
     belongs_to :vendor, optional: true
     enum dispatch_status: { New: "New", sent_to_driver: "Sent to Driver", complete: "Complete", billed: "Billed", deleted: "Deleted" }
 
+    def freight_only?
+      customer_orders.exists?(freight_only: true)
+    end
+
     private
 
     def set_default_status
