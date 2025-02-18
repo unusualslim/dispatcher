@@ -54,8 +54,8 @@
 
   <p>
     <strong>Destination:</strong>
-    <% destination_location = @destination_locations.find_by(city: @dispatch.destination) %>
-    <% if destination_location %>
+    <% if @dispatch.customer_orders.any? %>
+      <% destination_location = @dispatch.customer_orders.first.location %>
       <%= link_to destination_location.full_address_with_company, location_path(destination_location) %>
     <% else %>
       No destination location found
