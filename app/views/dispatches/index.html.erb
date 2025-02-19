@@ -189,7 +189,14 @@
                 <td><%= dispatch.dispatch_date.present? ? dispatch.dispatch_date.strftime("%B %d, %Y") : "N/A" %></td>
                 <td><%= dispatch.origin || "No Origin" %></td>
                 <td>
-                  <%= dispatch.destination || "No Destination" %>
+                  <p>
+                    <% if dispatch.customer_orders.any? %>
+                      <% destination_location = dispatch.customer_orders.first.location %>
+                      <%= "#{destination_location.company_name} - #{destination_location.city}" %>
+                    <% else %>
+                      No destination location found
+                    <% end %>
+                  </p>
                   <% if dispatch.freight_only? %>
                     <span class="badge bg-dark">Freight Only</span>
                   <% end %>
@@ -270,7 +277,14 @@
                 <td><%= dispatch.dispatch_date.present? ? dispatch.dispatch_date.strftime("%B %d, %Y") : "N/A" %></td>
                 <td><%= dispatch.origin || "No Origin" %></td>
                 <td>
-                  <%= dispatch.destination || "No Destination" %>
+                  <p>
+                    <% if dispatch.customer_orders.any? %>
+                      <% destination_location = dispatch.customer_orders.first.location %>
+                      <%= "#{destination_location.company_name} - #{destination_location.city}" %>
+                    <% else %>
+                      No destination location found
+                    <% end %>
+                  </p>
                   <% if dispatch.freight_only? %>
                     <span class="badge bg-dark">Freight Only</span>
                   <% end %>
