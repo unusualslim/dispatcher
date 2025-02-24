@@ -114,10 +114,10 @@ class DispatchesController < ApplicationController
   def create
     @origin_locations = Location.where(location_category_id: 1)
     @recent_customer_orders = CustomerOrder
-    .where.not(order_status: ['complete'])
-    .order(created_at: :desc)
+      .where.not(order_status: ['complete'])
+      .order(created_at: :desc)
     @dispatch = Dispatch.new(dispatch_params)
-  
+
     respond_to do |format|
       if @dispatch.save
         update_destination_from_customer_orders(@dispatch)

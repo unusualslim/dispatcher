@@ -33,7 +33,7 @@
 
   <div class="field">
     <%= form.label :origin, style: "display: block" %>
-    <%= form.collection_select(:origin, @origin_locations, :city, :city_with_company, prompt: "Select a Location") %>
+    <%= form.collection_select(:origin, @origin_locations, :full_address_with_company, :full_address_with_company, prompt: "Select a Location") %>
     <%= link_to 'New Location', new_location_path, class: 'btn btn-primary' %>
   </div>
 

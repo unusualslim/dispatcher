@@ -44,7 +44,7 @@
 
   <p>
     <strong>Origin:</strong>
-    <% origin_location = @origin_locations.find_by(city: @dispatch.origin) %>
+    <% origin_location = @origin_locations.select { |location| location.full_address_with_company == @dispatch.origin }.first %>
     <% if origin_location %>
       <%= link_to origin_location.full_address_with_company, location_path(origin_location) %>
     <% else %>
@@ -184,7 +184,7 @@
       <div class="modal-body">
         <%= form_with url: send_notification_dispatch_path(dispatch), method: :post, local: true, id: "notificationForm-#{dispatch.id}" do |f| %>
         <% origin_location = @origin_locations.find_by(city: @dispatch.origin) %>
-        <% destination_location = @destination_locations.find_by(city: @dispatch.destination) %>
+        <% destination_location = @dispatch.customer_orders.first.location if @dispatch.customer_orders.any? %>
         <div class="mb-3">
           <%= f.label :email_message, "Email Message" %>
           <%= f.text_area :email_message, 
