@@ -99,6 +99,7 @@
                 <span class="badge bg-dark ms-2">Freight Only</span>
               <% end %>
             </h5>
+            <p class="card-text"><strong>Customer:</strong> <%= dispatch_customer_order.customer_order&.customer&.name %></p>  
             <p class="card-text"><strong>Location:</strong> <%= dispatch_customer_order.customer_order.location.company_name %></p>
 
             <!-- Table for Displaying Products (No Edit/Update) -->
@@ -183,8 +184,14 @@
       </div>
       <div class="modal-body">
         <%= form_with url: send_notification_dispatch_path(dispatch), method: :post, local: true, id: "notificationForm-#{dispatch.id}" do |f| %>
-        <% origin_location = @origin_locations.find_by(city: @dispatch.origin) %>
-        <% destination_location = @dispatch.customer_orders.first.location if @dispatch.customer_orders.any? %>
+        <%
+          origin_location = @origin_locations.select { |location| location.full_address_with_company == @dispatch.origin }.first 
+          if origin_location.nil?
+            origin_location = @origin_locations.find_by(city: @dispatch.origin)
+          end
+          
+          destination_location = @dispatch.customer_orders.first.location if @dispatch.customer_orders.any?
+        %>
         <div class="mb-3">
           <%= f.label :email_message, "Email Message" %>
           <%= f.text_area :email_message, 
