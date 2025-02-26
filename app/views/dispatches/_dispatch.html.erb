@@ -55,7 +55,7 @@
   <p>
     <strong>Origin Notes:</strong>
     <% origin_location = @origin_locations.select { |location| location.full_address_with_company == @dispatch.origin }.first %>
-    <% if origin_location && origin_location.notes %>
+    <% if origin_location.notes? %>
       <%= origin_location.notes %>
     <% else %>
       No notes found
