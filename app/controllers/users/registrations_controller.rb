@@ -48,11 +48,17 @@ class Users::RegistrationsController < Devise::RegistrationsController
   # POST /users
   def create
     @user = User.new(sign_up_params)
-  
-    if @user.save
-      sign_in(@user) # Automatically log in the user after registration
-      redirect_to '/dispatches#index', notice: "Account successfully created."
+    
+    if verify_recaptcha(model: @user)
+      if @user.save
+        sign_in(@user) # Automatically log in the user after registration
+        redirect_to '/dispatches#index', notice: "Account successfully created."
+      else
+        Rails.logger.info "User save failed: #{@user.errors.full_messages.join(', ')}"
+        render :new
+      end
     else
+      Rails.logger.info "reCAPTCHA verification failed: #{@user.errors.full_messages.join(', ')}"
       render :new
     end
   end
