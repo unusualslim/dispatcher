@@ -24,7 +24,15 @@
       No destination location found
     <% end %>
   </p>
-
+  <p>
+    <strong>Location Notes:</strong>
+    <% location = Location.find_by(id: @customer_order.location_id) %>
+    <% if location.notes %>
+      <%= location.notes %>
+    <% else %>
+      No location notes
+    <% end %>
+  </p>
   <p><strong>Order Status:</strong> <%= @customer_order.order_status_before_type_cast %></p>
   <p><strong>Notes:</strong> <%= @customer_order.notes %></p>
 
