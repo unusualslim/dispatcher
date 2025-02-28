@@ -4,6 +4,7 @@ class Dispatch < ApplicationRecord
     #belongs_to :customer_order
     has_many :dispatch_customer_order, dependent: :destroy
     has_many :customer_orders, through: :dispatch_customer_order
+    has_many :dispatch_messages, dependent: :destroy
     has_many_attached :files
     belongs_to :driver, class_name: 'User', foreign_key: 'driver_id', optional: true
     belongs_to :vendor, optional: true

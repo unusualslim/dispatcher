@@ -55,7 +55,7 @@
   <p>
     <strong>Origin Notes:</strong>
     <% origin_location = @origin_locations.select { |location| location.full_address_with_company == @dispatch.origin }.first %>
-    <% if origin_location.notes? %>
+    <% if origin_location&.notes %>
       <%= origin_location.notes %>
     <% else %>
       No notes found
@@ -196,8 +196,47 @@
   <% end %>
 </div>
 
-
-
+  <!-- Display Message Logs -->
+  <h3>Message Logs</h3>
+  <% if dispatch.dispatch_messages.any? %>
+    <div class="table-responsive">
+      <table class="table table-striped table-hover">
+        <thead class="thead-dark">
+          <tr>
+            <th scope="col">ID</th>
+            <th scope="col">User</th>
+            <th scope="col">Message Body</th>
+            <th scope="col">Delivery Method</th>
+            <th scope="col">Sent At</th>
+            <th scope="col">Status</th>
+            <th scope="col">Reference ID</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% dispatch.dispatch_messages.each do |message| %>
+            <tr data-href="<%= dispatch_message_path(message) %>">
+              <td><%= message.id %></td>
+              <td><%= message.user&.full_name || "Unknown User" %></td>
+              <td><%= truncate(message.message_body, length: 50) %></td>
+              <td><%= message.delivery_method.capitalize %></td>
+              <td><%= message.sent_at ? message.sent_at.strftime("%B %d, %Y %H:%M") : "Not Sent" %></td>
+              <td>
+                <%= case message.status
+                    when "pending" then "Pending"
+                    when "sent" then "Sent"
+                    when "failed" then "Failed"
+                    else "Issue"
+                end %>
+              </td>
+              <td><%= message.reference_id || "N/A" %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p>No messages logged yet.</p>
+  <% end %>
 
 <div class="modal fade" id="editNotificationModal-<%= dispatch.id %>" tabindex="-1" aria-labelledby="editNotificationModalLabel" aria-hidden="true">
   <div class="modal-dialog">
@@ -208,21 +247,20 @@
       </div>
       <div class="modal-body">
         <%= form_with url: send_notification_dispatch_path(dispatch), method: :post, local: true, id: "notificationForm-#{dispatch.id}" do |f| %>
-        <%
-          origin_location = @origin_locations.select { |location| location.full_address_with_company == @dispatch.origin }.first 
-          if origin_location.nil?
-            origin_location = @origin_locations.find_by(city: @dispatch.origin)
-          end
-          
-          destination_location = @dispatch.customer_orders.first.location if @dispatch.customer_orders.any?
-        %>
-        <div class="mb-3">
-          <%= f.label :email_message, "Email Message" %>
-          <%= f.text_area :email_message, 
-              rows: 3, 
-              class: "form-control", 
-              value: "You have been assigned a new dispatch.\nOrigin: #{origin_location&.full_address_with_company || 'Unknown Origin'}\nOrigin Notes: #{origin_location&.notes || 'No Origin Notes'}\nDestination: #{destination_location&.full_address_with_company || 'Unknown Destination'}\nDestination Notes: #{destination_location&.notes || 'No Destination Notes'}\nRequired Dispatch Date: #{dispatch.dispatch_date}\nNotes: #{dispatch.notes}\nProducts: #{dispatch.customer_orders.map { |order| order.products.map(&:name).join(', ') }.join("\n")}\nView Details: loadntrucks.com/dispatches/#{dispatch.id}" %>
-        </div>
+          <%
+            origin_location = @origin_locations.select { |location| location.full_address_with_company == @dispatch.origin }.first 
+            if origin_location.nil?
+              origin_location = @origin_locations.find_by(city: @dispatch.origin)
+            end
+            destination_location = @dispatch.customer_orders.first.location if @dispatch.customer_orders.any?
+          %>
+          <div class="mb-3">
+            <%= f.label :email_message, "Email Message" %>
+            <%= f.text_area :email_message, 
+                rows: 3, 
+                class: "form-control", 
+                value: "You have been assigned a new dispatch.\nOrigin: #{origin_location&.full_address_with_company || 'Unknown Origin'}\nOrigin Notes: #{origin_location&.notes || 'No Origin Notes'}\nDestination: #{destination_location&.full_address_with_company || 'Unknown Destination'}\nDestination Notes: #{destination_location&.notes || 'No Destination Notes'}\nRequired Dispatch Date: #{dispatch.dispatch_date}\nNotes: #{dispatch.notes}\nProducts: #{dispatch.customer_orders.map { |order| order.products.map(&:name).join(', ') }.join("\n")}\nView Details: loadntrucks.com/dispatches/#{dispatch.id}" %>
+          </div>
           <div class="mb-3">
             <%= f.label :sms_message, "SMS Message" %>
             <%= f.text_area :sms_message, 
@@ -230,8 +268,11 @@
                 class: "form-control", 
                 value: "You have been assigned a new dispatch.\nOrigin: #{origin_location&.full_address_with_company || 'Unknown Origin'}\nOrigin Notes: #{origin_location&.notes || 'No Origin Notes'}\nDestination: #{destination_location&.full_address_with_company || 'Unknown Destination'}\nDestination Notes: #{destination_location&.notes || 'No Destination Notes'}\nRequired Dispatch Date: #{dispatch.dispatch_date}\nNotes: #{dispatch.notes}\nProducts: #{dispatch.customer_orders.map { |order| order.products.map(&:name).join(', ') }.join("\n")}\nView Details: loadntrucks.com/dispatches/#{dispatch.id}" %>
           </div>
-          <%= f.hidden_field :id, value: dispatch.id %>
-          <%# f.submit "Send Notification", class: "btn btn-primary" %>
+          <%= f.hidden_field :dispatch_id, value: dispatch.id %>
+          <%= f.hidden_field :user_id, value: current_user.id %>
+          <%= f.hidden_field :delivery_method, value: "email" %> <!-- or "sms" depending on the method -->
+          <%= f.hidden_field :status, value: "pending" %>
+          <%= f.hidden_field :sent_at, value: Time.current %>
         <% end %>
       </div>
       <div class="modal-footer">
@@ -241,3 +282,14 @@
     </div>
   </div>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const rows = document.querySelectorAll("tr[data-href]");
+  rows.forEach(row => {
+    row.addEventListener("click", function() {
+      window.location.href = this.dataset.href;
+    });
+  });
+});
+</script>

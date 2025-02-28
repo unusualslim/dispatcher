@@ -3,7 +3,7 @@ class ApplicationMailer < ActionMailer::Base
   layout "mailer"
 
   # Log email after sending
-  after_action :log_email
+  #after_action :log_email
 
   private
 
@@ -12,12 +12,11 @@ class ApplicationMailer < ActionMailer::Base
 
     # Use the MessageLogger service to log the email
     MessageLogger.log(
-      user: @user,
-      message_body: mail.body.raw_source,
-      delivery_method: "Email",
-      reference_id: mail.message_id,
-      status: "sent",
-      sent_at: Time.current
+      @dispatch,
+      mail.body.encoded,
+      "email",
+      "sent",
+      mail.message_id
     )
   end
 end

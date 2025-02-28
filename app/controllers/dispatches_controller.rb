@@ -1,5 +1,5 @@
 class DispatchesController < ApplicationController
-  before_action :set_dispatch, only: %i[show edit update destroy mark_as_complete mark_as_billed]
+  before_action :set_dispatch, only: %i[show edit update destroy mark_as_complete mark_as_billed send_notification]
 
   # GET /dispatches or /dispatches.json
   def index
@@ -213,18 +213,33 @@ class DispatchesController < ApplicationController
     @dispatch = Dispatch.find(params[:id])
     email_message = params[:email_message]
     sms_message = params[:sms_message]
+
+    Rails.logger.info "Dispatch ID: #{@dispatch.id}"
+    Rails.logger.info "Email Message: #{email_message}"
+    Rails.logger.info "SMS Message: #{sms_message}"
     
     # Update dispatch status to "Sent to driver"
-    @dispatch.update(status: "Sent to driver")
+    if @dispatch.update(status: "Sent to driver")
+      Rails.logger.info "Dispatch status updated to 'Sent to driver'"
+    else
+      Rails.logger.error "Failed to update dispatch status: #{@dispatch.errors.full_messages.join(', ')}"
+    end
   
     # Send email if driver has opted in for email notifications
     if @dispatch.driver.present? && @dispatch.driver.email_opt_in?
       DispatchMailer.send_dispatch_email(@dispatch, email_message).deliver_now
+      MessageLogger.log(@dispatch, email_message, "email", "sent")
+      Rails.logger.info "Email sent to driver"
+    else
+      Rails.logger.info "Driver not present or not opted in for email notifications"
     end
     
     # Send SMS if driver has opted in for SMS notifications and has a phone number
     if @dispatch.driver.present? && @dispatch.driver.sms_opt_in? && @dispatch.driver.phone_number.present?
       send_text_to_driver(@dispatch, sms_message)
+      Rails.logger.info "SMS sent to driver"
+    else
+      Rails.logger.info "Driver not present, not opted in for SMS notifications, or phone number not present"
     end
   
     # Respond to JS or HTML format
@@ -277,10 +292,25 @@ class DispatchesController < ApplicationController
     def boot_twilio
       account_sid = ENV['TWILIO_SID']
       auth_token = ENV['TWILIO_TOKEN']
-
-      @client = Twilio::REST::Client.new account_sid, auth_token
+      @client = Twilio::REST::Client.new(account_sid, auth_token)
     end
 
+    def create_dispatch_message(dispatch, message_body, delivery_method, status, reference_id = nil)
+      Rails.logger.info "Creating dispatch message with dispatch_id: #{dispatch.id}, message_body: #{message_body}, delivery_method: #{delivery_method}, status: #{status}, reference_id: #{reference_id}"
+      DispatchMessage.create!(
+        dispatch: dispatch,
+        user: dispatch.driver,
+        message_body: message_body,
+        delivery_method: delivery_method,
+        status: status,
+        reference_id: reference_id,
+        sent_at: Time.current
+      )
+    rescue ActiveRecord::RecordInvalid => e
+      Rails.logger.error "Failed to create dispatch message: #{e.message}"
+      Rails.logger.error "DispatchMessage errors: #{e.record.errors.full_messages.join(', ')}"
+    end
+  
     def send_text_to_driver(dispatch, sms_message)
       boot_twilio # Ensure Twilio client is initialized correctly.
     
@@ -317,28 +347,15 @@ class DispatchesController < ApplicationController
         )
     
         # Log the SMS in the database.
-        DispatchMessage.create!(
-          user_id: dispatch.driver.id, # Assuming `dispatch.driver` is a User.
-          message_body: sms_body,
-          delivery_method: "SMS",
-          reference_id: sms.sid,
-          status: "sent",
-          sent_at: Time.current
-        )
+        MessageLogger.log(dispatch, sms_body, "sms", "sent", sms.sid)
+        Rails.logger.info "SMS sent successfully with SID: #{sms.sid}"
       rescue Twilio::REST::RestError => e
         # Log the error and create a failed message record.
-        Rails.logger.error("Failed to send SMS: #{e.message}")
+        Rails.logger.error "Failed to send SMS: #{e.message}"
     
-        DispatchMessage.create!(
-          user_id: dispatch.driver.id,
-          message_body: sms_body,
-          delivery_method: "SMS",
-          reference_id: nil,
-          status: "failed",
-          sent_at: Time.current
-        )
+        MessageLogger.log(dispatch, sms_body, "sms", "failed")
       end
-    end    
+    end
 
     def update_destination_from_customer_orders(dispatch)
       if dispatch.customer_orders.any?
