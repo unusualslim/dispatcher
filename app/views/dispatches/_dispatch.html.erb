@@ -131,6 +131,7 @@
               <thead>
                 <tr>
                   <th>Product</th>
+                  <th>Unit of Measurement</th>
                   <th>Quantity (Gal)</th>
                   <th>Price</th>
                   <th>Total</th>
@@ -141,6 +142,7 @@
                 <% dispatch_customer_order.customer_order.customer_order_products.each do |cop| %>
                   <tr>
                     <td><%= Product.find_by(id: cop.product_id)&.name || "Unknown Product" %></td>
+                    <td><%= Product.find_by(id: cop.product_id)&.unit_of_measurement || "Not Set" %></td>
                     <td><%= cop.quantity || "Not Set" %></td>
                     <td><%= cop.price ? number_to_currency(cop.price) : "Not Set" %></td>
                     <td><%= cop.price ? number_to_currency(cop.quantity * cop.price) : "$0.00" %></td>
