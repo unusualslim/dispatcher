@@ -115,6 +115,7 @@
                         <thead>
                           <tr>
                             <th>Product Name</th>
+                            <th>Unit of Measurement</th>
                             <th>Quantity</th>
                             <th>Price</th>
                             <th>Total</th>
@@ -124,6 +125,7 @@
                           <% order.customer_order_products.each do |cop| %>
                             <tr>
                               <td><%= cop.product.name %></td>
+                              <td><%= cop.product.unit_of_measurement %></td>
                               <td><%= cop.quantity %></td>
                               <td><%= number_to_currency(cop.price) %></td>
                               <td><%= number_to_currency((cop.quantity || 0) * (cop.price || 0.0)) %></td>
