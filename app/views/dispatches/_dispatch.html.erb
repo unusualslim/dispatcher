@@ -261,14 +261,14 @@
             <%= f.text_area :email_message, 
                 rows: 3, 
                 class: "form-control", 
-                value: "You have been assigned a new dispatch.\nOrigin: #{origin_location&.full_address_with_company || 'Unknown Origin'}\nOrigin Notes: #{origin_location&.notes || 'No Origin Notes'}\nDestination: #{destination_location&.full_address_with_company || 'Unknown Destination'}\nDestination Notes: #{destination_location&.notes || 'No Destination Notes'}\nRequired Dispatch Date: #{dispatch.dispatch_date}\nNotes: #{dispatch.notes}\nProducts: #{dispatch.customer_orders.map { |order| order.products.map(&:name).join(', ') }.join("\n")}\nView Details: loadntrucks.com/dispatches/#{dispatch.id}" %>
+                value: "You have been assigned a new dispatch.\nOrigin: #{origin_location&.full_address_with_company || 'Unknown Origin'}\nOrigin Notes: #{origin_location&.notes || 'No Origin Notes'}\nDestination: #{destination_location&.full_address_with_company || 'Unknown Destination'}\nDestination Notes: #{destination_location&.notes || 'No Destination Notes'}\nRequired Dispatch Date: #{dispatch.dispatch_date}\nNotes: #{dispatch.notes}\nProducts: #{dispatch.customer_orders.map { |order| order.customer_order_products.map { |cop| "#{cop.product.name} (#{cop.quantity} #{cop.product.unit_of_measurement})" }.join(', ') }.join("\n")}\nView Details: loadntrucks.com/dispatches/#{dispatch.id}" %>
           </div>
           <div class="mb-3">
             <%= f.label :sms_message, "SMS Message" %>
             <%= f.text_area :sms_message, 
                 rows: 2, 
                 class: "form-control", 
-                value: "You have been assigned a new dispatch.\nOrigin: #{origin_location&.full_address_with_company || 'Unknown Origin'}\nOrigin Notes: #{origin_location&.notes || 'No Origin Notes'}\nDestination: #{destination_location&.full_address_with_company || 'Unknown Destination'}\nDestination Notes: #{destination_location&.notes || 'No Destination Notes'}\nRequired Dispatch Date: #{dispatch.dispatch_date}\nNotes: #{dispatch.notes}\nProducts: #{dispatch.customer_orders.map { |order| order.products.map(&:name).join(', ') }.join("\n")}\nView Details: loadntrucks.com/dispatches/#{dispatch.id}" %>
+                value: "You have been assigned a new dispatch.\nOrigin: #{origin_location&.full_address_with_company || 'Unknown Origin'}\nOrigin Notes: #{origin_location&.notes || 'No Origin Notes'}\nDestination: #{destination_location&.full_address_with_company || 'Unknown Destination'}\nDestination Notes: #{destination_location&.notes || 'No Destination Notes'}\nRequired Dispatch Date: #{dispatch.dispatch_date}\nNotes: #{dispatch.notes}\nProducts: #{dispatch.customer_orders.map { |order| order.customer_order_products.map { |cop| "#{cop.product.name} (#{cop.quantity} #{cop.product.unit_of_measurement})" }.join(', ') }.join("\n")}\nView Details: loadntrucks.com/dispatches/#{dispatch.id}" %>
           </div>
           <%= f.hidden_field :dispatch_id, value: dispatch.id %>
           <%= f.hidden_field :user_id, value: current_user.id %>
