@@ -47,6 +47,8 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :announcements
+
   resources :products
 
   resources :dispatch_messages, only: [:index, :show]

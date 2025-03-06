@@ -1,0 +1,8 @@
+<h1><%= @announcement.title %></h1>
+<p><%= @announcement.content %></p>
+<p><%= @announcement.published_at.in_time_zone('Eastern Time (US & Canada)').strftime("%B %d, %Y %I:%M %p %Z") %></p>
+<p><%= @announcement.status %></p>
+
+<%= link_to 'Edit', edit_announcement_path(@announcement), class: 'btn btn-primary' %>
+<%= link_to 'Back', announcements_path, class: 'btn btn-secondary' %>
+<%= button_to 'Destroy', announcement_path(@announcement), method: :delete, data: { confirm: 'Are you sure?' }, class: 'btn btn-danger' %>
