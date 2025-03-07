@@ -254,25 +254,25 @@
             if origin_location.nil?
               origin_location = @origin_locations.find_by(city: @dispatch.origin)
             end
-            destination_location = @dispatch.customer_orders.first.location if @dispatch.customer_orders.any?
+            destination_location = @dispatch.customer_orders.first&.location if @dispatch.customer_orders.any?
           %>
           <div class="mb-3">
             <%= f.label :email_message, "Email Message" %>
             <%= f.text_area :email_message, 
                 rows: 3, 
                 class: "form-control", 
-                value: "You have been assigned a new dispatch.\nOrigin: #{origin_location&.full_address_with_company || 'Unknown Origin'}\nOrigin Notes: #{origin_location&.notes || 'No Origin Notes'}\nDestination: #{destination_location&.full_address_with_company || 'Unknown Destination'}\nDestination Notes: #{destination_location&.notes || 'No Destination Notes'}\nRequired Dispatch Date: #{dispatch.dispatch_date}\nNotes: #{dispatch.notes}\nProducts: #{dispatch.customer_orders.map { |order| order.customer_order_products.map { |cop| "#{cop.product.name} (#{cop.quantity} #{cop.product.unit_of_measurement})" }.join(', ') }.join("\n")}\nView Details: loadntrucks.com/dispatches/#{dispatch.id}" %>
+                value: "You have been assigned a new dispatch.\nORIGIN: #{origin_location&.full_address_with_company || 'Unknown Origin'}\nORIGIN NOTES: #{origin_location&.notes || 'No Origin Notes'}\nDESTINATION: #{destination_location&.full_address_with_company || 'Unknown Destination'}\nDESTINATION NOTES: #{destination_location&.notes || 'No Destination Notes'}\nREQUIRED DISPATCH DATE: #{dispatch.dispatch_date}\nNOTES: #{dispatch.notes}\n\n#{dispatch.customer_orders.each_with_index.map { |order, index| "ORDER #{index + 1}:\nCUSTOMER: #{order.customer&.name || 'Unknown Customer'}\nLOCATION: #{order.location&.full_address_with_company || 'Unknown Location'}\nPRODUCTS:\n" + order.customer_order_products.map { |cop| "#{cop.product&.name || 'Unknown Product'} (#{cop.quantity} #{cop.product&.unit_of_measurement || 'Unknown Unit'})" }.join(', ') }.join("\n\n")}\nVIEW DETAILS: loadntrucks.com/dispatches/#{dispatch.id}" %>
           </div>
           <div class="mb-3">
             <%= f.label :sms_message, "SMS Message" %>
             <%= f.text_area :sms_message, 
                 rows: 2, 
                 class: "form-control", 
-                value: "You have been assigned a new dispatch.\nOrigin: #{origin_location&.full_address_with_company || 'Unknown Origin'}\nOrigin Notes: #{origin_location&.notes || 'No Origin Notes'}\nDestination: #{destination_location&.full_address_with_company || 'Unknown Destination'}\nDestination Notes: #{destination_location&.notes || 'No Destination Notes'}\nRequired Dispatch Date: #{dispatch.dispatch_date}\nNotes: #{dispatch.notes}\nProducts: #{dispatch.customer_orders.map { |order| order.customer_order_products.map { |cop| "#{cop.product.name} (#{cop.quantity} #{cop.product.unit_of_measurement})" }.join(', ') }.join("\n")}\nView Details: loadntrucks.com/dispatches/#{dispatch.id}" %>
+                value: "You have been assigned a new dispatch.\nORIGIN: #{origin_location&.full_address_with_company || 'Unknown Origin'}\nORIGIN NOTES: #{origin_location&.notes || 'No Origin Notes'}\nDESTINATION: #{destination_location&.full_address_with_company || 'Unknown Destination'}\nDESTINATION NOTES: #{destination_location&.notes || 'No Destination Notes'}\nREQUIRED DISPATCH DATE: #{dispatch.dispatch_date}\nNOTES: #{dispatch.notes}\n\n#{dispatch.customer_orders.each_with_index.map { |order, index| "ORDER #{index + 1}:\nCUSTOMER: #{order.customer&.name || 'Unknown Customer'}\nLOCATION: #{order.location&.full_address_with_company || 'Unknown Location'}\nPRODUCTS:\n" + order.customer_order_products.map { |cop| "#{cop.product&.name || 'Unknown Product'} (#{cop.quantity} #{cop.product&.unit_of_measurement || 'Unknown Unit'})" }.join(', ') }.join("\n\n")}\nVIEW DETAILS: loadntrucks.com/dispatches/#{dispatch.id}" %>
           </div>
           <%= f.hidden_field :dispatch_id, value: dispatch.id %>
           <%= f.hidden_field :user_id, value: current_user.id %>
-          <%= f.hidden_field :delivery_method, value: "email" %> <!-- or "sms" depending on the method -->
+          <%= f.hidden_field :delivery_method, value: "email" %>
           <%= f.hidden_field :status, value: "pending" %>
           <%= f.hidden_field :sent_at, value: Time.current %>
         <% end %>
