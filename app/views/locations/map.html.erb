@@ -54,25 +54,23 @@
     }).addTo(map);
 
     // Pass locations from Rails to JavaScript
-    const locations = <%= raw @locations.to_json(only: [:id, :latitude, :longitude, :city, :company_name, :location_category_id], methods: :has_active_order) %>;
+    const locations = <%= raw @locations.to_json(only: [:id, :latitude, :longitude, :city, :company_name, :location_category_id, :marker_color], methods: :has_active_order) %>;
 
     locations.forEach(location => {
-      let markerColor;
+      let markerColor = location.marker_color;
 
-      console.log(`Location ID: ${location.id}, Active Order: ${location.has_active_order}`);
-
-      if (location.has_active_order) {   
-        markerColor = "#28a745"; // Green for active orders
-      } else {
-        switch (location.location_category_id) {
-          case 1: markerColor = 'blue'; break;  
-          case 2: markerColor = 'red'; break;  
-          case 3: markerColor = 'gray'; break;  
-          default: markerColor = 'black';       
+      if (!markerColor) {
+        if (location.has_active_order) {   
+          markerColor = "#28a745"; // Green for active orders
+        } else {
+          switch (location.location_category_id) {
+            case 1: markerColor = 'blue'; break;  
+            case 2: markerColor = 'red'; break;  
+            case 3: markerColor = 'gray'; break;  
+            default: markerColor = 'black';       
+          }
         }
       }
-
-      console.log(`Location ID: ${location.id}, Assigned Color: ${markerColor}`);
 
       const marker = L.circleMarker([location.latitude, location.longitude], {
         radius: 8,
@@ -85,7 +83,7 @@
       marker.bindPopup(`<a href="/locations/${location.id}">${location.company_name}</a>`);
     });
 
-    // ✅ Add a Legend (Key) to the Top-Right Corner
+    // Add a Legend (Key) to the Top-Right Corner
     const legend = L.control({ position: "topright" });
 
     legend.onAdd = function (map) {

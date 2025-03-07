@@ -91,7 +91,7 @@ class LocationsController < ApplicationController
     private
   
     def location_params
-      params.require(:location).permit(:city, :address, :location_category_id, :company_name, :phone_number, :state, :notes, :zip, :max_capacity, :uleage_90, :latitude, :longitude, :cutoff_percent, product_ids: [], methods: [:has_active_order?])
+      params.require(:location).permit(:city, :address, :location_category_id, :company_name, :phone_number, :state, :notes, :zip, :max_capacity, :uleage_90, :latitude, :longitude, :cutoff_percent, :marker_color, product_ids: [], methods: [:has_active_order?])
     end
     def set_products
       @products = Product.all

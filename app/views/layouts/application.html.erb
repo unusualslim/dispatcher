@@ -9,73 +9,19 @@
 
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload", media: 'all' %>
     <%= stylesheet_link_tag 'custom', media: 'all' %>
+    <%= stylesheet_link_tag 'trix' %>
+    <%= javascript_include_tag 'trix' %>
     <%= javascript_include_tag "application", "data-turbo-track": "reload", defer: true %>
     <%= javascript_include_tag 'custom.js', type: "module" %>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <script src="https://www.google.com/recaptcha/api.js?render=explicit" async defer></script>
   </head>
 
-  <body>
-    <%= render 'layouts/header' %>
+<body>
+  <%= render 'layouts/header' %>
 
-    <div>
-      <% if Announcement.active.any? %>
-        <div class="alert alert-info">
-          <% Announcement.active.order(published_at: :desc).each do |announcement| %>
-            <div class="announcement" id="announcement-<%= announcement.id %>">
-              <button type="button" class="close" aria-label="Close" onclick="document.getElementById('announcement-<%= announcement.id %>').classList.add('hidden')">
-                <span aria-hidden="true">&times;</span>
-              </button>
-              <h4><%= announcement.title %></h4>
-              <p><%= announcement.content %></p>
-              <p><small><%= announcement.published_at.in_time_zone('Eastern Time (US & Canada)').strftime("%B %d, %Y %I:%M %p %Z") %></small></p>
-              <%= link_to 'View', announcement_path(announcement), class: 'btn btn-primary' %>
-            </div>
-          <% end %>
-        </div>
-      <% end %>
-
-      <%= yield %>
-    </div>
-
-  </body>
+  <div>
+    <%= yield %>
+  </div>
+</body>
 </html>
-
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-  document.querySelectorAll(".announcement .close").forEach(function(button) {
-    button.addEventListener("click", function() {
-      const announcement = this.closest(".announcement");
-      announcement.classList.add("hidden");
-
-      // Check if all announcements are hidden
-      const allHidden = Array.from(document.querySelectorAll(".announcement")).every(function(announcement) {
-        return announcement.classList.contains("hidden");
-      });
-
-      // Hide the parent container if all announcements are hidden
-      if (allHidden) {
-        document.querySelector(".alert.alert-info").style.display = "none";
-      }
-    });
-  });
-});
-</script>
-
-<style>
-.announcement {
-  position: relative;
-}
-
-.announcement .close {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-}
-
-.announcement.hidden {
-  display: none;
-  margin: 0;
-  padding: 0;
-}
-</style>

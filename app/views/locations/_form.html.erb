@@ -40,5 +40,9 @@
         <%= f.label :notes, style: "display: block" %>
         <%= f.text_area :notes %>
     </div>
+    <div class="field">
+        <%= f.label :marker_color, "Marker Color" %>
+        <%= f.color_field :marker_color %>
+    </div>
   <%= f.submit class: "btn btn-primary" %>
 <% end %>

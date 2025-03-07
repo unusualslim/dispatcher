@@ -3,6 +3,43 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 
+<% if Announcement.active.any? %>
+  <div class="alert alert-info announcements-container">
+    <% Announcement.active.order(published_at: :desc).each do |announcement| %>
+      <div class="announcement" id="announcement-<%= announcement.id %>">
+        <button type="button" class="close" aria-label="Close" onclick="document.getElementById('announcement-<%= announcement.id %>').classList.add('hidden')">
+          <span aria-hidden="true">&times;</span>
+        </button>
+        <h4><%= announcement.title %></h4>
+        <div class="announcement-content"><%= announcement.content.html_safe %></div>
+        <p><small><%= announcement.published_at.in_time_zone('Eastern Time (US & Canada)').strftime("%B %d, %Y %I:%M %p %Z") %></small></p>
+        <%= link_to 'View', announcement_path(announcement), class: 'btn btn-primary' %>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  document.querySelectorAll(".announcement .close").forEach(function(button) {
+    button.addEventListener("click", function() {
+      const announcement = this.closest(".announcement");
+      announcement.classList.add("hidden");
+
+      // Check if all announcements are hidden
+      const allHidden = Array.from(document.querySelectorAll(".announcement")).every(function(announcement) {
+        return announcement.classList.contains("hidden");
+      });
+
+      // Hide the parent container if all announcements are hidden
+      if (allHidden) {
+        document.querySelector(".alert.alert-info").style.display = "none";
+      }
+    });
+  });
+});
+</script>
+
 
 <div class="accordion" id="homePageAccordion">
 
@@ -464,7 +501,36 @@
   margin-bottom: 10px;
 }
 
-    #map {
-      height: 20vh; /* 100% of the viewport height */
-    }
+#map {
+  height: 20vh; /* 100% of the viewport height */
+}
+.announcements-container {
+  padding: 1rem;
+  background-color: #d9edf7; /* Light blue background */
+  border: 1px solid #bce8f1; /* Border color */
+  border-radius: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.announcement {
+  position: relative;
+  padding: 1rem;
+  background-color: #ffffff; /* White background for each announcement */
+  border: 1px solid #bce8f1; /* Border color */
+  border-radius: 0.25rem;
+  margin-bottom: 1rem; /* Space between announcements */
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); /* Subtle shadow */
+}
+
+.announcement .close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+.announcement.hidden {
+  display: none;
+  margin: 0;
+  padding: 0;
+}
 </style>
