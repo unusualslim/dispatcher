@@ -1,4 +1,6 @@
 Rails.application.routes.draw do
+  get 'calendar', to: 'calendar#index'
+  get 'calendar/events', to: 'calendar#events'
   get 'vendors/index'
   get 'vendors/new'
   get 'vendors/create'
@@ -19,6 +21,9 @@ Rails.application.routes.draw do
       patch :mark_as_complete
       patch :mark_as_billed
       patch :mark_as_sent_to_driver
+    end
+    collection do
+      get 'kanban'
     end
   end
   

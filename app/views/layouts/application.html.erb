@@ -10,11 +10,15 @@
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload", media: 'all' %>
     <%= stylesheet_link_tag 'custom', media: 'all' %>
     <%= stylesheet_link_tag 'trix' %>
+    <%= stylesheet_link_tag 'fullcalendar' %>
+    <%= javascript_include_tag 'fullcalendar' %>
     <%= javascript_include_tag 'trix' %>
     <%= javascript_include_tag "application", "data-turbo-track": "reload", defer: true %>
     <%= javascript_include_tag 'custom.js', type: "module" %>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <script src="https://www.google.com/recaptcha/api.js?render=explicit" async defer></script>
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css' rel='stylesheet' />
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js'></script>
   </head>
 
 <body>

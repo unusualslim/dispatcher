@@ -249,6 +249,13 @@ class DispatchesController < ApplicationController
     end
   end
 
+  def kanban
+    @drivers = User.all
+    @selected_driver_ids = params[:driver_ids] || @drivers.pluck(:id)
+    @selected_drivers = User.where(id: @selected_driver_ids).order(:id)
+    @dispatches = Dispatch.order(:dispatch_date)
+  end
+
   def mark_as_complete
     if @dispatch.update(status: "Complete")
       redirect_to dispatch_path(@dispatch), notice: "Dispatch marked as complete."

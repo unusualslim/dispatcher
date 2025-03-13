@@ -1,9 +1,9 @@
-<nav class="navbar navbar-expand-lg navbar-light bg-light w-100">
+<nav class="navbar navbar-expand-lg navbar-light bg-light w-100" data-turbo="false">
   <div class="container-fluid px-4">
     <!-- Left-side buttons -->
     <div class="d-flex align-items-center gap-3">
-      <a class="btn btn-primary" href="<%= new_dispatch_path %>" data-turbo="false">New Dispatch</a>
-      <%= link_to "LoadNTrucks", dispatches_path, class: "navbar-brand fw-bold", data: { turbo: false } %>
+      <a class="btn btn-primary" href="<%= new_dispatch_path %>">New Dispatch</a>
+      <%= link_to "LoadNTrucks", dispatches_path, class: "navbar-brand fw-bold" %>
     </div>
 
     <!-- Navbar toggler for mobile -->
@@ -16,17 +16,54 @@
     <div class="collapse navbar-collapse justify-content-center gap-3" id="navbarNav">
       <ul class="navbar-nav d-flex align-items-center gap-3">
         <% if user_signed_in? %>
-          <%= link_to "New Order", new_customer_order_path, class: "btn btn-success", data: { turbo: "false" } %>
-          <li class="nav-item"><%= link_to 'Orders', customer_orders_path, class: 'nav-link' %></li>
-          <li class="nav-item"><%= link_to 'Map', locations_map_path, class: 'nav-link', data: { turbo: "false" } %></li>
-          <li class="nav-item"><%= link_to 'Dispatches', view_dispatches_path, class: 'nav-link' %></li>
-          <li class="nav-item"><%= link_to 'Customers', customers_path, class: 'nav-link' %></li>
-          <li class="nav-item"><%= link_to 'Locations', locations_path, class: 'nav-link' %></li>
-          <li class="nav-item"><%= link_to 'Products', products_path, class: 'nav-link' %></li>
-          <li class="nav-item"><%= link_to "Vendors", vendors_path, class: "nav-link" %></li>
-          <li class="nav-item"><%= link_to 'Drivers', users_path, class: 'nav-link' %></li>
-          <li class="nav-item"><%= link_to 'Messages', dispatch_messages_path, class: 'nav-link' %></li>
-          <li class="nav-item"><%= link_to 'Announcements', announcements_path, class: 'nav-link' %></li>
+          <%= link_to "New Order", new_customer_order_path, class: "btn btn-success" %>
+          
+          <!-- Orders Button -->
+          <li><%= link_to 'Orders', customer_orders_path, class: 'nav-link' %></li>
+
+          <!-- Dispatches Dropdown -->
+          <li><%= link_to 'Dispatches', view_dispatches_path, class: 'nav-link' %></li>
+
+          <!-- Resources Dropdown -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="resourcesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Resources
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="resourcesDropdown">
+              <li><%= link_to 'Customers', customers_path, class: 'dropdown-item' %></li>
+              <li><%= link_to 'Locations', locations_path, class: 'dropdown-item' %></li>
+              <li><%= link_to 'Products', products_path, class: 'dropdown-item' %></li>
+              <li><%= link_to 'Vendors', vendors_path, class: 'dropdown-item' %></li>
+            </ul>
+          </li>
+
+          <!-- Communications Dropdown -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="communicationsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Communication
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="communicationsDropdown">
+              <li><%= link_to 'Messages', dispatch_messages_path, class: 'dropdown-item' %></li>
+              <li><%= link_to 'Announcements', announcements_path, class: 'dropdown-item' %></li>
+            </ul>
+          </li>
+
+          <!-- Drivers Dropdown -->
+          <li><%= link_to 'Drivers', users_path, class: 'nav-link' %></li>
+
+          <!-- Views Dropdown -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="viewsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Views
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="viewsDropdown">
+              <li><%= link_to 'Kanban', kanban_dispatches_path, class: 'dropdown-item' %></li>
+              <li><%= link_to 'Calendar', calendar_path, class: 'dropdown-item' %></li>
+              <li><%= link_to 'Map', locations_map_path, class: 'dropdown-item' %></li>
+            </ul>
+          </li>
+
+          <!-- Profile and Logout -->
           <li class="nav-item"><%= link_to 'Profile', edit_user_registration_path, class: 'nav-link' %></li>
           <li class="nav-item"><%= link_to 'Logout', destroy_user_session_path, method: :delete, class: 'nav-link' %></li>
         <% else %>
@@ -38,10 +75,36 @@
 
     <!-- Search Bar (Right-aligned) -->
     <div class="ms-auto">
-      <%= form_with url: search_customers_path, method: :get, class: "d-flex", local: true, data: { turbo: "false" } do |form| %>
+      <%= form_with url: search_customers_path, method: :get, class: "d-flex", local: true do |form| %>
         <%= form.text_field :query, placeholder: "Search phone numbers...", class: "form-control me-2" %>
         <%= form.submit "Search", class: "btn btn-outline-primary" %>
       <% end %>
     </div>
   </div>
 </nav>
+
+<style>
+  .navbar-nav .dropdown:hover .dropdown-menu {
+    display: block;
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var dropdowns = document.querySelectorAll('.nav-item.dropdown');
+    dropdowns.forEach(function(dropdown) {
+      dropdown.addEventListener('mouseover', function() {
+        var menu = dropdown.querySelector('.dropdown-menu');
+        var toggle = dropdown.querySelector('.dropdown-toggle');
+        toggle.setAttribute('aria-expanded', 'true');
+        menu.classList.add('show');
+      });
+      dropdown.addEventListener('mouseout', function() {
+        var menu = dropdown.querySelector('.dropdown-menu');
+        var toggle = dropdown.querySelector('.dropdown-toggle');
+        toggle.setAttribute('aria-expanded', 'false');
+        menu.classList.remove('show');
+      });
+    });
+  });
+</script>

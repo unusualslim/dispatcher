@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Kanban Board</title>
+  <%= csrf_meta_tags %>
+  <%= csp_meta_tag %>
+
+  <%= stylesheet_link_tag 'application', media: 'all' %>
+  <%= javascript_include_tag 'application', 'data-turbo-track': 'reload', defer: true %>
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #f4f4f9;
+      margin: 0;
+      padding: 0;
+    }
+
+    .kanban-header {
+      background-color: #007bff;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .kanban-controls {
+      margin: 1rem auto;
+      max-width: 1200px;
+      padding: 1rem;
+      background-color: white;
+      border-radius: 0.25rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      display: none; /* Initially hidden */
+    }
+
+    .kanban-board {
+      display: flex;
+      justify-content: space-between;
+      padding: 1rem;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .kanban-column {
+      flex: 1;
+      margin: 0 0.5rem;
+      background-color: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 0.25rem;
+      padding: 1rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .kanban-column h2 {
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+      color: #333;
+    }
+
+    .kanban-cards {
+      min-height: 200px;
+    }
+
+    .kanban-card {
+      background-color: #ffffff;
+      border: 1px solid #dee2e6;
+      border-radius: 0.25rem;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s;
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+
+    .kanban-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .kanban-card h4 {
+      margin-top: 0;
+      font-size: 1rem;
+      color: #007bff;
+    }
+
+    .kanban-card p {
+      margin: 0.5rem 0;
+      color: #555;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #ced4da;
+      border-radius: 0.25rem;
+    }
+
+    .btn-primary {
+      background-color: #007bff;
+      border-color: #007bff;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      transition: background-color 0.2s, border-color 0.2s;
+    }
+
+    .btn-primary:hover {
+      background-color: #0056b3;
+      border-color: #004085;
+    }
+
+    .toggle-button {
+      background-color: #007bff;
+      border: none;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      margin: 1rem auto;
+      display: block;
+      text-align: center;
+    }
+  </style>
+  <script>
+    function toggleControls() {
+      var controls = document.querySelector('.kanban-controls');
+      if (controls.style.display === 'none' || controls.style.display === '') {
+        controls.style.display = 'block';
+      } else {
+        controls.style.display = 'none';
+      }
+    }
+  </script>
+</head>
+<body>
+
+  <button class="toggle-button" onclick="toggleControls()">Toggle Driver Selection</button>
+
+  <div class="kanban-controls">
+    <%= form_with url: kanban_dispatches_path, method: :get, local: true do %>
+      <div class="form-group">
+        <label for="driver_ids">Select Drivers:</label>
+        <%= select_tag 'driver_ids[]', options_from_collection_for_select(@drivers, 'id', 'full_name', @selected_driver_ids), multiple: true, class: 'form-control' %>
+      </div>
+      <div class="form-group">
+        <button type="submit" class="btn btn-primary">Update</button>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="kanban-board">
+    <% if @selected_drivers.any? %>
+      <% @selected_drivers.each do |driver| %>
+        <div class="kanban-column">
+          <h2><%= driver.first_name %> <%= driver.last_name %></h2>
+          <div class="kanban-cards">
+            <% @dispatches.where(driver_id: driver.id).each do |dispatch| %>
+              <%= link_to dispatch_path(dispatch), class: 'kanban-card' do %>
+                <h4>Dispatch #<%= dispatch.id %></h4>
+                <p><strong>Origin:</strong> <%= dispatch.origin %></p>
+                <p><strong>Destination:</strong> <%= dispatch.destination %></p>
+                <p><strong>Date:</strong> <%= dispatch.dispatch_date %></p>
+                <p><%= dispatch.notes %></p>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    <% else %>
+      <p>No drivers found.</p>
+    <% end %>
+  </div>
+</body>
+</html>
