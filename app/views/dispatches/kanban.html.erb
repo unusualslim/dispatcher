@@ -39,6 +39,7 @@
       padding: 1rem;
       margin: 0 auto;
       width: 100%;
+      overflow-x: auto;
     }
 
     .kanban-column {
@@ -49,6 +50,7 @@
       border-radius: 0.25rem;
       padding: 1rem;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      min-width: 200px;
     }
 
     .kanban-column h2 {
@@ -141,8 +143,6 @@
 </head>
 <body>
 
-  <button class="toggle-button" onclick="toggleControls()">Toggle Driver Selection</button>
-
   <div class="kanban-controls">
     <%= form_with url: kanban_dispatches_path, method: :get, local: true do %>
       <div class="form-group">
@@ -156,25 +156,23 @@
   </div>
 
   <div class="kanban-board">
-    <% if @selected_drivers.any? %>
-      <% @selected_drivers.each do |driver| %>
-        <div class="kanban-column">
-          <h2><%= driver.first_name %> <%= driver.last_name %></h2>
-          <div class="kanban-cards">
-            <% @dispatches.where(driver_id: driver.id).each do |dispatch| %>
-              <%= link_to dispatch_path(dispatch), class: 'kanban-card' do %>
-                <h4>Dispatch #<%= dispatch.id %></h4>
-                <p><strong>Origin:</strong> <%= dispatch.origin %></p>
-                <p><strong>Destination:</strong> <%= dispatch.destination %></p>
-                <p><strong>Date:</strong> <%= dispatch.dispatch_date %></p>
-                <p><%= dispatch.notes %></p>
-              <% end %>
+    <% start_date = Date.yesterday %>
+    <% end_date = Date.today + 6.days %>
+    <% (start_date..end_date).each do |date| %>
+      <div class="kanban-column">
+        <h2><%= date.strftime("%a, %B %d") %></h2>
+        <div class="kanban-cards">
+          <% @dispatches.where(dispatch_date: date).each do |dispatch| %>
+            <%= link_to dispatch_path(dispatch), class: 'kanban-card' do %>
+              <h4>Dispatch #<%= dispatch.id %></h4>
+              <p><strong>Origin:</strong> <%= dispatch.origin %></p>
+              <p><strong>Destination:</strong> <%= dispatch.destination %></p>
+              <p><strong>Date:</strong> <%= dispatch.dispatch_date %></p>
+              <p><%= dispatch.notes %></p>
             <% end %>
-          </div>
+          <% end %>
         </div>
-      <% end %>
-    <% else %>
-      <p>No drivers found.</p>
+      </div>
     <% end %>
   </div>
 </body>
