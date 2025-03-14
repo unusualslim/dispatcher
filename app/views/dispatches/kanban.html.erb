@@ -165,6 +165,7 @@
           <% @dispatches.where(dispatch_date: date).each do |dispatch| %>
             <%= link_to dispatch_path(dispatch), class: 'kanban-card' do %>
               <h4>Dispatch #<%= dispatch.id %></h4>
+              <p><strong>Driver:</strong> <%= User.find(dispatch.driver_id).full_name %></p>
               <p><strong>Origin:</strong> <%= dispatch.origin %></p>
               <p><strong>Destination:</strong> <%= dispatch.destination %></p>
               <p><strong>Date:</strong> <%= dispatch.dispatch_date %></p>
