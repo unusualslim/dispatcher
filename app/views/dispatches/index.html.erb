@@ -81,7 +81,16 @@ document.addEventListener("DOMContentLoaded", function() {
 
             <% # Calculate total quantity of products in the order %>
             <% total_quantity = order.customer_order_products.sum { |cop| cop.quantity || 0 } %>
-            <% quantity_display = total_quantity.positive? ? "#{total_quantity} gals" : "Not Set" %>
+            <% top_product_quantity = top_product&.quantity || 0 %>
+            <% unit_of_measurement = top_product&.product&.unit_of_measurement || "units" %>
+            <% additional_products_count = total_products_count - 1 %>
+            <% quantity_display = if total_products_count > 1
+                                    "#{top_product_quantity} #{unit_of_measurement} #{top_product.product.name} + #{additional_products_count} "
+                                  elsif total_products_count == 1
+                                    "#{top_product_quantity} #{unit_of_measurement} #{top_product.product.name}"
+                                  else
+                                    "Not Set"
+                                  end %>
 
             <!-- Row to trigger collapse -->
             <tr data-bs-toggle="collapse" data-bs-target="#detailsOrder<%= order.id %>">
@@ -224,7 +233,7 @@ document.addEventListener("DOMContentLoaded", function() {
                   </span>
                 </td>
 
-                <td><%= dispatch.driver&.first_name || "No Driver Assigned" %></td>
+                <td><%= dispatch.driver&.full_name || "No Driver Assigned" %></td>
                 <td><%= dispatch.dispatch_date.present? ? dispatch.dispatch_date.strftime("%B %d, %Y") : "N/A" %></td>
                 <td><%= dispatch.origin || "No Origin" %></td>
                 <td>
@@ -391,12 +400,21 @@ document.addEventListener("DOMContentLoaded", function() {
 
               <% # Determine top product and total product count %>
               <% top_product = order.customer_order_products.max_by { |cop| cop.quantity || 0 } %>
+              <% unit_of_measurement = top_product&.product&.unit_of_measurement || "units" %>
               <% total_products_count = order.customer_order_products.count %>
               <% product_display = total_products_count > 1 ? "#{top_product.product.name} + #{total_products_count - 1}" : top_product.product.name %>
 
               <% # Calculate total quantity %>
               <% total_quantity = order.customer_order_products.sum { |cop| cop.quantity || 0 } %>
-              <% quantity_display = total_quantity.positive? ? "#{total_quantity} gals" : "Not Set" %>
+              <% top_product_quantity = top_product&.quantity || 0 %>
+              <% additional_products_count = total_products_count - 1 %>
+              <% quantity_display = if total_products_count > 1
+                        "#{top_product_quantity} #{unit_of_measurement} #{top_product.product.name} + #{additional_products_count}"
+                      elsif total_products_count == 1
+                        "#{top_product_quantity} #{unit_of_measurement} #{top_product.product.name}"
+                      else
+                        "Not Set"
+                      end %>
 
               <!-- Row to trigger collapse -->
               <tr data-bs-toggle="collapse" data-bs-target="#detailsOnHoldOrder<%= order.id %>">
