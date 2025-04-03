@@ -86,6 +86,14 @@ class LocationsController < ApplicationController
         format.json { render json: locations_json }
       end
     end
+
+    def toggle_status
+      @location = Location.find(params[:id])
+      @location.update(disabled: !@location.disabled)
+    
+      status = @location.disabled ? "disabled" : "enabled"
+      redirect_to locations_path, notice: "Location was successfully #{status}."
+    end
       
   
     private

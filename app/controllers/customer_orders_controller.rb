@@ -66,17 +66,28 @@ class CustomerOrdersController < ApplicationController
     end
 
     def create
-        @customer_order = CustomerOrder.new(customer_order_params)
+      @location = Location.find(customer_order_params[:location_id])
     
+      # Check if the location is disabled
+      if @location.disabled?
         respond_to do |format|
-          if @customer_order.save
-            format.html { redirect_to customer_order_url(@customer_order), notice: "Order was successfully created." }
-            format.json { render :show, status: :created, location: @customer_order }
-          else
-            format.html { render :new, status: :unprocessable_entity }
-            format.json { render json: @customer_order.errors, status: :unprocessable_entity }
-          end
+          format.html { redirect_to new_customer_order_path, alert: "The selected location is currently disabled and cannot be used." }
+          format.json { render json: { error: "The selected location is currently disabled and cannot be used." }, status: :unprocessable_entity }
         end
+        return
+      end
+    
+      @customer_order = CustomerOrder.new(customer_order_params)
+    
+      respond_to do |format|
+        if @customer_order.save
+          format.html { redirect_to customer_order_url(@customer_order), notice: "Order was successfully created." }
+          format.json { render :show, status: :created, location: @customer_order }
+        else
+          format.html { render :new, status: :unprocessable_entity }
+          format.json { render json: @customer_order.errors, status: :unprocessable_entity }
+        end
+      end
     end
 
     def update

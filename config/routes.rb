@@ -33,6 +33,9 @@ Rails.application.routes.draw do
     collection do
       get :search
     end
+    member do
+      patch :toggle_status
+    end
   end
   
   resources :customers do

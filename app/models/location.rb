@@ -14,6 +14,8 @@ class Location < ApplicationRecord
 
   has_many :customer_orders
 
+  validate :ensure_not_disabled, on: :use
+
   def city_with_company
     "#{company_name} - #{city}"
   end
@@ -26,5 +28,12 @@ class Location < ApplicationRecord
   def has_active_order
     customer_orders.exists?(order_status: ["New", "On Hold"]) ? true : false
   end
+
+  private
   
+  def ensure_not_disabled
+    if disabled
+      errors.add(:base, "This location is currently disabled and cannot be used.")
+    end
+  end
 end

@@ -3,6 +3,14 @@
 
   <%= render @location %>
 
+  <div class="mb-3">
+    <% if @location.disabled? %>
+      <%= button_to "Enable Location", toggle_status_location_path(@location), method: :patch, class: "btn btn-success", data: { confirm: "Are you sure you want to enable this location?" } %>
+    <% else %>
+      <%= button_to "Disable Location", toggle_status_location_path(@location), method: :patch, class: "btn btn-warning", data: { confirm: "Are you sure you want to disable this location?" } %>
+    <% end %>
+  </div>
+
 <% if @location.location_products.any? %>
   <strong>Products:</strong>
   <table class="table table-striped">

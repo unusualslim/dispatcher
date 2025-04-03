@@ -32,11 +32,13 @@
             <th>Zip</th>
             <th>Phone</th>
             <th>Category</th>
+            <th>Status</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           <% @locations.where(location_category_id: LocationCategory.find_by(name: 'Origin').id).each do |location| %>
-            <tr onclick="location.href='/locations/<%= location.id %>'; style='cursor:pointer;'">
+            <tr class="<%= 'table-danger' if location.disabled? %>" style="cursor: pointer;" onclick="location.href='/locations/<%= location.id %>';">
               <td><%= location.company_name %></td>
               <td><%= location.address %></td>
               <td><%= location.city %></td>
@@ -44,6 +46,11 @@
               <td><%= location.zip %></td>
               <td><%= location.phone_number %></td>
               <td><%= LocationCategory.find(location.location_category_id).name %></td>
+              <td><%= location.disabled? ? "Disabled" : "Enabled" %></td>
+<td>
+  <% button_class = location.disabled? ? 'btn-success' : 'btn-warning' %>
+  <%= link_to location.disabled? ? "Enable" : "Disable", toggle_status_location_path(location), method: :patch, class: "btn btn-sm #{button_class}" %>
+</td>
             </tr>
           <% end %>
         </tbody>
@@ -67,11 +74,13 @@
             <th>Zip</th>
             <th>Phone</th>
             <th>Category</th>
+            <th>Status</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           <% @locations.where(location_category_id: LocationCategory.where(name: ['Destination', 'Prospective']).pluck(:id)).each do |location| %>
-            <tr onclick="location.href='/locations/<%= location.id %>'; style='cursor:pointer;'">
+            <tr class="<%= 'table-danger' if location.disabled? %>" style="cursor: pointer;" onclick="location.href='/locations/<%= location.id %>';">
               <td><%= location.company_name %></td>
               <td><%= location.address %></td>
               <td><%= location.city %></td>
@@ -79,6 +88,11 @@
               <td><%= location.zip %></td>
               <td><%= location.phone_number %></td>
               <td><%= LocationCategory.find(location.location_category_id).name %></td>
+              <td><%= location.disabled? ? "Disabled" : "Enabled" %></td>
+              <td>
+                <% button_class = location.disabled? ? 'btn-success' : 'btn-warning' %>
+                <%= link_to location.disabled? ? "Enable" : "Disable", toggle_status_location_path(location), method: :patch, class: "btn btn-sm #{button_class}" %>
+              </td>
             </tr>
           <% end %>
         </tbody>
