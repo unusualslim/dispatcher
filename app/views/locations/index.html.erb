@@ -33,7 +33,6 @@
             <th>Phone</th>
             <th>Category</th>
             <th>Status</th>
-            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -47,10 +46,6 @@
               <td><%= location.phone_number %></td>
               <td><%= LocationCategory.find(location.location_category_id).name %></td>
               <td><%= location.disabled? ? "Disabled" : "Enabled" %></td>
-<td>
-  <% button_class = location.disabled? ? 'btn-success' : 'btn-warning' %>
-  <%= link_to location.disabled? ? "Enable" : "Disable", toggle_status_location_path(location), method: :patch, class: "btn btn-sm #{button_class}" %>
-</td>
             </tr>
           <% end %>
         </tbody>
@@ -75,7 +70,6 @@
             <th>Phone</th>
             <th>Category</th>
             <th>Status</th>
-            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -89,10 +83,6 @@
               <td><%= location.phone_number %></td>
               <td><%= LocationCategory.find(location.location_category_id).name %></td>
               <td><%= location.disabled? ? "Disabled" : "Enabled" %></td>
-              <td>
-                <% button_class = location.disabled? ? 'btn-success' : 'btn-warning' %>
-                <%= link_to location.disabled? ? "Enable" : "Disable", toggle_status_location_path(location), method: :patch, class: "btn btn-sm #{button_class}" %>
-              </td>
             </tr>
           <% end %>
         </tbody>
