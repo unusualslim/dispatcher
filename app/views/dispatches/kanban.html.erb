@@ -129,6 +129,56 @@
       display: block;
       text-align: center;
     }
+
+    #unassigned-orders-section {
+      margin-top: 20px;
+      padding: 1rem;
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 0.25rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .unassigned-orders-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .order-card {
+      background-color: #ffffff;
+      border: 1px solid #dee2e6;
+      border-radius: 0.25rem;
+      padding: 1rem;
+      width: 250px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.2s, box-shadow 0.2s;
+      display: block;
+      position: relative;
+    }
+
+    .order-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .order-card h3 {
+      margin: 0 0 10px;
+      font-size: 1.2em;
+      color: #333;
+    }
+
+    .order-card p {
+      margin: 5px 0;
+      font-size: 0.9em;
+      color: #555;
+    }
+
+    .order-card p strong {
+      color: #333;
+    }
   </style>
   <script>
     function toggleControls() {
@@ -182,5 +232,55 @@
       </div>
     <% end %>
   </div>
+
+<!-- Unassigned Orders Section -->
+<div id="unassigned-orders-section">
+  <h2>Unassigned Orders</h2>
+  <div class="unassigned-orders-container">
+    <% @unassigned_orders.each do |order| %>
+      <% companyName = order.location&.company_name || "No Company Name Available" %>
+      <% top_product = order.customer_order_products.max_by { |cop| cop.quantity || 0 } %>
+      <% total_products_count = order.customer_order_products.count %>
+      <% product_display = if total_products_count == 1
+                              top_product.product.name
+                            elsif total_products_count > 1
+                              "#{top_product.product.name} + #{total_products_count - 1}"
+                            else
+                              "No Products"
+                            end %>
+      <% total_quantity = order.customer_order_products.sum { |cop| cop.quantity || 0 } %>
+      <% top_product_quantity = top_product&.quantity || 0 %>
+      <% unit_of_measurement = top_product&.product&.unit_of_measurement || "units" %>
+      <% quantity_display = if total_products_count > 1
+                              "#{top_product_quantity} #{unit_of_measurement} #{top_product.product.name} + #{total_products_count - 1}"
+                            elsif total_products_count == 1
+                              "#{top_product_quantity} #{unit_of_measurement} #{top_product.product.name}"
+                            else
+                              "Not Set"
+                            end %>
+      <% status_class = case order.order_status.downcase %>
+        <% when "new" then "bg-primary" %>
+        <% when "complete" then "bg-success" %>
+        <% when "on hold" then "bg-warning text-dark" %>
+        <% when "deleted" then "bg-danger" %>
+        <% else "bg-secondary" %>
+      <% end %>
+      <% card_color = order.card_color || '#007bff' %>
+
+      <%= link_to customer_order_path(order), class: 'order-card', style: "border-left: 5px solid #{card_color};" do %>
+        <h3>Order #<%= order.id %></h3>
+        <p><strong>Status:</strong> <span class="badge <%= status_class %>"><%= order.order_status %></span></p>
+        <p><strong>Product:</strong> <%= product_display %></p>
+        <p><strong>Delivery Date:</strong> <%= order.required_delivery_date %></p>
+        <p><strong>Location:</strong> <%= companyName %></p>
+        <p><strong>Amount:</strong> <%= quantity_display %></p>
+        <% if order.freight_only? %>
+          <p><span class="badge bg-warning text-dark">Freight Only</span></p>
+        <% end %>
+      <% end %>
+    <% end %>
+  </div>
+</div>
+
 </body>
 </html>

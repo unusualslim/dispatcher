@@ -254,6 +254,8 @@ class DispatchesController < ApplicationController
     @selected_driver_ids = params[:driver_ids] || @drivers.pluck(:id)
     @selected_drivers = User.where(id: @selected_driver_ids).order(:id)
     @dispatches = Dispatch.order(:dispatch_date)
+    @unassigned_orders = CustomerOrder.left_joins(:dispatch_customer_orders)
+                                           .where(dispatch_customer_orders: { id: nil })
   end
 
   def mark_as_complete
