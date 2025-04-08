@@ -223,7 +223,14 @@
                 <% end %>
               </p>
               <p><strong>Origin:</strong> <%= dispatch.origin %></p>
-              <p><strong>Destination:</strong> <%= dispatch.destination %></p>
+              <p><strong>Destination:</strong> 
+                <% if dispatch.customer_orders.any? %>
+                  <% destination_location = dispatch.customer_orders.first.location %>
+                  <%= "#{destination_location.company_name} - #{destination_location.city}" %>
+                <% else %>
+                  <%= dispatch.destination || "No destination location found" %>
+                <% end %>
+              </p>
               <p><strong>Date:</strong> <%= dispatch.dispatch_date %></p>
               <p><%= dispatch.notes %></p>
             <% end %>
