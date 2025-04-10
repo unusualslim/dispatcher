@@ -12,6 +12,14 @@ class ThingsController < ApplicationController
     @thing = Thing.new
   end
 
+  def destroy
+    @thing.destroy
+    respond_to do |format|
+      format.html { redirect_to things_path, notice: 'Thing was successfully deleted.' }
+      format.json { head :no_content }
+    end
+  end
+
   def create
     @thing = Thing.new(thing_params)
     if @thing.save

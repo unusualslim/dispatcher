@@ -5,5 +5,5 @@
 <div>
   <%= link_to "Edit this asset", edit_thing_path(@thing), class: 'btn btn-warning' %>
   <%= link_to "Back to assets", things_path, class: 'btn btn-secondary', data: { turbo: false } %>
-  <%= button_to "Destroy this asset", @thing, method: :delete, data: { confirm: 'Are you sure you want to delete this thing?', turbo: false }, class: "btn btn-danger" %>
+  <%= button_to "Destroy this asset", @thing, method: :delete, data: { confirm: 'Are you sure you want to delete this asset?', turbo: false }, class: "btn btn-danger" %>
 </div>

@@ -52,7 +52,7 @@
     <%= form.select :thing_ids, 
                     options_for_select(@available_things.map { |thing| ["#{thing.id} - #{thing.name}", thing.id] }, @selected_thing_ids), 
                     { include_hidden: false }, 
-                    { id: 'thing_ids', multiple: true, prompt: 'Select Things', style: "height: 150px; width: 100%;" } %>
+                    { id: 'thing_ids', multiple: true, prompt: 'Select Assets', style: "height: 150px; width: 100%;" } %>
 
     <small id="selectHelp" class="form-text text-muted">Try ctrl+click to select multiple. (Use cmd+click on OSX.)</small>
   </div>
