@@ -1,4 +1,6 @@
 Rails.application.routes.draw do
+  #get 'assets/index'
+  #get 'assets/show'
   get 'calendar', to: 'calendar#index'
   get 'calendar/events', to: 'calendar#events'
   get 'vendors/index'
@@ -54,6 +56,9 @@ Rails.application.routes.draw do
       post 'reply'
     end
   end
+
+  resources :work_orders
+  resources :things
 
   resources :announcements
 

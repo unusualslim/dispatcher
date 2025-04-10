@@ -110,6 +110,27 @@
     <%= dispatch.notes %>
   </p>
 
+  <% if dispatch.things.present? %>
+    <h3>Associated Things</h3>
+    <div class="row">
+      <% dispatch.things.each do |thing| %>
+        <div class="col-md-4 mb-3">
+          <%= link_to thing_path(thing), class: "card-link", style: "text-decoration: none; color: inherit;" do %>
+            <div class="card h-100" style="cursor: pointer;">
+              <div class="card-body">
+                <h5 class="card-title">
+                  <%= thing.name %>
+                </h5>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <p>No associated things.</p>
+  <% end %>
+
   <% if dispatch.dispatch_customer_order.any? %>
     <h3>Associated Customer Orders</h3>
     

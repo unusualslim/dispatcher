@@ -8,6 +8,7 @@ class Dispatch < ApplicationRecord
     has_many_attached :files
     belongs_to :driver, class_name: 'User', foreign_key: 'driver_id', optional: true
     belongs_to :vendor, optional: true
+    has_and_belongs_to_many :things
     belongs_to :destination_location, class_name: "Location", foreign_key: "destination_location_id", optional: true
     enum dispatch_status: { New: "New", sent_to_driver: "Sent to Driver", complete: "Complete", billed: "Billed", deleted: "Deleted" }
 

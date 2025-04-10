@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_04_01_202635) do
+ActiveRecord::Schema[7.0].define(version: 2025_04_10_190855) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -143,7 +143,16 @@ ActiveRecord::Schema[7.0].define(version: 2025_04_01_202635) do
     t.boolean "needs_updating"
     t.bigint "vendor_id"
     t.integer "destination_location_id"
+    t.bigint "asset_id"
+    t.index ["asset_id"], name: "index_dispatches_on_asset_id"
     t.index ["vendor_id"], name: "index_dispatches_on_vendor_id"
+  end
+
+  create_table "dispatches_things", id: false, force: :cascade do |t|
+    t.bigint "dispatch_id", null: false
+    t.bigint "thing_id", null: false
+    t.index ["dispatch_id"], name: "index_dispatches_things_on_dispatch_id"
+    t.index ["thing_id"], name: "index_dispatches_things_on_thing_id"
   end
 
   create_table "location_categories", force: :cascade do |t|
@@ -217,6 +226,12 @@ ActiveRecord::Schema[7.0].define(version: 2025_04_01_202635) do
     t.string "unit_of_measurement"
   end
 
+  create_table "things", force: :cascade do |t|
+    t.string "name"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
@@ -241,6 +256,22 @@ ActiveRecord::Schema[7.0].define(version: 2025_04_01_202635) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "work_orders", force: :cascade do |t|
+    t.string "subject"
+    t.bigint "location_id", null: false
+    t.integer "assigned_to"
+    t.string "attachments"
+    t.bigint "vendor_id", null: false
+    t.string "status"
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "asset_id", null: false
+    t.index ["asset_id"], name: "index_work_orders_on_asset_id"
+    t.index ["location_id"], name: "index_work_orders_on_location_id"
+    t.index ["vendor_id"], name: "index_work_orders_on_vendor_id"
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "customer_locations", "customers"
@@ -253,10 +284,14 @@ ActiveRecord::Schema[7.0].define(version: 2025_04_01_202635) do
   add_foreign_key "dispatch_customer_orders", "dispatches"
   add_foreign_key "dispatch_messages", "dispatches"
   add_foreign_key "dispatch_messages", "users"
+  add_foreign_key "dispatches", "things", column: "asset_id"
   add_foreign_key "dispatches", "vendors"
   add_foreign_key "location_contacts", "locations"
   add_foreign_key "location_products", "locations", on_delete: :cascade
   add_foreign_key "location_products", "products"
   add_foreign_key "locations", "location_categories"
   add_foreign_key "phone_numbers", "customers"
+  add_foreign_key "work_orders", "locations"
+  add_foreign_key "work_orders", "things", column: "asset_id"
+  add_foreign_key "work_orders", "vendors"
 end

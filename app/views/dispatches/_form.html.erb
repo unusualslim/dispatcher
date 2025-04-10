@@ -42,6 +42,21 @@
     <%= form.collection_select :vendor_id, Vendor.all, :id, :name, { include_blank: "Select a Vendor" }, class: "form-control" %>
   </div>
 
+  <div class="mb-3">
+    <%= form.label 'Assets:', style: "display: block" %>
+
+    <!-- Search Input -->
+    <input type="text" id="thingSearch" class="form-control mb-3" placeholder="Search assets...">
+
+    <!-- Things Select Box -->
+    <%= form.select :thing_ids, 
+                    options_for_select(@available_things.map { |thing| ["#{thing.id} - #{thing.name}", thing.id] }, @selected_thing_ids), 
+                    { include_hidden: false }, 
+                    { id: 'thing_ids', multiple: true, prompt: 'Select Things', style: "height: 150px; width: 100%;" } %>
+
+    <small id="selectHelp" class="form-text text-muted">Try ctrl+click to select multiple. (Use cmd+click on OSX.)</small>
+  </div>
+
   <div>
     <%= form.label :dispatch_date, style: "display: block" %>
     <%= form.date_field :dispatch_date %>
@@ -71,6 +86,27 @@
   document.addEventListener("DOMContentLoaded", function () {
     const searchInput = document.getElementById("orderSearch");
     const selectBox = document.getElementById("customer_order_ids");
+
+    searchInput.addEventListener("keyup", function () {
+      const searchValue = searchInput.value.toLowerCase();
+      const options = selectBox.options;
+
+      for (let i = 0; i < options.length; i++) {
+        const optionText = options[i].text.toLowerCase();
+        if (optionText.includes(searchValue)) {
+          options[i].style.display = "block";
+        } else {
+          options[i].style.display = "none";
+        }
+      }
+    });
+  });
+</script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const searchInput = document.getElementById("thingSearch");
+    const selectBox = document.getElementById("thing_ids");
 
     searchInput.addEventListener("keyup", function () {
       const searchValue = searchInput.value.toLowerCase();

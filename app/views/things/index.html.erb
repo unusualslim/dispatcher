@@ -1,0 +1,24 @@
+<h1>Things</h1>
+
+<%= link_to "New Thing", new_thing_path, class: "btn btn-success mb-3" %>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Name</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @things.each do |thing| %>
+      <tr>
+        <td><%= thing.id %></td>
+        <td><%= thing.name %></td>
+        <td>
+          <%= link_to 'View', thing_path(thing), class: 'btn btn-primary btn-sm' %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
