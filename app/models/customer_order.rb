@@ -26,6 +26,10 @@ class CustomerOrder < ApplicationRecord
     dispatches.empty?
   end
 
+  def total_weight
+    products.sum(&:weight)
+  end
+
   private
 
   def add_blank_product

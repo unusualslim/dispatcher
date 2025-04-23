@@ -163,21 +163,35 @@ document.addEventListener("DOMContentLoaded", function() {
                             <th>Product Name</th>
                             <th>Unit of Measurement</th>
                             <th>Quantity</th>
+                            <th>Weight</th>
                             <th>Price</th>
-                            <th>Total</th>
+                            <th>Total Cost</th>
                           </tr>
                         </thead>
+                        <% total_weight = 0 %>
+                        <% total_price = 0 %>
                         <tbody>
                           <% order.customer_order_products.each do |cop| %>
                             <tr>
                               <td><%= cop.product.name %></td>
                               <td><%= cop.product.unit_of_measurement %></td>
                               <td><%= cop.quantity %></td>
+                              <td><%= (cop.quantity || 0) * (cop.product&.weight || 0) %> lbs</td>
                               <td><%= number_to_currency(cop.price) %></td>
                               <td><%= number_to_currency((cop.quantity || 0) * (cop.price || 0.0)) %></td>
                             </tr>
+                            <% total_weight += (cop.quantity || 0) * (cop.product&.weight || 0) %>
+                            <% total_price += (cop.quantity || 0) * (cop.price || 0.0) %>
                           <% end %>
                         </tbody>
+                        <tfoot>
+                          <tr>
+                            <td colspan="3" class="text-end"><strong>Total Weight:</strong></td>
+                            <td><strong><%= total_weight %> lbs</strong></td>
+                            <td class="text-end"><strong>Total Price:</strong></td>
+                            <td><strong><%= number_to_currency(total_price) %></strong></td>
+                          </tr>
+                        </tfoot>
                       </table>
                     </div>
                   </div>
@@ -490,28 +504,40 @@ document.addEventListener("DOMContentLoaded", function() {
                     <div class="row mt-3">
                       <div class="col">
                         <h6>Products in Order</h6>
-                        <table class="table table-bordered">
-                          <thead>
-                            <tr>
-                              <th>Product Name</th>
-                              <th>Unit of Measurement</th>
-                              <th>Quantity</th>
-                              <th>Price</th>
-                              <th>Total</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <% order.customer_order_products.each do |cop| %>
-                              <tr>
-                                <td><%= cop.product.name %></td>
-                                <td><%= cop.product.unit_of_measurement %></td>
-                                <td><%= cop.quantity %></td>
-                                <td><%= number_to_currency(cop.price) %></td>
-                                <td><%= number_to_currency((cop.quantity || 0) * (cop.price || 0.0)) %></td>
-                              </tr>
-                            <% end %>
-                          </tbody>
-                        </table>
+<table class="table table-bordered">
+  <thead>
+    <tr>
+      <th>Product Name</th>
+      <th>Unit of Measurement</th>
+      <th>Quantity</th>
+      <th>Price</th>
+      <th>Total</th>
+    </tr>
+  </thead>
+  <% total_weight = 0 %>
+  <% total_price = 0 %>
+  <tbody>
+    <% order.customer_order_products.each do |cop| %>
+      <tr>
+        <td><%= cop.product.name %></td>
+        <td><%= cop.product.unit_of_measurement %></td>
+        <td><%= cop.quantity %></td>
+        <td><%= number_to_currency(cop.price) %></td>
+        <td><%= number_to_currency((cop.quantity || 0) * (cop.price || 0.0)) %></td>
+      </tr>
+      <% total_weight += (cop.quantity || 0) * (cop.product&.weight || 0) %>
+      <% total_price += (cop.quantity || 0) * (cop.price || 0.0) %>
+    <% end %>
+  </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="2" class="text-end"><strong>Total Weight:</strong></td>
+      <td><strong><%= total_weight %> lbs</strong></td>
+      <td class="text-end"><strong>Total Price:</strong></td>
+      <td><strong><%= number_to_currency(total_price) %></strong></td>
+    </tr>
+  </tfoot>
+</table>
                       </div>
                     </div>
                     <div class="mt-3">

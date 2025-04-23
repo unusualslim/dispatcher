@@ -7,6 +7,7 @@
     <tr>
       <th>Name</th>
       <th>Unit of Measurement</th>
+      <th>Weight Per Unit (lbs)</th>
       <th>Actions</th>
     </tr>
   </thead>
@@ -15,6 +16,7 @@
       <tr>
         <td><%= product.name %></td>
         <td><%= product.unit_of_measurement %></td>
+        <td><%= product.weight %></td>
         <td>
           <%= link_to 'Edit', edit_product_path(product), class: 'btn btn-warning btn-sm' %>
           <%= button_to 'Delete', product_path(product), 

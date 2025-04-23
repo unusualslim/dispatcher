@@ -64,6 +64,10 @@
             </div>
 
             <div class="mb-3">
+              <label for="weight" class="form-label">Weight</label>
+            </div>
+
+            <div class="mb-3">
               <label for="price" class="form-label">Price</label>
               <%= form.number_field :price, class: "form-control", step: 0.01 %>
             </div>
@@ -77,66 +81,71 @@
     </div>
   </div>
 
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Product</th>
-        <th>Quantity</th>
-        <th>Price</th>
-        <th>Total</th>
-        <th>Actions</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <% total_sum = 0 %>
-      <% @customer_order.customer_order_products.each do |cop| %>
-      <tr>
-        <%= form_with model: [@customer_order, cop], method: :patch, local: true, data: { turbo: false } do |form| %>
-          <td>
-            <%= form.collection_select(
-              :product_id, 
-              Product.all,
-              :id, 
-              :name, 
-              { prompt: "Select a Product", selected: cop.product_id },
-              { class: 'form-select' }
-            ) %>
-          </td>
-          <td><%= form.number_field :quantity, value: cop.quantity, class: 'form-control', min: 1 %></td>
-          <td>
-            <%= form.number_field :price, 
-                  value: cop.price, 
-                  class: 'form-control', 
-                  step: 0.01, 
-                  placeholder: 'Enter price or leave blank' %>
-          </td>
-          <td><%= number_to_currency((cop.quantity || 0) * (cop.price || 0.0)) %></td>
-          <td>
-            <%= form.submit "Save", class: "btn btn-success btn-sm" %>
-          </td>
-        <% end %>
-
+<table class="table">
+  <thead>
+    <tr>
+      <th>Product</th>
+      <th>Quantity</th>
+      <th>Weight</th>
+      <th>Price</th>
+      <th>Total</th>
+      <th>Actions</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% total_sum = 0 %>
+    <% total_weight = 0 %>
+    <% @customer_order.customer_order_products.each do |cop| %>
+    <tr>
+      <%= form_with model: [@customer_order, cop], method: :patch, local: true, data: { turbo: false } do |form| %>
         <td>
-          <%= button_to "Remove", customer_order_customer_order_product_path(@customer_order, cop), 
-                        method: :delete, 
-                        data: { confirm: "Are you sure?" }, 
-                        class: "btn btn-danger btn-sm" %>
+          <%= form.collection_select(
+            :product_id, 
+            Product.all,
+            :id, 
+            :name, 
+            { prompt: "Select a Product", selected: cop.product_id },
+            { class: 'form-select' }
+          ) %>
         </td>
-      </tr>
-
-        <% total_sum += (cop.quantity || 0) * (cop.price || 0.0) %>
+        <td><%= form.number_field :quantity, value: cop.quantity, class: 'form-control', min: 1 %></td>
+        <td><%= (cop.quantity || 0) * (cop.product&.weight || 0) %> lbs</td>
+        <td>
+          <%= form.number_field :price, 
+                value: cop.price, 
+                class: 'form-control', 
+                step: 0.01, 
+                placeholder: 'Enter price or leave blank' %>
+        </td>
+        <td><%= number_to_currency((cop.quantity || 0) * (cop.price || 0.0)) %></td>
+        <td>
+          <%= form.submit "Save", class: "btn btn-success btn-sm" %>
+        </td>
       <% end %>
-    </tbody>
-    <tfoot>
-      <tr>
-        <td colspan="3" class="text-end"><strong>Total:</strong></td>
-        <td><%= number_to_currency(total_sum) %></td>
-        <td></td>
-        <td></td>
-      </tr>
-    </tfoot>
-  </table>
+
+      <td>
+        <%= button_to "Remove", customer_order_customer_order_product_path(@customer_order, cop), 
+                      method: :delete, 
+                      data: { confirm: "Are you sure?" }, 
+                      class: "btn btn-danger btn-sm" %>
+      </td>
+    </tr>
+
+      <% total_sum += (cop.quantity || 0) * (cop.price || 0.0) %>
+      <% total_weight += (cop.quantity || 0) * (cop.product&.weight || 0) %>
+    <% end %>
+  </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="2" class="text-end"><strong>Total Weight:</strong></td>
+      <td><%= total_weight %> lbs</td>
+      <td colspan="2" class="text-end"><strong>Total Price:</strong></td>
+      <td><%= number_to_currency(total_sum) %></td>
+      <td></td>
+    </tr>
+  </tfoot>
+</table>
 
   <!-- Associated Dispatches -->
   <% if @customer_order.dispatches.any? %>
