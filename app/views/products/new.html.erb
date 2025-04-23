@@ -22,6 +22,11 @@
     <%= form.text_field :unit_of_measurement, class: 'form-control' %>
   </div>
 
+  <div class="field">
+    <%= form.label "Weight (lbs per unit)" %>
+    <%= form.text_field :weight, class: 'form-control' %>
+  </div>
+
   <div class="actions">
     <%= form.submit 'Create Product', class: 'btn btn-success' %>
   </div>
