@@ -7,6 +7,7 @@ class CustomerOrder < ApplicationRecord
 
   has_many :customer_order_products, dependent: :destroy
   has_many :products, through: :customer_order_products
+  has_and_belongs_to_many :things
 
   accepts_nested_attributes_for :customer_order_products, allow_destroy: true
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_04_23_123548) do
+ActiveRecord::Schema[7.0].define(version: 2025_05_06_143847) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -95,6 +95,13 @@ ActiveRecord::Schema[7.0].define(version: 2025_04_23_123548) do
     t.boolean "freight_only"
     t.index ["customer_id"], name: "index_customer_orders_on_customer_id"
     t.index ["location_id"], name: "index_customer_orders_on_location_id"
+  end
+
+  create_table "customer_orders_things", id: false, force: :cascade do |t|
+    t.bigint "customer_order_id", null: false
+    t.bigint "thing_id", null: false
+    t.index ["customer_order_id"], name: "index_customer_orders_things_on_customer_order_id"
+    t.index ["thing_id"], name: "index_customer_orders_things_on_thing_id"
   end
 
   create_table "customers", force: :cascade do |t|

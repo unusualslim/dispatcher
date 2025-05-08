@@ -31,6 +31,13 @@
       <button type="button" class="btn btn-secondary" id="new-location-btn">New Destination</button>
     </div>
 
+    <div style="max-width: 300px;">
+  <%= form.label :thing_ids, "Assets" %>
+  <%= form.collection_select :thing_ids, Thing.all, :id, :name, 
+                             { prompt: "Select assets", disabled: "Select assets" }, 
+                             { class: "form-control", multiple: true } %>
+</div>
+
     <div>
       <%= form.label :order_status, style: "display: block" %>
       <%= form.collection_select :order_status, CustomerOrder.order_statuses.keys, :to_s, :humanize, { class: "form-control" } %>

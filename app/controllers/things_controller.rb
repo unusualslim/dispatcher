@@ -20,6 +20,17 @@ class ThingsController < ApplicationController
     end
   end
 
+  def edit
+  end
+
+  def update
+    if @thing.update(thing_params)
+      redirect_to @thing, notice: 'Thing was successfully updated.'
+    else
+      render :edit, status: :unprocessable_entity
+    end
+  end
+
   def create
     @thing = Thing.new(thing_params)
     if @thing.save
@@ -27,6 +38,11 @@ class ThingsController < ApplicationController
     else
       render :new, status: :unprocessable_entity
     end
+  end
+
+  def search
+    @things = Thing.where('name ILIKE ?', "%#{params[:query]}%")
+    render json: @things.map { |thing| { id: thing.id, name: thing.name } }
   end
 
   private
