@@ -53,6 +53,16 @@
   </div>
 
   <div>
+    <%= form.label :truck_id, "Select Truck", style: "display: block" %>
+    <%= form.collection_select :truck_id, Thing.where(category: "truck"), :id, :name, prompt: "Choose a Truck", class: "form-control" %>
+  </div>
+
+  <div>
+    <%= form.label :trailer_id, "Select Trailer", style: "display: block" %>
+    <%= form.collection_select :trailer_id, Thing.where(category: "trailer"), :id, :name, prompt: "Choose a Trailer", class: "form-control" %>
+  </div>
+
+  <div>
     <%= form.label :notes, style: "display: block" %>
     <%= form.text_area :notes %>
   </div>

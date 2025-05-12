@@ -1,4 +1,5 @@
 class Thing < ApplicationRecord
-    has_and_belongs_to_many :dispatches
-    has_and_belongs_to_many :customer_orders
+    belongs_to :dispatches, optional: true
+
+    validates :category, inclusion: { in: %w[truck trailer], message: "%{value} is not a valid category" }
 end

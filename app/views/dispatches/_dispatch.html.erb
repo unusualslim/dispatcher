@@ -110,26 +110,39 @@
     <%= dispatch.notes %>
   </p>
 
-<% if dispatch.customer_orders.any? %>
-  <h3>Associated Assets</h3>
-  <div class="row">
-    <% dispatch.customer_orders.each do |customer_order| %>
-      <% customer_order.things.each do |thing| %>
-        <div class="col-md-4 mb-3">
-          <%= link_to thing_path(thing), class: "card-link", style: "text-decoration: none; color: inherit;" do %>
-            <div class="card h-100" style="cursor: pointer;">
-              <div class="card-body">
-                <h5 class="card-title"><%= thing.name %></h5>
-                <p class="card-text">Created At: <%= thing.created_at.strftime("%B %d, %Y") %></p>
-              </div>
-            </div>
-          <% end %>
+<h3>Assigned Assets</h3>
+<div class="row">
+  <% if dispatch.truck.present? %>
+    <div class="col-md-4 mb-3">
+      <%= link_to thing_path(dispatch.truck), class: "card-link", style: "text-decoration: none; color: inherit;" do %>
+        <div class="card h-100" style="cursor: pointer;">
+          <div class="card-body">
+            <h5 class="card-title"><%= dispatch.truck.name %></h5>
+            <p class="card-text"><strong>Category:</strong> Truck</p>
+            <p class="card-text">Created At: <%= dispatch.truck.created_at.strftime("%B %d, %Y") %></p>
+          </div>
         </div>
       <% end %>
-    <% end %>
-  </div>
-<% else %>
-  <p>No associated customer orders or assets found.</p>
+    </div>
+  <% end %>
+
+  <% if dispatch.trailer.present? %>
+    <div class="col-md-4 mb-3">
+      <%= link_to thing_path(dispatch.trailer), class: "card-link", style: "text-decoration: none; color: inherit;" do %>
+        <div class="card h-100" style="cursor: pointer;">
+          <div class="card-body">
+            <h5 class="card-title"><%= dispatch.trailer.name %></h5>
+            <p class="card-text"><strong>Category:</strong> Trailer</p>
+            <p class="card-text">Created At: <%= dispatch.trailer.created_at.strftime("%B %d, %Y") %></p>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>
+
+<% if dispatch.truck.blank? && dispatch.trailer.blank? %>
+  <p>No assets assigned to this dispatch.</p>
 <% end %>
 
   <% if dispatch.dispatch_customer_order.any? %>

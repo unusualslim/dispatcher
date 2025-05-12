@@ -147,26 +147,6 @@
   </tfoot>
 </table>
 
-<% if @customer_order.things.any? %>
-  <h3>Associated Assets</h3>
-  <div class="row">
-    <% @customer_order.things.each do |thing| %>
-      <div class="col-md-4 mb-3">
-        <%= link_to thing_path(thing), class: "card-link", style: "text-decoration: none; color: inherit;" do %>
-          <div class="card h-100" style="cursor: pointer;">
-            <div class="card-body">
-              <h5 class="card-title"><%= thing.name %></h5>
-              <p class="card-text">Created At: <%= thing.created_at.strftime("%B %d, %Y") %></p>
-            </div>
-          </div>
-        <% end %>
-      </div>
-    <% end %>
-  </div>
-<% else %>
-  <p>No associated assets found.</p>
-<% end %>
-
   <!-- Associated Dispatches -->
   <% if @customer_order.dispatches.any? %>
     <h3>Associated Dispatches</h3>

@@ -388,6 +388,6 @@ class DispatchesController < ApplicationController
     end
 
     def dispatch_params
-      params.require(:dispatch).permit(:driver_id, :origin, :destination, :info, :dispatch_date, :status, :notes, :vendor_id, :customer_order_ids => [], files: [], thing_ids: [])
+      params.require(:dispatch).permit(:driver_id, :origin, :destination, :info, :dispatch_date, :status, :notes, :vendor_id, :truck_id, :trailer_id, :customer_order_ids => [], files: [], thing_ids: [])
     end
 end

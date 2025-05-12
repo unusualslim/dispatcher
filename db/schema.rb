@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_05_06_143847) do
+ActiveRecord::Schema[7.0].define(version: 2025_05_09_181451) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -151,6 +151,8 @@ ActiveRecord::Schema[7.0].define(version: 2025_05_06_143847) do
     t.bigint "vendor_id"
     t.integer "destination_location_id"
     t.bigint "asset_id"
+    t.integer "truck_id"
+    t.integer "trailer_id"
     t.index ["asset_id"], name: "index_dispatches_on_asset_id"
     t.index ["vendor_id"], name: "index_dispatches_on_vendor_id"
   end
@@ -238,6 +240,9 @@ ActiveRecord::Schema[7.0].define(version: 2025_05_06_143847) do
     t.string "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "category", default: "truck", null: false
+    t.bigint "dispatch_id"
+    t.index ["dispatch_id"], name: "index_things_on_dispatch_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -299,6 +304,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_05_06_143847) do
   add_foreign_key "location_products", "products"
   add_foreign_key "locations", "location_categories"
   add_foreign_key "phone_numbers", "customers"
+  add_foreign_key "things", "dispatches"
   add_foreign_key "work_orders", "locations"
   add_foreign_key "work_orders", "things", column: "asset_id"
   add_foreign_key "work_orders", "vendors"

@@ -52,6 +52,6 @@ class ThingsController < ApplicationController
   end
 
   def thing_params
-    params.require(:thing).permit(:name)
+    params.require(:thing).permit(:name, :category)
   end
 end

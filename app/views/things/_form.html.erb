@@ -4,6 +4,11 @@
     <%= form.text_field :name, class: "form-control" %>
   </div>
 
+  <div class="form-group">
+    <%= form.label :category, "Category" %>
+    <%= form.select :category, [["Truck", "truck"], ["Trailer", "trailer"]], {}, class: "form-control" %>
+  </div>
+
   <div class="actions">
     <%= form.submit class: "btn btn-primary" %>
     <%= link_to "Cancel", things_path, class: "btn btn-secondary" %>
