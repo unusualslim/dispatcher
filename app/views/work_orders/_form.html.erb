@@ -1,45 +1,102 @@
-<%= form_with(model: @work_order, local: true) do |form| %>
+<%= form_with(model: @work_order, local: true, data: { turbo: false }) do |form| %>
   <div class="form-group">
-    <%= form.label :subject %>
-    <%= form.text_field :subject, class: 'form-control' %>
+    <%= form.label :subject, "Subject" %>
+    <%= form.text_field :subject, class: "form-control" %>
   </div>
 
   <div class="form-group">
-    <%= form.label :location_id, 'Location' %>
-    <%= form.collection_select :location_id, Location.all, :id, :name, include_blank: true, class: 'form-control' %>
+    <%= form.label :status, "Status" %>
+    <%= form.select :status, [["Open", "Open"], ["Critical", "Critical"], ["Closed", "Closed"]], {}, class: "form-control" %>
   </div>
 
   <div class="form-group">
-    <%= form.label :asset_id, 'Asset' %>
-    <%= form.collection_select :asset_id, Asset.all, :id, :name, include_blank: true, class: 'form-control' %>
+    <%= form.label :assigned_to, "Assign To User" %>
+    <%= form.collection_select :assigned_to, User.all, :id, :full_name, { prompt: "Select a User" }, class: "form-control" %>
+  </div>
+
+<div class="form-group">
+  <label for="workable-search">Search</label>
+  <input type="text" id="workable-search" class="form-control" placeholder="Search for a location or asset">
+</div>
+
+<div class="form-group">
+  <%= form.label :workable_id, "Select Location or Asset" %>
+  <ul id="workable-results" class="list-group"></ul>
+</div>
+
+<!-- Hidden input to store the selected workable_id -->
+<%= form.hidden_field :workable_id, value: @work_order.workable_id %>
+<%= form.hidden_field :workable_type, value: @work_order.workable_type %>
+
+  <!-- Hidden input to store the selected workable_id -->
+  <%# form.hidden_field :workable_id, value: @work_order.workable_id %>
+
+  <div class="form-group">
+    <%= form.label :description, "Description" %>
+    <%= form.text_area :description, class: "form-control" %>
   </div>
 
   <div class="form-group">
-    <%= form.label :assigned_to, 'Assigned To (User ID)' %>
-    <%= form.number_field :assigned_to, class: 'form-control' %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :attachments %>
-    <%= form.text_field :attachments, class: 'form-control' %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :vendor_id, 'Vendor' %>
-    <%= form.collection_select :vendor_id, Vendor.all, :id, :name, include_blank: true, class: 'form-control' %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :status %>
-    <%= form.text_field :status, class: 'form-control' %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :description %>
-    <%= form.text_area :description, class: 'form-control' %>
-  </div>
-
-  <div class="form-group">
-    <%= form.submit 'Save', class: 'btn btn-primary' %>
+    <%= form.submit "Save", class: "btn btn-primary" %>
   </div>
 <% end %>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const workableSearchInput = document.getElementById("workable-search");
+  const workableResultsList = document.getElementById("workable-results");
+  const workableIdInput = document.querySelector("[name='work_order[workable_id]']");
+  const workableTypeInput = document.querySelector("[name='work_order[workable_type]']");
+
+  async function fetchWorkables(query = "") {
+    try {
+      const response = await fetch(`/work_orders/workables?query=${encodeURIComponent(query)}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const workables = await response.json();
+      updateResults(workables);
+    } catch (error) {
+      console.error("Error fetching workables:", error);
+      workableResultsList.innerHTML = "<li class='list-group-item'>Error loading options</li>";
+    }
+  }
+
+  function updateResults(workables) {
+    workableResultsList.innerHTML = "";
+
+    if (workables.length === 0) {
+      workableResultsList.innerHTML = "<li class='list-group-item'>No results found</li>";
+      return;
+    }
+
+    workables.forEach((workable) => {
+      const listItem = document.createElement("li");
+      listItem.className = "list-group-item";
+      listItem.textContent = `${workable.type}: ${workable.name}`;
+      listItem.dataset.id = workable.id;
+      listItem.dataset.type = workable.type;
+      listItem.style.cursor = "pointer";
+
+      listItem.addEventListener("click", () => {
+        workableIdInput.value = workable.id;
+        workableTypeInput.value = workable.type;
+        workableSearchInput.value = `${workable.type}: ${workable.name}`;
+        workableResultsList.innerHTML = ""; // Clear the results after selection
+      });
+
+      workableResultsList.appendChild(listItem);
+    });
+  }
+
+  // Fetch initial options on page load
+  fetchWorkables();
+
+  // Fetch filtered options on search input
+  workableSearchInput.addEventListener("input", (event) => {
+    const query = event.target.value;
+    fetchWorkables(query);
+  });
+});
+</script>

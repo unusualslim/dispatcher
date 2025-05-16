@@ -16,20 +16,35 @@
     <%= form.collection_select(:driver_id, User.workers, :id, :first_name, prompt: "Select a Worker") %>
   </div>
 
-  <div class="mb-3">
-    <%= form.label 'Customer Orders:', style: "display: block" %>
+<div class="mb-3">
+  <%= form.label 'Trucks:', style: "display: block" %>
 
-    <!-- Search Input -->
-    <input type="text" id="orderSearch" class="form-control mb-3" placeholder="Search orders...">
+  <!-- Search Input -->
+  <input type="text" id="truckSearch" class="form-control mb-3" placeholder="Search trucks...">
 
-    <!-- Orders Select Box -->
-    <%= form.select :customer_order_ids, 
-                    options_for_select(@recent_customer_orders.map { |co| ["#{co.id} - #{co.location.company_name} - #{co.required_delivery_date || 'No Delivery Date'}", co.id] }, @selected_customer_order_id), 
-                    { include_hidden: false }, 
-                    { id: 'customer_order_ids', multiple: true, prompt: 'Select Customer Orders', style: "height: 150px; width: 100%;" } %>
+  <!-- Trucks Select Box -->
+  <%= form.select :truck_id, 
+                  options_for_select(Thing.where(category: "truck").map { |truck| ["#{truck.id} - #{truck.name}", truck.id] }, @dispatch.truck_id), 
+                  { include_hidden: false }, 
+                  { id: 'truck_ids', multiple: false, prompt: 'Select a Truck', style: "height: 150px; width: 100%;" } %>
 
-    <small id="selectHelp" class="form-text text-muted">Try ctrl+click to select multiple. (Use cmd+click on OSX.)</small>
-  </div>
+  <small id="truckHelp" class="form-text text-muted">Search and select a truck for this dispatch.</small>
+</div>
+
+<div class="mb-3">
+  <%= form.label 'Trailers:', style: "display: block" %>
+
+  <!-- Search Input -->
+  <input type="text" id="trailerSearch" class="form-control mb-3" placeholder="Search trailers...">
+
+  <!-- Trailers Select Box -->
+  <%= form.select :trailer_id, 
+                  options_for_select(Thing.where(category: "trailer").map { |trailer| ["#{trailer.id} - #{trailer.name}", trailer.id] }, @dispatch.trailer_id), 
+                  { include_hidden: false }, 
+                  { id: 'trailer_ids', multiple: false, prompt: 'Select a Trailer', style: "height: 150px; width: 100%;" } %>
+
+  <small id="trailerHelp" class="form-text text-muted">Search and select a trailer for this dispatch.</small>
+</div>
 
   <div class="field">
     <%= form.label :origin, style: "display: block" %>

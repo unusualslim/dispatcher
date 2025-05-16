@@ -1,0 +1,23 @@
+<h1>Work Order Details</h1>
+
+<div class="card">
+  <div class="card-body">
+    <h5 class="card-title">Subject: <%= @work_order.subject %></h5>
+    <p class="card-text"><strong>Status:</strong> <%= @work_order.status %></p>
+    <p class="card-text"><strong>Assigned To:</strong> <%= User.find_by(id: @work_order.assigned_to)&.full_name || "Unassigned" %></p>
+    <p class="card-text"><strong>Description:</strong> <%= @work_order.description %></p>
+    <p class="card-text"><strong>Created On:</strong> <%= @work_order.created_at.strftime("%B %d, %Y") %></p>
+    <p class="card-text"><strong>Workable:</strong>
+      <% if @work_order.workable_type == "Location" %>
+        <%= link_to @work_order.workable.company_name, location_path(@work_order.workable_id) %>
+      <% elsif @work_order.workable_type == "Thing" %>
+        <%= link_to @work_order.workable.name, thing_path(@work_order.workable_id) %>
+      <% else %>
+        N/A
+      <% end %>
+    </p>
+  </div>
+</div>
+
+<%= link_to "Edit Work Order", edit_work_order_path(@work_order), class: "btn btn-secondary mt-3" %>
+<%= link_to "Back to Work Orders", work_orders_path, class: "btn btn-primary mt-3" %>

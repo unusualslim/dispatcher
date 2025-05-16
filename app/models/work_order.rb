@@ -1,4 +1,6 @@
 class WorkOrder < ApplicationRecord
-  belongs_to :location
-  belongs_to :vendor
+  belongs_to :workable, polymorphic: true
+
+  validates :subject, presence: true
+  validates :status, presence: true
 end

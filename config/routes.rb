@@ -57,7 +57,12 @@ Rails.application.routes.draw do
     end
   end
 
-  resources :work_orders
+  resources :work_orders do
+    collection do
+      get :workables
+    end
+  end
+  
   resources :things
 
   resources :announcements

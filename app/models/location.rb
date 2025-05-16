@@ -14,6 +14,8 @@ class Location < ApplicationRecord
 
   has_many :customer_orders
 
+  has_many :work_orders, as: :workable, dependent: :destroy
+
   validate :ensure_not_disabled, on: :use
 
   def city_with_company

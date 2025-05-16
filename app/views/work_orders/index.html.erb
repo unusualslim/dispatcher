@@ -1,0 +1,40 @@
+<h1>Work Orders</h1>
+
+<%= link_to "New Work Order", new_work_order_path, class: "btn btn-primary mb-3", data: { turbo: false } %>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Subject</th>
+      <th>Status</th>
+      <th>Assigned To</th>
+      <th>Asset</th>
+      <th>Created On</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @work_orders.each do |work_order| %>
+      <tr>
+        <td><%= work_order.subject %></td>
+        <td><%= work_order.status %></td>
+        <td><%= User.find_by(id: work_order.assigned_to)&.full_name || "Unassigned" %></td>
+        <td>
+          <% if work_order.workable_type == "Location" %>
+            <%= link_to work_order.workable.company_name, location_path(work_order.workable_id) %>
+          <% elsif work_order.workable_type == "Thing" %>
+            <%= link_to work_order.workable.name, thing_path(work_order.workable_id) %>
+          <% else %>
+            N/A
+          <% end %>
+        </td>
+        <td><%= work_order.created_at.strftime("%B %d, %Y") %></td>
+        <td>
+        <%= link_to "View", work_order_path(work_order), data: { turbo: false }, class: "btn btn-info btn-sm" %>
+        <%= link_to "Edit", edit_work_order_path(work_order), data: { turbo: false }, class: "btn btn-secondary btn-sm" %>
+        <%= button_to "Delete", work_order_path(work_order), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger btn-sm" %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
