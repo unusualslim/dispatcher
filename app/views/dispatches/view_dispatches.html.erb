@@ -53,28 +53,97 @@
 
 
   <!-- Dispatches Table -->
-  <table class="table table-hover">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Assigned To</th>
-        <th>Dispatch Date</th>
-        <th>Status</th>
-        <th>Notes</th>
-        <th>Created On</th>
+<table class="table table-hover">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Assigned To</th>
+      <th>Dispatch Date</th>
+      <th>Status</th>
+      <th>Origin</th>
+      <th>Destination</th>
+      <th>Notes</th>
+      <th>Created On</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @dispatches.each do |dispatch| %>
+      <tr style="cursor: pointer;" onclick="location.href='/dispatches/<%= dispatch.id %>';">
+
+        <!-- ID -->
+        <td><%= dispatch.id %></td>
+
+        <!-- Assigned To -->
+        <td><%= dispatch.driver&.full_name || 'Unassigned' %></td>
+
+        <!-- Dispatch Date -->
+        <td><%= dispatch.dispatch_date || 'No date set' %></td>
+
+        <!-- Status -->
+        <td><%= dispatch.status || 'No status' %></td>
+
+        <!-- Origin -->
+        <td><%= dispatch.origin || "No Origin" %></td>
+
+        <!-- Destination -->
+        <td>
+          <% if dispatch.customer_orders.any? %>
+            <% destination_location = dispatch.customer_orders.first.location %>
+            <%= "#{destination_location.company_name} - #{destination_location.city}" %>
+          <% else %>
+            No destination location found
+          <% end %>
+        </td>
+
+        <!-- Notes -->
+        <td><%= dispatch.notes.presence || 'No notes' %></td>
+
+        <!-- Created On -->
+        <td><%= dispatch.created_at.in_time_zone('Eastern Time (US & Canada)').strftime('%Y-%m-%d %I:%M %p') %></td>
       </tr>
-    </thead>
-    <tbody>
-      <% @dispatches.each do |dispatch| %>
-        <tr style="cursor: pointer;" onclick="location.href='/dispatches/<%= dispatch.id %>';">
-          <td><%= dispatch.id %></td>
-          <td><%= dispatch.driver&.full_name || 'Unassigned' %></td>
-          <td><%= dispatch.dispatch_date || 'No date set' %></td>
-          <td><%= dispatch.status || 'No status' %></td>
-          <td><%= dispatch.notes.presence || 'No notes' %></td>
-          <td><%= dispatch.created_at.in_time_zone('Eastern Time (US & Canada)').strftime('%Y-%m-%d %I:%M %p') %></td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
+    <% end %>
+  </tbody>
+</table>
 </div>
+
+<style>
+.table th, .table td {
+  text-align: left;
+  padding: 10px;
+  overflow: hidden; /* Prevent content from overflowing */
+  text-overflow: ellipsis; /* Add ellipsis for truncated text */
+  white-space: nowrap; /* Prevent text wrapping */
+}
+
+.table th:nth-child(1), .table td:nth-child(1) {
+  width: 5%; /* ID column */
+}
+
+.table th:nth-child(2), .table td:nth-child(2) {
+  width: 15%; /* Assigned To column */
+}
+
+.table th:nth-child(3), .table td:nth-child(3) {
+  width: 15%; /* Dispatch Date column */
+}
+
+.table th:nth-child(4), .table td:nth-child(4) {
+  width: 10%; /* Status column */
+}
+
+.table th:nth-child(5), .table td:nth-child(5) {
+  width: 20%; /* Origin column */
+}
+
+.table th:nth-child(6), .table td:nth-child(6) {
+  width: 20%; /* Destination column */
+}
+
+.table th:nth-child(7), .table td:nth-child(7) {
+  width: 10%; /* Notes column */
+}
+
+.table th:nth-child(8), .table td:nth-child(8) {
+  width: 15%; /* Created On column */
+}
+</style>
