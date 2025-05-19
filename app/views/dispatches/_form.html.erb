@@ -1,3 +1,12 @@
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 <%= form_with model: @dispatch, local: true, html: { multipart: true } do |form| %>
   <% if dispatch.errors.any? %>
     <div style="color: red">
@@ -31,35 +40,23 @@
     <small id="selectHelp" class="form-text text-muted">Try ctrl+click to select multiple. (Use cmd+click on OSX.)</small>
   </div>
 
-<div class="mb-3">
-  <%= form.label 'Trucks:', style: "display: block" %>
-
-  <!-- Search Input -->
-  <input type="text" id="truckSearch" class="form-control mb-3" placeholder="Search trucks...">
-
-  <!-- Trucks Select Box -->
-  <%= form.select :truck_id, 
+  <div class="mb-3">
+    <%= form.label 'Trucks:', style: "display: block" %>
+    <%= select_tag 'dispatch[truck_id]', 
                   options_for_select(Thing.where(category: "truck").map { |truck| ["#{truck.id} - #{truck.name}", truck.id] }, @dispatch.truck_id), 
-                  { include_hidden: false }, 
-                  { id: 'truck_ids', multiple: false, prompt: 'Select a Truck', style: "height: 150px; width: 100%;" } %>
+                  prompt: 'Select a Truck', 
+                  class: 'form-control select2' %>
+    <small id="truckHelp" class="form-text text-muted">Search and select a truck for this dispatch.</small>
+  </div>
 
-  <small id="truckHelp" class="form-text text-muted">Search and select a truck for this dispatch.</small>
-</div>
-
-<div class="mb-3">
-  <%= form.label 'Trailers:', style: "display: block" %>
-
-  <!-- Search Input -->
-  <input type="text" id="trailerSearch" class="form-control mb-3" placeholder="Search trailers...">
-
-  <!-- Trailers Select Box -->
-  <%= form.select :trailer_id, 
+  <div class="mb-3">
+    <%= form.label 'Trailers:', style: "display: block" %>
+    <%= select_tag 'dispatch[trailer_id]', 
                   options_for_select(Thing.where(category: "trailer").map { |trailer| ["#{trailer.id} - #{trailer.name}", trailer.id] }, @dispatch.trailer_id), 
-                  { include_hidden: false }, 
-                  { id: 'trailer_ids', multiple: false, prompt: 'Select a Trailer', style: "height: 150px; width: 100%;" } %>
-
-  <small id="trailerHelp" class="form-text text-muted">Search and select a trailer for this dispatch.</small>
-</div>
+                  prompt: 'Select a Trailer', 
+                  class: 'form-control select2' %>
+    <small id="trailerHelp" class="form-text text-muted">Search and select a trailer for this dispatch.</small>
+  </div>
 
   <div class="field">
     <%= form.label :origin, style: "display: block" %>
@@ -137,4 +134,14 @@
       }
     });
   });
+
+document.addEventListener("DOMContentLoaded", function () {
+  // Initialize Select2 for all elements with the 'select2' class
+  $('.select2').select2({
+    width: '100%', // Ensure the dropdown takes up the full width
+    placeholder: 'Select an option', // Placeholder text
+    allowClear: true, // Allow clearing the selection
+    minimumResultsForSearch: 0 // Enable search bar even for single-select dropdowns
+  });
+});
 </script>
