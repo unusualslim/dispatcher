@@ -1,0 +1,16 @@
+<h1>Work Order Notification</h1>
+
+<p>Hello <%= @user.full_name %>,</p>
+
+<p><%= @message_body %></p>
+
+<p><strong>Work Order Details:</strong></p>
+<ul>
+  <li><strong>ID:</strong> <%= @work_order.id %></li>
+  <li><strong>Subject:</strong> <%= @work_order.subject %></li>
+  <li><strong>Status:</strong> <%= @work_order.status %></li>
+  <li><strong>Description:</strong> <%= @work_order.description %></li>
+</ul>
+
+<p>You can view the work order by clicking the link below:</p>
+<p><%= link_to "View Work Order", work_order_url(@work_order) %></p>

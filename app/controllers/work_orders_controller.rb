@@ -16,6 +16,12 @@ class WorkOrdersController < ApplicationController
   def create
     @work_order = WorkOrder.new(work_order_params)
     if @work_order.save
+      # Send email to the assigned user
+      if @work_order.assigned_to.present?
+        user = User.find_by(id: @work_order.assigned_to)
+        DispatchMailer.send_work_order_email(@work_order, "A new work order has been assigned to you.").deliver_later
+      end
+  
       redirect_to @work_order, notice: 'Work order was successfully created.'
     else
       render :new
@@ -26,6 +32,12 @@ class WorkOrdersController < ApplicationController
 
   def update
     if @work_order.update(work_order_params)
+      # Send email to the assigned user
+      if @work_order.assigned_to.present?
+        user = User.find_by(id: @work_order.assigned_to)
+        DispatchMailer.send_work_order_email(@work_order, "The work order assigned to you has been updated.").deliver_later
+      end
+  
       redirect_to @work_order, notice: 'Work order was successfully updated.'
     else
       render :edit, status: :unprocessable_entity

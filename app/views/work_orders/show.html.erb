@@ -7,7 +7,7 @@
     <p class="card-text"><strong>Assigned To:</strong> <%= User.find_by(id: @work_order.assigned_to)&.full_name || "Unassigned" %></p>
     <p class="card-text"><strong>Description:</strong> <%= @work_order.description %></p>
     <p class="card-text"><strong>Created On:</strong> <%= @work_order.created_at.strftime("%B %d, %Y") %></p>
-    <p class="card-text"><strong>Workable:</strong>
+    <p class="card-text"><strong>Asset:</strong>
       <% if @work_order.workable_type == "Location" %>
         <%= link_to @work_order.workable.company_name, location_path(@work_order.workable_id) %>
       <% elsif @work_order.workable_type == "Thing" %>
