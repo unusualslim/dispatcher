@@ -61,8 +61,12 @@ Rails.application.routes.draw do
     collection do
       get :workables
     end
+    member do
+      patch :change_status
+    end
+    resources :comments, only: :create
   end
-  
+
   resources :things
 
   resources :announcements

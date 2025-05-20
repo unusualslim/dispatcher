@@ -1,3 +1,16 @@
+<div class="btn-group mb-3" role="group">
+  <% if @work_order.status == "Open" %>
+    <%= button_to "Mark as Critical", change_status_work_order_path(@work_order, status: "Critical"), method: :patch, class: "btn btn-warning" %>
+    <%= button_to "Mark as Closed", change_status_work_order_path(@work_order, status: "Closed"), method: :patch, class: "btn btn-danger" %>
+  <% elsif @work_order.status == "Critical" %>
+    <%= button_to "Mark as Open", change_status_work_order_path(@work_order, status: "Open"), method: :patch, class: "btn btn-primary" %>
+    <%= button_to "Mark as Closed", change_status_work_order_path(@work_order, status: "Closed"), method: :patch, class: "btn btn-danger" %>
+  <% elsif @work_order.status == "Closed" %>
+    <%= button_to "Mark as Open", change_status_work_order_path(@work_order, status: "Open"), method: :patch, class: "btn btn-primary" %>
+    <%= button_to "Mark as Critical", change_status_work_order_path(@work_order, status: "Critical"), method: :patch, class: "btn btn-warning" %>
+  <% end %>
+</div>
+
 <h1>Work Order Details</h1>
 
 <div class="card">
@@ -21,3 +34,33 @@
 
 <%= link_to "Edit Work Order", edit_work_order_path(@work_order), class: "btn btn-secondary mt-3" %>
 <%= link_to "Back to Work Orders", work_orders_path, class: "btn btn-primary mt-3" %>
+
+<hr>
+
+<h2>Comments</h2>
+
+<div id="comments">
+  <% if @work_order.comments.any? %>
+    <% @work_order.comments.each do |comment| %>
+      <div class="card mb-3">
+        <div class="card-body">
+          <p><strong><%= comment.user.full_name %>:</strong> <%= comment.content %></p>
+          <p class="text-muted">
+            <small>Posted on <%= comment.created_at.in_time_zone('Eastern Time (US & Canada)').strftime("%B %d, %Y at %I:%M %p") %></small>
+          </p>
+        </div>
+      </div>
+    <% end %>
+  <% else %>
+    <p>No comments on this work order.</p>
+  <% end %>
+</div>
+
+<h3>Add a Comment</h3>
+<%= form_with model: [@work_order, Comment.new], local: true do |form| %>
+  <div class="mb-3">
+    <%= form.label :content, "Your Comment" %>
+    <%= form.text_area :content, class: "form-control", rows: 3 %>
+  </div>
+  <%= form.submit "Post Comment", class: "btn btn-primary" %>
+<% end %>

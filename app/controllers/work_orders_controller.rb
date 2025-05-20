@@ -1,5 +1,5 @@
 class WorkOrdersController < ApplicationController
-  before_action :set_work_order, only: %i[show edit update destroy]
+  before_action :set_work_order, only: [:show, :edit, :update, :destroy, :change_status]
 
   def index
     @work_orders = WorkOrder.all
@@ -63,6 +63,14 @@ class WorkOrdersController < ApplicationController
   
     workables = locations + things
     render json: workables
+  end
+
+  def change_status
+    if @work_order.update(status: params[:status])
+      redirect_to @work_order, notice: "Work order status was successfully updated to #{params[:status]}."
+    else
+      redirect_to @work_order, alert: "Failed to update work order status."
+    end
   end
 
   private
