@@ -1,0 +1,9 @@
+<p>Hello <%= @user.full_name %>,</p>
+
+<p>A new comment has been added to Work Order #<%= @work_order.id %>:</p>
+
+<p><strong>Comment:</strong> <%= @comment.content %></p>
+<p><strong>By:</strong> <%= @comment.user.full_name %></p>
+
+<p>You can view the work order by clicking the link below:</p>
+<p><%= link_to "View Work Order", work_order_url(@work_order) %></p>

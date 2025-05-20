@@ -29,4 +29,15 @@ class DispatchMailer < ApplicationMailer
         subject: "Work Order ##{@work_order.id}"
       )
     end
+
+    def new_comment_email(work_order, comment, user)
+      @work_order = work_order
+      @comment = comment
+      @user = user
+  
+      mail(
+        to: @user.email,
+        subject: "New Comment on Work Order ##{@work_order.id}"
+      )
+    end
   end
