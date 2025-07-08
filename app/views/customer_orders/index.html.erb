@@ -11,42 +11,69 @@
 
   <!-- Search and Sorting Form -->
   <div class="mb-4">
-    <%= form_with(url: customer_orders_path, method: :get, local: true, data: { turbo: false }) do |f| %>
+    <%= form_with url: customer_orders_path, method: :get, local: true, data: { turbo: false } do |f| %>
       <div class="row mb-3">
+        <!-- Customer Select (NEW) -->
+        <div class="col-md-3">
+          <%= f.label :customer_id, 'Customer' %>
+          <%= f.select :customer_id,
+                options_from_collection_for_select(
+                  @customers, :id, :name, params[:customer_id]
+                ),
+                { include_blank: 'All Customers' },
+                class: 'form-control customer-select' %>
+        </div>
+
         <!-- Product Select -->
         <div class="col-md-3">
           <%= f.label :product, 'Product' %>
-          <%= f.select :product, options_from_collection_for_select(Product.all, :name, :name, params[:product]), { include_blank: 'Select a Product' }, class: 'form-control' %>
+          <%= f.select :product,
+                options_from_collection_for_select(@products, :name, :name, params[:product]),
+                { include_blank: 'Select a Product' },
+                class: 'form-control' %>
         </div>
 
         <!-- Location Select -->
         <div class="col-md-3">
           <%= f.label :location, 'Location' %>
-          <%= f.select :location, options_from_collection_for_select(Location.all, :id, lambda { |location| "#{location.address}, #{location.city}, #{location.state} #{location.zip}" }, selected: params[:location]), { include_blank: 'Select Location' }, class: 'form-control location-select' %>
+          <%= f.select :location,
+                options_from_collection_for_select(
+                  @locations,
+                  :id,
+                  ->(loc) { "#{loc.address}, #{loc.city}, #{loc.state} #{loc.zip}" },
+                  params[:location]
+                ),
+                { include_blank: 'Select Location' },
+                class: 'form-control location-select' %>
         </div>
 
         <!-- Freight Only Checkbox -->
         <div class="col-md-3" style="padding-top: 25px;">
           <%= f.label :freight_only, 'Freight Only' %>
-          <%= f.check_box :freight_only, { checked: params[:freight_only].present? }, true, false %>
-        </div>
-
-        <!-- Sort By Dropdown -->
-        <div class="col-md-3">
-          <%= f.label :sort_by, 'Sort By' %>
-          <%= f.select :sort_by, options_for_select([
-            ['Newest', 'newest'], 
-            ['Oldest', 'oldest'], 
-            ['Required Delivery Date', 'required_delivery_date']
-          ], selected: params[:sort_by]), { include_blank: 'Select Sorting' }, class: 'form-control' %>
+          <%= f.check_box :freight_only,
+                { checked: params[:freight_only].present? },
+                true, false %>
         </div>
       </div>
 
-      <!-- Hidden View Field -->
-      <%= f.hidden_field :view, value: params[:view] || 'card' %>
+      <div class="row mb-3">
+        <!-- Sort By Dropdown -->
+        <div class="col-md-3">
+          <%= f.label :sort_by, 'Sort By' %>
+          <%= f.select :sort_by,
+                options_for_select([
+                  ['Newest', 'newest'],
+                  ['Oldest', 'oldest'],
+                  ['Required Delivery Date', 'required_delivery_date']
+                ], params[:sort_by]),
+                { include_blank: 'Select Sorting' },
+                class: 'form-control' %>
+        </div>
 
-      <!-- Submit and Reset Buttons -->
-      <div class="row">
+        <!-- Hidden View Field -->
+        <%= f.hidden_field :view, value: params[:view] || 'card' %>
+
+        <!-- Submit and Reset Buttons -->
         <div class="col-md-2">
           <%= f.submit 'Apply Filters', class: 'btn btn-primary w-100' %>
         </div>
@@ -59,10 +86,13 @@
 
   <!-- Toggle View Buttons -->
   <div class="mb-4">
-    <%= link_to "Card View", customer_orders_path(view: "card", sort_by: params[:sort_by]), class: "btn btn-secondary me-2" %>
-    <%= link_to "Table View", customer_orders_path(view: "table", sort_by: params[:sort_by]), class: "btn btn-secondary" %>
+    <%= link_to "Card View",
+                customer_orders_path(view: "card", sort_by: params[:sort_by], customer_id: params[:customer_id]),
+                class: "btn btn-secondary me-2" %>
+    <%= link_to "Table View",
+                customer_orders_path(view: "table", sort_by: params[:sort_by], customer_id: params[:customer_id]),
+                class: "btn btn-secondary" %>
   </div>
-</div>
 
   <!-- Display Content -->
   <% if params[:view] == "table" %>
@@ -74,10 +104,16 @@
 
 <script>
   $(document).ready(function() {
-    // Apply Select2 to the location select dropdown
+    // Apply Select2 to the new customer select
+    $('.customer-select').select2({
+      placeholder: 'Filter by customer',
+      allowClear: true
+    });
+
+    // Existing location select
     $('.location-select').select2({
       placeholder: 'Search for a location',
-      allowClear: true // Allow clearing the selection
+      allowClear: true
     });
   });
 </script>

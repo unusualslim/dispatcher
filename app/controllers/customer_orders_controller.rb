@@ -1,43 +1,57 @@
 class CustomerOrdersController < ApplicationController
 
-    def index
-      @view = params[:view] || 'card' # Default to card view if no view is specified
-    
-      # Start with including necessary associations for performance
-      @customer_orders = CustomerOrder.includes(:location, customer_order_products: :product)
-    
-      # Apply filters if any
-      if params[:product].present?
-        @customer_orders = @customer_orders.joins(customer_order_products: :product)
-                                          .where('products.name ILIKE ?', "%#{params[:product]}%")
-      end
-    
-      if params[:location].present?
-        if params[:location].to_i.to_s == params[:location]  # If it's a number, assume it's an ID
-          @customer_orders = @customer_orders.where(location_id: params[:location])
-        else
-          @customer_orders = @customer_orders.joins(:location)
-                                            .where('locations.city ILIKE ?', "%#{params[:location]}%")
-        end
-      end
-    
-      if params[:freight_only].present?
-        @customer_orders = @customer_orders.where(freight_only: true)
-      end
-    
-      # Apply sorting logic based on the selected option
-      case params[:sort_by]
-      when 'newest'
-        @customer_orders = @customer_orders.order(created_at: :desc) # Sort by date created (newest first)
-      when 'oldest'
-        @customer_orders = @customer_orders.order(created_at: :asc) # Sort by date created (oldest first)
-      when 'required_delivery_date'
-        @customer_orders = @customer_orders.order(required_delivery_date: :asc) # Sort by required delivery date (closest first)
-      else
-        # Default sorting by required_delivery_date (ascending)
-        @customer_orders = @customer_orders.order(required_delivery_date: :asc)
-      end
-    end  
+def index
+  @view = params[:view] || 'card'  # Default to card view
+
+  # Load collections for the selects
+  @customers = Customer.order(:name)
+  @products  = Product.order(:name)
+  @locations = Location.order(:city)
+
+  # Start your query with the necessary includes
+  @customer_orders = CustomerOrder
+                       .includes(:location, :customer, customer_order_products: :product)
+
+  # NEW: filter by customer
+  if params[:customer_id].present?
+    @customer_orders = @customer_orders.where(customer_id: params[:customer_id])
+  end
+
+  # filter by product name (via join to products)
+  if params[:product].present?
+    @customer_orders = @customer_orders
+                         .joins(customer_order_products: :product)
+                         .where('products.name ILIKE ?', "%#{params[:product]}%")
+  end
+
+  # filter by location (ID or city name)
+  if params[:location].present?
+    if params[:location].to_i.to_s == params[:location]
+      @customer_orders = @customer_orders.where(location_id: params[:location])
+    else
+      @customer_orders = @customer_orders
+                           .joins(:location)
+                           .where('locations.city ILIKE ?', "%#{params[:location]}%")
+    end
+  end
+
+  # freight-only flag
+  if params[:freight_only].present?
+    @customer_orders = @customer_orders.where(freight_only: true)
+  end
+
+  # Apply sorting
+  case params[:sort_by]
+  when 'newest'
+    @customer_orders = @customer_orders.order(created_at: :desc)
+  when 'oldest'
+    @customer_orders = @customer_orders.order(created_at: :asc)
+  when 'required_delivery_date'
+    @customer_orders = @customer_orders.order(required_delivery_date: :asc)
+  else
+    @customer_orders = @customer_orders.order(required_delivery_date: :asc)
+  end
+end
   
     def show
         @customer_order = CustomerOrder.find(params[:id])
