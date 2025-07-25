@@ -1,3 +1,5 @@
+require 'csv'
+
 class DispatchesController < ApplicationController
   before_action :set_dispatch, only: %i[show edit update destroy mark_as_complete mark_as_billed send_notification]
 
@@ -297,6 +299,39 @@ class DispatchesController < ApplicationController
   
     file.purge # Deletes the file from Active Storage
     redirect_to dispatch_path(@dispatch), notice: "File was successfully deleted."
+  end
+
+  def export_csv
+    @dispatches = Dispatch.all
+
+    headers = [
+      "ID", "Assigned To", "Dispatch Date", "Status", "Origin", "Destination", "Notes", "Created On"
+    ]
+
+    csv_data = CSV.generate(headers: true) do |csv|
+      csv << headers
+      @dispatches.each do |dispatch|
+        destination = if dispatch.customer_orders.any?
+          loc = dispatch.customer_orders.first.location
+          "#{loc.company_name} - #{loc.city}"
+        else
+          "No destination location found"
+        end
+
+        csv << [
+          dispatch.id,
+          dispatch.driver&.full_name || 'Unassigned',
+          dispatch.dispatch_date,
+          dispatch.status,
+          dispatch.origin,
+          destination,
+          dispatch.notes,
+          dispatch.created_at.in_time_zone('Eastern Time (US & Canada)').strftime('%Y-%m-%d %I:%M %p')
+        ]
+      end
+    end
+
+    send_data csv_data, filename: "dispatches-#{Date.today}.csv"
   end
   
 

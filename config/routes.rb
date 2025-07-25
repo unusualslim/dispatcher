@@ -26,6 +26,7 @@ Rails.application.routes.draw do
     end
     collection do
       get 'kanban'
+      get :export_csv
     end
   end
   
