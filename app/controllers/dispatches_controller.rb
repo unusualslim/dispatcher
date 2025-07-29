@@ -176,7 +176,7 @@ class DispatchesController < ApplicationController
     if @selected_status == 'exclude_complete_deleted'
       @dispatches = @dispatches.where.not(status: ['complete', 'deleted'])
     elsif @selected_status != 'all'
-      @dispatches = @dispatches.where(status: @selected_status)
+      @dispatches = @dispatches.where('LOWER(status) = ?', @selected_status.downcase)
     end
   
     # Filter by selected driver (if any)
