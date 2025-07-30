@@ -301,38 +301,74 @@ class DispatchesController < ApplicationController
     redirect_to dispatch_path(@dispatch), notice: "File was successfully deleted."
   end
 
-  def export_csv
-    @dispatches = Dispatch.all
+def export_csv
+  # Apply the same filters as in view_dispatches
+  selected_status = params[:status] || 'all'
+  selected_driver = params[:driver]
+  sort_by = params[:sort_by] || 'dispatch_date'
 
-    headers = [
-      "ID", "Assigned To", "Dispatch Date", "Status", "Origin", "Destination", "Notes", "Created On"
-    ]
-
-    csv_data = CSV.generate(headers: true) do |csv|
-      csv << headers
-      @dispatches.each do |dispatch|
-        destination = if dispatch.customer_orders.any?
-          loc = dispatch.customer_orders.first.location
-          "#{loc.company_name} - #{loc.city}"
-        else
-          "No destination location found"
-        end
-
-        csv << [
-          dispatch.id,
-          dispatch.driver&.full_name || 'Unassigned',
-          dispatch.dispatch_date,
-          dispatch.status,
-          dispatch.origin,
-          destination,
-          dispatch.notes,
-          dispatch.created_at.in_time_zone('Eastern Time (US & Canada)').strftime('%Y-%m-%d %I:%M %p')
-        ]
-      end
-    end
-
-    send_data csv_data, filename: "dispatches-#{Date.today}.csv"
+  dispatches = Dispatch.all
+  if selected_status == 'exclude_complete_deleted'
+    dispatches = dispatches.where.not('LOWER(status)' => ['complete', 'deleted'])
+  elsif selected_status != 'all'
+    dispatches = dispatches.where('LOWER(status) = ?', selected_status.downcase)
   end
+
+  if selected_driver.present?
+    dispatches = dispatches.where(driver_id: selected_driver)
+  end
+
+  dispatches = case sort_by
+               when 'newest'
+                 dispatches.order(created_at: :desc)
+               when 'oldest'
+                 dispatches.order(created_at: :asc)
+               when 'dispatch_date'
+                 dispatches.order(dispatch_date: :asc)
+               else
+                 dispatches
+               end
+
+  headers = [
+    "ID", "Assigned To", "Dispatch Date", "Status", "Origin", "Destination", "Customer Orders", "Notes", "Created On"
+  ]
+
+  csv_data = CSV.generate(headers: true) do |csv|
+    csv << headers
+    dispatches.each do |dispatch|
+      if dispatch.customer_orders.any?
+        loc = dispatch.customer_orders.first.location
+        destination = [
+          loc.company_name,
+          loc.address,
+          loc.city,
+          loc.state,
+          loc.zip
+        ].compact.join(', ')
+      else
+        destination = "No destination location found"
+      end
+
+      customer_orders_info = dispatch.customer_orders.map do |co|
+        "Order ##{co.id} (#{co.location.company_name}, Delivery: #{co.required_delivery_date || 'N/A'})"
+      end.join(' | ')
+
+      csv << [
+        dispatch.id,
+        dispatch.driver&.full_name || 'Unassigned',
+        dispatch.dispatch_date,
+        dispatch.status,
+        dispatch.origin,
+        destination,
+        customer_orders_info,
+        dispatch.notes,
+        dispatch.created_at.in_time_zone('Eastern Time (US & Canada)').strftime('%Y-%m-%d %I:%M %p')
+      ]
+    end
+  end
+
+  send_data csv_data, filename: "dispatches-#{Date.today}.csv"
+end
   
 
   private
