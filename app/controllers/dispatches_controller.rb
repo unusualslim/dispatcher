@@ -329,43 +329,46 @@ def export_csv
                  dispatches
                end
 
-  headers = [
-    "ID", "Assigned To", "Dispatch Date", "Status", "Origin", "Destination", "Customer Orders", "Notes", "Created On"
-  ]
+headers = [
+  "Dispatch ID", "Assigned To", "Dispatch Date", "Status", "Origin", "Destination", "Notes", "Created On",
+  "Customer Order ID", "Order Company", "Order Delivery Date", "Order Product", "Order Amount"
+]
 
-  csv_data = CSV.generate(headers: true) do |csv|
-    csv << headers
-    dispatches.each do |dispatch|
-      if dispatch.customer_orders.any?
-        loc = dispatch.customer_orders.first.location
-        destination = [
-          loc.company_name,
-          loc.address,
-          loc.city,
-          loc.state,
-          loc.zip
-        ].compact.join(', ')
-      else
-        destination = "No destination location found"
-      end
+csv_data = CSV.generate(headers: true) do |csv|
+  csv << headers
+  dispatches.each do |dispatch|
+    # Write the dispatch row (customer order columns blank)
+    csv << [
+      dispatch.id,
+      dispatch.driver&.full_name || 'Unassigned',
+      dispatch.dispatch_date,
+      dispatch.status,
+      dispatch.origin,
+      (dispatch.customer_orders.first&.location ? [
+        dispatch.customer_orders.first.location.company_name,
+        dispatch.customer_orders.first.location.address,
+        dispatch.customer_orders.first.location.city,
+        dispatch.customer_orders.first.location.state,
+        dispatch.customer_orders.first.location.zip
+      ].compact.join(', ') : "No destination location found"),
+      dispatch.notes,
+      dispatch.created_at.in_time_zone('Eastern Time (US & Canada)').strftime('%Y-%m-%d %I:%M %p'),
+      nil, nil, nil, nil, nil
+    ]
 
-      customer_orders_info = dispatch.customer_orders.map do |co|
-        "Order ##{co.id} (#{co.location.company_name}, Delivery: #{co.required_delivery_date || 'N/A'})"
-      end.join(' | ')
-
+    # Write a row for each customer order
+    dispatch.customer_orders.each do |co|
       csv << [
-        dispatch.id,
-        dispatch.driver&.full_name || 'Unassigned',
-        dispatch.dispatch_date,
-        dispatch.status,
-        dispatch.origin,
-        destination,
-        customer_orders_info,
-        dispatch.notes,
-        dispatch.created_at.in_time_zone('Eastern Time (US & Canada)').strftime('%Y-%m-%d %I:%M %p')
+        nil, nil, nil, nil, nil, nil, nil, nil, # Dispatch columns blank
+        co.id,
+        co.location&.company_name,
+        co.required_delivery_date,
+        co.product,
+        co.approximate_product_amount
       ]
     end
   end
+end
 
   send_data csv_data, filename: "dispatches-#{Date.today}.csv"
 end
