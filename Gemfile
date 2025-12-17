@@ -21,6 +21,8 @@ gem 'will_paginate'
 
 gem 'fullcalendar-rails'
 
+gem "mini_racer"
+
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem "rails", "~> 7.0.3", ">= 7.0.3.1"
 
