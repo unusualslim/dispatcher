@@ -1,0 +1,43 @@
+<%= form_with url: url_for, method: :get, local: true, class: "mb-4" do |f| %>
+  <div class="filters flex flex-wrap gap-3 items-end">
+
+    <div>
+      <%= f.label :q, "Search", class: "block text-sm font-medium" %>
+      <%= f.text_field :q, value: @search_term, class: "border rounded px-2 py-1 w-48", placeholder: "Order #, customer, location" %>
+    </div>
+
+    <div>
+      <%= f.label :status, "Status", class: "block text-sm font-medium" %>
+      <%= f.select :status,
+            options_for_select([["All", "all"]] + @statuses.map { |s| [s.titleize, s] }, @selected_status),
+            {}, class: "border rounded px-2 py-1" %>
+    </div>
+
+    <div>
+      <%= f.label :location, "Location", class: "block text-sm font-medium" %>
+      <%= f.text_field :location, value: @location, class: "border rounded px-2 py-1 w-40", placeholder: "City / site" %>
+    </div>
+
+    <div>
+      <%= f.label :due_from, "Due from", class: "block text-sm font-medium" %>
+      <%= f.date_field :due_from, value: @due_from, class: "border rounded px-2 py-1" %>
+    </div>
+
+    <div>
+      <%= f.label :due_to, "Due to", class: "block text-sm font-medium" %>
+      <%= f.date_field :due_to, value: @due_to, class: "border rounded px-2 py-1" %>
+    </div>
+
+    <div class="flex gap-2">
+      <%= f.submit "Apply", class: "bg-blue-600 text-white px-3 py-2 rounded" %>
+      <%= link_to "Reset", url_for(only_path: true), class: "text-sm text-gray-600 underline" %>
+    </div>
+
+    <div class="ml-auto flex gap-2">
+      <%= link_to "Table View", production_orders_path(request.query_parameters),
+            class: "px-3 py-2 rounded #{ @view == 'table' ? 'bg-blue-600 text-white' : 'bg-gray-100' }" %>
+      <%= link_to "Kanban View", kanban_production_orders_path(request.query_parameters),
+            class: "px-3 py-2 rounded #{ @view == 'kanban' ? 'bg-blue-600 text-white' : 'bg-gray-100' }" %>
+    </div>
+  </div>
+<% end %>

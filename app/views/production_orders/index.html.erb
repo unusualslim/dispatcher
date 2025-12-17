@@ -1,0 +1,104 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">Production Orders</h1>
+    <div class="d-flex gap-2">
+      <%= link_to "Kanban View", kanban_production_orders_path, class: "btn btn-outline-secondary" %>
+      <%= link_to "New Production Order", new_production_order_path, class: "btn btn-primary", data: { turbo: false }  %>
+    </div>
+  </div>
+
+  <div class="card mb-3 shadow-sm">
+    <div class="card-body">
+      <%= form_with url: production_orders_path, method: :get, local: true, class: "row g-2 align-items-end" do %>
+        <div class="col-md-4">
+          <label class="form-label">Search</label>
+          <%= text_field_tag :search, params[:search], class: "form-control", placeholder: "Order #, product, batch, customer, location" %>
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label">Status</label>
+          <%= select_tag :status,
+                options_for_select([["All", "all"]] + ProductionOrder::STATUSES.map { |s| [s.titleize, s] }, params[:status].presence || "all"),
+                class: "form-select" %>
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label">Location</label>
+          <%= text_field_tag :location, params[:location], class: "form-control", placeholder: "City / site" %>
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label">Due from</label>
+          <%= date_field_tag :due_from, params[:due_from], class: "form-control" %>
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label">Due to</label>
+          <%= date_field_tag :due_to, params[:due_to], class: "form-control" %>
+        </div>
+
+        <div class="col-12 d-flex gap-2 mt-1">
+          <%= submit_tag "Apply", class: "btn btn-primary" %>
+          <%= link_to "Reset", production_orders_path, class: "btn btn-outline-secondary" %>
+
+          <div class="ms-auto text-muted small align-self-center">
+            <%= @production_orders.size %> shown
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-striped align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th style="width: 120px;">Order #</th>
+              <th>Item</th>
+              <th>Customer</th>
+              <th>Location</th>
+              <th style="width: 140px;">Status</th>
+              <th style="width: 90px;">Priority</th>
+              <th style="width: 130px;">Due Date</th>
+              <th style="width: 160px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if @production_orders.any? %>
+              <% @production_orders.each do |po| %>
+                <% badge = case po.status
+                  when "pending" then "bg-secondary"
+                  when "in_progress" then "bg-warning text-dark"
+                  when "completed" then "bg-success"
+                  else "bg-secondary"
+                end %>
+
+                <tr>
+                  <td><%= po.number.presence || "—" %></td>
+                  <td><%= po.product&.name || "—" %></td>
+                  <td><%= po.customer_name.presence || "—" %></td>
+                  <td><%= po.location_name.presence || "—" %></td>
+                  <td><span class="badge <%= badge %>"><%= po.status.to_s.titleize %></span></td>
+                  <td><%= po.priority.present? ? "P#{po.priority}" : "—" %></td>
+                  <td><%= po.due_date&.strftime("%Y-%m-%d") || "—" %></td>
+                  <td class="d-flex gap-2">
+                    <%= link_to "View", production_order_path(po), class: "btn btn-sm btn-outline-primary" %>
+                    <%= link_to "Edit", edit_production_order_path(po), class: "btn btn-sm btn-outline-secondary" %>
+                  </td>
+                </tr>
+              <% end %>
+            <% else %>
+              <tr>
+                <td colspan="8" class="text-center text-muted py-4">
+                  No production orders match your filters.
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

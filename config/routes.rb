@@ -44,6 +44,7 @@ Rails.application.routes.draw do
   resources :customers do
     collection do
       get :search
+      get :select2
     end
   end
   
@@ -68,11 +69,22 @@ Rails.application.routes.draw do
     resources :comments, only: :create
   end
 
+  resources :production_orders do
+    collection do
+      get :kanban
+    end
+  end
+
+
   resources :things
 
   resources :announcements
 
-  resources :products
+  resources :products do
+    collection do
+      get :search
+    end
+  end
 
   resources :dispatch_messages, only: [:index, :show]
 

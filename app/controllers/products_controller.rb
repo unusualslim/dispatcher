@@ -33,6 +33,41 @@ class ProductsController < ApplicationController
       @product.destroy
       redirect_to products_path, notice: 'Product was successfully deleted.'
     end
+
+    def search
+      q = params[:q].to_s.strip
+      products =
+        if q.blank?
+          Product.order(:name).limit(25)
+        else
+          Product.where("name ILIKE ?", "%#{q}%")
+                .order(:name)
+                .limit(25)
+        end
+
+      render json: products.map { |p|
+        {
+          id: p.id,
+          text: [p.name, (p.respond_to?(:sku) ? p.sku : nil)].compact.join(" — ")
+        }
+      }
+    end
+
+    def show
+      @product = Product.find(params[:id])
+
+      respond_to do |format|
+        format.html
+        format.json do
+          render json: {
+            id: @product.id,
+            name: @product.name,
+            sku: (@product.respond_to?(:sku) ? @product.sku : nil)
+          }
+        end
+      end
+    end
+
   
     private
   

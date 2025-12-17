@@ -67,6 +67,20 @@ class CustomersController < ApplicationController
       end
       render :search # Or a specific view for search results
     end
+
+    def select2
+      term = params[:q].to_s.strip
+
+      customers =
+        if term.present?
+          Customer.where("LOWER(name) LIKE ?", "%#{term.downcase}%").order(:name).limit(25)
+        else
+          Customer.order(:name).limit(25)
+        end
+
+      render json: customers.map { |c| { id: c.id, text: c.name } }
+    end
+
   
     private
   

@@ -1,0 +1,336 @@
+<head>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+</head>
+
+<%= form_with model: @production_order, local: true do |f| %>
+  <% if @production_order.errors.any? %>
+    <div class="alert alert-danger">
+      <strong><%= pluralize(@production_order.errors.count, "error") %> prevented saving:</strong>
+      <ul class="mb-0">
+        <% @production_order.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <style>
+    /* Tighter, cleaner spacing */
+    .po-card .card-body { padding: 1.25rem; }
+    .po-card .form-label { margin-bottom: 0.35rem; }
+    .po-card .row { --bs-gutter-y: 0.85rem; }
+
+    /* Select2: fixed, clean width + Bootstrap-like */
+    #product_search,
+    #customer_search,
+    #location_search,
+    .select2-container { width: 320px !important; max-width: 100% !important; }
+
+    .select2-container--default .select2-selection--single {
+      height: calc(2.375rem + 2px);
+      border: 1px solid #ced4da;
+      border-radius: 0.375rem;
+      display: flex;
+      align-items: center;
+      padding: 0.375rem 0.75rem;
+      background: #fff;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+      padding-left: 0;
+      line-height: 1.5;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+      height: calc(2.375rem + 2px);
+      right: 6px;
+    }
+    .select2-dropdown {
+      width: auto !important;
+      min-width: 320px !important;
+    }
+
+    /* Make header card look less bulky */
+    .po-section-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #495057;
+      margin: 0 0 0.75rem 0;
+    }
+  </style>
+
+  <!-- Order details -->
+  <div class="card mb-3 po-card">
+    <div class="card-body">
+      <div class="po-section-title">Order Details</div>
+
+      <div class="row g-3 align-items-end">
+        <div class="col-md-4">
+          <%= f.label :product_id, "Item", class: "form-label d-block" %>
+
+          <input type="hidden"
+                 id="product_id"
+                 name="production_order[product_id]"
+                 value="<%= @production_order.product_id %>">
+
+          <select id="product_search" class="form-select"></select>
+        </div>
+
+        <div class="col-md-4">
+          <%= f.label :batch_number, "Batch #", class: "form-label d-block" %>
+          <%= f.text_field :batch_number, class: "form-control" %>
+        </div>
+
+        <div class="col-md-4">
+          <%= f.label :qty_to_make, "Qty to make", class: "form-label d-block" %>
+          <%= f.number_field :qty_to_make, step: 0.001, class: "form-control" %>
+        </div>
+      </div>
+
+      <div class="row g-3 mt-1 align-items-end">
+        <div class="col-md-4">
+          <%= f.label :due_date, "Due date", class: "form-label d-block" %>
+          <%= f.date_field :due_date, class: "form-control" %>
+        </div>
+
+        <div class="col-md-4">
+          <%= f.label :status, "Status", class: "form-label d-block" %>
+          <%= f.select :status, ProductionOrder::STATUSES.map { |s| [s.titleize, s] }, {}, class: "form-select" %>
+        </div>
+      </div>
+
+      <hr class="my-3">
+
+      <div class="row g-3 align-items-end">
+        <div class="col-md-4">
+          <%= f.label :customer_id, "Customer", class: "form-label d-block" %>
+
+          <input type="hidden"
+                 id="customer_id"
+                 name="production_order[customer_id]"
+                 value="<%= @production_order.customer_id %>">
+
+          <select id="customer_search" class="form-select"></select>
+        </div>
+
+        <div class="col-md-4">
+          <%= f.label :location_id, "Location", class: "form-label d-block" %>
+
+          <input type="hidden"
+                 id="location_id"
+                 name="production_order[location_id]"
+                 value="<%= @production_order.location_id %>">
+
+          <select id="location_search" class="form-select"></select>
+        </div>
+
+        <div class="col-md-4">
+          <%= f.label :priority, "Priority", class: "form-label d-block" %>
+          <%= f.number_field :priority, class: "form-control", min: 1, max: 10, placeholder: "1 = highest" %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Components -->
+  <div class="card mb-3 po-card">
+    <div class="card-body">
+      <div class="po-section-title">Components and Qty</div>
+
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead>
+            <tr>
+              <th style="width: 110px;">Qty</th>
+              <th style="width: 90px;">UOM</th>
+              <th style="width: 150px;">Part #</th>
+              <th>Description</th>
+              <th style="width: 160px;">Confirmed by</th>
+            </tr>
+          </thead>
+          <tbody>
+            <%= f.fields_for :production_order_components do |c| %>
+              <tr>
+                <td>
+                  <%= c.hidden_field :id if c.object.persisted? %>
+                  <%= c.hidden_field :position %>
+                  <%= c.number_field :quantity, step: 0.001, class: "form-control form-control-sm" %>
+                </td>
+                <td><%= c.text_field :uom, class: "form-control form-control-sm" %></td>
+                <td><%= c.text_field :part_number, class: "form-control form-control-sm" %></td>
+                <td><%= c.text_field :description, class: "form-control form-control-sm" %></td>
+                <td><%= c.text_field :confirmed_by, class: "form-control form-control-sm" %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notes + completion -->
+  <div class="card mb-3 po-card">
+    <div class="card-body">
+      <div class="po-section-title">Notes & Completion</div>
+
+      <div class="mb-3">
+        <%= f.label :production_notes, "Production Notes", class: "form-label d-block" %>
+        <%= f.text_area :production_notes, rows: 4, class: "form-control" %>
+      </div>
+
+      <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <%= f.label :date_started, "Date Started", class: "form-label d-block" %>
+          <%= f.date_field :date_started, class: "form-control" %>
+        </div>
+        <div class="col-md-3">
+          <%= f.label :date_completed, "Date Completed", class: "form-label d-block" %>
+          <%= f.date_field :date_completed, class: "form-control" %>
+        </div>
+        <div class="col-md-3">
+          <%= f.label :total_qty_produced, "Total Qty Produced", class: "form-label d-block" %>
+          <%= f.number_field :total_qty_produced, step: 0.001, class: "form-control" %>
+        </div>
+        <div class="col-md-3">
+          <%= f.label :filled_by, "Filled by", class: "form-label d-block" %>
+          <%= f.text_field :filled_by, class: "form-control" %>
+        </div>
+      </div>
+
+      <div class="row g-3 mt-1 align-items-end">
+        <div class="col-md-6">
+          <%= f.label :approved_by, "Approved by", class: "form-label d-block" %>
+          <%= f.text_field :approved_by, class: "form-control" %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-between">
+    <%= link_to "Cancel", request.referer.presence || kanban_production_orders_path, class: "btn btn-outline-secondary" %>
+    <%= f.submit (@production_order.persisted? ? "Save Changes" : "Create Order"), class: "btn btn-primary" %>
+  </div>
+
+  <script>
+    document.addEventListener("turbo:load", function () {
+      if (!window.jQuery || !jQuery.fn.select2) return;
+
+      // ===== Product =====
+      var $product = jQuery("#product_search");
+      if ($product.length && !$product.data("select2")) {
+        $product.select2({
+          placeholder: "Search products...",
+          allowClear: true,
+          width: "320px",
+          minimumInputLength: 0,
+          dropdownAutoWidth: false,
+          ajax: {
+            url: "/products/search",
+            dataType: "json",
+            delay: 200,
+            data: function (params) { return { q: params.term || "" }; },
+            processResults: function (data) {
+              var rows = Array.isArray(data) ? data : (data.results || []);
+              return { results: rows.map(function (p) {
+                return { id: p.id, text: p.text || p.name || ("Product #" + p.id) };
+              })};
+            }
+          }
+        });
+
+        $product.on("change", function () {
+          document.getElementById("product_id").value = this.value || "";
+        });
+
+        var existingProductId = document.getElementById("product_id").value;
+        if (existingProductId) {
+          fetch("/products/" + existingProductId + ".json")
+            .then(r => r.json())
+            .then(p => {
+              var text = p.text || p.name || ("Product #" + p.id);
+              var option = new Option(text, p.id, true, true);
+              $product.append(option).trigger("change");
+            });
+        }
+      }
+
+      // ===== Customer (same pattern as product) =====
+      var $customer = jQuery("#customer_search");
+      if ($customer.length && !$customer.data("select2")) {
+        $customer.select2({
+          placeholder: "Search customers...",
+          allowClear: true,
+          width: "320px",
+          minimumInputLength: 0,
+          dropdownAutoWidth: false,
+          ajax: {
+            url: "/customers/select2",
+            dataType: "json",
+            delay: 200,
+            data: function (params) { return { q: params.term || "" }; },
+            processResults: function (data) {
+              var rows = Array.isArray(data) ? data : (data.results || []);
+              return { results: rows.map(function (c) {
+                return { id: c.id, text: c.text || c.name || ("Customer #" + c.id) };
+              })};
+            }
+          }
+        });
+
+        $customer.on("change", function () {
+          document.getElementById("customer_id").value = this.value || "";
+        });
+
+        var existingCustomerId = document.getElementById("customer_id").value;
+        if (existingCustomerId) {
+          fetch("/customers/" + existingCustomerId + ".json")
+            .then(r => r.json())
+            .then(c => {
+              var text = c.text || c.name || ("Customer #" + c.id);
+              var option = new Option(text, c.id, true, true);
+              $customer.append(option).trigger("change");
+            });
+        }
+      }
+
+      // ===== Location (same pattern as product) =====
+      var $location = jQuery("#location_search");
+      if ($location.length && !$location.data("select2")) {
+        $location.select2({
+          placeholder: "Search locations...",
+          allowClear: true,
+          width: "320px",
+          minimumInputLength: 0,
+          dropdownAutoWidth: false,
+          ajax: {
+            url: "/locations/select2",
+            dataType: "json",
+            delay: 200,
+            data: function (params) { return { q: params.term || "" }; },
+            processResults: function (data) {
+              var rows = Array.isArray(data) ? data : (data.results || []);
+              return { results: rows.map(function (l) {
+                return { id: l.id, text: l.text || l.name || ("Location #" + l.id) };
+              })};
+            }
+          }
+        });
+
+        $location.on("change", function () {
+          document.getElementById("location_id").value = this.value || "";
+        });
+
+        var existingLocationId = document.getElementById("location_id").value;
+        if (existingLocationId) {
+          fetch("/locations/" + existingLocationId + ".json")
+            .then(r => r.json())
+            .then(l => {
+              var text = l.text || l.name || ("Location #" + l.id);
+              var option = new Option(text, l.id, true, true);
+              $location.append(option).trigger("change");
+            });
+        }
+      }
+    });
+  </script>
+<% end %>

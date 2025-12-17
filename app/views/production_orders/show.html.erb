@@ -1,0 +1,213 @@
+<div class="container mt-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+    <div>
+      <h1 class="mb-1">
+        Production Order
+        <% if @production_order.number.present? %>
+          <span class="text-muted">#<%= @production_order.number %></span>
+        <% end %>
+      </h1>
+
+      <div class="text-muted">
+        <%= @production_order.item.presence || "No item set" %>
+        <% if @production_order.batch_number.present? %>
+          • Batch <%= @production_order.batch_number %>
+        <% end %>
+      </div>
+    </div>
+
+<div class="d-flex flex-wrap gap-2 align-items-center">
+
+  <%= link_to "Back",
+        request.referer.presence || kanban_production_orders_path,
+        class: "btn btn-outline-secondary btn-sm" %>
+
+  <%= link_to "Edit",
+        edit_production_order_path(@production_order),
+        class: "btn btn-primary btn-sm",
+        data: { turbo: false } %>
+
+  <%# Status transitions %>
+  <% if @production_order.status != "pending" %>
+    <%= button_to "Move to Pending",
+          production_order_path(@production_order, production_order: { status: "pending" }),
+          method: :patch,
+          class: "btn btn-outline-secondary btn-sm" %>
+  <% end %>
+
+  <% if @production_order.status != "in_progress" %>
+    <%= button_to "Start Production",
+          production_order_path(@production_order, production_order: { status: "in_progress" }),
+          method: :patch,
+          class: "btn btn-warning btn-sm" %>
+  <% end %>
+
+  <% if @production_order.status != "completed" %>
+    <%= button_to "Mark Completed",
+          production_order_path(@production_order, production_order: { status: "completed" }),
+          method: :patch,
+          class: "btn btn-success btn-sm" %>
+  <% end %>
+
+  <%# Delete %>
+  <%= button_to "Delete",
+            production_order_path(@production_order),
+            method: :delete,
+            form: {
+              data: {
+                turbo_confirm: "Are you sure you want to delete this production order? This cannot be undone."
+              }
+            },
+            class: "btn btn-danger btn-sm ms-auto" %>
+
+    </div>
+  </div>
+
+  <%# Status badge %>
+  <% status_class = case @production_order.status
+    when "pending"        then "bg-secondary"
+    when "scheduled"      then "bg-info"
+    when "in_progress"    then "bg-warning text-dark"
+    when "quality_check"  then "bg-primary"
+    when "completed"      then "bg-success"
+    else "bg-secondary"
+  end %>
+
+  <div class="row g-3">
+    <!-- Left: Summary -->
+    <div class="col-lg-5">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">Summary</h5>
+            <span class="badge <%= status_class %>"><%= @production_order.status.to_s.titleize %></span>
+          </div>
+
+          <dl class="row mb-0">
+            <dt class="col-5">Item</dt>
+            <dd class="col-7"><%= @production_order.item.presence || "—" %></dd>
+
+            <dt class="col-5">Batch #</dt>
+            <dd class="col-7"><%= @production_order.batch_number.presence || "—" %></dd>
+
+            <dt class="col-5">Qty to Make</dt>
+            <dd class="col-7">
+              <%= @production_order.qty_to_make.present? ? @production_order.qty_to_make : "—" %>
+            </dd>
+
+            <dt class="col-5">Due Date</dt>
+            <dd class="col-7"><%= @production_order.due_date&.strftime("%Y-%m-%d") || "—" %></dd>
+
+            <dt class="col-5">Customer</dt>
+            <dd class="col-7"><%= @production_order.customer_name.presence || "—" %></dd>
+
+            <dt class="col-5">Location</dt>
+            <dd class="col-7"><%= @production_order.location_name.presence || "—" %></dd>
+
+            <dt class="col-5">Priority</dt>
+            <dd class="col-7"><%= @production_order.priority.present? ? "P#{@production_order.priority}" : "—" %></dd>
+          </dl>
+        </div>
+      </div>
+
+      <div class="card shadow-sm mt-3">
+        <div class="card-body">
+          <h5 class="mb-3">Production Notes</h5>
+          <div class="text-muted">
+            <%= @production_order.production_notes.present? ? simple_format(@production_order.production_notes) : "—" %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Components + Footer Fields -->
+    <div class="col-lg-7">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">Components and Qty</h5>
+            <span class="text-muted small">
+              <%= @production_order.production_order_components.size %> line(s)
+            </span>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-sm align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 110px;">Qty</th>
+                  <th style="width: 90px;">UOM</th>
+                  <th style="width: 150px;">Part #</th>
+                  <th>Description</th>
+                  <th style="width: 160px;">Confirmed by</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% components = @production_order.production_order_components.to_a %>
+
+                <% if components.any? %>
+                  <% components.each do |c| %>
+                    <tr>
+                      <td><%= c.quantity.present? ? c.quantity : "—" %></td>
+                      <td><%= c.uom.presence || "—" %></td>
+                      <td><%= c.part_number.presence || "—" %></td>
+                      <td><%= c.description.presence || "—" %></td>
+                      <td><%= c.confirmed_by.presence || "—" %></td>
+                    </tr>
+                  <% end %>
+                <% else %>
+                  <tr>
+                    <td colspan="5" class="text-center text-muted py-4">
+                      No components added yet.
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="card shadow-sm mt-3">
+        <div class="card-body">
+          <h5 class="mb-3">Production Sign-off</h5>
+
+          <div class="row g-3">
+            <div class="col-md-4">
+              <div class="small text-muted">Date Started</div>
+              <div><%= @production_order.date_started&.strftime("%Y-%m-%d") || "—" %></div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="small text-muted">Date Completed</div>
+              <div><%= @production_order.date_completed&.strftime("%Y-%m-%d") || "—" %></div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="small text-muted">Total Qty Produced</div>
+              <div><%= @production_order.total_qty_produced.present? ? @production_order.total_qty_produced : "—" %></div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="small text-muted">Filled by</div>
+              <div><%= @production_order.filled_by.presence || "—" %></div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="small text-muted">Approved by</div>
+              <div><%= @production_order.approved_by.presence || "—" %></div>
+            </div>
+          </div>
+
+          <%# keep your old generic notes if you still use it %>
+          <% if @production_order.notes.present? %>
+            <hr class="my-3">
+            <div class="small text-muted mb-1">Notes</div>
+            <div><%= simple_format(@production_order.notes) %></div>
+          <% end %>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

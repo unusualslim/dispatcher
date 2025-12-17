@@ -24,6 +24,18 @@
           <!-- Dispatches Dropdown -->
           <li><%= link_to 'Dispatches', view_dispatches_path, class: 'nav-link' %></li>
 
+          <!-- Production Orders -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="<%= kanban_production_orders_path %>" id="prodOrdersDropdown"
+              role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Production Orders
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="prodOrdersDropdown">
+              <li><%= link_to 'Kanban', kanban_production_orders_path, class: 'dropdown-item' %></li>
+              <li><%= link_to 'Table', production_orders_path, class: 'dropdown-item' %></li>
+            </ul>
+          </li>
+
           <!-- Resources Dropdown -->
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" id="resourcesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -38,7 +50,7 @@
               <li><%= link_to 'Work Orders', work_orders_path, class: 'dropdown-item' %></li>
             </ul>
           </li>
-
+          
           <!-- Communications Dropdown -->
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" id="communicationsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -74,6 +86,7 @@
         <% end %>
       </ul>
     </div>
+
 
     <!-- Search Bar (Right-aligned) -->
     <div class="ms-auto">

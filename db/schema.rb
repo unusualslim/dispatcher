@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_05_19_182631) do
+ActiveRecord::Schema[7.0].define(version: 2025_12_17_182700) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -238,6 +238,48 @@ ActiveRecord::Schema[7.0].define(version: 2025_05_19_182631) do
     t.index ["customer_id"], name: "index_phone_numbers_on_customer_id"
   end
 
+  create_table "production_order_components", force: :cascade do |t|
+    t.bigint "production_order_id", null: false
+    t.decimal "quantity", precision: 12, scale: 3
+    t.string "uom"
+    t.string "part_number"
+    t.string "description"
+    t.string "confirmed_by"
+    t.integer "position"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["production_order_id", "position"], name: "idx_poc_on_po_id_pos"
+    t.index ["production_order_id"], name: "index_production_order_components_on_production_order_id"
+  end
+
+  create_table "production_orders", force: :cascade do |t|
+    t.string "number"
+    t.string "status"
+    t.date "due_date"
+    t.string "customer_name"
+    t.string "location_name"
+    t.integer "priority"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "item"
+    t.string "batch_number"
+    t.decimal "qty_to_make", precision: 12, scale: 3
+    t.text "production_notes"
+    t.date "date_started"
+    t.date "date_completed"
+    t.decimal "total_qty_produced", precision: 12, scale: 3
+    t.string "filled_by"
+    t.string "approved_by"
+    t.bigint "product_id"
+    t.bigint "customer_id"
+    t.bigint "location_id"
+    t.index ["customer_id"], name: "index_production_orders_on_customer_id"
+    t.index ["location_id"], name: "index_production_orders_on_location_id"
+    t.index ["number"], name: "index_production_orders_on_number", unique: true
+    t.index ["product_id"], name: "index_production_orders_on_product_id"
+  end
+
   create_table "products", force: :cascade do |t|
     t.string "name"
     t.datetime "created_at", null: false
@@ -315,6 +357,10 @@ ActiveRecord::Schema[7.0].define(version: 2025_05_19_182631) do
   add_foreign_key "location_products", "products"
   add_foreign_key "locations", "location_categories"
   add_foreign_key "phone_numbers", "customers"
+  add_foreign_key "production_order_components", "production_orders"
+  add_foreign_key "production_orders", "customers"
+  add_foreign_key "production_orders", "locations"
+  add_foreign_key "production_orders", "products"
   add_foreign_key "things", "dispatches"
   add_foreign_key "work_orders", "vendors"
 end
