@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_12_17_182700) do
+ActiveRecord::Schema[7.0].define(version: 2026_01_07_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -238,6 +238,14 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_17_182700) do
     t.index ["customer_id"], name: "index_phone_numbers_on_customer_id"
   end
 
+  create_table "production_order_batches", force: :cascade do |t|
+    t.bigint "production_order_id", null: false
+    t.string "batch_number", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["production_order_id"], name: "index_production_order_batches_on_production_order_id"
+  end
+
   create_table "production_order_components", force: :cascade do |t|
     t.bigint "production_order_id", null: false
     t.decimal "quantity", precision: 12, scale: 3
@@ -274,6 +282,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_17_182700) do
     t.bigint "product_id"
     t.bigint "customer_id"
     t.bigint "location_id"
+    t.date "production_date"
     t.index ["customer_id"], name: "index_production_orders_on_customer_id"
     t.index ["location_id"], name: "index_production_orders_on_location_id"
     t.index ["number"], name: "index_production_orders_on_number", unique: true
@@ -357,6 +366,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_17_182700) do
   add_foreign_key "location_products", "products"
   add_foreign_key "locations", "location_categories"
   add_foreign_key "phone_numbers", "customers"
+  add_foreign_key "production_order_batches", "production_orders"
   add_foreign_key "production_order_components", "production_orders"
   add_foreign_key "production_orders", "customers"
   add_foreign_key "production_orders", "locations"

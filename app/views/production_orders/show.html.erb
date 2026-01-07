@@ -86,10 +86,18 @@
           <dl class="row mb-0">
             <dt class="col-5">Item</dt>
             <dd class="col-7"><%= @production_order.item.presence || "—" %></dd>
-
-            <dt class="col-5">Batch #</dt>
-            <dd class="col-7"><%= @production_order.batch_number.presence || "—" %></dd>
-
+            <dt class="col-5">PDI Batch #</dt>
+            <dd class="col-7">
+              <% if @production_order.production_order_batches.any? %>
+                <ul class="mb-0 ps-3">
+                  <% @production_order.production_order_batches.each do |b| %>
+                    <li><%= b.batch_number %></li>
+                  <% end %>
+                </ul>
+              <% else %>
+                —
+              <% end %>
+            </dd>
             <dt class="col-5">Qty to Make</dt>
             <dd class="col-7">
               <%= @production_order.qty_to_make.present? ? @production_order.qty_to_make : "—" %>

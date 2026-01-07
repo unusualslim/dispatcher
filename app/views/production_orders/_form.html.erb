@@ -24,7 +24,6 @@
 
     /* Select2: fixed, clean width + Bootstrap-like */
     #product_search,
-    #customer_search,
     #location_search,
     .select2-container { width: 320px !important; max-width: 100% !important; }
 
@@ -77,8 +76,28 @@
         </div>
 
         <div class="col-md-4">
-          <%= f.label :batch_number, "Batch #", class: "form-label d-block" %>
-          <%= f.text_field :batch_number, class: "form-control" %>
+          <%= f.label :production_order_batches, "PDI Batch #", class: "form-label d-block" %>
+
+          <div id="batch-numbers">
+            <%= f.fields_for :production_order_batches do |b| %>
+              <div class="d-flex gap-2 mb-1">
+                <%= b.text_field :batch_number,
+                      class: "form-control",
+                      placeholder: "Batch #" %>
+
+                <% if b.object.persisted? %>
+                  <%= b.check_box :_destroy %>
+                  <small class="text-muted">Remove</small>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+
+          <button type="button"
+                  class="btn btn-sm btn-outline-secondary mt-1"
+                  id="add-batch">
+            + Add Batch
+          </button>
         </div>
 
         <div class="col-md-4">
@@ -87,10 +106,16 @@
         </div>
       </div>
 
+      <!-- Due + Production + Status -->
       <div class="row g-3 mt-1 align-items-end">
         <div class="col-md-4">
           <%= f.label :due_date, "Due date", class: "form-label d-block" %>
           <%= f.date_field :due_date, class: "form-control" %>
+        </div>
+
+        <div class="col-md-4">
+          <%= f.label :production_date, "Production date", class: "form-label d-block" %>
+          <%= f.date_field :production_date, class: "form-control" %>
         </div>
 
         <div class="col-md-4">
@@ -102,19 +127,9 @@
       <hr class="my-3">
 
       <div class="row g-3 align-items-end">
+        <!-- ✅ UPDATED: Origin Location ONLY -->
         <div class="col-md-4">
-          <%= f.label :customer_id, "Customer", class: "form-label d-block" %>
-
-          <input type="hidden"
-                 id="customer_id"
-                 name="production_order[customer_id]"
-                 value="<%= @production_order.customer_id %>">
-
-          <select id="customer_search" class="form-select"></select>
-        </div>
-
-        <div class="col-md-4">
-          <%= f.label :location_id, "Location", class: "form-label d-block" %>
+          <%= f.label :location_id, "Origin", class: "form-label d-block" %>
 
           <input type="hidden"
                  id="location_id"
@@ -132,7 +147,7 @@
     </div>
   </div>
 
-  <!-- Components -->
+  <!-- Components 
   <div class="card mb-3 po-card">
     <div class="card-body">
       <div class="po-section-title">Components and Qty</div>
@@ -167,7 +182,7 @@
       </div>
     </div>
   </div>
-
+  -->
   <!-- Notes + completion -->
   <div class="card mb-3 po-card">
     <div class="card-body">
@@ -211,126 +226,91 @@
     <%= f.submit (@production_order.persisted? ? "Save Changes" : "Create Order"), class: "btn btn-primary" %>
   </div>
 
-  <script>
-    document.addEventListener("turbo:load", function () {
-      if (!window.jQuery || !jQuery.fn.select2) return;
+ <script>
+  document.addEventListener("turbo:load", function () {
+    if (!window.jQuery || !jQuery.fn.select2) return;
 
-      // ===== Product =====
-      var $product = jQuery("#product_search");
-      if ($product.length && !$product.data("select2")) {
-        $product.select2({
-          placeholder: "Search products...",
-          allowClear: true,
-          width: "320px",
-          minimumInputLength: 0,
-          dropdownAutoWidth: false,
-          ajax: {
-            url: "/products/search",
-            dataType: "json",
-            delay: 200,
-            data: function (params) { return { q: params.term || "" }; },
-            processResults: function (data) {
-              var rows = Array.isArray(data) ? data : (data.results || []);
-              return { results: rows.map(function (p) {
-                return { id: p.id, text: p.text || p.name || ("Product #" + p.id) };
-              })};
-            }
-          }
-        });
+    var $location = jQuery("#location_search");
+    if (!$location.length) return;
 
-        $product.on("change", function () {
-          document.getElementById("product_id").value = this.value || "";
-        });
+    // 🔥 IMPORTANT: if it was ever initialized before, destroy it so new ajax URL applies
+    if ($location.data("select2")) {
+      $location.select2("destroy");
+      $location.off(); // remove old handlers
+      $location.empty(); // clear old options that might be stuck
+    }
 
-        var existingProductId = document.getElementById("product_id").value;
-        if (existingProductId) {
-          fetch("/products/" + existingProductId + ".json")
-            .then(r => r.json())
-            .then(p => {
-              var text = p.text || p.name || ("Product #" + p.id);
-              var option = new Option(text, p.id, true, true);
-              $product.append(option).trigger("change");
-            });
-        }
-      }
-
-      // ===== Customer (same pattern as product) =====
-      var $customer = jQuery("#customer_search");
-      if ($customer.length && !$customer.data("select2")) {
-        $customer.select2({
-          placeholder: "Search customers...",
-          allowClear: true,
-          width: "320px",
-          minimumInputLength: 0,
-          dropdownAutoWidth: false,
-          ajax: {
-            url: "/customers/select2",
-            dataType: "json",
-            delay: 200,
-            data: function (params) { return { q: params.term || "" }; },
-            processResults: function (data) {
-              var rows = Array.isArray(data) ? data : (data.results || []);
-              return { results: rows.map(function (c) {
-                return { id: c.id, text: c.text || c.name || ("Customer #" + c.id) };
-              })};
-            }
-          }
-        });
-
-        $customer.on("change", function () {
-          document.getElementById("customer_id").value = this.value || "";
-        });
-
-        var existingCustomerId = document.getElementById("customer_id").value;
-        if (existingCustomerId) {
-          fetch("/customers/" + existingCustomerId + ".json")
-            .then(r => r.json())
-            .then(c => {
-              var text = c.text || c.name || ("Customer #" + c.id);
-              var option = new Option(text, c.id, true, true);
-              $customer.append(option).trigger("change");
-            });
-        }
-      }
-
-      // ===== Location (same pattern as product) =====
-      var $location = jQuery("#location_search");
-      if ($location.length && !$location.data("select2")) {
-        $location.select2({
-          placeholder: "Search locations...",
-          allowClear: true,
-          width: "320px",
-          minimumInputLength: 0,
-          dropdownAutoWidth: false,
-          ajax: {
-            url: "/locations/select2",
-            dataType: "json",
-            delay: 200,
-            data: function (params) { return { q: params.term || "" }; },
-            processResults: function (data) {
-              var rows = Array.isArray(data) ? data : (data.results || []);
-              return { results: rows.map(function (l) {
-                return { id: l.id, text: l.text || l.name || ("Location #" + l.id) };
-              })};
-            }
-          }
-        });
-
-        $location.on("change", function () {
-          document.getElementById("location_id").value = this.value || "";
-        });
-
-        var existingLocationId = document.getElementById("location_id").value;
-        if (existingLocationId) {
-          fetch("/locations/" + existingLocationId + ".json")
-            .then(r => r.json())
-            .then(l => {
-              var text = l.text || l.name || ("Location #" + l.id);
-              var option = new Option(text, l.id, true, true);
-              $location.append(option).trigger("change");
-            });
+    $location.select2({
+      placeholder: "Search origin locations...",
+      allowClear: true,
+      width: "320px",
+      minimumInputLength: 0,
+      dropdownAutoWidth: false,
+      ajax: {
+        url: "/locations/select2",
+        dataType: "json",
+        delay: 200,
+        data: function (params) {
+          return { q: params.term || "" };
+        },
+        processResults: function (data) {
+          var rows = Array.isArray(data) ? data : (data.results || []);
+          return {
+            results: rows.map(function (l) {
+              return { id: l.id, text: l.text || l.city_with_company || ("Location #" + l.id) };
+            })
+          };
         }
       }
     });
-  </script>
+
+    $location.on("change", function () {
+      document.getElementById("location_id").value = this.value || "";
+    });
+
+    // Prefill on edit
+    var existingLocationId = document.getElementById("location_id").value;
+    if (existingLocationId) {
+      fetch("/locations/" + existingLocationId + ".json")
+        .then(r => r.json())
+        .then(l => {
+          var text = l.city_with_company || l.company_name || l.city || ("Location #" + l.id);
+          var option = new Option(text, l.id, true, true);
+          $location.append(option).trigger("change");
+        });
+    }
+  });
+
+  // ✅ Optional but recommended with Turbo:
+  // prevents “stuck” instances when navigating away/back
+  document.addEventListener("turbo:before-cache", function () {
+    if (window.jQuery && jQuery.fn.select2) {
+      var $location = jQuery("#location_search");
+      if ($location.length && $location.data("select2")) $location.select2("destroy");
+    }
+  });
+</script>
+
 <% end %>
+
+<script>
+document.addEventListener("turbo:load", function () {
+  const btn = document.getElementById("add-batch");
+  const container = document.getElementById("batch-numbers");
+  if (!btn || !container) return;
+
+  let index = container.children.length;
+
+  btn.addEventListener("click", function () {
+    const html = `
+      <div class="d-flex gap-2 mb-1">
+        <input type="text"
+               name="production_order[production_order_batches_attributes][${index}][batch_number]"
+               class="form-control"
+               placeholder="Batch #">
+      </div>`;
+    container.insertAdjacentHTML("beforeend", html);
+    index++;
+  });
+});
+</script>

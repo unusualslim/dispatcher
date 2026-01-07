@@ -35,6 +35,7 @@ Rails.application.routes.draw do
     resources :location_products, only: [:new, :create, :edit, :update, :destroy]
     collection do
       get :search
+      get :select2
     end
     member do
       patch :toggle_status

@@ -160,6 +160,15 @@
       color: #555;
     }
 
+    .kanban-card.overdue {
+      border-left: 5px solid #dc3545; /* red */
+      background-color: #fff5f5;
+    }
+
+    .kanban-card.overdue h4 {
+      color: #dc3545;
+    }
+
     @media (max-width: 768px) {
       .kanban-board {
         padding: 0.5rem;
@@ -227,7 +236,7 @@
     <% end %>
 
     <% (start_date..end_date).each do |date| %>
-      <% orders_for_day = (@production_orders || ProductionOrder.none).where(due_date: date) %>
+      <% orders_for_day = (@production_orders || ProductionOrder.none).where(production_date: date) %>
 
       <div class="kanban-column">
         <h2>
@@ -237,11 +246,25 @@
 
         <div class="kanban-cards">
           <% orders_for_day.each do |order| %>
-            <%= link_to production_order_path(order), class: "kanban-card" do %>
+            <% overdue = order.due_date.present? && order.due_date < Date.today %>
+            <%= link_to production_order_path(order),
+                  class: "kanban-card #{'overdue' if overdue}" do %>
               <div class="status-bar status-<%= order.status %>"></div>
               <h4>Order #<%= order.number.presence || order.id %></h4>
               <p><strong>Customer:</strong> <%= order.customer_name || "—" %></p>
               <p><strong>Location:</strong> <%= order.location_name || "—" %></p>
+
+              <% if order.due_date.present? %>
+                <% days_until_due = (order.due_date - Date.current).to_i %>
+                <p>
+                  <strong>Due:</strong> <%= order.due_date.strftime("%m/%d") %>
+                  &nbsp;•&nbsp;
+                  <%= days_until_due >= 0 ? "#{days_until_due} days until due" : "#{days_until_due.abs} days past due" %>
+                </p>
+              <% else %>
+                <p><strong>Due:</strong> —</p>
+              <% end %>
+
               <p><strong>Status:</strong> <%= order.status.titleize %></p>
               <% if order.priority.present? %>
                 <p><strong>Priority:</strong> P<%= order.priority %></p>

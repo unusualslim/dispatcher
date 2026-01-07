@@ -121,7 +121,9 @@ class ProductionOrdersController < ApplicationController
         :total_qty_produced,
         :filled_by,
         :approved_by,
-        production_order_components_attributes: [:id, :position, :quantity, :uom, :part_number, :description, :confirmed_by, :_destroy]
+        :production_date,
+        production_order_components_attributes: [:id, :position, :quantity, :uom, :part_number, :description, :confirmed_by, :_destroy],
+        production_order_batches_attributes: [:id, :batch_number, :_destroy]
     )
     end
 

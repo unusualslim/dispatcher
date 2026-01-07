@@ -9,6 +9,11 @@ class ProductionOrder < ApplicationRecord
   has_many :production_order_components, -> { order(:position, :id) }, dependent: :destroy
   accepts_nested_attributes_for :production_order_components, allow_destroy: true
 
+  has_many :production_order_batches, dependent: :destroy
+  accepts_nested_attributes_for :production_order_batches,
+                              allow_destroy: true,
+                              reject_if: :all_blank
+
   validates :status, inclusion: { in: STATUSES }, allow_blank: true
   validates :number, presence: true, uniqueness: true
 

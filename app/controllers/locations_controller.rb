@@ -94,6 +94,37 @@ class LocationsController < ApplicationController
       status = @location.disabled ? "disabled" : "enabled"
       redirect_to locations_path, notice: "Location was successfully #{status}."
     end
+
+    def select2
+      q = params[:q].to_s.strip
+
+      # ✅ ALWAYS origins only
+      scope = Location.where(location_category_id: 1)
+
+      if q.present?
+        pattern = "%#{q.downcase}%"
+        scope = scope.where(
+          "LOWER(company_name) LIKE :p OR LOWER(city) LIKE :p OR LOWER(state) LIKE :p OR LOWER(zip) LIKE :p",
+          p: pattern
+        )
+      end
+
+      locations = scope.order(company_name: :asc, city: :asc).limit(25)
+
+      render json: {
+        results: locations.map { |l|
+          text = [
+            l.company_name.presence,
+            l.city.presence,
+            l.state.presence
+          ].compact.join(" - ").presence || "Location ##{l.id}"
+
+          { id: l.id, text: text }
+        }
+      }
+    end
+
+
       
   
     private
