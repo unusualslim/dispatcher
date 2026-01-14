@@ -86,12 +86,17 @@
           <dl class="row mb-0">
             <dt class="col-5">Item</dt>
             <dd class="col-7"><%= @production_order.item.presence || "—" %></dd>
-            <dt class="col-5">PDI Batch #</dt>
+            <dt class="col-5">PDI Batches</dt>
             <dd class="col-7">
               <% if @production_order.production_order_batches.any? %>
                 <ul class="mb-0 ps-3">
                   <% @production_order.production_order_batches.each do |b| %>
-                    <li><%= b.batch_number %></li>
+                    <li>
+                      <strong><%= b.batch_number %></strong>
+                      <span class="text-muted">
+                        — <%= number_with_precision(b.quantity, precision: 3) %>
+                      </span>
+                    </li>
                   <% end %>
                 </ul>
               <% else %>

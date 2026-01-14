@@ -56,96 +56,150 @@
       color: #495057;
       margin: 0 0 0.75rem 0;
     }
+
+    .batch-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .batch-row {
+      display: grid;
+      grid-template-columns: 1fr 120px auto; /* batch # | qty | remove */
+      gap: 0.5rem;
+      align-items: center;
+      width: 100%;
+    }
+
+    .batch-remove {
+      display: flex;
+      align-items: center;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 768px) {
+      .batch-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
   </style>
 
   <!-- Order details -->
-  <div class="card mb-3 po-card">
-    <div class="card-body">
-      <div class="po-section-title">Order Details</div>
+<div class="card mb-3 po-card">
+  <div class="card-body">
+    <div class="po-section-title">Order Details</div>
 
-      <div class="row g-3 align-items-end">
-        <div class="col-md-4">
-          <%= f.label :product_id, "Item", class: "form-label d-block" %>
+    <!-- Row 1: Item / Customer / Qty -->
+    <div class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <%= f.label :product_id, "Item", class: "form-label d-block" %>
 
-          <input type="hidden"
-                 id="product_id"
-                 name="production_order[product_id]"
-                 value="<%= @production_order.product_id %>">
+        <input type="hidden"
+               id="product_id"
+               name="production_order[product_id]"
+               value="<%= @production_order.product_id %>">
 
-          <select id="product_search" class="form-select"></select>
-        </div>
-
-        <div class="col-md-4">
-          <%= f.label :production_order_batches, "PDI Batch #", class: "form-label d-block" %>
-
-          <div id="batch-numbers">
-            <%= f.fields_for :production_order_batches do |b| %>
-              <div class="d-flex gap-2 mb-1">
-                <%= b.text_field :batch_number,
-                      class: "form-control",
-                      placeholder: "Batch #" %>
-
-                <% if b.object.persisted? %>
-                  <%= b.check_box :_destroy %>
-                  <small class="text-muted">Remove</small>
-                <% end %>
-              </div>
-            <% end %>
-          </div>
-
-          <button type="button"
-                  class="btn btn-sm btn-outline-secondary mt-1"
-                  id="add-batch">
-            + Add Batch
-          </button>
-        </div>
-
-        <div class="col-md-4">
-          <%= f.label :qty_to_make, "Qty to make", class: "form-label d-block" %>
-          <%= f.number_field :qty_to_make, step: 0.001, class: "form-control" %>
-        </div>
+        <select id="product_search" class="form-select"></select>
       </div>
 
-      <!-- Due + Production + Status -->
-      <div class="row g-3 mt-1 align-items-end">
-        <div class="col-md-4">
-          <%= f.label :due_date, "Due date", class: "form-label d-block" %>
-          <%= f.date_field :due_date, class: "form-control" %>
-        </div>
+      <div class="col-md-4">
+        <%= f.label :customer_id, "Customer", class: "form-label d-block" %>
 
-        <div class="col-md-4">
-          <%= f.label :production_date, "Production date", class: "form-label d-block" %>
-          <%= f.date_field :production_date, class: "form-control" %>
-        </div>
+        <input type="hidden"
+               id="customer_id"
+               name="production_order[customer_id]"
+               value="<%= @production_order.customer_id %>">
 
-        <div class="col-md-4">
-          <%= f.label :status, "Status", class: "form-label d-block" %>
-          <%= f.select :status, ProductionOrder::STATUSES.map { |s| [s.titleize, s] }, {}, class: "form-select" %>
-        </div>
+        <select id="customer_search" class="form-select"></select>
       </div>
 
-      <hr class="my-3">
+      <div class="col-md-4">
+        <%= f.label :qty_to_make, "Qty to make", class: "form-label d-block" %>
+        <%= f.number_field :qty_to_make, step: 0.001, class: "form-control" %>
+      </div>
+    </div>
 
-      <div class="row g-3 align-items-end">
-        <!-- ✅ UPDATED: Origin Location ONLY -->
-        <div class="col-md-4">
-          <%= f.label :location_id, "Origin", class: "form-label d-block" %>
+    <!-- Row 2: Due / Production / Status -->
+    <div class="row g-3 align-items-end mt-1">
+      <div class="col-md-4">
+        <%= f.label :due_date, "Due date", class: "form-label d-block" %>
+        <%= f.date_field :due_date, class: "form-control" %>
+      </div>
 
-          <input type="hidden"
-                 id="location_id"
-                 name="production_order[location_id]"
-                 value="<%= @production_order.location_id %>">
+      <div class="col-md-4">
+        <%= f.label :production_date, "Production date", class: "form-label d-block" %>
+        <%= f.date_field :production_date, class: "form-control" %>
+      </div>
 
-          <select id="location_search" class="form-select"></select>
+      <div class="col-md-4">
+        <%= f.label :status, "Status", class: "form-label d-block" %>
+        <%= f.select :status,
+              ProductionOrder::STATUSES.map { |s| [s.titleize, s] },
+              {},
+              class: "form-select" %>
+      </div>
+    </div>
+
+    <!-- Row 3: Origin / Priority / PDI Batches -->
+    <div class="row g-3 align-items-start mt-3 pt-1">
+      <div class="col-md-4">
+        <%= f.label :location_id, "Origin", class: "form-label d-block" %>
+
+        <input type="hidden"
+               id="location_id"
+               name="production_order[location_id]"
+               value="<%= @production_order.location_id %>">
+
+        <select id="location_search" class="form-select"></select>
+      </div>
+
+      <div class="col-md-4">
+        <%= f.label :priority, "Priority", class: "form-label d-block" %>
+        <%= f.number_field :priority,
+              class: "form-control",
+              min: 1,
+              max: 10,
+              placeholder: "1 = highest" %>
+      </div>
+
+      <div class="col-md-4">
+        <%= f.label :production_order_batches, "PDI Batches", class: "form-label d-block" %>
+
+        <div id="batch-numbers" class="batch-stack">
+          <%= f.fields_for :production_order_batches do |b| %>
+            <div class="batch-row" data-batch-row="1">
+              <%= b.text_field :batch_number,
+                    class: "form-control",
+                    placeholder: "Batch #" %>
+
+              <%= b.number_field :quantity,
+                    step: 0.001,
+                    class: "form-control",
+                    placeholder: "Qty" %>
+
+              <% if b.object.persisted? %>
+                <div class="form-check batch-remove">
+                  <%= b.check_box :_destroy, class: "form-check-input" %>
+                  <%= b.label :_destroy, "Remove", class: "form-check-label small ms-1" %>
+                </div>
+              <% else %>
+                <div></div>
+              <% end %>
+            </div>
+          <% end %>
         </div>
 
-        <div class="col-md-4">
-          <%= f.label :priority, "Priority", class: "form-label d-block" %>
-          <%= f.number_field :priority, class: "form-control", min: 1, max: 10, placeholder: "1 = highest" %>
-        </div>
+        <button type="button"
+                class="btn btn-sm btn-outline-secondary mt-2"
+                id="add-batch">
+          + Add Batch
+        </button>
       </div>
     </div>
   </div>
+</div>
+
 
   <!-- Components 
   <div class="card mb-3 po-card">
@@ -230,87 +284,148 @@
   document.addEventListener("turbo:load", function () {
     if (!window.jQuery || !jQuery.fn.select2) return;
 
-    var $location = jQuery("#location_search");
-    if (!$location.length) return;
+    function initSelect2(selectId, hiddenId, ajaxUrl, placeholder, prefillUrlBuilder, textFromJson) {
+      var $el = jQuery(selectId);
+      if (!$el.length) return;
 
-    // 🔥 IMPORTANT: if it was ever initialized before, destroy it so new ajax URL applies
-    if ($location.data("select2")) {
-      $location.select2("destroy");
-      $location.off(); // remove old handlers
-      $location.empty(); // clear old options that might be stuck
-    }
-
-    $location.select2({
-      placeholder: "Search origin locations...",
-      allowClear: true,
-      width: "320px",
-      minimumInputLength: 0,
-      dropdownAutoWidth: false,
-      ajax: {
-        url: "/locations/select2",
-        dataType: "json",
-        delay: 200,
-        data: function (params) {
-          return { q: params.term || "" };
-        },
-        processResults: function (data) {
-          var rows = Array.isArray(data) ? data : (data.results || []);
-          return {
-            results: rows.map(function (l) {
-              return { id: l.id, text: l.text || l.city_with_company || ("Location #" + l.id) };
-            })
-          };
-        }
+      // If Turbo cached and re-used the DOM, you can end up with a "stuck" select2 instance.
+      if ($el.data("select2")) {
+        $el.select2("destroy");
+        $el.off();
+        $el.empty();
       }
-    });
 
-    $location.on("change", function () {
-      document.getElementById("location_id").value = this.value || "";
-    });
+      $el.select2({
+        placeholder: placeholder,
+        allowClear: true,
+        width: "320px",
+        minimumInputLength: 0,
+        dropdownAutoWidth: false,
+        ajax: {
+          url: ajaxUrl,
+          dataType: "json",
+          delay: 200,
+          data: function (params) {
+            // send both keys so either controller style works (q or query)
+            return { q: params.term || "", query: params.term || "" };
+          },
+          processResults: function (data) {
+            var rows = Array.isArray(data) ? data : (data.results || []);
+            return {
+              results: rows.map(function (row) {
+                return {
+                  id: row.id,
+                  text: row.text || row.name || row.city_with_company || ("#" + row.id)
+                };
+              })
+            };
+          }
+        }
+      });
 
-    // Prefill on edit
-    var existingLocationId = document.getElementById("location_id").value;
-    if (existingLocationId) {
-      fetch("/locations/" + existingLocationId + ".json")
-        .then(r => r.json())
-        .then(l => {
-          var text = l.city_with_company || l.company_name || l.city || ("Location #" + l.id);
-          var option = new Option(text, l.id, true, true);
-          $location.append(option).trigger("change");
-        });
+      $el.on("change", function () {
+        var hidden = document.getElementById(hiddenId);
+        if (hidden) hidden.value = this.value || "";
+      });
+
+      // Prefill on edit
+      var existingIdEl = document.getElementById(hiddenId);
+      var existingId = existingIdEl ? existingIdEl.value : "";
+      if (existingId) {
+        fetch(prefillUrlBuilder(existingId))
+          .then(function (r) { return r.json(); })
+          .then(function (json) {
+            var text = textFromJson(json) || ("#" + json.id);
+            var option = new Option(text, json.id, true, true);
+            $el.append(option).trigger("change");
+          })
+          .catch(function () {});
+      }
     }
+
+    // Product
+    initSelect2(
+      "#product_search",
+      "product_id",
+      "/products/search",
+      "Search products...",
+      function (id) { return "/products/" + id + ".json"; },
+      function (p) { return p.text || p.name || ("Product #" + p.id); }
+    );
+
+    // Customer
+    initSelect2(
+      "#customer_search",
+      "customer_id",
+      "/customers/select2",
+      "Search customers...",
+      function (id) { return "/customers/" + id + ".json"; },
+      function (c) { return c.text || c.name || ("Customer #" + c.id); }
+    );
+
+    // Origin location
+    initSelect2(
+      "#location_search",
+      "location_id",
+      "/locations/select2",
+      "Search origin locations...",
+      function (id) { return "/locations/" + id + ".json"; },
+      function (l) { return l.text || l.city_with_company || l.company_name || l.city || ("Location #" + l.id); }
+    );
   });
 
-  // ✅ Optional but recommended with Turbo:
-  // prevents “stuck” instances when navigating away/back
+  // Prevent cached select2 instances from breaking when navigating back
   document.addEventListener("turbo:before-cache", function () {
-    if (window.jQuery && jQuery.fn.select2) {
-      var $location = jQuery("#location_search");
-      if ($location.length && $location.data("select2")) $location.select2("destroy");
-    }
+    if (!window.jQuery || !jQuery.fn.select2) return;
+    ["#product_search", "#customer_search", "#location_search"].forEach(function (id) {
+      var $el = jQuery(id);
+      if ($el.length && $el.data("select2")) $el.select2("destroy");
+    });
   });
 </script>
+
 
 <% end %>
 
 <script>
 document.addEventListener("turbo:load", function () {
-  const btn = document.getElementById("add-batch");
-  const container = document.getElementById("batch-numbers");
-  if (!btn || !container) return;
+  var container = document.getElementById("batch-numbers");
+  var addBtn = document.getElementById("add-batch");
+  if (!container || !addBtn) return;
 
-  let index = container.children.length;
+  // find next index based on existing inputs
+  var index = container.querySelectorAll("[data-batch-row]").length;
+  if (index === 0) {
+    // fallback if you didn't add data-batch-row yet
+    index = container.querySelectorAll('input[name*="[production_order_batches_attributes]"][name*="[batch_number]"]').length;
+  }
 
-  btn.addEventListener("click", function () {
-    const html = `
-      <div class="d-flex gap-2 mb-1">
-        <input type="text"
+  addBtn.addEventListener("click", function () {
+    var html = `
+      <div class="d-flex gap-2 mb-1 align-items-center" data-batch-row="1">
+        <input class="form-control"
+               placeholder="Batch #"
+               type="text"
                name="production_order[production_order_batches_attributes][${index}][batch_number]"
-               class="form-control"
-               placeholder="Batch #">
-      </div>`;
+               id="production_order_production_order_batches_attributes_${index}_batch_number" />
+
+        <input class="form-control"
+               placeholder="Qty"
+               step="0.001"
+               type="number"
+               name="production_order[production_order_batches_attributes][${index}][quantity]"
+               id="production_order_production_order_batches_attributes_${index}_quantity" />
+
+        <input type="checkbox"
+               name="production_order[production_order_batches_attributes][${index}][_destroy]"
+               id="production_order_production_order_batches_attributes_${index}__destroy" />
+        <small class="text-muted">Remove</small>
+      </div>
+    `;
+
     container.insertAdjacentHTML("beforeend", html);
-    index++;
+    index += 1;
   });
 });
+
 </script>

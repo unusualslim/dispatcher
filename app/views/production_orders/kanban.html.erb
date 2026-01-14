@@ -244,34 +244,46 @@
           <span><%= orders_for_day.count %></span>
         </h2>
 
-        <div class="kanban-cards">
-          <% orders_for_day.each do |order| %>
-            <% overdue = order.due_date.present? && order.due_date < Date.today %>
-            <%= link_to production_order_path(order),
-                  class: "kanban-card #{'overdue' if overdue}" do %>
-              <div class="status-bar status-<%= order.status %>"></div>
-              <h4>Order #<%= order.number.presence || order.id %></h4>
-              <p><strong>Customer:</strong> <%= order.customer_name || "—" %></p>
-              <p><strong>Location:</strong> <%= order.location_name || "—" %></p>
+      <div class="kanban-cards">
+        <% orders_for_day.each do |order| %>
+          <% overdue = order.due_date.present? && order.due_date < Date.today %>
+          <%= link_to production_order_path(order),
+                class: "kanban-card #{'overdue' if overdue}" do %>
+            <div class="status-bar status-<%= order.status %>"></div>
 
-              <% if order.due_date.present? %>
-                <% days_until_due = (order.due_date - Date.current).to_i %>
-                <p>
-                  <strong>Due:</strong> <%= order.due_date.strftime("%m/%d") %>
-                  &nbsp;•&nbsp;
-                  <%= days_until_due >= 0 ? "#{days_until_due} days until due" : "#{days_until_due.abs} days past due" %>
-                </p>
-              <% else %>
-                <p><strong>Due:</strong> —</p>
-              <% end %>
+            <h4>Order #<%= order.number.presence || order.id %></h4>
 
-              <p><strong>Status:</strong> <%= order.status.titleize %></p>
-              <% if order.priority.present? %>
-                <p><strong>Priority:</strong> P<%= order.priority %></p>
-              <% end %>
+            <p><strong>Customer:</strong> <%= order.customer_name || "—" %></p>
+            <p><strong>Location:</strong> <%= order.location_name || "—" %></p>
+
+            <p><strong>Item:</strong>
+              <%= order.item.presence || (order.respond_to?(:product) ? order.product&.name : "—") || "—" %>
+            </p>
+
+            <p><strong>Qty:</strong>
+              <%= order.qty_to_make.present? ? sprintf("%.3f", order.qty_to_make) : "—" %>
+            </p>
+
+            <% if order.due_date.present? %>
+              <% days_until_due = (order.due_date - Date.current).to_i %>
+              <p>
+                <strong>Due:</strong> <%= order.due_date.strftime("%m/%d") %>
+                &nbsp;•&nbsp;
+                <%= days_until_due >= 0 ? "#{days_until_due} days until due" : "#{days_until_due.abs} days past due" %>
+              </p>
+            <% else %>
+              <p><strong>Due:</strong> —</p>
+            <% end %>
+
+            <p><strong>Status:</strong> <%= order.status.titleize %></p>
+
+            <% if order.priority.present? %>
+              <p><strong>Priority:</strong> P<%= order.priority %></p>
             <% end %>
           <% end %>
-        </div>
+        <% end %>
+      </div>
+
       </div>
     <% end %>
   </div>

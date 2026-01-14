@@ -51,10 +51,13 @@ class ProductionOrdersController < ApplicationController
     end
 
   # GET /production_orders/new
-    def new
+  def new
     @production_order = ProductionOrder.new(due_date: Date.today, status: "pending")
     12.times { |i| @production_order.production_order_components.build(position: i + 1) }
-    end
+
+    # ✅ ensure the form renders one blank batch row
+    @production_order.production_order_batches.build
+  end
 
 
   # POST /production_orders
@@ -69,10 +72,17 @@ class ProductionOrdersController < ApplicationController
   end
 
   # GET /production_orders/:id/edit
-    def edit
-        missing = 12 - @production_order.production_order_components.size
-        missing.times { |i| @production_order.production_order_components.build(position: @production_order.production_order_components.size + i + 1) } if missing.positive?
-    end
+  def edit
+    missing = 12 - @production_order.production_order_components.size
+    missing.times do |i|
+      @production_order.production_order_components.build(
+        position: @production_order.production_order_components.size + i + 1
+      )
+    end if missing.positive?
+
+    # ✅ if there are no batches yet, show one blank row
+    @production_order.production_order_batches.build if @production_order.production_order_batches.empty?
+  end
 
   # PATCH/PUT /production_orders/:id
     def update
@@ -123,7 +133,7 @@ class ProductionOrdersController < ApplicationController
         :approved_by,
         :production_date,
         production_order_components_attributes: [:id, :position, :quantity, :uom, :part_number, :description, :confirmed_by, :_destroy],
-        production_order_batches_attributes: [:id, :batch_number, :_destroy]
+        production_order_batches_attributes: [:id, :batch_number, :quantity, :_destroy]
     )
     end
 
