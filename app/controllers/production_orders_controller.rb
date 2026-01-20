@@ -53,7 +53,7 @@ class ProductionOrdersController < ApplicationController
   # GET /production_orders/new
   def new
     @production_order = ProductionOrder.new(due_date: Date.today, status: "pending")
-    12.times { |i| @production_order.production_order_components.build(position: i + 1) }
+    5.times { |i| @production_order.production_order_components.build(position: i + 1) }
 
     # ✅ ensure the form renders one blank batch row
     @production_order.production_order_batches.build
@@ -73,7 +73,7 @@ class ProductionOrdersController < ApplicationController
 
   # GET /production_orders/:id/edit
   def edit
-    missing = 12 - @production_order.production_order_components.size
+    missing = 5 - @production_order.production_order_components.size
     missing.times do |i|
       @production_order.production_order_components.build(
         position: @production_order.production_order_components.size + i + 1
@@ -86,12 +86,12 @@ class ProductionOrdersController < ApplicationController
 
   # PATCH/PUT /production_orders/:id
     def update
-    if @production_order.update(production_order_params)
-        redirect_to production_order_path(@production_order),
-                    notice: "Production order updated."
-    else
-        render :edit, status: :unprocessable_entity
-    end
+      if @production_order.update(production_order_params)
+          redirect_to production_order_path(@production_order),
+                      notice: "Production order updated."
+      else
+          render :edit, status: :unprocessable_entity
+      end
     end
 
   # GET /production_orders/:id

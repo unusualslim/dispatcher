@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  product: one
+  component_product: one
+  quantity_per_unit: 9.99
+  uom: MyString
+
+two:
+  product: two
+  component_product: two
+  quantity_per_unit: 9.99
+  uom: MyString

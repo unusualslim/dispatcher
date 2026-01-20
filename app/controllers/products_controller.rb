@@ -1,5 +1,5 @@
 class ProductsController < ApplicationController
-    before_action :set_product, only: %i[edit update destroy]
+    before_action :set_product, only: %i[edit update destroy, :components]
   
     def index
       @products = Product.all
@@ -25,7 +25,8 @@ class ProductsController < ApplicationController
       if @product.update(product_params)
         redirect_to products_path, notice: 'Product was successfully updated.'
       else
-        render :edit
+        @product.product_components.build if @product.product_components.empty?
+        render :show, status: :unprocessable_entity
       end
     end
   
@@ -56,6 +57,9 @@ class ProductsController < ApplicationController
     def show
       @product = Product.find(params[:id])
 
+      # ensure at least one row renders in the HTML form
+      @product.product_components.build if @product.product_components.empty?
+
       respond_to do |format|
         format.html
         format.json do
@@ -68,6 +72,36 @@ class ProductsController < ApplicationController
       end
     end
 
+    def components
+      rows = @product.product_components.includes(:component_product).map do |pc|
+        {
+          id: pc.id,
+          component_product_id: pc.component_product_id,
+          component_name: pc.component_product&.name,
+          quantity_per_unit: pc.quantity_per_unit&.to_f,
+          uom: pc.uom
+        }
+      end
+
+      render json: { product_id: @product.id, components: rows }
+    end
+
+    def bom
+      product = Product.includes(product_components: :component_product).find(params[:id])
+
+      components = product.product_components.map do |pc|
+        cp = pc.component_product
+        {
+          id: cp.id,
+          name: cp.name,
+          part_number: (cp.respond_to?(:sku) ? cp.sku : nil),
+          quantity_per_unit: pc.quantity_per_unit,
+          uom: pc.uom
+        }
+      end
+
+      render json: { components: components }
+    end
   
     private
   
@@ -76,6 +110,19 @@ class ProductsController < ApplicationController
     end
   
     def product_params
-      params.require(:product).permit(:name, :description, :price, :unit_of_measurement, :weight)
+      params.require(:product).permit(
+        :name,
+        :description,
+        :price,
+        :unit_of_measurement,
+        :weight,
+        product_components_attributes: [
+          :id,
+          :component_product_id,
+          :quantity_per_unit,
+          :uom,
+          :_destroy
+        ]
+      )
     end
   end

@@ -53,6 +53,21 @@ class ProductionOrder < ApplicationRecord
     where(status: s)
     }
 
+  def build_components_from_bom!
+    return if product.blank? || qty_to_make.blank?
+
+    production_order_components.destroy_all
+
+    product.product_components.includes(:component_product).each_with_index do |pc, idx|
+      production_order_components.build(
+        position: idx + 1,
+        quantity: (pc.quantity_per_unit.to_d * qty_to_make.to_d),
+        uom: pc.uom.presence || "",
+        part_number: pc.component_product&.part_number,
+        description: pc.component_product&.name
+      )
+    end
+  end
 
   private
 

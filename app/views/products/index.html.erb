@@ -14,16 +14,20 @@
   <tbody>
     <% @products.each do |product| %>
       <tr>
-        <td><%= product.name %></td>
+        <td>
+          <%= link_to product.name, product_path(product), class: "text-decoration-none" %>
+        </td>
+
         <td><%= product.unit_of_measurement %></td>
         <td><%= product.weight %></td>
+
         <td>
           <%= link_to 'Edit', edit_product_path(product), class: 'btn btn-warning btn-sm' %>
-          <%= button_to 'Delete', product_path(product), 
-               method: :delete, 
-               data: { confirm: 'Are you sure?' }, 
-               class: 'btn btn-danger btn-sm', 
-               form: { style: 'display: inline;' } %>
+          <%= button_to 'Delete', product_path(product),
+                method: :delete,
+                data: { confirm: 'Are you sure?' },
+                class: 'btn btn-danger btn-sm',
+                form: { style: 'display: inline;' } %>
         </td>
       </tr>
     <% end %>

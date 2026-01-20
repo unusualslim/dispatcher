@@ -200,43 +200,52 @@
   </div>
 </div>
 
+<!-- Components -->
+<div class="card mb-3 po-card">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="mb-0">Components and Qty</h5>
 
-  <!-- Components 
-  <div class="card mb-3 po-card">
-    <div class="card-body">
-      <div class="po-section-title">Components and Qty</div>
+      <button type="button" class="btn btn-sm btn-outline-secondary" id="recalc-components">
+        Recalculate from BOM
+      </button>
+    </div>
 
-      <div class="table-responsive">
-        <table class="table table-sm align-middle mb-0">
-          <thead>
-            <tr>
-              <th style="width: 110px;">Qty</th>
-              <th style="width: 90px;">UOM</th>
-              <th style="width: 150px;">Part #</th>
-              <th>Description</th>
-              <th style="width: 160px;">Confirmed by</th>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Description</th>
+            <th style="width: 140px;">Qty</th>
+            <th style="width: 120px;">UOM</th>
+          </tr>
+        </thead>
+
+        <tbody id="components-body" class="components-tbody">
+          <%= f.fields_for :production_order_components do |c| %>
+            <tr class="component-row">
+              <td>
+                <%= c.hidden_field :id if c.object&.persisted? %>
+                <%= c.hidden_field :position, class: "component-position" %>
+                <%= c.text_field :description, class: "form-control form-control-sm component-desc" %>
+              </td>
+
+              <td>
+                <%= c.number_field :quantity, step: 0.001, class: "form-control form-control-sm component-qty" %>
+              </td>
+
+              <td>
+                <%= c.text_field :uom, class: "form-control form-control-sm component-uom" %>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            <%= f.fields_for :production_order_components do |c| %>
-              <tr>
-                <td>
-                  <%= c.hidden_field :id if c.object.persisted? %>
-                  <%= c.hidden_field :position %>
-                  <%= c.number_field :quantity, step: 0.001, class: "form-control form-control-sm" %>
-                </td>
-                <td><%= c.text_field :uom, class: "form-control form-control-sm" %></td>
-                <td><%= c.text_field :part_number, class: "form-control form-control-sm" %></td>
-                <td><%= c.text_field :description, class: "form-control form-control-sm" %></td>
-                <td><%= c.text_field :confirmed_by, class: "form-control form-control-sm" %></td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      </div>
+          <% end %>
+        </tbody>
+      </table>
     </div>
   </div>
-  -->
+</div>
+
+
   <!-- Notes + completion -->
   <div class="card mb-3 po-card">
     <div class="card-body">
@@ -281,108 +290,102 @@
   </div>
 
  <script>
-  document.addEventListener("turbo:load", function () {
-    if (!window.jQuery || !jQuery.fn.select2) return;
+document.addEventListener("turbo:load", function () {
+  if (!window.jQuery || !jQuery.fn.select2) return;
 
-    function initSelect2(selectId, hiddenId, ajaxUrl, placeholder, prefillUrlBuilder, textFromJson) {
-      var $el = jQuery(selectId);
-      if (!$el.length) return;
+  function setupSelect2({ selectId, hiddenId, ajaxUrl, placeholder, prefillUrl, textFromJson }) {
+    var $select = jQuery("#" + selectId);
+    var hidden = document.getElementById(hiddenId);
+    if (!$select.length || !hidden) return;
 
-      // If Turbo cached and re-used the DOM, you can end up with a "stuck" select2 instance.
-      if ($el.data("select2")) {
-        $el.select2("destroy");
-        $el.off();
-        $el.empty();
-      }
-
-      $el.select2({
-        placeholder: placeholder,
-        allowClear: true,
-        width: "320px",
-        minimumInputLength: 0,
-        dropdownAutoWidth: false,
-        ajax: {
-          url: ajaxUrl,
-          dataType: "json",
-          delay: 200,
-          data: function (params) {
-            // send both keys so either controller style works (q or query)
-            return { q: params.term || "", query: params.term || "" };
-          },
-          processResults: function (data) {
-            var rows = Array.isArray(data) ? data : (data.results || []);
-            return {
-              results: rows.map(function (row) {
-                return {
-                  id: row.id,
-                  text: row.text || row.name || row.city_with_company || ("#" + row.id)
-                };
-              })
-            };
-          }
-        }
-      });
-
-      $el.on("change", function () {
-        var hidden = document.getElementById(hiddenId);
-        if (hidden) hidden.value = this.value || "";
-      });
-
-      // Prefill on edit
-      var existingIdEl = document.getElementById(hiddenId);
-      var existingId = existingIdEl ? existingIdEl.value : "";
-      if (existingId) {
-        fetch(prefillUrlBuilder(existingId))
-          .then(function (r) { return r.json(); })
-          .then(function (json) {
-            var text = textFromJson(json) || ("#" + json.id);
-            var option = new Option(text, json.id, true, true);
-            $el.append(option).trigger("change");
-          })
-          .catch(function () {});
-      }
+    // Turbo safety: destroy stale instances so init/prefill actually runs
+    if ($select.data("select2")) {
+      $select.select2("destroy");
+      $select.off();
+      $select.empty();
     }
 
-    // Product
-    initSelect2(
-      "#product_search",
-      "product_id",
-      "/products/search",
-      "Search products...",
-      function (id) { return "/products/" + id + ".json"; },
-      function (p) { return p.text || p.name || ("Product #" + p.id); }
-    );
-
-    // Customer
-    initSelect2(
-      "#customer_search",
-      "customer_id",
-      "/customers/select2",
-      "Search customers...",
-      function (id) { return "/customers/" + id + ".json"; },
-      function (c) { return c.text || c.name || ("Customer #" + c.id); }
-    );
-
-    // Origin location
-    initSelect2(
-      "#location_search",
-      "location_id",
-      "/locations/select2",
-      "Search origin locations...",
-      function (id) { return "/locations/" + id + ".json"; },
-      function (l) { return l.text || l.city_with_company || l.company_name || l.city || ("Location #" + l.id); }
-    );
-  });
-
-  // Prevent cached select2 instances from breaking when navigating back
-  document.addEventListener("turbo:before-cache", function () {
-    if (!window.jQuery || !jQuery.fn.select2) return;
-    ["#product_search", "#customer_search", "#location_search"].forEach(function (id) {
-      var $el = jQuery(id);
-      if ($el.length && $el.data("select2")) $el.select2("destroy");
+    $select.select2({
+      placeholder: placeholder,
+      allowClear: true,
+      width: "100%",
+      minimumInputLength: 0,
+      dropdownAutoWidth: false,
+      ajax: {
+        url: ajaxUrl,
+        dataType: "json",
+        delay: 200,
+        data: function (params) { return { q: params.term || "" }; },
+        processResults: function (data) {
+          var rows = Array.isArray(data) ? data : (data.results || []);
+          return {
+            results: rows.map(function (r) {
+              return { id: r.id, text: r.text || r.name || r.city_with_company || ("#" + r.id) };
+            })
+          };
+        }
+      }
     });
+
+    // keep hidden input synced
+    $select.on("change", function () {
+      hidden.value = this.value || "";
+    });
+
+    // ✅ PREFILL: inject selected option so Select2 displays it
+    var existingId = hidden.value;
+    if (existingId) {
+      fetch(prefillUrl(existingId), { headers: { "Accept": "application/json" } })
+        .then(function (r) { return r.json(); })
+        .then(function (obj) {
+          var text = textFromJson(obj) || ("#" + obj.id);
+          var option = new Option(text, obj.id, true, true);
+          $select.append(option).trigger("change");
+        })
+        .catch(function (e) {
+          console.warn("Prefill failed for", selectId, e);
+        });
+    }
+  }
+
+  setupSelect2({
+    selectId: "product_search",
+    hiddenId: "product_id",
+    ajaxUrl: "/products/search",
+    placeholder: "Search products...",
+    prefillUrl: function (id) { return "/products/" + id + ".json"; },
+    textFromJson: function (p) { return p.text || p.name; }
   });
+
+  setupSelect2({
+    selectId: "customer_search",
+    hiddenId: "customer_id",
+    ajaxUrl: "/customers/select2",
+    placeholder: "Search customers...",
+    prefillUrl: function (id) { return "/customers/" + id + ".json"; },
+    textFromJson: function (c) { return c.text || c.name; }
+  });
+
+  setupSelect2({
+    selectId: "location_search",
+    hiddenId: "location_id",
+    ajaxUrl: "/locations/select2",
+    placeholder: "Search origin locations...",
+    prefillUrl: function (id) { return "/locations/" + id + ".json"; },
+    textFromJson: function (l) { return l.text || l.city_with_company || l.company_name || l.city; }
+  });
+});
+
+// Turbo cache safety
+document.addEventListener("turbo:before-cache", function () {
+  if (!window.jQuery || !jQuery.fn.select2) return;
+  ["#product_search", "#customer_search", "#location_search"].forEach(function (sel) {
+    var $el = jQuery(sel);
+    if ($el.length && $el.data("select2")) $el.select2("destroy");
+  });
+});
 </script>
+
 
 
 <% end %>
@@ -428,4 +431,91 @@ document.addEventListener("turbo:load", function () {
   });
 });
 
+</script>
+
+
+<script>
+document.addEventListener("turbo:load", function () {
+  var productHidden = document.getElementById("product_id");
+  var qtyInput = document.querySelector('input[name="production_order[qty_to_make]"]');
+  var tbody = document.getElementById("components-body");
+  var recalcBtn = document.getElementById("recalc-components");
+
+  if (!productHidden || !qtyInput || !tbody || !recalcBtn) return;
+
+  function escapeHtml(s) {
+    return String(s || "").replace(/[&<>"']/g, function (c) {
+      return ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" })[c];
+    });
+  }
+
+  function toNum(v) {
+    var n = parseFloat(v);
+    return isNaN(n) ? 0 : n;
+  }
+
+  function setComponentsRows(components, qtyToMake) {
+    tbody.innerHTML = "";
+
+    components.forEach(function (comp, idx) {
+      var required = (toNum(comp.quantity_per_unit) * toNum(qtyToMake));
+      var position = idx + 1;
+
+      tbody.insertAdjacentHTML("beforeend", `
+        <tr class="component-row">
+          <td>
+            <input type="hidden"
+                   name="production_order[production_order_components_attributes][${idx}][position]"
+                   value="${position}"
+                   class="component-position" />
+
+            <input class="form-control form-control-sm component-desc"
+                   type="text"
+                   name="production_order[production_order_components_attributes][${idx}][description]"
+                   value="${escapeHtml(comp.name || comp.description || "")}" />
+          </td>
+
+          <td>
+            <input class="form-control form-control-sm component-qty"
+                   step="0.001"
+                   type="number"
+                   name="production_order[production_order_components_attributes][${idx}][quantity]"
+                   value="${required.toFixed(3)}" />
+          </td>
+
+          <td>
+            <input class="form-control form-control-sm component-uom"
+                   type="text"
+                   name="production_order[production_order_components_attributes][${idx}][uom]"
+                   value="${escapeHtml(comp.uom || "")}" />
+          </td>
+        </tr>
+      `);
+    });
+  }
+
+  async function fetchBom(productId) {
+    var r = await fetch("/products/" + productId + "/bom", {
+      headers: { "Accept": "application/json" }
+    });
+    if (!r.ok) throw new Error("BOM fetch failed");
+    return await r.json();
+  }
+
+  async function recalc() {
+    var productId = productHidden.value;
+    var qtyToMake = qtyInput.value;
+
+    if (!productId) return;
+
+    try {
+      var bom = await fetchBom(productId);
+      setComponentsRows(bom.components || [], qtyToMake);
+    } catch (e) {
+      console.warn(e);
+    }
+  }
+
+  recalcBtn.addEventListener("click", recalc);
+});
 </script>
