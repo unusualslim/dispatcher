@@ -9,10 +9,7 @@
       </h1>
 
       <div class="text-muted">
-        <%= @production_order.item.presence || "No item set" %>
-        <% if @production_order.batch_number.present? %>
-          • Batch <%= @production_order.batch_number %>
-        <% end %>
+        <%= @production_order.product&.name.presence || @production_order.item.presence || "No item set" %>
       </div>
     </div>
 
@@ -84,8 +81,12 @@
           </div>
 
           <dl class="row mb-0">
-            <dt class="col-5">Item</dt>
-            <dd class="col-7"><%= @production_order.item.presence || "—" %></dd>
+          <dt class="col-5">Item</dt>
+          <dd class="col-7">
+            <%= @production_order.product&.name.presence ||
+                @production_order.item.presence ||
+                "—" %>
+          </dd>
             <dt class="col-5">PDI Batches</dt>
             <dd class="col-7">
               <% if @production_order.production_order_batches.any? %>
@@ -136,50 +137,47 @@
     <!-- Right: Components + Footer Fields -->
     <div class="col-lg-7">
       <div class="card shadow-sm">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="mb-0">Components and Qty</h5>
-            <span class="text-muted small">
-              <%= @production_order.production_order_components.size %> line(s)
-            </span>
-          </div>
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="mb-0">Components and Qty</h5>
+      <span class="text-muted small">
+        <%= @production_order.production_order_components.size %> line(s)
+      </span>
+    </div>
 
-          <div class="table-responsive">
-            <table class="table table-sm align-middle">
-              <thead class="table-light">
-                <tr>
-                  <th style="width: 110px;">Qty</th>
-                  <th style="width: 90px;">UOM</th>
-                  <th style="width: 150px;">Part #</th>
-                  <th>Description</th>
-                  <th style="width: 160px;">Confirmed by</th>
-                </tr>
-              </thead>
-              <tbody>
-                <% components = @production_order.production_order_components.to_a %>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Description</th>
+            <th style="width: 140px;">Qty</th>
+            <th style="width: 100px;">UOM</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% components = @production_order.production_order_components.to_a %>
 
-                <% if components.any? %>
-                  <% components.each do |c| %>
-                    <tr>
-                      <td><%= c.quantity.present? ? c.quantity : "—" %></td>
-                      <td><%= c.uom.presence || "—" %></td>
-                      <td><%= c.part_number.presence || "—" %></td>
-                      <td><%= c.description.presence || "—" %></td>
-                      <td><%= c.confirmed_by.presence || "—" %></td>
-                    </tr>
-                  <% end %>
-                <% else %>
-                  <tr>
-                    <td colspan="5" class="text-center text-muted py-4">
-                      No components added yet.
-                    </td>
-                  </tr>
-                <% end %>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+          <% if components.any? %>
+            <% components.each do |c| %>
+              <tr>
+                <td><%= c.description.presence || "—" %></td>
+                <td><%= c.quantity.present? ? c.quantity : "—" %></td>
+                <td><%= c.uom.presence || "—" %></td>
+              </tr>
+            <% end %>
+          <% else %>
+            <tr>
+              <td colspan="3" class="text-center text-muted py-4">
+                No components added yet.
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 
       <div class="card shadow-sm mt-3">
         <div class="card-body">
