@@ -210,7 +210,7 @@
         Recalculate from BOM
       </button>
     </div>
-
+    <div id="components-destroy"></div>
     <div class="table-responsive">
       <table class="table table-sm align-middle mb-0">
         <thead class="table-light">
@@ -454,46 +454,6 @@ document.addEventListener("turbo:load", function () {
     return isNaN(n) ? 0 : n;
   }
 
-  function setComponentsRows(components, qtyToMake) {
-    tbody.innerHTML = "";
-
-    components.forEach(function (comp, idx) {
-      var required = (toNum(comp.quantity_per_unit) * toNum(qtyToMake));
-      var position = idx + 1;
-
-      tbody.insertAdjacentHTML("beforeend", `
-        <tr class="component-row">
-          <td>
-            <input type="hidden"
-                   name="production_order[production_order_components_attributes][${idx}][position]"
-                   value="${position}"
-                   class="component-position" />
-
-            <input class="form-control form-control-sm component-desc"
-                   type="text"
-                   name="production_order[production_order_components_attributes][${idx}][description]"
-                   value="${escapeHtml(comp.name || comp.description || "")}" />
-          </td>
-
-          <td>
-            <input class="form-control form-control-sm component-qty"
-                   step="0.001"
-                   type="number"
-                   name="production_order[production_order_components_attributes][${idx}][quantity]"
-                   value="${required.toFixed(3)}" />
-          </td>
-
-          <td>
-            <input class="form-control form-control-sm component-uom"
-                   type="text"
-                   name="production_order[production_order_components_attributes][${idx}][uom]"
-                   value="${escapeHtml(comp.uom || "")}" />
-          </td>
-        </tr>
-      `);
-    });
-  }
-
   async function fetchBom(productId) {
     var r = await fetch("/products/" + productId + "/bom", {
       headers: { "Accept": "application/json" }
@@ -502,15 +462,81 @@ document.addEventListener("turbo:load", function () {
     return await r.json();
   }
 
+  function rebuildComponents(components, qtyToMake) {
+    // 1) collect existing DB ids from current rows
+    var existingIds = Array.from(
+      tbody.querySelectorAll('input[name*="[production_order_components_attributes]"][name$="[id]"]')
+    )
+      .map(function (el) { return el.value; })
+      .filter(Boolean);
+
+    // 2) wipe table
+    tbody.innerHTML = "";
+
+    // 3) add "destroy" entries FIRST using numeric indexes
+    var idx = 0;
+    existingIds.forEach(function (id) {
+      tbody.insertAdjacentHTML("beforeend", `
+        <tr style="display:none;">
+          <td>
+            <input type="hidden"
+              name="production_order[production_order_components_attributes][${idx}][id]"
+              value="${id}">
+            <input type="hidden"
+              name="production_order[production_order_components_attributes][${idx}][_destroy]"
+              value="1">
+          </td>
+        </tr>
+      `);
+      idx += 1;
+    });
+
+    // 4) add the new BOM rows after the destroy entries (also numeric)
+    components.forEach(function (comp, bomIndex) {
+      var required = (toNum(comp.quantity_per_unit) * toNum(qtyToMake));
+      var position = bomIndex + 1;
+
+      tbody.insertAdjacentHTML("beforeend", `
+        <tr class="component-row">
+          <td>
+            <input type="hidden"
+              name="production_order[production_order_components_attributes][${idx}][position]"
+              value="${position}">
+            <input class="form-control form-control-sm component-desc"
+              type="text"
+              name="production_order[production_order_components_attributes][${idx}][description]"
+              value="${escapeHtml(comp.name || comp.description || "")}">
+          </td>
+
+          <td>
+            <input class="form-control form-control-sm component-qty"
+              step="0.001"
+              type="number"
+              name="production_order[production_order_components_attributes][${idx}][quantity]"
+              value="${required.toFixed(3)}">
+          </td>
+
+          <td>
+            <input class="form-control form-control-sm component-uom"
+              type="text"
+              name="production_order[production_order_components_attributes][${idx}][uom]"
+              value="${escapeHtml(comp.uom || "")}">
+          </td>
+        </tr>
+      `);
+
+      idx += 1;
+    });
+  }
+
   async function recalc() {
     var productId = productHidden.value;
     var qtyToMake = qtyInput.value;
-
     if (!productId) return;
 
     try {
       var bom = await fetchBom(productId);
-      setComponentsRows(bom.components || [], qtyToMake);
+      rebuildComponents(bom.components || [], qtyToMake);
     } catch (e) {
       console.warn(e);
     }

@@ -84,15 +84,19 @@ class ProductionOrdersController < ApplicationController
     @production_order.production_order_batches.build if @production_order.production_order_batches.empty?
   end
 
-  # PATCH/PUT /production_orders/:id
-    def update
-      if @production_order.update(production_order_params)
-          redirect_to production_order_path(@production_order),
-                      notice: "Production order updated."
-      else
-          render :edit, status: :unprocessable_entity
+  def update
+    if @production_order.update(production_order_params)
+      respond_to do |format|
+        format.html { redirect_to @production_order, notice: "Production order updated." }
+        format.turbo_stream { redirect_to @production_order, notice: "Production order updated." }
+      end
+    else
+      respond_to do |format|
+        format.html { render :edit, status: :unprocessable_entity }
+        format.turbo_stream { render :edit, status: :unprocessable_entity }
       end
     end
+  end
 
   # GET /production_orders/:id
   def show; end
@@ -115,27 +119,32 @@ class ProductionOrdersController < ApplicationController
     @production_order = ProductionOrder.find(params[:id])
   end
 
-    def production_order_params
+  def production_order_params
     params.require(:production_order).permit(
-        :product_id,
-        :customer_id,
-        :location_id,
-        :batch_number,
-        :qty_to_make,
-        :due_date,
-        :status,
-        :priority,
-        :production_notes,
-        :date_started,
-        :date_completed,
-        :total_qty_produced,
-        :filled_by,
-        :approved_by,
-        :production_date,
-        production_order_components_attributes: [:id, :position, :quantity, :uom, :part_number, :description, :confirmed_by, :_destroy],
-        production_order_batches_attributes: [:id, :batch_number, :quantity, :_destroy]
+      :product_id,
+      :customer_id,
+      :location_id,
+      :qty_to_make,
+      :due_date,
+      :production_date,
+      :status,
+      :priority,
+      :production_notes,
+      :date_started,
+      :date_completed,
+      :total_qty_produced,
+      :filled_by,
+      :approved_by,
+
+      production_order_batches_attributes: [
+        :id, :batch_number, :quantity, :_destroy
+      ],
+
+      # ✅ IMPORTANT: this must be EXACTLY this key name
+      production_order_components_attributes: [
+        :id, :position, :description, :quantity, :uom, :_destroy
+      ]
     )
-    end
-
-
+  end
+  private :production_order_params
 end
