@@ -5,50 +5,65 @@ class DispatchesController < ApplicationController
 
   # GET /dispatches or /dispatches.json
   def index
-    # Collect filter parameters, setting default for status
-    @completed_dispatches = Dispatch.where(status: ["Complete", "complete"]).order(dispatch_date: :desc)
-    @filtered_dispatches = Dispatch.where(status: ['New', 'sent_to_driver', 'Sent to driver', 'Sent to Driver']).order(:dispatch_date)
+    # Latest 20 "active" dispatches (New / Sent to Driver)
+    @filtered_dispatches = Dispatch
+      .where("LOWER(status) IN (?)", ["new", "sent to driver", "sent_to_driver"])
+      .includes(
+        :driver,
+        customer_orders: [
+          :location,
+          { customer_order_products: :product }
+        ]
+      )
+      .order(dispatch_date: :desc, id: :desc)
+      .limit(20)
+
+    # Latest 20 completed dispatches
+    @completed_dispatches = Dispatch
+      .where("LOWER(status) = ?", "complete")
+      .includes(:driver, customer_orders: :location)
+      .order(dispatch_date: :desc, id: :desc)
+      .limit(20)
+
     @destination_locations = Location.all
-    @origin_locations = Location.all
-    @on_hold_orders = CustomerOrder.where(order_status: "On Hold")
+    @origin_locations      = Location.all
+    @on_hold_orders        = CustomerOrder.where(order_status: "On Hold")
+
     @filters = {
       product: params[:product],
       delivery_date: params[:delivery_date],
       delivery_date_condition: params[:delivery_date_condition],
       location: params[:location],
       amount: params[:amount],
-      status: params[:status] || 'unassigned'  # Default to 'unassigned' if not provided
+      status: params[:status] || 'unassigned'
     }
-  
+
     # Base query depending on the selected status
     case @filters[:status]
     when 'unassigned'
       @unassigned_open_orders = CustomerOrder.where(order_status: 'New')
-                                             .left_joins(:dispatch_customer_orders)
-                                             .where(dispatch_customer_orders: { id: nil })
+                                            .left_joins(:dispatch_customer_orders)
+                                            .where(dispatch_customer_orders: { id: nil })
     when 'assigned'
       @unassigned_open_orders = CustomerOrder.joins(:dispatch_customer_orders).distinct
     else
       @unassigned_open_orders = CustomerOrder.all.distinct
     end
-  
-    # Apply filters for product
+
+    # Filters
     if @filters[:product].present?
       @unassigned_open_orders = @unassigned_open_orders.where('product LIKE ?', "%#{@filters[:product]}%")
     end
-  
-    # Apply filters for location
+
     if @filters[:location].present?
       @unassigned_open_orders = @unassigned_open_orders.joins(:location)
-                                                       .where('locations.company_name LIKE ?', "%#{@filters[:location]}%")
+                                                      .where('locations.company_name LIKE ?', "%#{@filters[:location]}%")
     end
-  
-    # Apply filters for amount
+
     if @filters[:amount].present?
       @unassigned_open_orders = @unassigned_open_orders.where(approximate_product_amount: @filters[:amount])
     end
-  
-    # Apply delivery date filter with condition
+
     if @filters[:delivery_date].present? && @filters[:delivery_date_condition].present?
       delivery_date = @filters[:delivery_date]
       case @filters[:delivery_date_condition]
@@ -60,11 +75,10 @@ class DispatchesController < ApplicationController
         @unassigned_open_orders = @unassigned_open_orders.where(required_delivery_date: delivery_date)
       end
     end
-  
-    # Other necessary data for the page
+
     @new_dispatches = Dispatch.where(status: "New", driver_id: nil)
-    @drivers = User.all
-    @workers = User.where(role: "worker")
+    @drivers        = User.all
+    @workers        = User.where(role: "worker")
   end
   
 
