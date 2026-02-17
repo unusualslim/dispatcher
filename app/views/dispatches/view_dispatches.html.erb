@@ -50,11 +50,11 @@
             <%= submit_tag 'Apply Filters', class: 'btn btn-primary btn-md w-100' %>
           </div>
           <div style="width: 150px;">
-            <!-- clear filters AND clear page -->
             <%= link_to 'Clear Filters', view_dispatches_path(page: nil, status: nil, driver: nil, sort_by: nil),
                         class: 'btn btn-secondary btn-md w-100' %>
           </div>
         </div>
+
       </div>
     <% end %>
   </div>
@@ -76,11 +76,13 @@
     <tbody>
       <% @dispatches.each do |dispatch| %>
         <tr style="cursor: pointer;" onclick="location.href='/dispatches/<%= dispatch.id %>';">
+
           <td><%= dispatch.id %></td>
           <td><%= dispatch.driver&.full_name || 'Unassigned' %></td>
           <td><%= dispatch.dispatch_date || 'No date set' %></td>
           <td><%= dispatch.status || 'No status' %></td>
           <td><%= dispatch.origin || "No Origin" %></td>
+
           <td>
             <% if dispatch.customer_orders.any? %>
               <% destination_location = dispatch.customer_orders.first.location %>
@@ -89,6 +91,7 @@
               No destination location found
             <% end %>
           </td>
+
           <td><%= dispatch.notes.presence || 'No notes' %></td>
           <td><%= dispatch.created_at.in_time_zone('Eastern Time (US & Canada)').strftime('%Y-%m-%d %I:%M %p') %></td>
         </tr>
@@ -96,9 +99,15 @@
     </tbody>
   </table>
 
-  <!-- PAGINATION (keeps filters/sort while paging) -->
+  <!-- PAGINATION (better spacing + guaranteed filter params) -->
+  <% pagination_params = params.permit(:status, :driver, :sort_by).to_h %>
   <div class="d-flex justify-content-center mt-3">
-    <%= will_paginate @dispatches, params: request.query_parameters %>
+    <%= will_paginate @dispatches,
+          params: pagination_params,
+          previous_label: "&larr; Previous",
+          next_label: "Next &rarr;",
+          inner_window: 2,
+          outer_window: 0 %>
   </div>
 </div>
 
@@ -119,4 +128,33 @@
 .table th:nth-child(6), .table td:nth-child(6) { width: 20%; }
 .table th:nth-child(7), .table td:nth-child(7) { width: 10%; }
 .table th:nth-child(8), .table td:nth-child(8) { width: 15%; }
+
+/* will_paginate spacing fix */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  padding-left: 0;
+}
+
+.pagination a,
+.pagination span {
+  display: inline-block;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  text-decoration: none;
+  line-height: 1;
+}
+
+.pagination .current {
+  font-weight: 700;
+}
+
+.pagination .disabled {
+  opacity: 0.5;
+}
 </style>
