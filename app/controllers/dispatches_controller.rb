@@ -180,36 +180,43 @@ class DispatchesController < ApplicationController
   
 
   def view_dispatches
-    @statuses = Dispatch.distinct.pluck(:status) # Fetch all unique statuses
-    @selected_status = params[:status] || 'all' # Default to 'all' to show all statuses
-    @selected_driver = params[:driver] # Selected driver ID
-    @sort_by = params[:sort_by] || 'dispatch_date' # Default sorting by dispatch date
-  
-    # Filter by selected status
-    @dispatches = Dispatch.all
-    if @selected_status == 'exclude_complete_deleted'
-      @dispatches = @dispatches.where.not(status: ['complete', 'deleted'])
-    elsif @selected_status != 'all'
-      @dispatches = @dispatches.where('LOWER(status) = ?', @selected_status.downcase)
+    @statuses = Dispatch.distinct.pluck(:status)
+    @selected_status = params[:status].presence || "all"
+    @selected_driver = params[:driver]
+    @sort_by = params[:sort_by].presence || "dispatch_date"
+
+    # Start with a relation (includes prevents N+1 in your view)
+    dispatches = Dispatch.includes(:driver, customer_orders: :location)
+
+    # Status filter
+    if @selected_status == "exclude_complete_deleted"
+      dispatches = dispatches.where.not("LOWER(status) IN (?)", %w[complete deleted])
+    elsif @selected_status != "all"
+      dispatches = dispatches.where("LOWER(status) = ?", @selected_status.downcase)
     end
-  
-    # Filter by selected driver (if any)
+
+    # Driver filter
     if @selected_driver.present?
-      @dispatches = @dispatches.where(driver_id: @selected_driver)
+      dispatches = dispatches.where(driver_id: @selected_driver)
     end
-  
-    # Apply sorting
-    @dispatches = case @sort_by
-                  when 'newest'
-                    @dispatches.order(created_at: :desc)
-                  when 'oldest'
-                    @dispatches.order(created_at: :asc)
-                  when 'dispatch_date'
-                    @dispatches.order(dispatch_date: :asc)
-                  else
-                    @dispatches
-                  end
+
+    # Sorting
+    dispatches =
+      case @sort_by
+      when "newest"
+        dispatches.order(created_at: :desc)
+      when "oldest"
+        dispatches.order(created_at: :asc)
+      when "dispatch_date"
+        dispatches.order(dispatch_date: :asc)
+      else
+        dispatches
+      end
+
+    # Pagination (LAST)
+    @dispatches = dispatches.paginate(page: params[:page], per_page: 25)
   end
+
   
 
   def search
