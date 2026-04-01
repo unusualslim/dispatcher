@@ -1,7 +1,43 @@
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <div class="content">
   <p style="color: green"><%= notice %></p>
 
-  <%= render @location %>
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h1 class="mb-3"><%= @location.company_name %></h1>
+
+      <div class="row">
+        <div class="col-md-6">
+          <p><strong>ID:</strong> <%= @location.id %></p>
+          <p><strong>City:</strong> <%= @location.city.presence || "N/A" %></p>
+          <p><strong>Address:</strong> <%= @location.address.presence || "N/A" %></p>
+          <p><strong>State:</strong> <%= @location.state.presence || "N/A" %></p>
+          <p><strong>Phone:</strong> <%= @location.phone_number.presence || "N/A" %></p>
+          <p><strong>Category:</strong> <%= @location.location_category_id.presence || "N/A" %></p>
+          <p><strong>Marker Color:</strong> <%= @location.marker_color.presence || "N/A" %></p>
+          <p><strong>Latitude:</strong> <%= @location.latitude.presence || "N/A" %></p>
+          <p><strong>Longitude:</strong> <%= @location.longitude.presence || "N/A" %></p>
+        </div>
+
+        <div class="col-md-6">
+          <% if @location.latitude.present? && @location.longitude.present? %>
+            <div
+              id="location-map"
+              style="height: 320px; width: 100%; border: 1px solid #ccc; border-radius: 8px;"
+              data-lat="<%= @location.latitude %>"
+              data-lng="<%= @location.longitude %>"
+              data-name="<%= @location.company_name %>">
+            </div>
+          <% else %>
+            <div class="alert alert-secondary mb-0">
+              No map available because latitude or longitude is missing.
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <div class="mb-3">
     <% if @location.disabled? %>
@@ -11,69 +47,63 @@
     <% end %>
   </div>
 
-<% if @location.location_products.any? %>
-  <strong>Products:</strong>
-  <table class="table table-striped">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Max Capacity</th>
-        <th>Upper Cutoff</th>
-        <th>Lower Cutoff</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @location.location_products.each do |location_product| %>
+  <% if @location.location_products.any? %>
+    <strong>Products:</strong>
+    <table class="table table-striped">
+      <thead>
         <tr>
-          <td><%= location_product.product.name %></td>
-
-          <!-- Check if max_capacity is present -->
-          <td>
-            <% if location_product.max_capacity.present? %>
-              <%= location_product.max_capacity %> gal
-            <% else %>
-              N/A
-            <% end %>
-          </td>
-
-          <!-- Check if uleage_90 and max_capacity are present for the upper cutoff -->
-          <td>
-            <% if location_product.uleage_90.present? && location_product.max_capacity.present? %>
-              <%= (location_product.uleage_90.to_f / 100) * location_product.max_capacity %> gal 
-              <strong>(<%= location_product.uleage_90 %>%)</strong>
-            <% else %>
-              N/A
-            <% end %>
-          </td>
-
-          <!-- Check if cutoff and max_capacity are present for the lower cutoff -->
-          <td>
-            <% if location_product.cutoff.present? && location_product.max_capacity.present? %>
-              <%= (location_product.cutoff.to_f / 100) * location_product.max_capacity %> gal 
-              <strong>(<%= location_product.cutoff %>%)</strong>
-            <% else %>
-              N/A
-            <% end %>
-          </td>
-
-          <!-- Actions for edit and delete -->
-          <td>
-            <div class="btn-group" role="group">
-              <%= link_to 'Edit', edit_location_location_product_path(@location, location_product), class: 'btn btn-primary btn-sm', style: 'width:60px; margin-right:10px;' %>
-              <%= button_to 'Delete', location_location_product_path(@location, location_product), method: :delete, data: { confirm: 'Are you sure?' }, class: 'btn btn-danger btn-sm' %>
-            </div>
-          </td>
+          <th>Name</th>
+          <th>Max Capacity</th>
+          <th>Upper Cutoff</th>
+          <th>Lower Cutoff</th>
+          <th>Actions</th>
         </tr>
-      <% end %>
-    </tbody>
-  </table>
-<% end %>
+      </thead>
+      <tbody>
+        <% @location.location_products.each do |location_product| %>
+          <tr>
+            <td><%= location_product.product.name %></td>
 
+            <td>
+              <% if location_product.max_capacity.present? %>
+                <%= location_product.max_capacity %> gal
+              <% else %>
+                N/A
+              <% end %>
+            </td>
+
+            <td>
+              <% if location_product.uleage_90.present? && location_product.max_capacity.present? %>
+                <%= (location_product.uleage_90.to_f / 100) * location_product.max_capacity %> gal
+                <strong>(<%= location_product.uleage_90 %>%)</strong>
+              <% else %>
+                N/A
+              <% end %>
+            </td>
+
+            <td>
+              <% if location_product.cutoff.present? && location_product.max_capacity.present? %>
+                <%= (location_product.cutoff.to_f / 100) * location_product.max_capacity %> gal
+                <strong>(<%= location_product.cutoff %>%)</strong>
+              <% else %>
+                N/A
+              <% end %>
+            </td>
+
+            <td>
+              <div class="btn-group" role="group">
+                <%= link_to 'Edit', edit_location_location_product_path(@location, location_product), class: 'btn btn-primary btn-sm', style: 'width:60px; margin-right:10px;' %>
+                <%= button_to 'Delete', location_location_product_path(@location, location_product), method: :delete, data: { confirm: 'Are you sure?' }, class: 'btn btn-danger btn-sm' %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
 
   <%= link_to 'Add Product', new_location_location_product_path(@location), class: 'btn btn-success' %>
 
-  <!-- Associated Customers Section -->
   <h3 class="mt-4">Associated Customers:</h3>
   <% if @location.customers.any? %>
     <div class="row">
@@ -101,7 +131,6 @@
     <p class="text-muted">No customers associated with this location.</p>
   <% end %>
 
-  <!-- Associated Customer Orders Section -->
   <% if @location.customer_orders.any? %>
     <h3 class="mt-4">Associated Customer Orders:</h3>
   <% else %>
@@ -135,7 +164,11 @@
               <% end %>
             </td>
             <td><%= order.customer_order_products.sum(:quantity) || "Not Set" %></td>
-            <td><span class="badge bg-<%= order.order_status == 'New' ? 'success' : 'secondary' %>"><%= order.order_status %></span></td>
+            <td>
+              <span class="badge bg-<%= order.order_status == 'New' ? 'success' : 'secondary' %>">
+                <%= order.order_status %>
+              </span>
+            </td>
             <td><%= order.required_delivery_date || "Not Set" %></td>
             <td>
               <%= link_to 'View', customer_order_path(order), class: 'btn btn-primary btn-sm' %>
@@ -148,12 +181,43 @@
     <p class="text-muted">No customer orders associated with this location.</p>
   <% end %>
 
-
   <hr>
 
-  <div>
+  <div class="d-flex flex-wrap gap-2">
     <%= link_to "Edit this location", edit_location_path(@location), class: 'btn btn-warning' %>
     <%= link_to "Back to locations", locations_path, class: 'btn btn-secondary', data: { turbo: false } %>
     <%= button_to "Destroy this location", @location, method: :delete, data: { confirm: 'Are you sure you want to delete this location?', turbo: false }, class: "btn btn-danger" %>
   </div>
 </div>
+
+<script>
+  document.addEventListener("turbo:load", function () {
+    const mapEl = document.getElementById("location-map");
+    if (!mapEl) return;
+
+    if (mapEl.dataset.loaded === "true") return;
+
+    const lat = parseFloat(mapEl.dataset.lat);
+    const lng = parseFloat(mapEl.dataset.lng);
+    const name = mapEl.dataset.name || "Location";
+
+    if (isNaN(lat) || isNaN(lng)) return;
+
+    const map = L.map("location-map").setView([lat, lng], 13);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap contributors",
+      maxZoom: 19
+    }).addTo(map);
+
+    L.marker([lat, lng]).addTo(map)
+      .bindPopup(name)
+      .openPopup();
+
+    mapEl.dataset.loaded = "true";
+
+    setTimeout(function () {
+      map.invalidateSize();
+    }, 100);
+  });
+</script>
