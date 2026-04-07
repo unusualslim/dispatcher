@@ -73,14 +73,38 @@ class LocationsController < ApplicationController
     def map
       @locations = Location.includes(:location_category, :customer_orders)
                            .where.not(latitude: nil, longitude: nil)
-    
+
       locations_json = @locations.as_json(
         only: [:id, :latitude, :longitude, :city, :company_name, :location_category_id],
         methods: [:has_active_order] # This MUST match the method name EXACTLY
       )
-    
-      Rails.logger.debug "LOCATIONS JSON: #{locations_json}" # Debugging
-    
+
+      active_dispatches = Dispatch.where(status: "Sent to Driver")
+                                  .includes(customer_orders: :location, destination_location: {})
+                                  .where.not(destination_location_id: nil)
+
+      @dispatch_routes = active_dispatches.map do |dispatch|
+        next unless dispatch.destination_location&.latitude && dispatch.destination_location&.longitude
+
+        pickup_points = dispatch.customer_orders
+                                .filter_map do |order|
+                                  loc = order.location
+                                  next unless loc&.latitude && loc&.longitude
+                                  { lat: loc.latitude, lng: loc.longitude, name: loc.company_name }
+                                end
+
+        next if pickup_points.empty?
+
+        dest = dispatch.destination_location
+        {
+          id: dispatch.id,
+          destination: { lat: dest.latitude, lng: dest.longitude, name: dest.company_name },
+          pickups: pickup_points,
+          driver: dispatch.driver&.full_name,
+          dispatch_date: dispatch.dispatch_date
+        }
+      end.compact
+
       respond_to do |format|
         format.html
         format.json { render json: locations_json }

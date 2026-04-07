@@ -55,6 +55,7 @@
 
     // Pass locations from Rails to JavaScript
     const locations = <%= raw @locations.to_json(only: [:id, :latitude, :longitude, :city, :company_name, :location_category_id, :marker_color], methods: :has_active_order) %>;
+    const dispatchRoutes = <%= raw @dispatch_routes.to_json %>;
 
     locations.forEach(location => {
       let markerColor = location.marker_color;
@@ -83,6 +84,40 @@
       marker.bindPopup(`<a href="/locations/${location.id}">${location.company_name}</a>`);
     });
 
+    // Returns a color based on days until dispatch_date
+    function routeColor(dispatchDate) {
+      if (!dispatchDate) return '#6c757d'; // gray = no date set
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const days = Math.round((new Date(dispatchDate) - today) / 86400000);
+      if (days <= 0) return '#dc3545'; // red — today or overdue
+      if (days === 1) return '#fd7e14'; // orange — tomorrow
+      if (days === 2) return '#ffc107'; // yellow — 2 days out
+      return '#28a745';                 // green — 3+ days
+    }
+
+    // Draw route lines for "sent to driver" dispatches
+    dispatchRoutes.forEach(dispatch => {
+      const color = routeColor(dispatch.dispatch_date);
+      dispatch.pickups.forEach(pickup => {
+        const coords = [
+          [pickup.lat, pickup.lng],
+          [dispatch.destination.lat, dispatch.destination.lng]
+        ];
+
+        const line = L.polyline(coords, {
+          color: color,
+          weight: 3,
+          opacity: 0.8,
+          dashArray: '6, 6'
+        }).addTo(map);
+
+        const driverLabel = dispatch.driver ? ` — ${dispatch.driver}` : '';
+        const dateLabel = dispatch.dispatch_date ? ` | Due: ${dispatch.dispatch_date}` : '';
+        line.bindPopup(`<strong>Dispatch #${dispatch.id}${driverLabel}</strong><br>${pickup.name} → ${dispatch.destination.name}${dateLabel}`);
+      });
+    });
+
     // Add a Legend (Key) to the Top-Right Corner
     const legend = L.control({ position: "topright" });
 
@@ -94,7 +129,13 @@
         <i style="background: blue"></i> Origin <br>
         <i style="background: red"></i> Destination <br>
         <i style="background: gray"></i> Prospective <br>
-        <i style="background: black"></i> Unknown Category
+        <i style="background: black"></i> Unknown Category <br>
+        <hr style="margin: 4px 0">
+        <strong>Dispatch Routes</strong><br>
+        <i style="background: #28a745; border-radius: 0; height: 3px; margin-top: 6px;"></i> 3+ days out <br>
+        <i style="background: #ffc107; border-radius: 0; height: 3px; margin-top: 6px;"></i> 2 days out <br>
+        <i style="background: #fd7e14; border-radius: 0; height: 3px; margin-top: 6px;"></i> Tomorrow <br>
+        <i style="background: #dc3545; border-radius: 0; height: 3px; margin-top: 6px;"></i> Today / Overdue
       `;
       return div;
     };
