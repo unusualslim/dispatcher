@@ -20,7 +20,7 @@
           <%= label_tag :status, 'Status' %>
           <%= select_tag :status, options_for_select(
             [['All', 'all'], ['Incomplete', 'exclude_complete_deleted']] +
-            Dispatch.dispatch_statuses.keys.map { |status| [status.humanize, status] },
+            Dispatch.dispatch_statuses.values.map { |status| [status, status] },
             selected: params[:status].presence || 'all'
           ), class: "form-control" %>
         </div>
