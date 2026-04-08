@@ -99,23 +99,21 @@
     // Draw route lines for "sent to driver" dispatches
     dispatchRoutes.forEach(dispatch => {
       const color = routeColor(dispatch.dispatch_date);
-      dispatch.pickups.forEach(pickup => {
-        const coords = [
-          [pickup.lat, pickup.lng],
-          [dispatch.destination.lat, dispatch.destination.lng]
-        ];
+      const coords = [
+        [dispatch.origin.lat, dispatch.origin.lng],
+        [dispatch.destination.lat, dispatch.destination.lng]
+      ];
 
-        const line = L.polyline(coords, {
-          color: color,
-          weight: 3,
-          opacity: 0.8,
-          dashArray: '6, 6'
-        }).addTo(map);
+      const line = L.polyline(coords, {
+        color: color,
+        weight: 3,
+        opacity: 0.8,
+        dashArray: '6, 6'
+      }).addTo(map);
 
-        const driverLabel = dispatch.driver ? ` — ${dispatch.driver}` : '';
-        const dateLabel = dispatch.dispatch_date ? ` | Due: ${dispatch.dispatch_date}` : '';
-        line.bindPopup(`<strong>Dispatch #${dispatch.id}${driverLabel}</strong><br>${pickup.name} → ${dispatch.destination.name}${dateLabel}`);
-      });
+      const driverLabel = dispatch.driver ? ` — ${dispatch.driver}` : '';
+      const dateLabel = dispatch.dispatch_date ? ` | Due: ${dispatch.dispatch_date}` : '';
+      line.bindPopup(`<strong>Dispatch #${dispatch.id}${driverLabel}</strong><br>${dispatch.origin.name} → ${dispatch.destination.name}${dateLabel}`);
     });
 
     // Add a Legend (Key) to the Top-Right Corner

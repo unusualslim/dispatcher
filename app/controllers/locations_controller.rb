@@ -80,30 +80,26 @@ class LocationsController < ApplicationController
       )
 
       active_dispatches = Dispatch.where(status: "Sent to Driver")
-                                  .includes(customer_orders: :location, destination_location: {})
-                                  .where.not(destination_location_id: nil)
+                                  .includes(customer_orders: :location)
 
-      @dispatch_routes = active_dispatches.map do |dispatch|
-        next unless dispatch.destination_location&.latitude && dispatch.destination_location&.longitude
+      origin_locations = Location.where.not(latitude: nil, longitude: nil)
+                                  .index_by(&:full_address_with_company)
 
-        pickup_points = dispatch.customer_orders
-                                .filter_map do |order|
-                                  loc = order.location
-                                  next unless loc&.latitude && loc&.longitude
-                                  { lat: loc.latitude, lng: loc.longitude, name: loc.company_name }
-                                end
+      @dispatch_routes = active_dispatches.filter_map do |dispatch|
+        origin = origin_locations[dispatch.origin]
+        next unless origin
 
-        next if pickup_points.empty?
+        dest = dispatch.customer_orders.map(&:location).find { |l| l&.latitude && l&.longitude }
+        next unless dest
 
-        dest = dispatch.destination_location
         {
           id: dispatch.id,
+          origin: { lat: origin.latitude, lng: origin.longitude, name: origin.company_name },
           destination: { lat: dest.latitude, lng: dest.longitude, name: dest.company_name },
-          pickups: pickup_points,
           driver: dispatch.driver&.full_name,
           dispatch_date: dispatch.dispatch_date
         }
-      end.compact
+      end
 
       respond_to do |format|
         format.html
