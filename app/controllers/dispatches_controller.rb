@@ -8,7 +8,7 @@ class DispatchesController < ApplicationController
   def index
     # Latest 20 "active" dispatches (New / Sent to Driver)
     @filtered_dispatches = Dispatch
-      .where("LOWER(status) IN (?)", ["new", "sent to driver", "sent_to_driver"])
+      .where(status: ["New", "Sent to Driver"])
       .includes(
         :driver,
         customer_orders: [
@@ -21,7 +21,7 @@ class DispatchesController < ApplicationController
 
     # Latest 20 completed dispatches
     @completed_dispatches = Dispatch
-      .where("LOWER(status) = ?", "complete")
+      .where(status: "Complete")
       .includes(:driver, customer_orders: :location)
       .order(dispatch_date: :desc, id: :desc)
       .limit(20)
@@ -206,9 +206,9 @@ class DispatchesController < ApplicationController
 
     # Status filter
     if @selected_status == "exclude_complete_deleted"
-      dispatches = dispatches.where.not("LOWER(status) IN (?)", %w[complete deleted])
+      dispatches = dispatches.where.not(status: ["Complete", "Deleted"])
     elsif @selected_status != "all"
-      dispatches = dispatches.where("LOWER(status) = ?", @selected_status.downcase)
+      dispatches = dispatches.where(status: @selected_status)
     end
 
     # Driver filter
