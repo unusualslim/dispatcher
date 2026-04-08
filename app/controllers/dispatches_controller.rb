@@ -1,4 +1,5 @@
 require 'csv'
+require 'net/http'
 
 class DispatchesController < ApplicationController
   before_action :set_dispatch, only: %i[show edit update destroy mark_as_complete mark_as_billed send_notification]
@@ -84,10 +85,25 @@ class DispatchesController < ApplicationController
 
   # GET /dispatches/1 or /dispatches/1.json
   def show
-    @dispatch = Dispatch.find(params[:id]) 
+    @dispatch = Dispatch.find(params[:id])
     @customer_orders = @dispatch.customer_orders
     @origin_locations = Location.where(location_category_id: 1)
     @destination_locations = Location.where(location_category_id: 2)
+
+    origin = @origin_locations.find { |l| l.full_address_with_company == @dispatch.origin }
+    dest = @customer_orders.first&.location
+
+    if origin&.latitude && origin&.longitude && dest&.latitude && dest&.longitude
+      begin
+        uri = URI("https://router.project-osrm.org/route/v1/driving/#{origin.longitude},#{origin.latitude};#{dest.longitude},#{dest.latitude}?overview=false")
+        response = Net::HTTP.get(uri)
+        data = JSON.parse(response)
+        meters = data.dig("routes", 0, "distance")
+        @road_distance = (meters / 1609.34).round(1) if meters
+      rescue StandardError
+        @road_distance = nil
+      end
+    end
   end
 
   # GET /dispatches/new

@@ -72,6 +72,10 @@
     <% end %>
   </p>
 
+  <% if @road_distance %>
+    <p><strong>Road Distance:</strong> <%= @road_distance %> miles</p>
+  <% end %>
+
   <p>
     <strong>Destination Notes:</strong>
     <% if @dispatch.customer_orders.any? %>
