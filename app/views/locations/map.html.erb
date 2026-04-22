@@ -99,10 +99,12 @@
     // Draw route lines for "sent to driver" dispatches
     dispatchRoutes.forEach(dispatch => {
       const color = routeColor(dispatch.dispatch_date);
-      const coords = [
-        [dispatch.origin.lat, dispatch.origin.lng],
-        [dispatch.destination.lat, dispatch.destination.lng]
-      ];
+      const coords = dispatch.route_coords && dispatch.route_coords.length > 0
+        ? dispatch.route_coords
+        : [
+            [dispatch.origin.lat, dispatch.origin.lng],
+            [dispatch.destination.lat, dispatch.destination.lng]
+          ];
 
       const line = L.polyline(coords, {
         color: color,

@@ -1,3 +1,5 @@
+require 'net/http'
+
 class LocationsController < ApplicationController
     before_action :set_products, only: [:new, :edit, :create, :update]
     before_action :set_location, only: [:show, :edit, :update, :destroy]
@@ -92,12 +94,15 @@ class LocationsController < ApplicationController
         dest = dispatch.customer_orders.map(&:location).find { |l| l&.latitude && l&.longitude }
         next unless dest
 
+        route_coords = fetch_osrm_route(origin.latitude, origin.longitude, dest.latitude, dest.longitude)
+
         {
           id: dispatch.id,
           origin: { lat: origin.latitude, lng: origin.longitude, name: origin.company_name },
           destination: { lat: dest.latitude, lng: dest.longitude, name: dest.company_name },
           driver: dispatch.driver&.full_name,
-          dispatch_date: dispatch.dispatch_date
+          dispatch_date: dispatch.dispatch_date,
+          route_coords: route_coords
         }
       end
 
@@ -149,6 +154,17 @@ class LocationsController < ApplicationController
   
     private
   
+    def fetch_osrm_route(orig_lat, orig_lng, dest_lat, dest_lng)
+      uri = URI("https://router.project-osrm.org/route/v1/driving/#{orig_lng},#{orig_lat};#{dest_lng},#{dest_lat}?overview=full&geometries=geojson")
+      response = Net::HTTP.get(uri)
+      data = JSON.parse(response)
+      coords = data.dig("routes", 0, "geometry", "coordinates")
+      # OSRM returns [lng, lat]; Leaflet expects [lat, lng]
+      coords&.map { |c| [c[1], c[0]] }
+    rescue StandardError
+      nil
+    end
+
     def location_params
       params.require(:location).permit(:city, :address, :location_category_id, :company_name, :phone_number, :state, :notes, :zip, :max_capacity, :uleage_90, :latitude, :longitude, :cutoff_percent, :marker_color, product_ids: [], methods: [:has_active_order?])
     end
