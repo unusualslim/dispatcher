@@ -159,10 +159,10 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_08_124247) do
     t.string "destination"
     t.boolean "needs_updating"
     t.bigint "vendor_id"
-    t.integer "destination_location_id"
     t.bigint "asset_id"
     t.integer "truck_id"
     t.integer "trailer_id"
+    t.integer "destination_location_id"
     t.index ["asset_id"], name: "index_dispatches_on_asset_id"
     t.index ["vendor_id"], name: "index_dispatches_on_vendor_id"
   end

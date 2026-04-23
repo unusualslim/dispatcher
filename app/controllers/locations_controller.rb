@@ -106,6 +106,8 @@ class LocationsController < ApplicationController
         }
       end
 
+      @samsara_vehicles = fetch_samsara_vehicles
+
       respond_to do |format|
         format.html
         format.json { render json: locations_json }
@@ -154,6 +156,33 @@ class LocationsController < ApplicationController
   
     private
   
+    def fetch_samsara_vehicles
+      api_key = ENV['SAMSARA_API_KEY']
+      return [] if api_key.blank?
+
+      uri = URI('https://api.samsara.com/fleet/vehicles/locations')
+      request = Net::HTTP::Get.new(uri)
+      request['Authorization'] = "Bearer #{api_key}"
+      request['Accept'] = 'application/json'
+
+      response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http| http.request(request) }
+      data = JSON.parse(response.body)
+
+      data.fetch('data', []).filter_map do |v|
+        loc = v['location']
+        next unless loc&.dig('latitude') && loc&.dig('longitude')
+        {
+          id:        v['id'],
+          name:      v['name'],
+          lat:       loc['latitude'],
+          lng:       loc['longitude'],
+          last_seen: loc['time']
+        }
+      end
+    rescue StandardError
+      []
+    end
+
     def fetch_osrm_route(orig_lat, orig_lng, dest_lat, dest_lng)
       uri = URI("https://router.project-osrm.org/route/v1/driving/#{orig_lng},#{orig_lat};#{dest_lng},#{dest_lat}?overview=full&geometries=geojson")
       response = Net::HTTP.get(uri)

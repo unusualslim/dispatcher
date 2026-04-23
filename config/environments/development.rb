@@ -62,6 +62,14 @@ Rails.application.configure do
   # Suppress logger output for asset requests.
   config.assets.quiet = true
   config.assets.debug = false
+
+  # Use memory store for Sprockets asset cache on Windows to avoid
+  # atomic file rename errors (Windows locks open files).
+  if Gem.win_platform?
+    config.assets.configure do |env|
+      env.cache = ActiveSupport::Cache::MemoryStore.new(size: 50.megabytes)
+    end
+  end
   # config.assets.digest = false
   # config.assets.compile = true
 

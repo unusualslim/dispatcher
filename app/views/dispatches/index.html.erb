@@ -69,12 +69,12 @@ document.addEventListener("DOMContentLoaded", function() {
             <% companyName = order.location&.company_name || "No Company Name Available" %>
 
             <% # Determine top product and total product count %>
-            <% top_product = order.customer_order_products.max_by { |cop| cop.quantity || 0 } %>
-            <% total_products_count = order.customer_order_products.count %>
+            <% top_product = order.customer_order_products.select { |cop| cop.product }.max_by { |cop| cop.quantity || 0 } %>
+            <% total_products_count = order.customer_order_products.count { |cop| cop.product } %>
             <% product_display = if total_products_count == 1
-                                    top_product.product.name
+                                    top_product&.product&.name || "Not Set"
                                   elsif total_products_count > 1
-                                    "#{top_product.product.name} + #{total_products_count - 1}"
+                                    "#{top_product&.product&.name || "Not Set"} + #{total_products_count - 1}"
                                   else
                                     "No Products"
                                   end %>
@@ -85,9 +85,9 @@ document.addEventListener("DOMContentLoaded", function() {
             <% unit_of_measurement = top_product&.product&.unit_of_measurement || "units" %>
             <% additional_products_count = total_products_count - 1 %>
             <% quantity_display = if total_products_count > 1
-                                    "#{top_product_quantity} #{unit_of_measurement} #{top_product.product.name} + #{additional_products_count} "
+                                    "#{top_product_quantity} #{unit_of_measurement} #{top_product&.product&.name || "Not Set"} + #{additional_products_count} "
                                   elsif total_products_count == 1
-                                    "#{top_product_quantity} #{unit_of_measurement} #{top_product.product.name}"
+                                    "#{top_product_quantity} #{unit_of_measurement} #{top_product&.product&.name || "Not Set"}"
                                   else
                                     "Not Set"
                                   end %>
@@ -435,19 +435,19 @@ document.addEventListener("DOMContentLoaded", function() {
               <% companyName = order.location&.company_name || "No Company Name Available" %>
 
               <% # Determine top product and total product count %>
-              <% top_product = order.customer_order_products.max_by { |cop| cop.quantity || 0 } %>
+              <% top_product = order.customer_order_products.select { |cop| cop.product }.max_by { |cop| cop.quantity || 0 } %>
               <% unit_of_measurement = top_product&.product&.unit_of_measurement || "units" %>
-              <% total_products_count = order.customer_order_products.count %>
-              <% product_display = total_products_count > 1 ? "#{top_product.product.name} + #{total_products_count - 1}" : top_product.product.name %>
+              <% total_products_count = order.customer_order_products.count { |cop| cop.product } %>
+              <% product_display = total_products_count > 1 ? "#{top_product&.product&.name || "Not Set"} + #{total_products_count - 1}" : (top_product&.product&.name || "No Products") %>
 
               <% # Calculate total quantity %>
               <% total_quantity = order.customer_order_products.sum { |cop| cop.quantity || 0 } %>
               <% top_product_quantity = top_product&.quantity || 0 %>
               <% additional_products_count = total_products_count - 1 %>
               <% quantity_display = if total_products_count > 1
-                        "#{top_product_quantity} #{unit_of_measurement} #{top_product.product.name} + #{additional_products_count}"
+                        "#{top_product_quantity} #{unit_of_measurement} #{top_product&.product&.name || "Not Set"} + #{additional_products_count}"
                       elsif total_products_count == 1
-                        "#{top_product_quantity} #{unit_of_measurement} #{top_product.product.name}"
+                        "#{top_product_quantity} #{unit_of_measurement} #{top_product&.product&.name || "Not Set"}"
                       else
                         "Not Set"
                       end %>
