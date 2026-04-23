@@ -56,7 +56,6 @@
     // Pass locations from Rails to JavaScript
     const locations = <%= raw @locations.to_json(only: [:id, :latitude, :longitude, :city, :company_name, :location_category_id, :marker_color], methods: :has_active_order) %>;
     const dispatchRoutes = <%= raw @dispatch_routes.to_json %>;
-    const samsaraVehicles = <%= raw (@samsara_vehicles || []).to_json %>;
 
     locations.forEach(location => {
       let markerColor = location.marker_color;
@@ -111,7 +110,8 @@
         color: color,
         weight: 3,
         opacity: 0.8,
-        dashArray: '6, 6'
+        dashArray: '6, 6',
+        _dispatchId: dispatch.id
       }).addTo(map);
 
       const driverLabel = dispatch.driver ? ` — ${dispatch.driver}` : '';
@@ -119,7 +119,7 @@
       line.bindPopup(`<strong>Dispatch #${dispatch.id}${driverLabel}</strong><br>${dispatch.origin.name} → ${dispatch.destination.name}${dateLabel}`);
     });
 
-    // Samsara live truck markers
+    // Samsara live truck markers — loaded async so page doesn't wait on API
     const truckIcon = L.divIcon({
       className: '',
       html: `<div style="
@@ -139,18 +139,35 @@
       popupAnchor: [0, -12]
     });
 
-    samsaraVehicles.forEach(vehicle => {
-      const lastSeen = vehicle.last_seen
-        ? new Date(vehicle.last_seen).toLocaleString()
-        : 'Unknown';
+    fetch('/locations/vehicles')
+      .then(r => r.json())
+      .then(vehicles => {
+        vehicles.forEach(vehicle => {
+          const lastSeen = vehicle.last_seen
+            ? new Date(vehicle.last_seen).toLocaleString()
+            : 'Unknown';
+          L.marker([vehicle.lat, vehicle.lng], { icon: truckIcon })
+            .addTo(map)
+            .bindPopup(`<strong>${vehicle.name}</strong><br><span style="color:#888; font-size:12px;">Last updated: ${lastSeen}</span>`);
+        });
+      })
+      .catch(() => {}); // silently ignore if Samsara is unreachable
 
-      L.marker([vehicle.lat, vehicle.lng], { icon: truckIcon })
-        .addTo(map)
-        .bindPopup(`
-          <strong>${vehicle.name}</strong><br>
-          <span style="color:#888; font-size:12px;">Last updated: ${lastSeen}</span>
-        `);
-    });
+    // Upgrade straight-line routes to OSRM-routed paths async
+    fetch('/locations/dispatch_routes')
+      .then(r => r.json())
+      .then(osrmRoutes => {
+        osrmRoutes.forEach(osrm => {
+          if (!osrm.route_coords || osrm.route_coords.length === 0) return;
+          // Find the existing polyline for this dispatch and update its coords
+          map.eachLayer(layer => {
+            if (layer instanceof L.Polyline && layer.options._dispatchId === osrm.id) {
+              layer.setLatLngs(osrm.route_coords);
+            }
+          });
+        });
+      })
+      .catch(() => {});
 
     // Add a Legend (Key) to the Top-Right Corner
     const legend = L.control({ position: "topright" });

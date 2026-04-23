@@ -76,18 +76,48 @@ class LocationsController < ApplicationController
       @locations = Location.includes(:location_category, :customer_orders)
                            .where.not(latitude: nil, longitude: nil)
 
-      locations_json = @locations.as_json(
-        only: [:id, :latitude, :longitude, :city, :company_name, :location_category_id],
-        methods: [:has_active_order] # This MUST match the method name EXACTLY
-      )
-
       active_dispatches = Dispatch.where(status: "Sent to Driver")
                                   .includes(customer_orders: :location)
 
       origin_locations = Location.where.not(latitude: nil, longitude: nil)
                                   .index_by(&:full_address_with_company)
 
+      # Straight-line routes only — OSRM routing loaded async after page paint
       @dispatch_routes = active_dispatches.filter_map do |dispatch|
+        origin = origin_locations[dispatch.origin]
+        next unless origin
+
+        dest = dispatch.customer_orders.map(&:location).find { |l| l&.latitude && l&.longitude }
+        next unless dest
+
+        {
+          id: dispatch.id,
+          origin: { lat: origin.latitude, lng: origin.longitude, name: origin.company_name },
+          destination: { lat: dest.latitude, lng: dest.longitude, name: dest.company_name },
+          driver: dispatch.driver&.full_name,
+          dispatch_date: dispatch.dispatch_date,
+          route_coords: []
+        }
+      end
+
+      respond_to do |format|
+        format.html
+        format.json { render json: @locations.as_json(only: [:id, :latitude, :longitude, :city, :company_name, :location_category_id], methods: [:has_active_order]) }
+      end
+    end
+
+    def vehicles
+      render json: fetch_samsara_vehicles
+    end
+
+    def dispatch_routes
+      active_dispatches = Dispatch.where(status: "Sent to Driver")
+                                  .includes(customer_orders: :location)
+
+      origin_locations = Location.where.not(latitude: nil, longitude: nil)
+                                  .index_by(&:full_address_with_company)
+
+      routes = active_dispatches.filter_map do |dispatch|
         origin = origin_locations[dispatch.origin]
         next unless origin
 
@@ -98,20 +128,11 @@ class LocationsController < ApplicationController
 
         {
           id: dispatch.id,
-          origin: { lat: origin.latitude, lng: origin.longitude, name: origin.company_name },
-          destination: { lat: dest.latitude, lng: dest.longitude, name: dest.company_name },
-          driver: dispatch.driver&.full_name,
-          dispatch_date: dispatch.dispatch_date,
-          route_coords: route_coords
+          route_coords: route_coords || []
         }
       end
 
-      @samsara_vehicles = fetch_samsara_vehicles
-
-      respond_to do |format|
-        format.html
-        format.json { render json: locations_json }
-      end
+      render json: routes
     end
 
     def toggle_status

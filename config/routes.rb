@@ -31,6 +31,8 @@ Rails.application.routes.draw do
   end
   
   get 'locations/map', to: 'locations#map', as: :locations_map
+  get 'locations/vehicles', to: 'locations#vehicles', as: :locations_vehicles
+  get 'locations/dispatch_routes', to: 'locations#dispatch_routes', as: :locations_dispatch_routes
   resources :locations do
     resources :location_products, only: [:new, :create, :edit, :update, :destroy]
     collection do
