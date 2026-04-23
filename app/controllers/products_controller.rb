@@ -116,6 +116,11 @@ class ProductsController < ApplicationController
         :price,
         :unit_of_measurement,
         :weight,
+        :is_raw_material,
+        :current_stock,
+        :reorder_point,
+        :safety_stock,
+        :cost_per_unit,
         product_components_attributes: [
           :id,
           :component_product_id,

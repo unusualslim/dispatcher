@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_04_08_124247) do
+ActiveRecord::Schema[7.0].define(version: 2026_04_23_184142) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -174,6 +174,22 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_08_124247) do
     t.index ["thing_id"], name: "index_dispatches_things_on_thing_id"
   end
 
+  create_table "inventory_transactions", force: :cascade do |t|
+    t.bigint "product_id", null: false
+    t.decimal "quantity", precision: 14, scale: 3, null: false
+    t.string "direction", null: false
+    t.string "transactable_type"
+    t.bigint "transactable_id"
+    t.string "reference_number"
+    t.text "notes"
+    t.bigint "created_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_inventory_transactions_on_created_by_id"
+    t.index ["product_id"], name: "index_inventory_transactions_on_product_id"
+    t.index ["transactable_type", "transactable_id"], name: "idx_inv_trans_on_transactable"
+  end
+
   create_table "location_categories", force: :cascade do |t|
     t.string "name"
     t.datetime "created_at", null: false
@@ -255,6 +271,12 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_08_124247) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.decimal "quantity", precision: 12, scale: 3
+    t.string "lot_number"
+    t.string "qc_status", default: "pending"
+    t.text "qc_notes"
+    t.string "qc_by"
+    t.datetime "qc_at"
+    t.index ["lot_number"], name: "index_production_order_batches_on_lot_number", unique: true
     t.index ["production_order_id"], name: "index_production_order_batches_on_production_order_id"
   end
 
@@ -268,6 +290,9 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_08_124247) do
     t.integer "position"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "product_id"
+    t.decimal "quantity_actual", precision: 12, scale: 3
+    t.index ["product_id"], name: "index_production_order_components_on_product_id"
     t.index ["production_order_id", "position"], name: "idx_poc_on_po_id_pos"
     t.index ["production_order_id"], name: "index_production_order_components_on_production_order_id"
   end
@@ -307,6 +332,33 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_08_124247) do
     t.datetime "updated_at", null: false
     t.string "unit_of_measurement"
     t.decimal "weight"
+    t.boolean "is_raw_material", default: false, null: false
+    t.decimal "current_stock", precision: 14, scale: 3, default: "0.0"
+    t.decimal "reorder_point", precision: 14, scale: 3
+    t.decimal "safety_stock", precision: 14, scale: 3, default: "0.0"
+    t.decimal "cost_per_unit", precision: 12, scale: 4
+  end
+
+  create_table "purchase_orders", force: :cascade do |t|
+    t.bigint "vendor_id", null: false
+    t.bigint "product_id", null: false
+    t.decimal "quantity", precision: 14, scale: 3, null: false
+    t.decimal "unit_cost", precision: 12, scale: 4
+    t.string "status", default: "draft", null: false
+    t.string "trigger_type"
+    t.text "trigger_reason"
+    t.bigint "approved_by_id"
+    t.datetime "submitted_at"
+    t.date "expected_delivery_date"
+    t.datetime "received_at"
+    t.bigint "received_by_id"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_id"], name: "index_purchase_orders_on_product_id"
+    t.index ["status"], name: "index_purchase_orders_on_status"
+    t.index ["trigger_type"], name: "index_purchase_orders_on_trigger_type"
+    t.index ["vendor_id"], name: "index_purchase_orders_on_vendor_id"
   end
 
   create_table "things", force: :cascade do |t|
@@ -340,6 +392,10 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_08_124247) do
     t.string "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "lead_time_days"
+    t.string "contact_name"
+    t.string "email"
+    t.string "phone"
   end
 
   create_table "work_orders", force: :cascade do |t|
@@ -373,6 +429,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_08_124247) do
   add_foreign_key "dispatch_messages", "users"
   add_foreign_key "dispatches", "things", column: "asset_id"
   add_foreign_key "dispatches", "vendors"
+  add_foreign_key "inventory_transactions", "products"
   add_foreign_key "location_contacts", "locations"
   add_foreign_key "location_products", "locations", on_delete: :cascade
   add_foreign_key "location_products", "products"
@@ -382,9 +439,12 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_08_124247) do
   add_foreign_key "product_components", "products", column: "component_product_id"
   add_foreign_key "production_order_batches", "production_orders"
   add_foreign_key "production_order_components", "production_orders"
+  add_foreign_key "production_order_components", "products"
   add_foreign_key "production_orders", "customers"
   add_foreign_key "production_orders", "locations"
   add_foreign_key "production_orders", "products"
+  add_foreign_key "purchase_orders", "products"
+  add_foreign_key "purchase_orders", "vendors"
   add_foreign_key "things", "dispatches"
   add_foreign_key "work_orders", "vendors"
 end

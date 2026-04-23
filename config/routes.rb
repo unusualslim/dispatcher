@@ -79,6 +79,15 @@ Rails.application.routes.draw do
   end
 
 
+  get 'mrp', to: 'mrp#index', as: :mrp
+
+  resources :purchase_orders, only: [:index, :new, :create, :show] do
+    member do
+      patch :approve
+      patch :receive
+    end
+  end
+
   resources :things
 
   resources :announcements

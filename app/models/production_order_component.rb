@@ -1,5 +1,6 @@
 class ProductionOrderComponent < ApplicationRecord
   belongs_to :production_order
+  belongs_to :product, optional: true
 
   before_validation :default_position
 

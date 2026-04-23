@@ -1,0 +1,81 @@
+<div class="container mt-4" style="max-width: 700px;">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">Purchase Order #<%= @purchase_order.id %></h1>
+    <%= link_to 'All POs', purchase_orders_path, class: 'btn btn-outline-secondary btn-sm' %>
+  </div>
+
+  <% if notice %>
+    <div class="alert alert-success"><%= notice %></div>
+  <% end %>
+  <% if alert %>
+    <div class="alert alert-danger"><%= alert %></div>
+  <% end %>
+
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <dl class="row mb-0">
+        <dt class="col-4">Status</dt>
+        <dd class="col-8">
+          <% bg = { 'draft' => 'secondary', 'pending_approval' => 'warning', 'approved' => 'primary',
+                    'submitted' => 'info', 'received' => 'success', 'cancelled' => 'danger' }
+             color = bg[@purchase_order.status] || 'secondary' %>
+          <span class="badge bg-<%= color %>"><%= @purchase_order.status.humanize %></span>
+        </dd>
+
+        <dt class="col-4">Product</dt>
+        <dd class="col-8"><%= link_to @purchase_order.product.name, product_path(@purchase_order.product) %></dd>
+
+        <dt class="col-4">Vendor</dt>
+        <dd class="col-8"><%= @purchase_order.vendor.name %></dd>
+
+        <dt class="col-4">Quantity</dt>
+        <dd class="col-8"><%= number_with_precision(@purchase_order.quantity, precision: 1) %> <%= @purchase_order.product.unit_of_measurement %></dd>
+
+        <dt class="col-4">Unit Cost</dt>
+        <dd class="col-8"><%= @purchase_order.unit_cost ? number_to_currency(@purchase_order.unit_cost) : '—' %></dd>
+
+        <dt class="col-4">Total Cost</dt>
+        <dd class="col-8"><%= @purchase_order.total_cost ? number_to_currency(@purchase_order.total_cost) : '—' %></dd>
+
+        <dt class="col-4">Trigger</dt>
+        <dd class="col-8"><%= @purchase_order.trigger_type&.humanize || '—' %></dd>
+
+        <% if @purchase_order.trigger_reason.present? %>
+          <dt class="col-4">Reason</dt>
+          <dd class="col-8 text-muted small"><%= @purchase_order.trigger_reason %></dd>
+        <% end %>
+
+        <dt class="col-4">Expected Delivery</dt>
+        <dd class="col-8"><%= @purchase_order.expected_delivery_date&.strftime('%B %d, %Y') || '—' %></dd>
+
+        <% if @purchase_order.approved_by.present? %>
+          <dt class="col-4">Approved By</dt>
+          <dd class="col-8"><%= @purchase_order.approved_by.full_name %></dd>
+        <% end %>
+
+        <% if @purchase_order.received_at.present? %>
+          <dt class="col-4">Received At</dt>
+          <dd class="col-8"><%= @purchase_order.received_at.strftime('%B %d, %Y %H:%M') %></dd>
+        <% end %>
+
+        <% if @purchase_order.notes.present? %>
+          <dt class="col-4">Notes</dt>
+          <dd class="col-8"><%= @purchase_order.notes %></dd>
+        <% end %>
+      </dl>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2">
+    <% if @purchase_order.status == 'draft' %>
+      <%= button_to 'Approve', approve_purchase_order_path(@purchase_order),
+            method: :patch, class: 'btn btn-success',
+            data: { confirm: 'Approve this purchase order?' } %>
+    <% end %>
+    <% if @purchase_order.status == 'approved' %>
+      <%= button_to 'Mark Received', receive_purchase_order_path(@purchase_order),
+            method: :patch, class: 'btn btn-primary',
+            data: { confirm: "Mark received? This will add #{number_with_precision(@purchase_order.quantity, precision: 1)} #{@purchase_order.product.unit_of_measurement} to inventory." } %>
+    <% end %>
+  </div>
+</div>

@@ -1,35 +1,66 @@
-<h1>Edit Product</h1>
+<div class="container mt-4" style="max-width: 680px;">
+  <h1>Edit Product</h1>
 
-<%= form_with model: @product, local: true do |form| %>
-  <% if @product.errors.any? %>
-    <div style="color: red">
-      <h2><%= pluralize(@product.errors.count, "error") %> prohibited this product from being saved:</h2>
-      <ul>
-        <% @product.errors.full_messages.each do |message| %>
-          <li><%= message %></li>
-        <% end %>
-      </ul>
+  <%= form_with model: @product, local: true do |form| %>
+    <% if @product.errors.any? %>
+      <div class="alert alert-danger">
+        <ul class="mb-0">
+          <% @product.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div class="card shadow-sm mb-3">
+      <div class="card-header fw-semibold">Basic Info</div>
+      <div class="card-body row g-3">
+        <div class="col-12">
+          <%= form.label :name, class: 'form-label' %>
+          <%= form.text_field :name, class: 'form-control' %>
+        </div>
+        <div class="col-6">
+          <%= form.label :unit_of_measurement, class: 'form-label' %>
+          <%= form.text_field :unit_of_measurement, class: 'form-control' %>
+        </div>
+        <div class="col-6">
+          <%= form.label :weight, "Weight (lbs/unit)", class: 'form-label' %>
+          <%= form.number_field :weight, step: 0.001, class: 'form-control' %>
+        </div>
+        <div class="col-12">
+          <div class="form-check form-switch mt-1">
+            <%= form.check_box :is_raw_material, class: 'form-check-input', role: 'switch' %>
+            <%= form.label :is_raw_material, "Raw Material (input to manufacturing)", class: 'form-check-label' %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow-sm mb-3">
+      <div class="card-header fw-semibold">Inventory & Reorder</div>
+      <div class="card-body row g-3">
+        <div class="col-6">
+          <%= form.label :current_stock, "Current Stock", class: 'form-label' %>
+          <%= form.number_field :current_stock, step: 0.001, class: 'form-control' %>
+        </div>
+        <div class="col-6">
+          <%= form.label :cost_per_unit, "Cost per Unit ($)", class: 'form-label' %>
+          <%= form.number_field :cost_per_unit, step: 0.0001, class: 'form-control' %>
+        </div>
+        <div class="col-6">
+          <%= form.label :reorder_point, "Reorder Point", class: 'form-label' %>
+          <%= form.number_field :reorder_point, step: 0.001, class: 'form-control' %>
+        </div>
+        <div class="col-6">
+          <%= form.label :safety_stock, "Safety Stock", class: 'form-label' %>
+          <%= form.number_field :safety_stock, step: 0.001, class: 'form-control' %>
+        </div>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <%= form.submit 'Update Product', class: 'btn btn-success' %>
+      <%= link_to 'Cancel', products_path, class: 'btn btn-secondary' %>
     </div>
   <% end %>
-
-  <div class="field">
-    <%= form.label :name %>
-    <%= form.text_field :name, class: 'form-control' %>
-  </div>
-
-  <div class="field">
-    <%= form.label :unit_of_measurement %>
-    <%= form.text_field :unit_of_measurement, class: 'form-control' %>
-  </div>
-
-  <div class="field">
-    <%= form.label "Weight (lbs per unit)" %>
-    <%= form.text_field :weight, class: 'form-control' %>
-  </div>
-
-  <div class="actions">
-    <%= form.submit 'Update Product', class: 'btn btn-success' %>
-  </div>
-<% end %>
-
-<%= link_to 'Back', products_path, class: 'btn btn-secondary' %>
+</div>

@@ -1,0 +1,166 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="mb-0">MRP Dashboard</h1>
+  <div class="d-flex gap-2">
+    <%= link_to 'Purchase Orders', purchase_orders_path, class: 'btn btn-outline-secondary btn-sm' %>
+    <%= link_to 'Products', products_path, class: 'btn btn-outline-secondary btn-sm' %>
+    <%= link_to 'New PO', new_purchase_order_path, class: 'btn btn-primary btn-sm' %>
+  </div>
+</div>
+
+<%# ── Requirements from open orders ─────────────────────────────────────────── %>
+<div class="card shadow-sm mb-4">
+  <div class="card-header fw-semibold d-flex justify-content-between">
+    <span>Material Requirements — Next 30 Days</span>
+    <span class="text-muted small">Based on open customer orders</span>
+  </div>
+  <div class="card-body p-0">
+    <% if @requirements.empty? %>
+      <div class="p-4 text-muted text-center">
+        No open orders with BOM-linked products in the next 30 days.
+        <br><small>Set up BOM components on products and mark raw materials to see requirements here.</small>
+      </div>
+    <% else %>
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Raw Material</th>
+            <th>Needed</th>
+            <th>Available</th>
+            <th>Shortfall</th>
+            <th>Preferred Vendor</th>
+            <th>Lead Time</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @requirements.each do |req| %>
+            <tr class="<%= req.urgent ? 'table-danger' : '' %>">
+              <td class="fw-semibold"><%= req.product.name %></td>
+              <td><%= number_with_precision(req.total_needed, precision: 1) %> <%= req.product.unit_of_measurement %></td>
+              <td><%= number_with_precision(req.available_stock, precision: 1) %></td>
+              <td>
+                <% if req.shortfall > 0 %>
+                  <span class="text-danger fw-bold"><%= number_with_precision(req.shortfall, precision: 1) %></span>
+                <% else %>
+                  <span class="text-success">—</span>
+                <% end %>
+              </td>
+              <td><%= req.vendor&.name || '<span class="text-muted">None on file</span>'.html_safe %></td>
+              <td><%= req.lead_time_days ? "#{req.lead_time_days} days" : '—' %></td>
+              <td>
+                <% if req.shortfall > 0 %>
+                  <%= link_to 'Create PO',
+                        new_purchase_order_path(product_id: req.product.id),
+                        class: 'btn btn-sm btn-danger' %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  </div>
+</div>
+
+<%# ── Raw material stock levels ──────────────────────────────────────────────── %>
+<div class="card shadow-sm mb-4">
+  <div class="card-header fw-semibold">Raw Material Stock Levels</div>
+  <div class="card-body p-0">
+    <% if @low_stock.empty? %>
+      <div class="p-4 text-muted text-center">No raw materials configured yet. Edit products to set reorder points.</div>
+    <% else %>
+      <table class="table table-sm mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Product</th>
+            <th>Stock</th>
+            <th>Safety Stock</th>
+            <th>Reorder Point</th>
+            <th>Available</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @low_stock.each do |p| %>
+            <% status = p.stock_status %>
+            <tr>
+              <td><%= link_to p.name, product_path(p), class: 'text-decoration-none' %></td>
+              <td><%= number_with_precision(p.current_stock, precision: 1) %> <%= p.unit_of_measurement %></td>
+              <td><%= number_with_precision(p.safety_stock, precision: 1) %></td>
+              <td><%= number_with_precision(p.reorder_point, precision: 1) %></td>
+              <td><%= number_with_precision(p.available_stock, precision: 1) %></td>
+              <td>
+                <% if status == :critical %>
+                  <span class="badge bg-danger">Critical</span>
+                <% elsif status == :low %>
+                  <span class="badge bg-warning text-dark">Low</span>
+                <% else %>
+                  <span class="badge bg-success">OK</span>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  </div>
+</div>
+
+<%# ── Draft & Pending POs ─────────────────────────────────────────────────────── %>
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header fw-semibold d-flex justify-content-between">
+        Draft POs
+        <span class="badge bg-secondary"><%= @draft_pos.count %></span>
+      </div>
+      <div class="card-body p-0">
+        <% if @draft_pos.empty? %>
+          <div class="p-3 text-muted small text-center">No draft purchase orders.</div>
+        <% else %>
+          <table class="table table-sm mb-0">
+            <thead class="table-light"><tr><th>Product</th><th>Vendor</th><th>Qty</th><th></th></tr></thead>
+            <tbody>
+              <% @draft_pos.each do |po| %>
+                <tr>
+                  <td><%= po.product&.name %></td>
+                  <td><%= po.vendor&.name %></td>
+                  <td><%= number_with_precision(po.quantity, precision: 1) %></td>
+                  <td><%= link_to 'View', purchase_order_path(po), class: 'btn btn-xs btn-sm btn-outline-secondary' %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header fw-semibold d-flex justify-content-between">
+        Pending Approval
+        <span class="badge bg-warning text-dark"><%= @pending_pos.count %></span>
+      </div>
+      <div class="card-body p-0">
+        <% if @pending_pos.empty? %>
+          <div class="p-3 text-muted small text-center">No POs awaiting approval.</div>
+        <% else %>
+          <table class="table table-sm mb-0">
+            <thead class="table-light"><tr><th>Product</th><th>Vendor</th><th>Qty</th><th></th></tr></thead>
+            <tbody>
+              <% @pending_pos.each do |po| %>
+                <tr>
+                  <td><%= po.product&.name %></td>
+                  <td><%= po.vendor&.name %></td>
+                  <td><%= number_with_precision(po.quantity, precision: 1) %></td>
+                  <td><%= link_to 'View', purchase_order_path(po), class: 'btn btn-sm btn-outline-secondary' %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
