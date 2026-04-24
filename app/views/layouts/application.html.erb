@@ -8,7 +8,6 @@
     <%= csp_meta_tag %>
 
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload", media: 'all' %>
-    <%= stylesheet_link_tag 'custom', media: 'all' %>
     <%= stylesheet_link_tag 'trix' %>
     <%= stylesheet_link_tag 'fullcalendar' %>
     <%= javascript_include_tag 'fullcalendar' %>
@@ -21,21 +20,53 @@
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js'></script>
   </head>
 
-<body>
-  <%= render 'layouts/header' %>
+  <body class="app-layout">
+    <%= render 'layouts/sidebar' %>
 
-  <!-- Flash Messages -->
-  <div class="container mt-3">
-    <% if flash[:notice] %>
-      <div class="alert alert-success"><%= flash[:notice] %></div>
-    <% end %>
-    <% if flash[:alert] %>
-      <div class="alert alert-danger"><%= flash[:alert] %></div>
-    <% end %>
-  </div>
+    <div class="main-wrapper">
+      <%= render 'layouts/header' %>
 
-  <div>
-    <%= yield %>
-  </div>
-</body>
+      <!-- Flash Messages -->
+      <div class="container-fluid px-4 pt-3">
+        <% if flash[:notice] %>
+          <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+            <%= flash[:notice] %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        <% end %>
+        <% if flash[:alert] %>
+          <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+            <%= flash[:alert] %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        <% end %>
+      </div>
+
+      <main class="main-content">
+        <%= yield %>
+      </main>
+    </div>
+
+    <script>
+      (function() {
+        var toggle = document.getElementById('sidebarToggle');
+        var close  = document.getElementById('sidebarClose');
+        var overlay = document.getElementById('sidebarOverlay');
+        var sidebar = document.getElementById('sidebar');
+
+        function openSidebar() {
+          sidebar.classList.add('sidebar-open');
+          overlay.classList.remove('d-none');
+        }
+        function closeSidebar() {
+          sidebar.classList.remove('sidebar-open');
+          overlay.classList.add('d-none');
+        }
+
+        if (toggle)  toggle.addEventListener('click', openSidebar);
+        if (close)   close.addEventListener('click', closeSidebar);
+        if (overlay) overlay.addEventListener('click', closeSidebar);
+      })();
+    </script>
+  </body>
 </html>

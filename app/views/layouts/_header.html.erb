@@ -1,141 +1,18 @@
-<nav class="navbar navbar-expand-lg navbar-light bg-light w-100" data-turbo="false">
-  <div class="container-fluid px-4">
-    <!-- Left-side buttons -->
-    <div class="d-flex align-items-center gap-3">
-      <a class="btn btn-primary" href="<%= new_dispatch_path %>">New Dispatch</a>
-      <%= link_to "LoadNTrucks", dispatches_path, class: "navbar-brand fw-bold" %>
-    </div>
+<header class="topbar d-flex align-items-center justify-content-between px-4" data-turbo="false">
+  <!-- Mobile hamburger -->
+  <button class="sidebar-toggle-btn d-lg-none me-3" id="sidebarToggle" type="button">
+    <i class="bi bi-list fs-4"></i>
+  </button>
 
-    <!-- Navbar toggler for mobile -->
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-      aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
+  <div class="flex-grow-1"></div>
 
-    <!-- Navbar links -->
-    <div class="collapse navbar-collapse justify-content-center gap-3" id="navbarNav">
-      <ul class="navbar-nav d-flex align-items-center gap-3">
-        <% if user_signed_in? %>
-          <%= link_to "New Order", new_customer_order_path, class: "btn btn-success" %>
-          
-          <!-- Orders Button -->
-          <li><%= link_to 'Orders', customer_orders_path, class: 'nav-link' %></li>
-
-          <!-- Dispatches Dropdown -->
-          <li><%= link_to 'Dispatches', view_dispatches_path, class: 'nav-link' %></li>
-
-          <!-- Production Orders -->
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="<%= kanban_production_orders_path %>" id="prodOrdersDropdown"
-              role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              Production Orders
-            </a>
-            <ul class="dropdown-menu" aria-labelledby="prodOrdersDropdown">
-              <li><%= link_to 'Kanban', kanban_production_orders_path, class: 'dropdown-item' %></li>
-              <li><%= link_to 'Table', production_orders_path, class: 'dropdown-item' %></li>
-            </ul>
-          </li>
-
-          <!-- MRP Dropdown -->
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="<%= mrp_path %>" id="mrpDropdown"
-              role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              MRP
-            </a>
-            <ul class="dropdown-menu" aria-labelledby="mrpDropdown">
-              <li><%= link_to 'Dashboard', mrp_path, class: 'dropdown-item' %></li>
-              <li><%= link_to 'Purchase Orders', purchase_orders_path, class: 'dropdown-item' %></li>
-              <li><%= link_to 'New PO', new_purchase_order_path, class: 'dropdown-item' %></li>
-              <li><hr class="dropdown-divider"></li>
-              <li><%= link_to 'Inventory History', inventory_transactions_path, class: 'dropdown-item' %></li>
-              <li><%= link_to 'Adjust Inventory', new_inventory_adjustment_path, class: 'dropdown-item' %></li>
-            </ul>
-          </li>
-
-          <!-- Resources Dropdown -->
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="resourcesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              Resources
-            </a>
-            <ul class="dropdown-menu" aria-labelledby="resourcesDropdown">
-              <li><%= link_to 'Customers', customers_path, class: 'dropdown-item' %></li>
-              <li><%= link_to 'Locations', locations_path, class: 'dropdown-item' %></li>
-              <li><%= link_to 'Products', products_path, class: 'dropdown-item' %></li>
-              <li><%= link_to 'Vendors', vendors_path, class: 'dropdown-item' %></li>
-              <li><%= link_to 'Assets', things_path, class: 'dropdown-item' %></li>
-              <li><%= link_to 'Work Orders', work_orders_path, class: 'dropdown-item' %></li>
-            </ul>
-          </li>
-          
-          <!-- Communications Dropdown -->
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="communicationsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              Communication
-            </a>
-            <ul class="dropdown-menu" aria-labelledby="communicationsDropdown">
-              <li><%= link_to 'Messages', dispatch_messages_path, class: 'dropdown-item' %></li>
-              <li><%= link_to 'Announcements', announcements_path, class: 'dropdown-item' %></li>
-            </ul>
-          </li>
-
-          <!-- Drivers Dropdown -->
-          <li><%= link_to 'Drivers', users_path, class: 'nav-link' %></li>
-
-          <!-- Views Dropdown -->
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="viewsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              Views
-            </a>
-            <ul class="dropdown-menu" aria-labelledby="viewsDropdown">
-              <li><%= link_to 'Kanban', kanban_dispatches_path, class: 'dropdown-item' %></li>
-              <li><%= link_to 'Calendar', calendar_path, class: 'dropdown-item' %></li>
-              <li><%= link_to 'Map', locations_map_path, class: 'dropdown-item' %></li>
-            </ul>
-          </li>
-
-          <!-- Profile and Logout -->
-          <li class="nav-item"><%= link_to 'Profile', edit_user_registration_path, class: 'nav-link' %></li>
-          <li class="nav-item"><%= link_to 'Logout', destroy_user_session_path, method: :delete, class: 'nav-link' %></li>
-        <% else %>
-          <li class="nav-item"><%= link_to 'Sign Up', new_user_registration_path, class: 'nav-link' %></li>
-          <li class="nav-item"><%= link_to 'Sign In', new_user_session_path, class: 'nav-link' %></li>
-        <% end %>
-      </ul>
-    </div>
-
-
-    <!-- Search Bar (Right-aligned) -->
-    <div class="ms-auto">
-      <%= form_with url: search_customers_path, method: :get, class: "d-flex", local: true do |form| %>
-        <%= form.text_field :query, placeholder: "Search phone numbers...", class: "form-control me-2" %>
-        <%= form.submit "Search", class: "btn btn-outline-primary" %>
-      <% end %>
-    </div>
+  <!-- Quick actions -->
+  <div class="d-flex align-items-center gap-2">
+    <% if user_signed_in? %>
+      <%= link_to "New Order", new_customer_order_path, class: "btn btn-success btn-sm" %>
+      <%= link_to "New Dispatch", new_dispatch_path, class: "btn btn-primary btn-sm" %>
+    <% else %>
+      <%= link_to 'Sign In', new_user_session_path, class: 'btn btn-outline-light btn-sm' %>
+    <% end %>
   </div>
-</nav>
-
-<style>
-  .navbar-nav .dropdown:hover .dropdown-menu {
-    display: block;
-  }
-</style>
-
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    var dropdowns = document.querySelectorAll('.nav-item.dropdown');
-    dropdowns.forEach(function(dropdown) {
-      dropdown.addEventListener('mouseover', function() {
-        var menu = dropdown.querySelector('.dropdown-menu');
-        var toggle = dropdown.querySelector('.dropdown-toggle');
-        toggle.setAttribute('aria-expanded', 'true');
-        menu.classList.add('show');
-      });
-      dropdown.addEventListener('mouseout', function() {
-        var menu = dropdown.querySelector('.dropdown-menu');
-        var toggle = dropdown.querySelector('.dropdown-toggle');
-        toggle.setAttribute('aria-expanded', 'false');
-        menu.classList.remove('show');
-      });
-    });
-  });
-</script>
+</header>
