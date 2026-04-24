@@ -1,0 +1,67 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="mb-0">Inventory History</h1>
+    <% if @product %>
+      <div class="text-muted small">Filtered: <%= @product.name %> — Current stock: <strong><%= number_with_precision(@product.current_stock, precision: 1) %> <%= @product.unit_of_measurement %></strong></div>
+    <% end %>
+  </div>
+  <div class="d-flex gap-2">
+    <%= link_to 'New Adjustment', new_inventory_adjustment_path, class: 'btn btn-primary btn-sm' %>
+    <%= link_to 'MRP Dashboard', mrp_path, class: 'btn btn-outline-secondary btn-sm' %>
+  </div>
+</div>
+
+<%# Filter bar %>
+<div class="card shadow-sm mb-3">
+  <div class="card-body py-2">
+    <%= form_with url: inventory_transactions_path, method: :get, local: true, class: 'd-flex gap-2 align-items-center flex-wrap' do |f| %>
+      <select name="product_id" class="form-select form-select-sm" style="max-width: 250px;" onchange="this.form.submit()">
+        <option value="">All Products</option>
+        <% @products.each do |p| %>
+          <option value="<%= p.id %>" <%= 'selected' if @product&.id == p.id %>><%= p.name %></option>
+        <% end %>
+      </select>
+      <% if @product %>
+        <%= link_to 'Clear Filter', inventory_transactions_path, class: 'btn btn-sm btn-outline-secondary' %>
+      <% end %>
+    <% end %>
+  </div>
+</div>
+
+<% if @transactions.empty? %>
+  <div class="text-center text-muted py-5">No inventory transactions recorded yet.</div>
+<% else %>
+  <table class="table table-hover table-sm">
+    <thead class="table-light">
+      <tr>
+        <th>Date</th>
+        <th>Product</th>
+        <th>Direction</th>
+        <th>Quantity</th>
+        <th>Reference</th>
+        <th>Notes</th>
+        <th>By</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @transactions.each do |t| %>
+        <tr>
+          <td class="text-nowrap"><%= t.created_at.strftime('%b %d %Y %H:%M') %></td>
+          <td><%= link_to t.product.name, product_path(t.product), class: 'text-decoration-none' %></td>
+          <td>
+            <% if t.direction == 'in' %>
+              <span class="badge bg-success">+ In</span>
+            <% else %>
+              <span class="badge bg-danger">− Out</span>
+            <% end %>
+          </td>
+          <td class="fw-semibold"><%= number_with_precision(t.quantity, precision: 3) %> <%= t.product.unit_of_measurement %></td>
+          <td class="text-muted small"><%= t.reference_number || '—' %></td>
+          <td class="text-muted small"><%= t.notes || '—' %></td>
+          <td class="text-muted small"><%= t.created_by&.full_name || '—' %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <div class="text-muted small text-end">Showing most recent 200 transactions</div>
+<% end %>

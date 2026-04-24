@@ -6,7 +6,7 @@ class ProductsController < ApplicationController
     end
   
     def new
-      @product = Product.new
+      @product = Product.new(unit_of_measurement: 'Each')
     end
   
     def create

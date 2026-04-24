@@ -1,0 +1,66 @@
+<div class="container mt-4" style="max-width: 580px;">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">Inventory Adjustment</h1>
+    <%= link_to 'View History', inventory_transactions_path, class: 'btn btn-outline-secondary btn-sm' %>
+  </div>
+
+  <% if alert %>
+    <div class="alert alert-danger"><%= alert %></div>
+  <% end %>
+
+  <%= form_with url: inventory_adjustments_path, method: :post, local: true do |f| %>
+    <div class="card shadow-sm">
+      <div class="card-body row g-3">
+
+        <div class="col-12">
+          <label class="form-label fw-semibold">Product</label>
+          <select name="product_id" class="form-select" required>
+            <option value="">Select product...</option>
+            <% @products.each do |p| %>
+              <option value="<%= p.id %>"
+                <%= 'selected' if @selected_product&.id == p.id %>>
+                <%= p.name %> (<%= number_with_precision(p.current_stock, precision: 1) %> <%= p.unit_of_measurement %> on hand)
+              </option>
+            <% end %>
+          </select>
+        </div>
+
+        <div class="col-6">
+          <label class="form-label fw-semibold">Direction</label>
+          <select name="direction" class="form-select" required>
+            <option value="in">+ Add to Stock</option>
+            <option value="out">− Remove from Stock</option>
+          </select>
+        </div>
+
+        <div class="col-6">
+          <label class="form-label fw-semibold">Quantity</label>
+          <input type="number" name="quantity" step="0.001" min="0.001"
+                 class="form-control" placeholder="0.000" required>
+        </div>
+
+        <div class="col-12">
+          <label class="form-label fw-semibold">Reason</label>
+          <select name="reason_code" class="form-select" required>
+            <option value="">Select reason...</option>
+            <% @reason_codes.each do |r| %>
+              <option value="<%= r %>"><%= r %></option>
+            <% end %>
+          </select>
+        </div>
+
+        <div class="col-12">
+          <label class="form-label">Additional Notes <span class="text-muted small">(optional)</span></label>
+          <textarea name="notes" class="form-control" rows="2"
+                    placeholder="e.g. tank 3, shift supervisor initials..."></textarea>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-3">
+      <button type="submit" class="btn btn-success">Record Adjustment</button>
+      <%= link_to 'Cancel', inventory_transactions_path, class: 'btn btn-secondary' %>
+    </div>
+  <% end %>
+</div>

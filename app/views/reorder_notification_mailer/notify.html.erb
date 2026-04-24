@@ -1,0 +1,30 @@
+<p>Hi <%= @user.first_name %>,</p>
+
+<p>The automated reorder check has created <strong><%= @purchase_orders.count %> draft purchase order(s)</strong> for products that have fallen below their reorder points.</p>
+
+<table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+  <thead>
+    <tr style="background: #f5f5f5;">
+      <th>Product</th>
+      <th>Current Stock</th>
+      <th>Reorder Point</th>
+      <th>Order Qty</th>
+      <th>Vendor</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @purchase_orders.each do |po| %>
+      <tr>
+        <td><%= po.product.name %></td>
+        <td><%= number_with_precision(po.product.current_stock, precision: 1) %> <%= po.product.unit_of_measurement %></td>
+        <td><%= number_with_precision(po.product.reorder_point, precision: 1) %></td>
+        <td><%= number_with_precision(po.quantity, precision: 1) %></td>
+        <td><%= po.vendor&.name || 'None assigned' %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<p>Please review and approve these orders in the <a href="<%= purchase_orders_url %>">Purchase Orders</a> section.</p>
+
+<p style="color: #888; font-size: 12px;">This is an automated message from LoadNTrucks.</p>

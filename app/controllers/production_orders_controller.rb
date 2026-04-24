@@ -91,10 +91,7 @@ class ProductionOrdersController < ApplicationController
         format.turbo_stream { redirect_to @production_order, notice: "Production order updated." }
       end
     else
-      respond_to do |format|
-        format.html { render :edit, status: :unprocessable_entity }
-        format.turbo_stream { render :edit, status: :unprocessable_entity }
-      end
+      render :edit, status: :unprocessable_entity
     end
   end
 
@@ -137,7 +134,7 @@ class ProductionOrdersController < ApplicationController
       :approved_by,
 
       production_order_batches_attributes: [
-        :id, :batch_number, :quantity, :_destroy
+        :id, :batch_number, :quantity, :qc_status, :qc_notes, :qc_by, :_destroy
       ],
 
       # ✅ IMPORTANT: this must be EXACTLY this key name

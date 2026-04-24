@@ -179,6 +179,78 @@
 </div>
 
 
+      <%# QC & Batch Completion Panel %>
+      <div class="card shadow-sm mt-3">
+        <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+          Batch QC & Completion
+          <span class="text-muted small">Pass QC first, then complete to update inventory</span>
+        </div>
+        <div class="card-body p-0">
+          <% if @production_order.production_order_batches.any? %>
+            <% @production_order.production_order_batches.each do |batch| %>
+              <div class="border-bottom p-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <strong><%= batch.batch_number %></strong>
+                  <% qc_color = { 'pending' => 'secondary', 'passed' => 'success', 'hold' => 'warning', 'rejected' => 'danger' }[batch.qc_status] || 'secondary' %>
+                  <span class="badge bg-<%= qc_color %>"><%= batch.qc_status.upcase %></span>
+                </div>
+
+                <div class="text-muted small mb-2">
+                  Qty: <%= number_with_precision(batch.quantity, precision: 3) %>
+                  <% if batch.lot_number.present? %>
+                    &nbsp;|&nbsp; Lot: <strong><%= batch.lot_number %></strong>
+                  <% end %>
+                  <% if batch.qc_by.present? %>
+                    &nbsp;|&nbsp; QC by: <%= batch.qc_by %>
+                  <% end %>
+                  <% if batch.qc_notes.present? %>
+                    <div class="mt-1">Notes: <%= batch.qc_notes %></div>
+                  <% end %>
+                </div>
+
+                <%# QC Update Form %>
+                <% unless batch.qc_status == 'passed' %>
+                  <%= form_with url: update_qc_production_order_batch_path(batch), method: :patch, local: true, class: 'd-flex gap-2 align-items-end flex-wrap' do |f| %>
+                    <div>
+                      <label class="form-label form-label-sm mb-1">QC Status</label>
+                      <%= f.select :qc_status,
+                            ProductionOrderBatch::QC_STATUSES.map { |s| [s.capitalize, s] },
+                            { selected: batch.qc_status },
+                            class: 'form-select form-select-sm' %>
+                    </div>
+                    <div>
+                      <label class="form-label form-label-sm mb-1">QC By</label>
+                      <%= f.text_field :qc_by, value: batch.qc_by, class: 'form-control form-control-sm', placeholder: 'Initials / name' %>
+                    </div>
+                    <div style="flex: 1; min-width: 150px;">
+                      <label class="form-label form-label-sm mb-1">Notes</label>
+                      <%= f.text_field :qc_notes, value: batch.qc_notes, class: 'form-control form-control-sm', placeholder: 'QC notes...' %>
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-outline-primary">Update QC</button>
+                  <% end %>
+                <% end %>
+
+                <%# Complete Button — only for passed batches %>
+                <% if batch.qc_status == 'passed' %>
+                  <div class="mt-2">
+                    <% if batch.lot_number.blank? %>
+                      <span class="text-muted small me-2">No lot number yet.</span>
+                    <% end %>
+                    <%= button_to "Complete Batch & Update Inventory",
+                          complete_production_order_batch_path(batch),
+                          method: :patch,
+                          data: { confirm: "Complete batch #{batch.batch_number}? This will deduct raw materials and add finished goods to inventory." },
+                          class: 'btn btn-sm btn-success' %>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+          <% else %>
+            <div class="p-3 text-muted small">No batches on this production order.</div>
+          <% end %>
+        </div>
+      </div>
+
       <div class="card shadow-sm mt-3">
         <div class="card-body">
           <h5 class="mb-3">Production Sign-off</h5>

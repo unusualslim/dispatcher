@@ -88,6 +88,16 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :production_order_batches, only: [] do
+    member do
+      patch :update_qc
+      patch :complete
+    end
+  end
+
+  resources :inventory_adjustments, only: [:new, :create]
+  resources :inventory_transactions, only: [:index]
+
   resources :things
 
   resources :announcements
