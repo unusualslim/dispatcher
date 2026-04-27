@@ -32,7 +32,7 @@ class MrpEngine
       vendor        = PurchaseOrder.joins(:vendor).where(product: product)
                         .order(created_at: :desc).first&.vendor
       lead_time     = vendor&.lead_time_days
-      order_by_date = lead_time ? Date.today : nil
+      order_by_date = lead_time ? Date.today + lead_time.days : nil
       urgent        = shortfall > 0
 
       Requirement.new(

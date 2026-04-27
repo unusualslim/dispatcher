@@ -1,7 +1,9 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+acme:
+  name: Acme Fuels
+  email: acme@example.com
+  phone: "555-0001"
 
-one:
-  name: MyString
-
-two:
-  name: MyString
+river_transport:
+  name: River Transport Co
+  email: river@example.com
+  phone: "555-0002"

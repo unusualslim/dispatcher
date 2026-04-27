@@ -1,7 +1,5 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+fuel_depot:
+  name: Fuel Depot
 
-one:
-  name: MyString
-
-two:
-  name: MyString
+manufacturing:
+  name: Manufacturing

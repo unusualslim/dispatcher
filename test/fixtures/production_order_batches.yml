@@ -1,9 +1,11 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+batch_one:
+  production_order: def_batch_order
+  batch_number: BATCH-001
+  quantity: 60.0
+  qc_status: passed
 
-one:
-  production_order: one
-  batch_number: MyString
-
-two:
-  production_order: two
-  batch_number: MyString
+batch_two:
+  production_order: def_batch_order
+  batch_number: BATCH-002
+  quantity: 40.0
+  qc_status: pending

@@ -10,14 +10,14 @@ class BomPopulatorService
     return false if bom_lines.empty?
 
     bom_lines.each_with_index do |line, idx|
-      qty_needed = line.quantity_per_unit * @order.qty_to_make
-      @order.production_order_components.find_or_create_by(product_id: line.component_product_id) do |c|
-        c.quantity    = qty_needed
-        c.uom         = line.uom
-        c.description = line.component_product&.name
-        c.part_number = line.component_product&.id&.to_s
-        c.position    = idx + 1
-      end
+      qty_needed = line.quantity_per_unit.to_d * @order.qty_to_make.to_d
+      comp = @order.production_order_components.find_or_initialize_by(product_id: line.component_product_id)
+      comp.quantity    = qty_needed
+      comp.uom         = line.uom
+      comp.description = line.component_product&.name
+      comp.part_number = line.component_product&.id&.to_s
+      comp.position    = idx + 1
+      comp.save!
     end
     true
   end

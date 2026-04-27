@@ -1,19 +1,13 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+def_batch_order:
+  number: ABCDEF
+  status: pending
+  due_date: <%= Date.today + 7 %>
+  qty_to_make: 100.0
+  product: def_finished
 
-one:
-  number: MyString
-  status: MyString
-  due_date: 2025-12-11
-  customer_name: MyString
-  location_name: MyString
-  priority: 1
-  notes: MyText
-
-two:
-  number: MyString
-  status: MyString
-  due_date: 2025-12-11
-  customer_name: MyString
-  location_name: MyString
-  priority: 1
-  notes: MyText
+small_order:
+  number: GHIJKL
+  status: pending
+  due_date: <%= Date.today + 14 %>
+  qty_to_make: 40.0
+  product: def_finished

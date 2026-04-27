@@ -1,17 +1,4 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
-
-one:
-  driver_id: MyString
-  origin: MyString
-  info: MyText
-  dispatch_date: 2023-11-07
-  status: MyString
-  notes: MyText
-
-two:
-  driver_id: MyString
-  origin: MyString
-  info: MyText
-  dispatch_date: 2023-11-07
-  status: MyString
-  notes: MyText
+dispatch_one:
+  origin: Warehouse
+  dispatch_date: 2026-05-04
+  status: new

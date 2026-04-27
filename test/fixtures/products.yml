@@ -1,7 +1,26 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+def_concentrate:
+  name: DEF Concentrate
+  unit_of_measurement: Gallon
+  is_raw_material: true
+  current_stock: 500.0
+  reorder_point: 100.0
+  safety_stock: 50.0
+  cost_per_unit: 2.50
 
-one:
-  name: MyString
+urea:
+  name: Urea
+  unit_of_measurement: Pound
+  is_raw_material: true
+  current_stock: 20.0
+  reorder_point: 100.0
+  safety_stock: 25.0
+  cost_per_unit: 1.20
 
-two:
-  name: MyString
+def_finished:
+  name: DEF Finished Product
+  unit_of_measurement: Gallon
+  is_raw_material: false
+  current_stock: 0.0
+  reorder_point: 0.0
+  safety_stock: 0.0
+  cost_per_unit: 5.00

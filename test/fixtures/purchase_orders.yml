@@ -1,0 +1,7 @@
+draft_concentrate_po:
+  vendor: chem_supply
+  product: def_concentrate
+  quantity: 200.0
+  unit_cost: 2.50
+  status: draft
+  trigger_type: auto_reorder

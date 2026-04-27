@@ -23,11 +23,16 @@ class ProductionOrderBatch < ApplicationRecord
     return false unless production_order.present?
 
     ActiveRecord::Base.transaction do
+      # Proportion this batch's quantity against the total order qty
+      order_qty    = production_order.qty_to_make.to_d
+      batch_qty    = quantity.to_d
+      batch_ratio  = order_qty > 0 ? batch_qty / order_qty : BigDecimal('1')
+
       # Deduct raw materials consumed
       production_order.production_order_components.includes(:product).each do |comp|
         next unless comp.product&.is_raw_material?
-        actual_qty = comp.quantity_actual || comp.quantity
-        next unless actual_qty&.positive?
+        actual_qty = comp.quantity_actual.presence&.to_d || (comp.quantity.to_d * batch_ratio)
+        next unless actual_qty.positive?
 
         InventoryTransaction.create!(
           product:          comp.product,

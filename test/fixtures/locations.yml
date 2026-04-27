@@ -1,9 +1,15 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+warehouse:
+  city: Springfield
+  company_name: Five Points Warehouse
+  address: 123 Main St
+  state: OH
+  zip: "45501"
+  location_category: fuel_depot
 
-one:
-  name: MyString
-  address: MyText
-
-two:
-  name: MyString
-  address: MyText
+terminal:
+  city: Columbus
+  company_name: Columbus Terminal
+  address: 456 Oak Ave
+  state: OH
+  zip: "43004"
+  location_category: fuel_depot

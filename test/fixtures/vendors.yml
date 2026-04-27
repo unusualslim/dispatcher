@@ -1,7 +1,7 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+chem_supply:
+  name: Chem Supply Co
+  lead_time_days: 7
 
-one:
-  name: MyString
-
-two:
-  name: MyString
+bulk_direct:
+  name: Bulk Direct LLC
+  lead_time_days: 14

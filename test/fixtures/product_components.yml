@@ -1,13 +1,13 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+# DEF Finished Product requires 0.325 gallons of concentrate per unit
+def_needs_concentrate:
+  product: def_finished
+  component_product: def_concentrate
+  quantity_per_unit: 0.325
+  uom: Gallon
 
-one:
-  product: one
-  component_product: one
-  quantity_per_unit: 9.99
-  uom: MyString
-
-two:
-  product: two
-  component_product: two
-  quantity_per_unit: 9.99
-  uom: MyString
+# DEF Finished Product requires 2.0 lbs of urea per unit
+def_needs_urea:
+  product: def_finished
+  component_product: urea
+  quantity_per_unit: 2.0
+  uom: Pound
