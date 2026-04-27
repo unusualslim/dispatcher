@@ -230,17 +230,21 @@
                   <% end %>
                 <% end %>
 
-                <%# Complete Button — only for passed batches %>
+                <%# Complete Button — only for passed, not-yet-completed batches %>
                 <% if batch.qc_status == 'passed' %>
                   <div class="mt-2">
-                    <% if batch.lot_number.blank? %>
-                      <span class="text-muted small me-2">No lot number yet.</span>
+                    <% if batch.completed? %>
+                      <span class="badge bg-success">Completed <%= batch.completed_at.strftime("%b %-d %H:%M") %></span>
+                    <% else %>
+                      <% if batch.lot_number.blank? %>
+                        <span class="text-muted small me-2">No lot number yet.</span>
+                      <% end %>
+                      <%= button_to "Complete Batch & Update Inventory",
+                            complete_production_order_batch_path(batch),
+                            method: :patch,
+                            data: { confirm: "Complete batch #{batch.batch_number}? This will deduct raw materials and add finished goods to inventory." },
+                            class: 'btn btn-sm btn-success' %>
                     <% end %>
-                    <%= button_to "Complete Batch & Update Inventory",
-                          complete_production_order_batch_path(batch),
-                          method: :patch,
-                          data: { confirm: "Complete batch #{batch.batch_number}? This will deduct raw materials and add finished goods to inventory." },
-                          class: 'btn btn-sm btn-success' %>
                   </div>
                 <% end %>
               </div>

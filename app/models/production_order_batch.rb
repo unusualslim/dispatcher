@@ -18,9 +18,14 @@ class ProductionOrderBatch < ApplicationRecord
     save!
   end
 
+  def completed?
+    completed_at.present?
+  end
+
   def complete_and_deduct_inventory!(completed_by_user)
     return false unless passed?
     return false unless production_order.present?
+    return false if completed?
 
     ActiveRecord::Base.transaction do
       # Proportion this batch's quantity against the total order qty
@@ -28,9 +33,9 @@ class ProductionOrderBatch < ApplicationRecord
       batch_qty    = quantity.to_d
       batch_ratio  = order_qty > 0 ? batch_qty / order_qty : BigDecimal('1')
 
-      # Deduct raw materials consumed
+      # Deduct all components consumed (regardless of is_raw_material flag)
       production_order.production_order_components.includes(:product).each do |comp|
-        next unless comp.product&.is_raw_material?
+        next unless comp.product.present?
         actual_qty = comp.quantity_actual.presence&.to_d || (comp.quantity.to_d * batch_ratio)
         next unless actual_qty.positive?
 
@@ -61,6 +66,8 @@ class ProductionOrderBatch < ApplicationRecord
         )
         finished_product.increment!(:current_stock, qty_produced)
       end
+
+      update!(completed_at: Time.current)
 
       # Trigger reorder check for any materials that dropped below reorder point
       ReorderCheckJob.perform_later

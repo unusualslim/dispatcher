@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_04_23_184142) do
+ActiveRecord::Schema[7.0].define(version: 2026_04_27_182834) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -276,6 +276,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_23_184142) do
     t.text "qc_notes"
     t.string "qc_by"
     t.datetime "qc_at"
+    t.datetime "completed_at"
     t.index ["lot_number"], name: "index_production_order_batches_on_lot_number", unique: true
     t.index ["production_order_id"], name: "index_production_order_batches_on_production_order_id"
   end
