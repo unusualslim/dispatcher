@@ -1,0 +1,30 @@
+<div class="container py-4" style="max-width: 860px;">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Inventory & MRP User Guide</h1>
+    <a href="<%= mrp_path %>" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> MRP Dashboard
+    </a>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body px-4 py-4 prose">
+      <%= @content %>
+    </div>
+  </div>
+</div>
+
+<style>
+  .prose h1 { font-size: 1.6rem; margin-top: 2rem; margin-bottom: .5rem; }
+  .prose h2 { font-size: 1.3rem; margin-top: 2rem; margin-bottom: .5rem; border-bottom: 1px solid #dee2e6; padding-bottom: .3rem; }
+  .prose h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: .4rem; }
+  .prose p  { margin-bottom: .8rem; }
+  .prose table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: .92rem; }
+  .prose th, .prose td { border: 1px solid #dee2e6; padding: .4rem .75rem; }
+  .prose th { background: #f8f9fa; font-weight: 600; }
+  .prose ul, .prose ol { padding-left: 1.5rem; margin-bottom: .8rem; }
+  .prose li { margin-bottom: .25rem; }
+  .prose strong { font-weight: 600; }
+  .prose code { background: #f8f9fa; padding: .1em .3em; border-radius: 3px; font-size: .88em; }
+  .prose blockquote { border-left: 3px solid #dee2e6; padding-left: 1rem; color: #6c757d; }
+  .prose h1:first-child { margin-top: 0; }
+</style>

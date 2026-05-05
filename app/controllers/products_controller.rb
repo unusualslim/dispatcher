@@ -121,6 +121,7 @@ class ProductsController < ApplicationController
         :reorder_point,
         :safety_stock,
         :cost_per_unit,
+        :part_number,
         product_components_attributes: [
           :id,
           :component_product_id,

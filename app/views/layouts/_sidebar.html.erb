@@ -87,6 +87,16 @@
             <i class="bi bi-clock-history"></i> Inventory History
           <% end %>
         </li>
+        <li class="<%= 'active' if current == 'inventory_imports' %>">
+          <%= link_to new_inventory_import_path do %>
+            <i class="bi bi-upload"></i> Import from PDI
+          <% end %>
+        </li>
+        <li class="<%= 'active' if current == 'docs' %>">
+          <%= link_to docs_mrp_guide_path do %>
+            <i class="bi bi-journal-text"></i> MRP Guide
+          <% end %>
+        </li>
       </ul>
 
       <!-- MASTER DATA -->

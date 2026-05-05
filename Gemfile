@@ -18,6 +18,8 @@ gem 'recaptcha', require: 'recaptcha/rails'
 gem 'dotenv-rails'
 
 gem 'will_paginate'
+gem 'roo'
+gem 'redcarpet'
 
 gem 'fullcalendar-rails'
 

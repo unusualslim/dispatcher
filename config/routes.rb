@@ -80,6 +80,7 @@ Rails.application.routes.draw do
 
 
   get 'mrp', to: 'mrp#index', as: :mrp
+  get 'docs/mrp-guide', to: 'docs#mrp_guide', as: :docs_mrp_guide
 
   resources :purchase_orders, only: [:index, :new, :create, :show] do
     member do
@@ -97,6 +98,9 @@ Rails.application.routes.draw do
 
   resources :inventory_adjustments, only: [:new, :create]
   resources :inventory_transactions, only: [:index]
+  resource :inventory_import, only: [:new, :create] do
+    post :preview, on: :collection
+  end
 
   resources :things
 

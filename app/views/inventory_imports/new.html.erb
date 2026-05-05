@@ -1,0 +1,30 @@
+<div class="container mt-4" style="max-width: 600px;">
+  <h1 class="mb-1">Import Inventory from PDI</h1>
+  <p class="text-muted mb-4">Upload the warehouse inventory report exported from PDI. Products are matched by part number — matched products get their stock updated, unmatched ones can be created as new products.</p>
+
+  <%= form_with url: preview_inventory_import_path, method: :post, multipart: true, data: { turbo: false } do |f| %>
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Product Type</label>
+          <div class="d-flex gap-3">
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="product_type" id="typeComponents" value="raw_material" checked>
+              <label class="form-check-label" for="typeComponents">Components (raw materials)</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="product_type" id="typeFinished" value="finished_good">
+              <label class="form-check-label" for="typeFinished">Finished Products</label>
+            </div>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">PDI Inventory Export (.xlsx)</label>
+          <%= f.file_field :file, accept: '.xlsx', class: 'form-control', required: true %>
+          <div class="form-text">Use the "Warehouse Inventory Report" export from PDI.</div>
+        </div>
+        <%= f.submit "Preview Import", class: "btn btn-primary" %>
+      </div>
+    </div>
+  <% end %>
+</div>
