@@ -300,7 +300,7 @@ class DispatchesController < ApplicationController
     @dispatches_by_date = dispatches.group_by(&:dispatch_date)
     @unassigned_orders = CustomerOrder.left_joins(:dispatch_customer_orders)
                                       .where(dispatch_customer_orders: { id: nil })
-                                      .where(order_status: :new)
+                                      .where(order_status: :New)
                                       .includes(:location, customer_order_products: :product)
                                       .order(:required_delivery_date)
   end
