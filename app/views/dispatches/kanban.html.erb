@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Kanban Board</title>
+  <title>Dispatch Kanban</title>
   <%= csrf_meta_tags %>
   <%= csp_meta_tag %>
-
   <%= stylesheet_link_tag 'application', media: 'all' %>
   <%= javascript_include_tag 'application', 'data-turbo-track': 'reload', defer: true %>
   <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
     body {
       font-family: 'Roboto', sans-serif;
       background-color: #f4f4f9;
@@ -15,224 +16,422 @@
       padding: 0;
     }
 
-    .kanban-header {
-      background-color: #007bff;
-      color: white;
-      padding: 1rem;
-      text-align: center;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    .kanban-controls {
-      margin: 1rem auto;
-      max-width: 1200px;
-      padding: 1rem;
-      background-color: white;
-      border-radius: 0.25rem;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      display: none; /* Initially hidden */
-    }
-
-    .kanban-board {
+    /* ── Toolbar ── */
+    .kanban-toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: #fff;
+      border-bottom: 1px solid #dee2e6;
+      padding: .6rem 1rem;
       display: flex;
-      justify-content: space-between;
-      padding: 1rem;
-      margin: 0 auto;
-      width: 100%;
-      overflow-x: auto;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      box-shadow: 0 2px 4px rgba(0,0,0,.06);
     }
-
-    .kanban-column {
-      flex: 1;
-      margin: 0 0.5rem;
-      background-color: #f8f9fa;
-      border: 1px solid #dee2e6;
-      border-radius: 0.25rem;
-      padding: 1rem;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      min-width: 200px;
+    .kanban-toolbar h1 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin: 0;
+      white-space: nowrap;
     }
-
-    .kanban-column h2 {
-      font-size: 1.25rem;
-      margin-bottom: 1rem;
-      color: #333;
-    }
-
-    .kanban-cards {
-      min-height: 200px;
-    }
-
-    .kanban-card {
-      background-color: #ffffff;
-      border: 1px solid #dee2e6;
-      border-radius: 0.25rem;
-      padding: 1rem;
-      margin-bottom: 1rem;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      transition: transform 0.2s;
-      cursor: pointer;
+    .back-link {
+      color: #6c757d;
       text-decoration: none;
-      color: inherit;
-      display: block;
+      font-size: .85rem;
+      white-space: nowrap;
     }
-
-    .kanban-card:hover {
-      transform: translateY(-5px);
+    .back-link:hover { color: #333; }
+    .toolbar-divider {
+      width: 1px;
+      height: 1.4rem;
+      background: #dee2e6;
+      flex-shrink: 0;
     }
-
-    .kanban-card h4 {
-      margin-top: 0;
-      font-size: 1rem;
-      color: #007bff;
+    .filter-label {
+      font-size: .8rem;
+      color: #6c757d;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      white-space: nowrap;
     }
-
-    .kanban-card p {
-      margin: 0.5rem 0;
-      color: #555;
+    .driver-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .35rem;
     }
-
-    .form-group {
-      margin-bottom: 1rem;
-    }
-
-    .form-control {
-      width: 100%;
-      padding: 0.5rem;
-      border: 1px solid #ced4da;
-      border-radius: 0.25rem;
-    }
-
-    .btn-primary {
-      background-color: #007bff;
-      border-color: #007bff;
-      color: white;
-      padding: 0.5rem 1rem;
-      border-radius: 0.25rem;
+    .driver-pill {
+      background: #f0f0f0;
+      border: 1px solid #dee2e6;
+      border-radius: 999px;
+      padding: .2rem .75rem;
+      font-size: .8rem;
       cursor: pointer;
-      transition: background-color 0.2s, border-color 0.2s;
+      transition: background .15s, color .15s, border-color .15s;
+      white-space: nowrap;
+    }
+    .driver-pill:hover { background: #e2e6ea; }
+    .driver-pill.active {
+      background: #0d6efd;
+      color: #fff;
+      border-color: #0d6efd;
     }
 
-    .btn-primary:hover {
-      background-color: #0056b3;
-      border-color: #004085;
-    }
-
-    .toggle-button {
-      background-color: #007bff;
-      border: none;
-      color: white;
-      padding: 0.5rem 1rem;
-      border-radius: 0.25rem;
-      cursor: pointer;
-      margin: 1rem auto;
-      display: block;
-      text-align: center;
-    }
-
+    /* ── Unassigned section ── */
     #unassigned-orders-section {
-      margin-top: 20px;
-      padding: 1rem;
-      background-color: #f9f9f9;
-      border: 1px solid #ddd;
-      border-radius: 0.25rem;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      padding: .75rem 1rem;
+      background: #fff8e1;
+      border-bottom: 1px solid #ffe082;
     }
-
+    .unassigned-header {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      margin-bottom: .6rem;
+    }
+    .unassigned-header h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 0;
+      color: #795548;
+    }
+    .unassigned-count {
+      background: #ff8f00;
+      color: #fff;
+      border-radius: 999px;
+      font-size: .72rem;
+      font-weight: 700;
+      padding: .1rem .5rem;
+    }
     .unassigned-orders-container {
       display: flex;
       flex-wrap: wrap;
-      gap: 15px;
+      gap: 12px;
     }
-
     .order-card {
-      background-color: #ffffff;
+      background: #fff;
       border: 1px solid #dee2e6;
-      border-radius: 0.25rem;
-      padding: 1rem;
-      width: 250px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      border-radius: .35rem;
+      padding: .75rem;
+      width: 230px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.08);
       text-decoration: none;
       color: inherit;
-      transition: transform 0.2s, box-shadow 0.2s;
+      transition: transform .15s, box-shadow .15s;
       display: block;
-      position: relative;
     }
-
     .order-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      transform: translateY(-3px);
+      box-shadow: 0 4px 10px rgba(0,0,0,.13);
     }
-
     .order-card h3 {
-      margin: 0 0 10px;
-      font-size: 1.2em;
+      margin: 0 0 6px;
+      font-size: .95rem;
       color: #333;
     }
-
     .order-card p {
-      margin: 5px 0;
-      font-size: 0.9em;
+      margin: 3px 0;
+      font-size: .82rem;
       color: #555;
     }
+    .order-card p strong { color: #333; }
+    .no-unassigned {
+      font-size: .9rem;
+      color: #795548;
+      font-style: italic;
+    }
 
-    .order-card p strong {
+    /* ── Kanban board ── */
+    .kanban-board {
+      display: flex;
+      padding: 1rem;
+      gap: .75rem;
+      overflow-x: auto;
+      align-items: flex-start;
+      min-height: calc(100vh - 120px);
+    }
+
+    .kanban-column {
+      flex: 0 0 220px;
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: .4rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,.07);
+      display: flex;
+      flex-direction: column;
+    }
+    .kanban-column.today {
+      background: #e8f4fd;
+      border-color: #90caf9;
+    }
+
+    .column-header {
+      position: sticky;
+      top: 53px; /* height of toolbar */
+      z-index: 10;
+      background: inherit;
+      border-bottom: 1px solid #dee2e6;
+      border-radius: .4rem .4rem 0 0;
+      padding: .6rem .75rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .5rem;
+    }
+    .today .column-header { border-bottom-color: #90caf9; }
+
+    .column-date {
+      font-size: .9rem;
+      font-weight: 600;
       color: #333;
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+    }
+    .today-badge {
+      background: #0d6efd;
+      color: #fff;
+      font-size: .65rem;
+      font-weight: 700;
+      letter-spacing: .05em;
+      padding: .1rem .4rem;
+      border-radius: 999px;
+    }
+    .column-count {
+      background: #6c757d;
+      color: #fff;
+      border-radius: 999px;
+      font-size: .7rem;
+      font-weight: 700;
+      padding: .1rem .45rem;
+      min-width: 1.4rem;
+      text-align: center;
+    }
+    .today .column-count { background: #0d6efd; }
+
+    .kanban-cards {
+      padding: .6rem;
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+      min-height: 80px;
+    }
+
+    /* ── Dispatch cards ── */
+    .kanban-card {
+      background: #fff;
+      border: 1px solid #dee2e6;
+      border-radius: .35rem;
+      padding: .65rem .75rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,.07);
+      transition: transform .15s, box-shadow .15s;
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      border-left-width: 4px;
+    }
+    .kanban-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0,0,0,.12);
+    }
+    .kanban-card[data-hidden="true"] { display: none; }
+
+    /* Status border colors */
+    .kanban-card.status-new            { border-left-color: #0d6efd; }
+    .kanban-card.status-sent_to_driver { border-left-color: #fd7e14; }
+    .kanban-card.status-complete       { border-left-color: #198754; }
+    .kanban-card.status-billed         { border-left-color: #6f42c1; }
+
+    .card-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: .35rem;
+    }
+    .card-dispatch-id {
+      font-size: .88rem;
+      font-weight: 700;
+      color: #0d6efd;
+    }
+    .card-status-badge {
+      font-size: .68rem;
+      font-weight: 600;
+      padding: .15rem .45rem;
+      border-radius: 999px;
+      text-transform: capitalize;
+      white-space: nowrap;
+    }
+    .badge-new            { background: #cfe2ff; color: #084298; }
+    .badge-sent_to_driver { background: #ffe5d0; color: #7d3c00; }
+    .badge-complete       { background: #d1e7dd; color: #0a3622; }
+    .badge-billed         { background: #e8d5f5; color: #3b1070; }
+
+    .card-row {
+      font-size: .8rem;
+      color: #555;
+      margin: 2px 0;
+      display: flex;
+      gap: .3rem;
+    }
+    .card-row strong { color: #333; flex-shrink: 0; }
+    .card-meta {
+      display: flex;
+      gap: .5rem;
+      margin-top: .4rem;
+      flex-wrap: wrap;
+    }
+    .card-meta-chip {
+      background: #f0f0f0;
+      border-radius: 999px;
+      font-size: .72rem;
+      padding: .1rem .45rem;
+      color: #555;
+    }
+    .card-notes {
+      font-size: .78rem;
+      color: #888;
+      margin-top: .3rem;
+      font-style: italic;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    .empty-column-msg {
+      font-size: .8rem;
+      color: #aaa;
+      text-align: center;
+      padding: .5rem 0;
+      font-style: italic;
     }
   </style>
-  <script>
-    function toggleControls() {
-      var controls = document.querySelector('.kanban-controls');
-      if (controls.style.display === 'none' || controls.style.display === '') {
-        controls.style.display = 'block';
-      } else {
-        controls.style.display = 'none';
-      }
-    }
-  </script>
 </head>
 <body>
 
-  <div class="kanban-controls">
-    <%= form_with url: kanban_dispatches_path, method: :get, local: true do %>
-      <div class="form-group">
-        <label for="driver_ids">Select Drivers:</label>
-        <%= select_tag 'driver_ids[]', options_from_collection_for_select(@drivers, 'id', 'full_name', @selected_driver_ids), multiple: true, class: 'form-control' %>
+  <!-- Toolbar -->
+  <div class="kanban-toolbar">
+    <%= link_to dispatches_path, class: 'back-link' do %>&larr; Dispatches<% end %>
+    <div class="toolbar-divider"></div>
+    <h1>Dispatch Kanban</h1>
+    <div class="toolbar-divider"></div>
+    <span class="filter-label">Driver</span>
+    <div class="driver-pills">
+      <button class="driver-pill active" data-driver-id="all">All</button>
+      <% @drivers.each do |driver| %>
+        <button class="driver-pill" data-driver-id="<%= driver.id %>"><%= driver.full_name %></button>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Unassigned Orders -->
+  <div id="unassigned-orders-section">
+    <div class="unassigned-header">
+      <h2>Unassigned Orders</h2>
+      <span class="unassigned-count"><%= @unassigned_orders.size %></span>
+    </div>
+    <% if @unassigned_orders.any? %>
+      <div class="unassigned-orders-container">
+        <% @unassigned_orders.each do |order| %>
+          <% company_name = order.location&.company_name || "No Location" %>
+          <% top_product = order.customer_order_products.max_by { |cop| cop.quantity || 0 } %>
+          <% total_count = order.customer_order_products.count %>
+          <% product_display = if total_count == 1
+                                  top_product.product.name
+                                elsif total_count > 1
+                                  "#{top_product.product.name} +#{total_count - 1}"
+                                else
+                                  "No Products"
+                                end %>
+          <% top_qty = top_product&.quantity || 0 %>
+          <% uom = top_product&.product&.unit_of_measurement || "units" %>
+          <% qty_display = total_count >= 1 ? "#{number_with_delimiter(top_qty.to_i)} #{uom}#{total_count > 1 ? " +#{total_count - 1}" : ""}" : "Not Set" %>
+          <% card_color = order.card_color || '#0d6efd' %>
+
+          <%= link_to customer_order_path(order), class: 'order-card', style: "border-left: 4px solid #{card_color};" do %>
+            <h3>Order #<%= order.id %></h3>
+            <p><strong>Location:</strong> <%= company_name %></p>
+            <p><strong>Product:</strong> <%= product_display %></p>
+            <p><strong>Amount:</strong> <%= qty_display %></p>
+            <p><strong>Deliver by:</strong> <%= order.required_delivery_date&.strftime("%b %d") || "—" %></p>
+            <% if order.freight_only? %>
+              <p><span class="badge bg-warning text-dark" style="font-size:.7rem;">Freight Only</span></p>
+            <% end %>
+          <% end %>
+        <% end %>
       </div>
-      <div class="form-group">
-        <button type="submit" class="btn btn-primary">Update</button>
-      </div>
+    <% else %>
+      <p class="no-unassigned">No unassigned orders.</p>
     <% end %>
   </div>
 
+  <!-- Kanban Board -->
   <div class="kanban-board">
     <% start_date = Date.yesterday %>
     <% end_date = Date.today + 6.days %>
     <% (start_date..end_date).each do |date| %>
-      <div class="kanban-column">
-        <h2><%= date.strftime("%a, %B %d") %></h2>
+      <% day_dispatches = @dispatches_by_date[date] || [] %>
+      <% next if date < Date.yesterday && day_dispatches.empty? %>
+      <% is_today = date == Date.today %>
+
+      <div class="kanban-column <%= 'today' if is_today %>">
+        <div class="column-header">
+          <div class="column-date">
+            <% if is_today %><span class="today-badge">TODAY</span><% end %>
+            <%= date.strftime("%a, %b %-d") %>
+          </div>
+          <span class="column-count" data-count-for="<%= date %>"><%= day_dispatches.count %></span>
+        </div>
+
         <div class="kanban-cards">
-          <% @dispatches.where(dispatch_date: date).each do |dispatch| %>
-            <%= link_to dispatch_path(dispatch), class: 'kanban-card' do %>
-              <h4>Dispatch #<%= dispatch.id %></h4>
-              <p><strong>Driver:</strong> 
-                <% if dispatch.driver_id.present? %>
-                  <%= User.find(dispatch.driver_id).full_name %>
+          <% if day_dispatches.empty? %>
+            <span class="empty-column-msg">No dispatches</span>
+          <% end %>
+
+          <% day_dispatches.each do |dispatch| %>
+            <% status_key = dispatch.status.to_s %>
+            <% order_count = dispatch.customer_orders.size %>
+            <% total_qty = dispatch.customer_orders.sum { |o| o.customer_order_products.sum { |cop| cop.quantity || 0 } } %>
+
+            <%= link_to dispatch_path(dispatch),
+                  class: "kanban-card status-#{status_key}",
+                  data: { driver_id: dispatch.driver_id.to_s } do %>
+
+              <div class="card-header-row">
+                <span class="card-dispatch-id">Dispatch #<%= dispatch.id %></span>
+                <span class="card-status-badge badge-<%= status_key %>"><%= status_key.tr('_', ' ') %></span>
+              </div>
+
+              <div class="card-row">
+                <strong>Driver:</strong>
+                <%= dispatch.driver&.full_name || "Unassigned" %>
+              </div>
+              <div class="card-row">
+                <strong>Origin:</strong>
+                <%= dispatch.origin.presence || "—" %>
+              </div>
+              <div class="card-row">
+                <strong>To:</strong>
+                <% if dispatch.customer_orders.any? && dispatch.customer_orders.first.location %>
+                  <%= "#{dispatch.customer_orders.first.location.company_name} – #{dispatch.customer_orders.first.location.city}" %>
                 <% else %>
-                  No Driver Assigned
+                  <%= dispatch.destination.presence || "—" %>
                 <% end %>
-              </p>
-              <p><strong>Origin:</strong> <%= dispatch.origin %></p>
-              <p><strong>Destination:</strong> 
-                <% if dispatch.customer_orders.any? %>
-                  <% destination_location = dispatch.customer_orders.first.location %>
-                  <%= "#{destination_location.company_name} - #{destination_location.city}" %>
-                <% else %>
-                  <%= dispatch.destination || "No destination location found" %>
+              </div>
+
+              <div class="card-meta">
+                <span class="card-meta-chip"><%= order_count %> <%= "order".pluralize(order_count) %></span>
+                <% if total_qty > 0 %>
+                  <span class="card-meta-chip"><%= number_with_delimiter(total_qty.to_i) %> gal</span>
                 <% end %>
-              </p>
-              <p><strong>Date:</strong> <%= dispatch.dispatch_date %></p>
-              <p><%= dispatch.notes %></p>
+              </div>
+
+              <% if dispatch.notes.present? %>
+                <div class="card-notes"><%= dispatch.notes %></div>
+              <% end %>
             <% end %>
           <% end %>
         </div>
@@ -240,54 +439,28 @@
     <% end %>
   </div>
 
-<!-- Unassigned Orders Section -->
-<div id="unassigned-orders-section">
-  <h2>Unassigned Orders</h2>
-  <div class="unassigned-orders-container">
-    <% @unassigned_orders.each do |order| %>
-      <% companyName = order.location&.company_name || "No Company Name Available" %>
-      <% top_product = order.customer_order_products.max_by { |cop| cop.quantity || 0 } %>
-      <% total_products_count = order.customer_order_products.count %>
-      <% product_display = if total_products_count == 1
-                              top_product.product.name
-                            elsif total_products_count > 1
-                              "#{top_product.product.name} + #{total_products_count - 1}"
-                            else
-                              "No Products"
-                            end %>
-      <% total_quantity = order.customer_order_products.sum { |cop| cop.quantity || 0 } %>
-      <% top_product_quantity = top_product&.quantity || 0 %>
-      <% unit_of_measurement = top_product&.product&.unit_of_measurement || "units" %>
-      <% quantity_display = if total_products_count > 1
-                              "#{top_product_quantity} #{unit_of_measurement} #{top_product.product.name} + #{total_products_count - 1}"
-                            elsif total_products_count == 1
-                              "#{top_product_quantity} #{unit_of_measurement} #{top_product.product.name}"
-                            else
-                              "Not Set"
-                            end %>
-      <% status_class = case order.order_status.downcase %>
-        <% when "new" then "bg-primary" %>
-        <% when "complete" then "bg-success" %>
-        <% when "on hold" then "bg-warning text-dark" %>
-        <% when "deleted" then "bg-danger" %>
-        <% else "bg-secondary" %>
-      <% end %>
-      <% card_color = order.card_color || '#007bff' %>
+  <script>
+    // Driver filter pills
+    const pills = document.querySelectorAll('.driver-pill');
+    pills.forEach(pill => {
+      pill.addEventListener('click', function () {
+        pills.forEach(p => p.classList.remove('active'));
+        this.classList.add('active');
+        const target = this.dataset.driverId;
 
-      <%= link_to customer_order_path(order), class: 'order-card', style: "border-left: 5px solid #{card_color};" do %>
-        <h3>Order #<%= order.id %></h3>
-        <p><strong>Status:</strong> <span class="badge <%= status_class %>"><%= order.order_status %></span></p>
-        <p><strong>Product:</strong> <%= product_display %></p>
-        <p><strong>Delivery Date:</strong> <%= order.required_delivery_date %></p>
-        <p><strong>Location:</strong> <%= companyName %></p>
-        <p><strong>Amount:</strong> <%= quantity_display %></p>
-        <% if order.freight_only? %>
-          <p><span class="badge bg-warning text-dark">Freight Only</span></p>
-        <% end %>
-      <% end %>
-    <% end %>
-  </div>
-</div>
+        document.querySelectorAll('.kanban-card').forEach(card => {
+          const match = target === 'all' || card.dataset.driverId === target;
+          card.dataset.hidden = match ? 'false' : 'true';
+        });
+
+        // Update column count badges to reflect visible cards only
+        document.querySelectorAll('.kanban-column').forEach(col => {
+          const visible = col.querySelectorAll('.kanban-card:not([data-hidden="true"])').length;
+          col.querySelector('.column-count').textContent = visible;
+        });
+      });
+    });
+  </script>
 
 </body>
 </html>

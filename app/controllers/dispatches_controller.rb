@@ -293,12 +293,16 @@ class DispatchesController < ApplicationController
   end
 
   def kanban
-    @drivers = User.all
-    @selected_driver_ids = params[:driver_ids] || @drivers.pluck(:id)
-    @selected_drivers = User.where(id: @selected_driver_ids).order(:id)
-    @dispatches = Dispatch.order(:dispatch_date)
+    @drivers = User.all.order(:first_name)
+    dispatches = Dispatch.includes(:driver, customer_orders: :customer_order_products)
+                         .where.not(status: :deleted)
+                         .order(:dispatch_date)
+    @dispatches_by_date = dispatches.group_by(&:dispatch_date)
     @unassigned_orders = CustomerOrder.left_joins(:dispatch_customer_orders)
-                                           .where(dispatch_customer_orders: { id: nil })
+                                      .where(dispatch_customer_orders: { id: nil })
+                                      .where(order_status: :new)
+                                      .includes(:location, customer_order_products: :product)
+                                      .order(:required_delivery_date)
   end
 
   def mark_as_complete
