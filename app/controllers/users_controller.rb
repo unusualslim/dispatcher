@@ -10,6 +10,14 @@ class UsersController < ApplicationController
   # GET /users/1 or /users/1.json
   def show
     @user = User.find(params[:id])
+
+    @start_date = params[:start_date].present? ? (Date.parse(params[:start_date]) rescue nil) : nil
+    @end_date   = params[:end_date].present?   ? (Date.parse(params[:end_date])   rescue nil) : nil
+
+    dispatches = @user.dispatches.where.not(status: "deleted").order(dispatch_date: :desc)
+    dispatches = dispatches.where("dispatch_date >= ?", @start_date) if @start_date
+    dispatches = dispatches.where("dispatch_date <= ?", @end_date)   if @end_date
+    @dispatches = dispatches.includes(customer_orders: [:location, :customer_order_products])
   end
 
   # GET /users/new

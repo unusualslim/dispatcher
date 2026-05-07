@@ -22,9 +22,9 @@
             <i class="bi bi-cart3"></i> Orders
           <% end %>
         </li>
-        <li class="<%= 'active' if current == 'dispatches' && action_name != 'kanban' %>">
-          <%= link_to dispatches_path do %>
-            <i class="bi bi-truck"></i> Dispatches
+        <li class="<%= 'active' if action_name == 'view_dispatches' %>">
+          <%= link_to view_dispatches_path do %>
+            <i class="bi bi-table"></i> Dispatches
           <% end %>
         </li>
         <li class="<%= 'active' if current == 'dispatches' && action_name == 'kanban' %>">

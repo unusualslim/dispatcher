@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_04_27_194908) do
+ActiveRecord::Schema[7.0].define(version: 2026_05_07_100003) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -82,11 +82,12 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_27_194908) do
 
   create_table "customer_order_products", force: :cascade do |t|
     t.bigint "customer_order_id", null: false
-    t.bigint "product_id", null: false
     t.integer "quantity"
     t.decimal "price"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "product_name"
+    t.string "product_id"
     t.index ["customer_order_id"], name: "index_customer_order_products_on_customer_order_id"
     t.index ["product_id"], name: "index_customer_order_products_on_product_id"
   end
@@ -159,10 +160,10 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_27_194908) do
     t.string "destination"
     t.boolean "needs_updating"
     t.bigint "vendor_id"
-    t.integer "destination_location_id"
     t.bigint "asset_id"
     t.integer "truck_id"
     t.integer "trailer_id"
+    t.integer "destination_location_id"
     t.index ["asset_id"], name: "index_dispatches_on_asset_id"
     t.index ["vendor_id"], name: "index_dispatches_on_vendor_id"
   end
@@ -175,7 +176,6 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_27_194908) do
   end
 
   create_table "inventory_transactions", force: :cascade do |t|
-    t.bigint "product_id", null: false
     t.decimal "quantity", precision: 14, scale: 3, null: false
     t.string "direction", null: false
     t.string "transactable_type"
@@ -185,6 +185,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_27_194908) do
     t.bigint "created_by_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "product_id", null: false
     t.index ["created_by_id"], name: "index_inventory_transactions_on_created_by_id"
     t.index ["product_id"], name: "index_inventory_transactions_on_product_id"
     t.index ["transactable_type", "transactable_id"], name: "idx_inv_trans_on_transactable"
@@ -208,12 +209,12 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_27_194908) do
 
   create_table "location_products", force: :cascade do |t|
     t.bigint "location_id", null: false
-    t.bigint "product_id", null: false
     t.integer "max_capacity"
     t.integer "uleage_90"
     t.integer "cutoff"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "product_id", null: false
     t.index ["location_id"], name: "index_location_products_on_location_id"
     t.index ["product_id"], name: "index_location_products_on_product_id"
   end
@@ -241,7 +242,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_27_194908) do
 
   create_table "locations_products", id: false, force: :cascade do |t|
     t.bigint "location_id", null: false
-    t.bigint "product_id", null: false
+    t.string "product_id", null: false
     t.index ["location_id"], name: "index_locations_products_on_location_id"
     t.index ["product_id"], name: "index_locations_products_on_product_id"
   end
@@ -255,12 +256,12 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_27_194908) do
   end
 
   create_table "product_components", force: :cascade do |t|
-    t.bigint "product_id", null: false
-    t.bigint "component_product_id", null: false
     t.decimal "quantity_per_unit", precision: 12, scale: 3
     t.string "uom"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "product_id", null: false
+    t.string "component_product_id", null: false
     t.index ["component_product_id"], name: "index_product_components_on_component_product_id"
     t.index ["product_id"], name: "index_product_components_on_product_id"
   end
@@ -291,8 +292,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_27_194908) do
     t.integer "position"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "product_id"
     t.decimal "quantity_actual", precision: 12, scale: 3
+    t.string "product_id"
     t.index ["product_id"], name: "index_production_order_components_on_product_id"
     t.index ["production_order_id", "position"], name: "idx_poc_on_po_id_pos"
     t.index ["production_order_id"], name: "index_production_order_components_on_production_order_id"
@@ -317,17 +318,17 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_27_194908) do
     t.decimal "total_qty_produced", precision: 12, scale: 3
     t.string "filled_by"
     t.string "approved_by"
-    t.bigint "product_id"
     t.bigint "customer_id"
     t.bigint "location_id"
     t.date "production_date"
+    t.string "product_id"
     t.index ["customer_id"], name: "index_production_orders_on_customer_id"
     t.index ["location_id"], name: "index_production_orders_on_location_id"
     t.index ["number"], name: "index_production_orders_on_number", unique: true
     t.index ["product_id"], name: "index_production_orders_on_product_id"
   end
 
-  create_table "products", force: :cascade do |t|
+  create_table "products", id: :string, force: :cascade do |t|
     t.string "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -338,12 +339,10 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_27_194908) do
     t.decimal "reorder_point", precision: 14, scale: 3
     t.decimal "safety_stock", precision: 14, scale: 3, default: "0.0"
     t.decimal "cost_per_unit", precision: 12, scale: 4
-    t.string "part_number"
   end
 
   create_table "purchase_orders", force: :cascade do |t|
     t.bigint "vendor_id", null: false
-    t.bigint "product_id", null: false
     t.decimal "quantity", precision: 14, scale: 3, null: false
     t.decimal "unit_cost", precision: 12, scale: 4
     t.string "status", default: "draft", null: false
@@ -357,6 +356,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_27_194908) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "product_name"
+    t.string "product_id"
     t.index ["product_id"], name: "index_purchase_orders_on_product_id"
     t.index ["status"], name: "index_purchase_orders_on_status"
     t.index ["trigger_type"], name: "index_purchase_orders_on_trigger_type"

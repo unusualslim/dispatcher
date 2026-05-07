@@ -1,10 +1,113 @@
-<p style="color: green"><%= notice %></p>
+<div class="container mt-4">
 
-<%= render @user %>
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <%= link_to users_path, class: 'btn btn-sm btn-outline-secondary' do %>
+      &larr; Users
+    <% end %>
+    <h1 class="mb-0"><%= @user.full_name %></h1>
+    <span class="badge bg-secondary"><%= @user.role&.capitalize %></span>
+    <%= link_to 'Edit', edit_user_path(@user), class: 'btn btn-sm btn-outline-primary ms-auto' %>
+  </div>
 
-<div>
-  <%= link_to "Edit this user", edit_user_path(@user) %> |
-  <%= link_to "Back to users", users_path %>
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <h6 class="card-subtitle mb-2 text-muted">Contact</h6>
+          <p class="mb-1"><i class="bi bi-envelope me-1"></i> <%= @user.email %></p>
+          <p class="mb-0"><i class="bi bi-telephone me-1"></i> <%= @user.phone_number.presence || "—" %></p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <h6 class="card-subtitle mb-2 text-muted">Dispatch Summary</h6>
+          <p class="mb-1"><strong><%= @dispatches.count %></strong> dispatch<%= @dispatches.count == 1 ? '' : 'es' %> in selected range</p>
+          <p class="mb-0"><strong><%= @user.dispatches.where.not(status: 'deleted').count %></strong> total all-time</p>
+        </div>
+      </div>
+    </div>
+  </div>
 
-  <%= button_to "Destroy this user", @user, method: :delete %>
+  <!-- Date filter -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body py-2">
+      <%= form_with url: user_path(@user), method: :get, local: true, class: 'd-flex align-items-center gap-3 flex-wrap' do |f| %>
+        <span class="fw-semibold text-muted" style="font-size:.85rem;">FILTER BY DATE</span>
+        <div class="d-flex align-items-center gap-2">
+          <input type="date" name="start_date" value="<%= @start_date %>"
+                 class="form-control form-control-sm" style="width:auto;"
+                 placeholder="From">
+          <span class="text-muted">to</span>
+          <input type="date" name="end_date" value="<%= @end_date %>"
+                 class="form-control form-control-sm" style="width:auto;"
+                 placeholder="To">
+        </div>
+        <button type="submit" class="btn btn-sm btn-primary">Apply</button>
+        <% if @start_date || @end_date %>
+          <%= link_to 'Clear', user_path(@user), class: 'btn btn-sm btn-outline-secondary' %>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Dispatches table -->
+  <div class="card shadow-sm">
+    <div class="card-header fw-semibold">
+      Dispatches
+      <% if @start_date || @end_date %>
+        <span class="text-muted fw-normal ms-2" style="font-size:.85rem;">
+          <%= [@start_date&.strftime("%b %-d, %Y"), @end_date&.strftime("%b %-d, %Y")].compact.join(" – ") %>
+        </span>
+      <% end %>
+    </div>
+
+    <% if @dispatches.empty? %>
+      <div class="card-body text-muted fst-italic">No dispatches found for this range.</div>
+    <% else %>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>#</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th>Origin</th>
+              <th>Destination</th>
+              <th>Orders</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @dispatches.each do |dispatch| %>
+              <tr style="cursor:pointer;" onclick="location.href='<%= dispatch_path(dispatch) %>'">
+                <td><%= link_to "##{dispatch.id}", dispatch_path(dispatch) %></td>
+                <td><%= dispatch.dispatch_date&.strftime("%b %-d, %Y") || "—" %></td>
+                <td>
+                  <% badge_class = case dispatch.status
+                     when "New"            then "bg-primary"
+                     when "Sent to Driver" then "bg-warning text-dark"
+                     when "Complete"       then "bg-success"
+                     when "Billed"         then "bg-purple"
+                     else "bg-secondary"
+                     end %>
+                  <span class="badge <%= badge_class %>"><%= dispatch.status %></span>
+                </td>
+                <td><%= dispatch.origin.presence || "—" %></td>
+                <td>
+                  <% first_order = dispatch.customer_orders.first %>
+                  <%= first_order&.location&.company_name || dispatch.destination.presence || "—" %>
+                  <% if dispatch.customer_orders.size > 1 %>
+                    <span class="text-muted" style="font-size:.8rem;">+<%= dispatch.customer_orders.size - 1 %> more</span>
+                  <% end %>
+                </td>
+                <td><%= dispatch.customer_orders.size %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+  </div>
+
 </div>

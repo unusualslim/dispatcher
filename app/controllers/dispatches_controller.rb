@@ -294,8 +294,14 @@ class DispatchesController < ApplicationController
 
   def kanban
     @drivers = User.all.order(:first_name)
+
+    @start_date = params[:start_date].present? ? (Date.parse(params[:start_date]) rescue Date.today) : Date.today
+    @end_date   = params[:end_date].present?   ? (Date.parse(params[:end_date])   rescue Date.today + 6) : Date.today + 6
+    @start_date, @end_date = @end_date, @start_date if @start_date > @end_date
+
     dispatches = Dispatch.includes(:driver, customer_orders: :customer_order_products)
                          .where.not(status: :deleted)
+                         .where(dispatch_date: @start_date..@end_date)
                          .order(:dispatch_date)
     @dispatches_by_date = dispatches.group_by(&:dispatch_date)
     @unassigned_orders = CustomerOrder.left_joins(:dispatch_customer_orders)

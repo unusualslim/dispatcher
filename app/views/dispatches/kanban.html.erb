@@ -325,6 +325,17 @@
         <button class="driver-pill" data-driver-id="<%= driver.id %>"><%= driver.full_name %></button>
       <% end %>
     </div>
+    <div class="toolbar-divider"></div>
+    <span class="filter-label">Dates</span>
+    <%= form_with url: kanban_dispatches_path, method: :get, local: true, style: 'display:flex;align-items:center;gap:.5rem;' do |f| %>
+      <input type="date" name="start_date" value="<%= @start_date %>"
+             class="form-control form-control-sm" style="width:auto;"
+             onchange="this.form.submit()">
+      <span style="color:#6c757d;font-size:.85rem;">to</span>
+      <input type="date" name="end_date" value="<%= @end_date %>"
+             class="form-control form-control-sm" style="width:auto;"
+             onchange="this.form.submit()">
+    <% end %>
   </div>
 
   <!-- Unassigned Orders -->
@@ -371,11 +382,8 @@
 
   <!-- Kanban Board -->
   <div class="kanban-board">
-    <% start_date = Date.yesterday %>
-    <% end_date = Date.today + 6.days %>
-    <% (start_date..end_date).each do |date| %>
+    <% (@start_date..@end_date).each do |date| %>
       <% day_dispatches = @dispatches_by_date[date] || [] %>
-      <% next if date < Date.yesterday && day_dispatches.empty? %>
       <% is_today = date == Date.today %>
 
       <div class="kanban-column <%= 'today' if is_today %>">

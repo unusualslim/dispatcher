@@ -7,6 +7,8 @@ class User < ApplicationRecord
     # Validations
     validates :email, presence: true, uniqueness: true
   
+    has_many :dispatches, foreign_key: :driver_id, dependent: :nullify
+
     # Scope to filter workers
     scope :workers, -> { where(role: 'worker') }
   
