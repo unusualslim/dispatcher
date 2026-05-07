@@ -28,7 +28,7 @@ class InventoryImportService
       description = raw[COL_DESCRIPTION].to_s.strip
       category    = raw[COL_CATEGORY].to_s.strip
       next if part_number.blank? || description.blank?
-      product     = Product.find_by(part_number: part_number)
+      product     = Product.find_by(id: part_number)
 
       rows << ImportRow.new(
         part_number: part_number,
@@ -60,8 +60,8 @@ class InventoryImportService
         counts[:updated] += 1
       when :create
         Product.create!(
+          id:              row.part_number,
           name:            row.description,
-          part_number:     row.part_number,
           current_stock:   row.quantity,
           is_raw_material: is_raw
         )

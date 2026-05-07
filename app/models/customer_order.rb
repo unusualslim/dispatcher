@@ -36,7 +36,7 @@ class CustomerOrder < ApplicationRecord
   def add_blank_product
     Rails.logger.info "Adding a blank product to customer order with ID: #{id}"
   
-    blank_product = self.customer_order_products.create(quantity: 0, price: 0.0, product_id: 1)
+    blank_product = self.customer_order_products.create(quantity: 0, price: 0.0, product_id: "FPS001")
   
     if blank_product.persisted?
       Rails.logger.info "Successfully added blank product: #{blank_product.inspect}"

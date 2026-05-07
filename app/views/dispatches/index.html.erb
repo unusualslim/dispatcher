@@ -173,8 +173,8 @@ document.addEventListener("DOMContentLoaded", function() {
                         <tbody>
                           <% order.customer_order_products.each do |cop| %>
                             <tr>
-                              <td><%= cop.product.name %></td>
-                              <td><%= cop.product.unit_of_measurement %></td>
+                              <td><%= cop.product&.name || cop.product_name %></td>
+                              <td><%= cop.product&.unit_of_measurement %></td>
                               <td><%= cop.quantity %></td>
                               <td><%= (cop.quantity || 0) * (cop.product&.weight || 0) %> lbs</td>
                               <td><%= number_to_currency(cop.price) %></td>
@@ -307,8 +307,8 @@ document.addEventListener("DOMContentLoaded", function() {
                             <ul class="list-group">
                               <% order.customer_order_products.each do |cop| %>
                                 <li class="list-group-item">
-                                  <strong><%= cop.product.name %></strong> - 
-                                  <%= cop.quantity %> <%= cop.product.unit_of_measurement %>
+                                  <strong><%= cop.product&.name || cop.product_name %></strong> -
+                                  <%= cop.quantity %> <%= cop.product&.unit_of_measurement %>
                                 </li>
                               <% end %>
                             </ul>
@@ -519,8 +519,8 @@ document.addEventListener("DOMContentLoaded", function() {
   <tbody>
     <% order.customer_order_products.each do |cop| %>
       <tr>
-        <td><%= cop.product.name %></td>
-        <td><%= cop.product.unit_of_measurement %></td>
+        <td><%= cop.product&.name || cop.product_name %></td>
+        <td><%= cop.product&.unit_of_measurement %></td>
         <td><%= cop.quantity %></td>
         <td><%= number_to_currency(cop.price) %></td>
         <td><%= number_to_currency((cop.quantity || 0) * (cop.price || 0.0)) %></td>

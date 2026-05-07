@@ -155,7 +155,8 @@
             <td><%= link_to order.id, customer_order_path(order) %></td>
             <td>
               <% if order.customer_order_products.any? %>
-                <%= order.customer_order_products.first.product.name %>
+                <% _cop = order.customer_order_products.first %>
+                <%= _cop.product&.name || _cop.product_name %>
                 <% if order.customer_order_products.count > 1 %>
                   + <%= order.customer_order_products.count - 1 %> more
                 <% end %>

@@ -15,9 +15,9 @@
   <tbody>
     <% @purchase_orders.each do |po| %>
       <tr>
-        <td><%= po.product.name %></td>
-        <td><%= number_with_precision(po.product.current_stock, precision: 1) %> <%= po.product.unit_of_measurement %></td>
-        <td><%= number_with_precision(po.product.reorder_point, precision: 1) %></td>
+        <td><%= po.product&.name || po.product_name %></td>
+        <td><%= number_with_precision(po.product&.current_stock, precision: 1) %> <%= po.product&.unit_of_measurement %></td>
+        <td><%= number_with_precision(po.product&.reorder_point, precision: 1) %></td>
         <td><%= number_with_precision(po.quantity, precision: 1) %></td>
         <td><%= po.vendor&.name || 'None assigned' %></td>
       </tr>

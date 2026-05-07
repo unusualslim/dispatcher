@@ -339,10 +339,11 @@
           <% company_name = order.location&.company_name || "No Location" %>
           <% top_product = order.customer_order_products.max_by { |cop| cop.quantity || 0 } %>
           <% total_count = order.customer_order_products.count %>
+          <% _pname = top_product&.then { |cop| cop.product&.name || cop.product_name } %>
           <% product_display = if total_count == 1
-                                  top_product.product.name
+                                  _pname
                                 elsif total_count > 1
-                                  "#{top_product.product.name} +#{total_count - 1}"
+                                  "#{_pname} +#{total_count - 1}"
                                 else
                                   "No Products"
                                 end %>

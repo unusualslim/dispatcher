@@ -16,6 +16,7 @@ class Product < ApplicationRecord
   accepts_nested_attributes_for :product_components, allow_destroy: true
 
   validates :name, presence: true
+  validates :id, presence: true
 
   scope :raw_materials,       -> { where(is_raw_material: true) }
   scope :finished_goods,      -> { where(is_raw_material: false) }

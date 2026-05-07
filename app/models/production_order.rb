@@ -63,7 +63,7 @@ class ProductionOrder < ApplicationRecord
         position: idx + 1,
         quantity: (pc.quantity_per_unit.to_d * qty_to_make.to_d),
         uom: pc.uom.presence || "",
-        part_number: pc.component_product&.part_number,
+        part_number: pc.component_product&.id,
         description: pc.component_product&.name
       )
     end

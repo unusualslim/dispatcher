@@ -16,6 +16,11 @@
       <div class="card-header fw-semibold">Basic Info</div>
       <div class="card-body row g-3">
         <div class="col-12">
+          <%= form.label :id, "PDI Product ID", class: 'form-label' %>
+          <%= form.text_field :id, class: 'form-control', placeholder: 'e.g. FPS001, CC360570', required: true %>
+          <div class="form-text">Must match the PDI part number exactly. Cannot be changed after creation.</div>
+        </div>
+        <div class="col-12">
           <%= form.label :name, class: 'form-label' %>
           <%= form.text_field :name, class: 'form-control' %>
         </div>

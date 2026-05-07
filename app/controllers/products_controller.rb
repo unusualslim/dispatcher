@@ -94,7 +94,7 @@ class ProductsController < ApplicationController
         {
           id: cp.id,
           name: cp.name,
-          part_number: (cp.respond_to?(:sku) ? cp.sku : nil),
+          part_number: cp.id,
           quantity_per_unit: pc.quantity_per_unit,
           uom: pc.uom
         }
@@ -111,6 +111,7 @@ class ProductsController < ApplicationController
   
     def product_params
       params.require(:product).permit(
+        :id,
         :name,
         :description,
         :price,
@@ -121,7 +122,6 @@ class ProductsController < ApplicationController
         :reorder_point,
         :safety_stock,
         :cost_per_unit,
-        :part_number,
         product_components_attributes: [
           :id,
           :component_product_id,

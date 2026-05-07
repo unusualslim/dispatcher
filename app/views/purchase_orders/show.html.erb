@@ -23,7 +23,13 @@
         </dd>
 
         <dt class="col-4">Product</dt>
-        <dd class="col-8"><%= link_to @purchase_order.product.name, product_path(@purchase_order.product) %></dd>
+        <dd class="col-8">
+          <% if @purchase_order.product %>
+            <%= link_to @purchase_order.product.name, product_path(@purchase_order.product) %>
+          <% else %>
+            <%= @purchase_order.product_name %>
+          <% end %>
+        </dd>
 
         <dt class="col-4">Vendor</dt>
         <dd class="col-8"><%= @purchase_order.vendor.name %></dd>

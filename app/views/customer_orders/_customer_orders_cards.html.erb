@@ -34,7 +34,7 @@
 
             <% if customer_order.customer_order_products.any? %>
               <p class="card-text">
-                <%= customer_order.customer_order_products.limit(3).map { |order_product| "#{order_product.quantity} gallons #{order_product.product.name}" }.join(', ') %>
+                <%= customer_order.customer_order_products.limit(3).map { |op| "#{op.quantity} gallons #{op.product&.name || op.product_name}" }.join(', ') %>
               </p>
             <% else %>
               <p class="card-text">Missing product amounts</p>
