@@ -79,13 +79,18 @@ class InventoryImportService
     sheet = xlsx.sheet(0)
     rows  = []
 
+    Rails.logger.info "[InventoryImport] last_row=#{sheet.last_row}"
+
     (2..sheet.last_row).each do |i|
       row = sheet.row(i)
+      r1  = row[1]
+      Rails.logger.info "[InventoryImport] row #{i}: col1=#{r1.inspect} (#{r1.class})"
       # Skip header/footer rows (date cells, legend row)
-      next if row[1].to_s =~ /\d{4}-\d{2}-\d{2}/ || row[1].to_s.start_with?('Exception Legend')
+      next if r1.to_s =~ /\d{4}-\d{2}-\d{2}/ || r1.to_s.start_with?('Exception Legend')
       rows << row
     end
 
+    Rails.logger.info "[InventoryImport] parsed #{rows.size} data rows"
     rows
   end
 
