@@ -52,17 +52,13 @@ class Users::RegistrationsController < Devise::RegistrationsController
     if verify_recaptcha(model: @user)
       puts "reCAPTCHA verification succeeded"
       if @user.save
-        puts "User save succeeded"
-        sign_in(@user) # Automatically log in the user after registration
-        redirect_to '/dispatches#index', notice: "Account successfully created."
+        sign_in(@user)
+        redirect_to dispatches_path, notice: "Account successfully created."
       else
-        puts "User save failed: #{@user.errors.full_messages.join(', ')}"
-        render :new
+        render :new, status: :unprocessable_entity
       end
     else
-      puts "reCAPTCHA verification failed: #{@user.errors.full_messages.join(', ')}"
-      @user.errors.add(:base, "reCAPTCHA verification failed, please try again.")
-      render :new
+      render :new, status: :unprocessable_entity
     end
   end
 

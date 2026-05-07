@@ -1,57 +1,74 @@
-<h1 class="mb-4">Add New User</h1>
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+      <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+          <h4 class="mb-0">Add New User</h4>
+        </div>
+        <div class="card-body p-4">
 
-<%= form_with(model: @user, url: user_registration_path, class: "needs-validation", local: true) do |form| %>
-  <% if @user.errors.any? %>
-    <div class="alert alert-danger">
-      <h2><%= pluralize(@user.errors.count, "error") %> prohibited this user from being saved:</h2>
-      <ul>
-        <% @user.errors.full_messages.each do |message| %>
-          <li><%= message %></li>
-        <% end %>
-      </ul>
+          <% if @user.errors.any? %>
+            <div class="alert alert-danger">
+              <ul class="mb-0 ps-3">
+                <% @user.errors.full_messages.each do |message| %>
+                  <li><%= message %></li>
+                <% end %>
+              </ul>
+            </div>
+          <% end %>
+
+          <%= form_with(model: @user, url: user_registration_path, data: { turbo: false }, class: "needs-validation") do |form| %>
+
+            <div class="row g-3 mb-3">
+              <div class="col">
+                <%= form.label :first_name, class: "form-label" %>
+                <%= form.text_field :first_name, class: "form-control", placeholder: "First name", required: true %>
+              </div>
+              <div class="col">
+                <%= form.label :last_name, class: "form-label" %>
+                <%= form.text_field :last_name, class: "form-control", placeholder: "Last name", required: true %>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <%= form.label :email, class: "form-label" %>
+              <%= form.email_field :email, class: "form-control", placeholder: "email@example.com", required: true %>
+            </div>
+
+            <div class="mb-3">
+              <%= form.label :phone_number, class: "form-label" %>
+              <%= form.text_field :phone_number, class: "form-control", placeholder: "Phone number" %>
+            </div>
+
+            <div class="mb-3">
+              <%= form.label :role, class: "form-label" %>
+              <%= form.select :role,
+                    [['Worker (Driver)', 'worker'], ['Admin', 'admin']],
+                    { prompt: 'Select role...' },
+                    class: "form-select", required: true %>
+            </div>
+
+            <div class="mb-3">
+              <%= form.label :password, class: "form-label" %>
+              <%= form.password_field :password, class: "form-control", placeholder: "Password", required: true %>
+            </div>
+
+            <div class="mb-3">
+              <%= form.label :password_confirmation, "Confirm Password", class: "form-label" %>
+              <%= form.password_field :password_confirmation, class: "form-control", placeholder: "Confirm password", required: true %>
+            </div>
+
+            <div class="mb-4">
+              <%= recaptcha_tags %>
+            </div>
+
+            <div class="d-grid">
+              <%= form.submit 'Create User', class: 'btn btn-primary btn-lg' %>
+            </div>
+
+          <% end %>
+        </div>
+      </div>
     </div>
-  <% end %>
-
-  <div class="mb-3">
-    <%= form.label :email, class: "form-label" %>
-    <%= form.text_field :email, class: "form-control", placeholder: "Enter email address" %>
   </div>
-
-  <div class="mb-3">
-    <%= form.label :password, class: "form-label" %>
-    <%= form.password_field :password, class: "form-control", placeholder: "Enter password" %>
-  </div>
-
-  <div class="mb-3">
-    <%= form.label :password_confirmation, class: "form-label" %>
-    <%= form.password_field :password_confirmation, class: "form-control", placeholder: "Confirm password" %>
-  </div>
-
-  <div class="mb-3">
-    <%= form.label :first_name, class: "form-label" %>
-    <%= form.text_field :first_name, class: "form-control", placeholder: "Enter first name" %>
-  </div>
-
-  <div class="mb-3">
-    <%= form.label :last_name, class: "form-label" %>
-    <%= form.text_field :last_name, class: "form-control", placeholder: "Enter last name" %>
-  </div>
-
-  <div class="mb-3">
-    <%= form.label :phone_number, class: "form-label" %>
-    <%= form.text_field :phone_number, class: "form-control", placeholder: "Enter phone number" %>
-  </div>
-
-  <div class="mb-3">
-    <%= form.label :role, class: "form-label" %>
-    <%= form.text_field :role, class: "form-control", placeholder: "Enter User's Role" %>
-  </div>
-
-  <div class="field">
-    <%= recaptcha_tags %>
-  </div>
-
-  <div>
-    <%= form.submit 'Create User', class: 'btn btn-primary' %>
-  </div>
-<% end %>
+</div>
