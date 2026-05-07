@@ -81,8 +81,8 @@ class InventoryImportService
 
     (2..sheet.last_row).each do |i|
       row = sheet.row(i)
-      # Stop at footer rows (date/time metadata row or legend row)
-      break if row[1].to_s =~ /\d{4}-\d{2}-\d{2}/ || row[1].to_s.start_with?('Exception Legend')
+      # Skip header/footer rows (date cells, legend row)
+      next if row[1].to_s =~ /\d{4}-\d{2}-\d{2}/ || row[1].to_s.start_with?('Exception Legend')
       rows << row
     end
 
