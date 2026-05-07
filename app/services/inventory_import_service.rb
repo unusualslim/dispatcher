@@ -80,11 +80,26 @@ class InventoryImportService
     rows  = []
 
     Rails.logger.info "[InventoryImport] last_row=#{sheet.last_row}"
+    sample_done = false
 
     (2..sheet.last_row).each do |i|
       row = sheet.row(i)
       r1  = row[1]
-      Rails.logger.info "[InventoryImport] row #{i}: col1=#{r1.inspect} (#{r1.class})"
+
+      # Log full row structure for first section so we can see column layout
+      unless sample_done
+        if r1.to_s.start_with?('COMPONENTS')
+          sample_done = true
+          (-1..5).each do |offset|
+            idx = i + offset
+            next unless idx >= 2
+            sample_row = sheet.row(idx)
+            non_nil = sample_row.each_with_index.reject { |v, _| v.nil? }.map { |v, j| "#{j}:#{v.inspect}" }
+            Rails.logger.info "[InventoryImport] SAMPLE row #{idx}: [#{non_nil.join(', ')}]"
+          end
+        end
+      end
+
       # Skip header/footer rows (date cells, legend row)
       next if r1.to_s =~ /\d{4}-\d{2}-\d{2}/ || r1.to_s.start_with?('Exception Legend')
       rows << row
