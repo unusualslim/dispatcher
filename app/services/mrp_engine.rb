@@ -14,6 +14,7 @@ class MrpEngine
 
     open_orders.each do |order_product|
       product  = order_product.product
+      next if product.nil?
       quantity = order_product.quantity || 0
       next if quantity <= 0
 
