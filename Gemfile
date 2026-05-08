@@ -19,6 +19,7 @@ gem 'dotenv-rails'
 
 gem 'will_paginate'
 gem 'roo'
+gem 'net-ftp'
 gem 'redcarpet'
 
 gem 'fullcalendar-rails'

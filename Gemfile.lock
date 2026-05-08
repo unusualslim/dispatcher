@@ -155,10 +155,14 @@ GEM
     method_source (1.0.0)
     mini_magick (4.11.0)
     mini_mime (1.1.5)
+    mini_portile2 (2.8.9)
     minitest (5.20.0)
     momentjs-rails (2.29.4.1)
       railties (>= 3.1)
     msgpack (1.7.2)
+    net-ftp (0.3.9)
+      net-protocol
+      time
     net-imap (0.4.4)
       date
       net-protocol
@@ -169,6 +173,9 @@ GEM
     net-smtp (0.4.0)
       net-protocol
     nio4r (2.5.9)
+    nokogiri (1.15.4)
+      mini_portile2 (~> 2.8.2)
+      racc (~> 1.4)
     nokogiri (1.15.4-x64-mingw-ucrt)
       racc (~> 1.4)
     nokogiri (1.15.4-x86_64-linux)
@@ -258,6 +265,8 @@ GEM
     stringio (3.0.8)
     thor (1.3.0)
     tilt (2.3.0)
+    time (0.4.2)
+      date
     timeout (0.4.1)
     turbo-rails (1.5.0)
       actionpack (>= 6.0.0)
@@ -292,6 +301,7 @@ GEM
     zeitwerk (2.6.12)
 
 PLATFORMS
+  ruby
   x64-mingw-ucrt
   x86_64-linux
 
@@ -307,6 +317,7 @@ DEPENDENCIES
   image_processing (~> 1.2)
   jbuilder
   jsbundling-rails
+  net-ftp
   pg (~> 1.1)
   puma (~> 5.0)
   rails (~> 7.0.3, >= 7.0.3.1)
