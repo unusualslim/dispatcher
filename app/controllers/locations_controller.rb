@@ -101,7 +101,7 @@ class LocationsController < ApplicationController
       end
 
       respond_to do |format|
-        format.html
+        format.html { render layout: false }
         format.json { render json: @locations.as_json(only: [:id, :latitude, :longitude, :city, :company_name, :location_category_id], methods: [:has_active_order]) }
       end
     end
