@@ -21,7 +21,7 @@
 
     #map-back-btn {
       position: fixed;
-      top: 12px;
+      top: 80px;
       left: 12px;
       z-index: 1000;
       background: #fff;
@@ -45,6 +45,7 @@
       line-height: 1.5;
       font-size: 14px;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+      max-width: 200px;
     }
     .legend i {
       width: 15px;
@@ -52,6 +53,31 @@
       display: inline-block;
       margin-right: 5px;
       border-radius: 50%;
+    }
+    .legend-toggle {
+      display: none;
+      background: none;
+      border: none;
+      font-size: 12px;
+      color: #666;
+      cursor: pointer;
+      float: right;
+      padding: 0;
+    }
+    .legend-body { display: block; }
+    @media (max-width: 768px) {
+      .legend {
+        font-size: 11px;
+        padding: 6px 8px;
+        max-width: 160px;
+        line-height: 1.4;
+      }
+      .legend i {
+        width: 11px;
+        height: 11px;
+      }
+      .legend-toggle { display: inline; }
+      .legend-body.collapsed { display: none; }
     }
   </style>
 </head>
@@ -194,21 +220,24 @@
     legend.onAdd = function (map) {
       const div = L.DomUtil.create("div", "legend");
       div.innerHTML = `
-        <strong>Map Key</strong><br>
-        <i style="background: #28a745"></i> Active Order <br>
-        <i style="background: blue"></i> Origin <br>
-        <i style="background: red"></i> Destination <br>
-        <i style="background: gray"></i> Prospective <br>
-        <i style="background: black"></i> Unknown Category <br>
-        <hr style="margin: 4px 0">
-        <strong>Dispatch Routes</strong><br>
-        <i style="background: #28a745; border-radius: 0; height: 3px; margin-top: 6px;"></i> 3+ days out <br>
-        <i style="background: #ffc107; border-radius: 0; height: 3px; margin-top: 6px;"></i> 2 days out <br>
-        <i style="background: #fd7e14; border-radius: 0; height: 3px; margin-top: 6px;"></i> Tomorrow <br>
-        <i style="background: #dc3545; border-radius: 0; height: 3px; margin-top: 6px;"></i> Today / Overdue <br>
-        <hr style="margin: 4px 0">
-        <strong>Live Fleet (Samsara)</strong><br>
-        <span style="font-size:13px;">🚛</span> GPS Vehicle Location
+        <strong>Map Key</strong>
+        <button class="legend-toggle" onclick="this.nextElementSibling.classList.toggle('collapsed');this.textContent=this.nextElementSibling.classList.contains('collapsed')?'▼':'▲'">▲</button>
+        <div class="legend-body">
+          <i style="background: #28a745"></i> Active Order <br>
+          <i style="background: blue"></i> Origin <br>
+          <i style="background: red"></i> Destination <br>
+          <i style="background: gray"></i> Prospective <br>
+          <i style="background: black"></i> Unknown <br>
+          <hr style="margin: 4px 0">
+          <strong>Routes</strong><br>
+          <i style="background: #28a745; border-radius: 0; height: 3px; margin-top: 6px;"></i> 3+ days <br>
+          <i style="background: #ffc107; border-radius: 0; height: 3px; margin-top: 6px;"></i> 2 days <br>
+          <i style="background: #fd7e14; border-radius: 0; height: 3px; margin-top: 6px;"></i> Tomorrow <br>
+          <i style="background: #dc3545; border-radius: 0; height: 3px; margin-top: 6px;"></i> Today/Overdue <br>
+          <hr style="margin: 4px 0">
+          <strong>Fleet</strong><br>
+          <span style="font-size:13px;">🚛</span> GPS Location
+        </div>
       `;
       return div;
     };
