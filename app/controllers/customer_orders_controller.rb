@@ -40,6 +40,18 @@ def index
     @customer_orders = @customer_orders.where(freight_only: true)
   end
 
+  # filter by order_status (e.g. "New", "On Hold", "unassigned")
+  if params[:order_status].present?
+    if params[:order_status] == "unassigned"
+      @customer_orders = @customer_orders
+                           .left_joins(:dispatch_customer_orders)
+                           .where(dispatch_customer_orders: { id: nil })
+                           .where(order_status: "New")
+    else
+      @customer_orders = @customer_orders.where(order_status: params[:order_status])
+    end
+  end
+
   # Apply sorting
   case params[:sort_by]
   when 'newest'

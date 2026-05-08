@@ -4,82 +4,48 @@ require 'net/http'
 class DispatchesController < ApplicationController
   before_action :set_dispatch, only: %i[show edit update destroy mark_as_complete mark_as_billed send_notification]
 
-  # GET /dispatches or /dispatches.json
+  # GET / (dashboard)
   def index
-    # Latest 20 "active" dispatches (New / Sent to Driver)
-    @filtered_dispatches = Dispatch
-      .where(status: ["New", "Sent to Driver"])
-      .includes(
-        :driver,
-        customer_orders: [
-          :location,
-          { customer_order_products: :product }
-        ]
-      )
-      .order(dispatch_date: :desc, id: :desc)
-      .limit(20)
+    today = Date.today
 
-    # Latest 20 completed dispatches
-    @completed_dispatches = Dispatch
-      .where(status: "Complete")
+    # Stat card counts
+    @stat_active         = Dispatch.where(status: ["New", "Sent to Driver"]).count
+    @stat_in_transit     = Dispatch.where(status: "Sent to Driver").count
+    @stat_unassigned     = CustomerOrder.where(order_status: "New")
+                                        .left_joins(:dispatch_customer_orders)
+                                        .where(dispatch_customer_orders: { id: nil }).count
+    @stat_on_hold        = CustomerOrder.where(order_status: "On Hold").count
+
+    # Today's dispatches
+    @today_dispatches = Dispatch
+      .where(dispatch_date: today)
+      .where.not(status: ["Complete", "Billed", "deleted"])
+      .includes(:driver, customer_orders: [:location, { customer_order_products: :product }])
+      .order(:id)
+
+    # Upcoming dispatches (next 7 days, not today)
+    @upcoming_dispatches = Dispatch
+      .where(dispatch_date: (today + 1)..(today + 7))
+      .where.not(status: ["Complete", "Billed", "deleted"])
       .includes(:driver, customer_orders: :location)
-      .order(dispatch_date: :desc, id: :desc)
+      .order(:dispatch_date, :id)
+      .limit(15)
+
+    # Unassigned orders (oldest delivery date first)
+    @unassigned_orders = CustomerOrder
+      .where(order_status: "New")
+      .left_joins(:dispatch_customer_orders)
+      .where(dispatch_customer_orders: { id: nil })
+      .includes(:location, customer_order_products: :product)
+      .order(Arel.sql("required_delivery_date ASC NULLS LAST"))
       .limit(20)
 
-    @destination_locations = Location.all
-    @origin_locations      = Location.all
-    @on_hold_orders        = CustomerOrder.where(order_status: "On Hold")
-
-    @filters = {
-      product: params[:product],
-      delivery_date: params[:delivery_date],
-      delivery_date_condition: params[:delivery_date_condition],
-      location: params[:location],
-      amount: params[:amount],
-      status: params[:status] || 'unassigned'
-    }
-
-    # Base query depending on the selected status
-    case @filters[:status]
-    when 'unassigned'
-      @unassigned_open_orders = CustomerOrder.where(order_status: 'New')
-                                            .left_joins(:dispatch_customer_orders)
-                                            .where(dispatch_customer_orders: { id: nil })
-    when 'assigned'
-      @unassigned_open_orders = CustomerOrder.joins(:dispatch_customer_orders).distinct
-    else
-      @unassigned_open_orders = CustomerOrder.all.distinct
-    end
-
-    # Filters
-    if @filters[:product].present?
-      @unassigned_open_orders = @unassigned_open_orders.where('product LIKE ?', "%#{@filters[:product]}%")
-    end
-
-    if @filters[:location].present?
-      @unassigned_open_orders = @unassigned_open_orders.joins(:location)
-                                                      .where('locations.company_name LIKE ?', "%#{@filters[:location]}%")
-    end
-
-    if @filters[:amount].present?
-      @unassigned_open_orders = @unassigned_open_orders.where(approximate_product_amount: @filters[:amount])
-    end
-
-    if @filters[:delivery_date].present? && @filters[:delivery_date_condition].present?
-      delivery_date = @filters[:delivery_date]
-      case @filters[:delivery_date_condition]
-      when 'before'
-        @unassigned_open_orders = @unassigned_open_orders.where("required_delivery_date < ?", delivery_date)
-      when 'after'
-        @unassigned_open_orders = @unassigned_open_orders.where("required_delivery_date > ?", delivery_date)
-      when 'on'
-        @unassigned_open_orders = @unassigned_open_orders.where(required_delivery_date: delivery_date)
-      end
-    end
-
-    @new_dispatches = Dispatch.where(status: "New", driver_id: nil)
-    @drivers        = User.all
-    @workers        = User.where(role: "worker")
+    # On hold orders
+    @on_hold_orders = CustomerOrder
+      .where(order_status: "On Hold")
+      .includes(:location)
+      .order(Arel.sql("required_delivery_date ASC NULLS LAST"))
+      .limit(10)
   end
   
 

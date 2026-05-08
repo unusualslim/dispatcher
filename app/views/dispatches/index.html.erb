@@ -1,602 +1,264 @@
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-
+<%# ── Announcements ── %>
 <% if Announcement.active.any? %>
-  <div class="alert alert-info announcements-container">
-    <% Announcement.active.order(published_at: :desc).each do |announcement| %>
-      <div class="announcement" id="announcement-<%= announcement.id %>">
-        <button type="button" class="close" aria-label="Close" onclick="document.getElementById('announcement-<%= announcement.id %>').classList.add('hidden')">
-          <span aria-hidden="true">&times;</span>
-        </button>
-        <h4><%= announcement.title %></h4>
-        <div class="announcement-content"><%= announcement.content.html_safe %></div>
-        <p><small><%= announcement.published_at.in_time_zone('Eastern Time (US & Canada)').strftime("%B %d, %Y %I:%M %p %Z") %></small></p>
-        <%= link_to 'View', announcement_path(announcement), class: 'btn btn-primary' %>
+  <div style="background:#d1ecf1;border-bottom:1px solid #bee5eb;padding:.6rem 1rem;">
+    <% Announcement.active.order(published_at: :desc).each do |ann| %>
+      <div class="d-flex align-items-start gap-2 mb-1" id="ann-<%= ann.id %>">
+        <i class="bi bi-megaphone-fill text-info mt-1"></i>
+        <div class="flex-grow-1">
+          <strong><%= ann.title %></strong>
+          <span class="text-muted ms-2" style="font-size:.85rem;"><%= ann.published_at.in_time_zone('Eastern Time (US & Canada)').strftime("%b %-d") %></span>
+        </div>
+        <button class="btn-close btn-sm" onclick="document.getElementById('ann-<%= ann.id %>').remove()"></button>
       </div>
     <% end %>
   </div>
 <% end %>
 
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-  document.querySelectorAll(".announcement .close").forEach(function(button) {
-    button.addEventListener("click", function() {
-      const announcement = this.closest(".announcement");
-      announcement.classList.add("hidden");
+<style>
+  .stat-card { text-decoration:none; color:inherit; display:block; transition:transform .15s, box-shadow .15s; }
+  .stat-card:hover { transform:translateY(-3px); box-shadow:0 6px 16px rgba(0,0,0,.12) !important; color:inherit; }
+  .section-card-link { text-decoration:none; color:inherit; font-weight:600; }
+  .section-card-link:hover { text-decoration:underline; color:#0d6efd; }
+</style>
 
-      // Check if all announcements are hidden
-      const allHidden = Array.from(document.querySelectorAll(".announcement")).every(function(announcement) {
-        return announcement.classList.contains("hidden");
-      });
+<div class="container-fluid px-4 py-3">
 
-      // Hide the parent container if all announcements are hidden
-      if (allHidden) {
-        document.querySelector(".alert.alert-info").style.display = "none";
-      }
-    });
-  });
-});
-</script>
+  <%# ── Page header ── %>
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h4 class="mb-0 fw-bold">Dashboard</h4>
+    <span class="text-muted" style="font-size:.85rem;"><%= Date.today.strftime("%A, %B %-d, %Y") %></span>
+  </div>
 
-
-<div class="accordion" id="homePageAccordion">
-
- <!-- Unassigned Orders Section -->
-<div class="accordion-item">
-  <h2 class="accordion-header" id="headingOrders">
-    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOrders" aria-expanded="true" aria-controls="collapseOrders" style="font-weight: 600;">
-      Unassigned Orders
-    </button>
-  </h2>
-  <div id="collapseOrders" class="accordion-collapse collapse show" aria-labelledby="headingOrders">
-    <div class="accordion-body">
-      <table class="table table-hover">
-        <thead>
-          <tr>
-            <th>Order ID</th>
-            <th>Status</th>
-            <th>Product</th>
-            <th>Delivery Date</th>
-            <th>Location</th>
-            <th>Amount</th>
-            <th></th> <!-- New column for Freight Only -->
-          </tr>
-        </thead>
-        <tbody>
-          <% @unassigned_open_orders.each do |order| %>
-            <% companyName = order.location&.company_name || "No Company Name Available" %>
-
-            <% # Determine top product and total product count %>
-            <% top_product = order.customer_order_products.select { |cop| cop.product }.max_by { |cop| cop.quantity || 0 } %>
-            <% total_products_count = order.customer_order_products.count { |cop| cop.product } %>
-            <% product_display = if total_products_count == 1
-                                    top_product&.product&.name || "Not Set"
-                                  elsif total_products_count > 1
-                                    "#{top_product&.product&.name || "Not Set"} + #{total_products_count - 1}"
-                                  else
-                                    "No Products"
-                                  end %>
-
-            <% # Calculate total quantity of products in the order %>
-            <% total_quantity = order.customer_order_products.sum { |cop| cop.quantity || 0 } %>
-            <% top_product_quantity = top_product&.quantity || 0 %>
-            <% unit_of_measurement = top_product&.product&.unit_of_measurement || "units" %>
-            <% additional_products_count = total_products_count - 1 %>
-            <% quantity_display = if total_products_count > 1
-                                    "#{top_product_quantity} #{unit_of_measurement} #{top_product&.product&.name || "Not Set"} + #{additional_products_count} "
-                                  elsif total_products_count == 1
-                                    "#{top_product_quantity} #{unit_of_measurement} #{top_product&.product&.name || "Not Set"}"
-                                  else
-                                    "Not Set"
-                                  end %>
-
-            <!-- Row to trigger collapse -->
-            <tr data-bs-toggle="collapse" data-bs-target="#detailsOrder<%= order.id %>">
-              <td><%= order.id %></td>
-              <td>
-                <% status_class = case order.order_status.downcase %>
-                  <% when "new" then "bg-primary" %>
-                  <% when "complete" then "bg-success" %>
-                  <% when "on hold" then "bg-warning text-dark" %>
-                  <% when "deleted" then "bg-danger" %>
-                  <% else "bg-secondary" %>
-                <% end %>
-
-                <span class="badge <%= status_class %>">
-                  <%= order.order_status %>
-                </span>
-              </td>
-              <td><%= product_display %></td>
-              <td><%= order.required_delivery_date %></td>
-              <td><%= companyName %></td>
-              <td><%= quantity_display %></td>
-              <td>
-                <% if order.freight_only? %>
-                  <span class="badge bg-warning text-dark">Freight Only</span>
-                <% end %>
-              </td>
-            </tr>
-
-            <!-- Collapsible Row -->
-            <tr class="collapse" id="detailsOrder<%= order.id %>">
-              <td colspan="7">
-                <div class="border rounded bg-light p-4">
-                  <h5>Order Details</h5>
-                  <div class="row">
-                    <div class="col">
-                      <ul class="list-unstyled">
-                        <li><strong>Order ID:</strong> <%= order.id %></li>
-                        <li><strong>Delivery Date:</strong> <%= order.required_delivery_date %></li>
-                        <li><strong>Location:</strong> <%= companyName %></li>
-                        <li>
-                          <strong>Freight Only:</strong> 
-                          <% if order.freight_only? %>
-                            <span class="badge bg-warning text-dark">Yes</span>
-                          <% else %>
-                            <span class="text-muted">No</span>
-                          <% end %>
-                        </li>
-                      </ul>
-                    </div>
-                    <div class="col">
-                      <ul class="list-unstyled">
-                        <li><strong>Status:</strong> 
-                          <% status_classes = { "new" => "bg-primary", "complete" => "bg-success", "deleted" => "bg-danger", "on_hold" => "bg-warning text-dark" } %>
-                          <span class="badge <%= status_classes[order.order_status.downcase] || 'bg-secondary' %>">
-                            <%= order.order_status.humanize %>
-                          </span>
-                        </li>
-                      </ul>
-                    </div>
-                    <div class="col">
-                      <div id="map<%= order.id %>" style="height: 20vh;"></div>
-                    </div>
-                  </div>
-                  <div class="row mt-3">
-                    <div class="col">
-                      <h6>Products in Order</h6>
-                      <table class="table table-bordered">
-                        <thead>
-                          <tr>
-                            <th>Product Name</th>
-                            <th>Unit of Measurement</th>
-                            <th>Quantity</th>
-                            <th>Weight</th>
-                            <th>Price</th>
-                            <th>Total Cost</th>
-                          </tr>
-                        </thead>
-                        <% total_weight = 0 %>
-                        <% total_price = 0 %>
-                        <tbody>
-                          <% order.customer_order_products.each do |cop| %>
-                            <tr>
-                              <td><%= cop.product&.name || cop.product_name %></td>
-                              <td><%= cop.product&.unit_of_measurement %></td>
-                              <td><%= cop.quantity %></td>
-                              <td><%= (cop.quantity || 0) * (cop.product&.weight || 0) %> lbs</td>
-                              <td><%= number_to_currency(cop.price) %></td>
-                              <td><%= number_to_currency((cop.quantity || 0) * (cop.price || 0.0)) %></td>
-                            </tr>
-                            <% total_weight += (cop.quantity || 0) * (cop.product&.weight || 0) %>
-                            <% total_price += (cop.quantity || 0) * (cop.price || 0.0) %>
-                          <% end %>
-                        </tbody>
-                        <tfoot>
-                          <tr>
-                            <td colspan="3" class="text-end"><strong>Total Weight:</strong></td>
-                            <td><strong><%= total_weight %> lbs</strong></td>
-                            <td class="text-end"><strong>Total Price:</strong></td>
-                            <td><strong><%= number_to_currency(total_price) %></strong></td>
-                          </tr>
-                        </tfoot>
-                      </table>
-                    </div>
-                  </div>
-                  <div class="mt-3">
-                    <%= link_to 'View Order', customer_order_path(order), class: 'btn btn-primary' %>
-                  </div>
-                </div>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
+  <%# ── Stat cards ── %>
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <%= link_to view_dispatches_path(status: "exclude_complete_deleted"), class: 'stat-card' do %>
+        <div class="card shadow-sm h-100 border-0" style="border-left:4px solid #0d6efd !important;">
+          <div class="card-body py-3">
+            <div class="text-muted mb-1" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;">Active Dispatches</div>
+            <div class="fw-bold" style="font-size:2rem;line-height:1;"><%= @stat_active %></div>
+            <div class="text-muted mt-1" style="font-size:.8rem;">New or sent to driver &rarr;</div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+    <div class="col-6 col-md-3">
+      <%= link_to view_dispatches_path(status: "Sent to Driver"), class: 'stat-card' do %>
+        <div class="card shadow-sm h-100 border-0" style="border-left:4px solid #fd7e14 !important;">
+          <div class="card-body py-3">
+            <div class="text-muted mb-1" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;">In Transit</div>
+            <div class="fw-bold" style="font-size:2rem;line-height:1;"><%= @stat_in_transit %></div>
+            <div class="text-muted mt-1" style="font-size:.8rem;">Sent to driver &rarr;</div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+    <div class="col-6 col-md-3">
+      <%= link_to customer_orders_path(order_status: "unassigned"), class: 'stat-card' do %>
+        <div class="card shadow-sm h-100 border-0" style="border-left:4px solid #dc3545 !important;">
+          <div class="card-body py-3">
+            <div class="text-muted mb-1" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;">Unassigned Orders</div>
+            <div class="fw-bold" style="font-size:2rem;line-height:1;"><%= @stat_unassigned %></div>
+            <div class="text-muted mt-1" style="font-size:.8rem;">Need a dispatch &rarr;</div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+    <div class="col-6 col-md-3">
+      <%= link_to customer_orders_path(order_status: "On Hold"), class: 'stat-card' do %>
+        <div class="card shadow-sm h-100 border-0" style="border-left:4px solid #ffc107 !important;">
+          <div class="card-body py-3">
+            <div class="text-muted mb-1" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;">On Hold</div>
+            <div class="fw-bold" style="font-size:2rem;line-height:1;"><%= @stat_on_hold %></div>
+            <div class="text-muted mt-1" style="font-size:.8rem;">Orders paused &rarr;</div>
+          </div>
+        </div>
+      <% end %>
     </div>
   </div>
-</div>
 
+  <%# ── Main two-column ── %>
+  <div class="row g-3 mb-3">
 
-  <!-- Dispatches Section -->
-  <div class="accordion-item">
-    <h2 class="accordion-header" id="headingDispatches">
-      <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDispatches" aria-expanded="true" aria-controls="collapseDispatches" style="font-weight: 600;">
-        Dispatches (New & Sent to Driver)
-      </button>
-    </h2>
-    <div id="collapseDispatches" class="accordion-collapse collapse show" aria-labelledby="headingDispatches">
-      <div class="accordion-body">
-        <table class="table table-hover">
-          <thead>
-            <tr>
-              <th>Dispatch ID</th>
-              <th>Status</th>
-              <th>Driver</th>
-              <th>Dispatch Date</th>
-              <th>Origin</th>
-              <th>Destination</th>
-            </tr>
-          </thead>
-          <tbody id="dispatchAccordion">
-            <% @filtered_dispatches.each do |dispatch| %>
-            <!-- Row Header -->
-            <tr data-bs-toggle="collapse" data-bs-target="#detailsDispatch<%= dispatch.id %>" aria-expanded="false" aria-controls="detailsDispatch<%= dispatch.id %>">
-              <td><%= dispatch.id %></td>
-              <td>
-                <% status_classes = { 
-                  "New" => "bg-primary", 
-                  "Sent to Driver" => "bg-warning text-dark", 
-                  "Complete" => "bg-success", 
-                  "Billed" => "bg-info",
-                  "Cancelled" => "bg-danger"
-                } %>
-                <span class="badge <%= status_classes[dispatch.status.humanize.titleize] || 'bg-secondary' %>">
-                  <%= dispatch.status.humanize.titleize || "N/A" %>
-                </span>
-              </td>
-              <td><%= dispatch.driver&.full_name || "No Driver Assigned" %></td>
-              <td><%= dispatch.dispatch_date.present? ? dispatch.dispatch_date.strftime("%B %d, %Y") : "N/A" %></td>
-              <td><%= dispatch.origin || "No Origin" %></td>
-              <td>
-                <% if dispatch.customer_orders.any? %>
-                  <% destination_location = dispatch.customer_orders.first.location %>
-                  <%= "#{destination_location.company_name} - #{destination_location.city}" %>
-                <% else %>
-                  No destination location found
+    <%# Today's dispatches %>
+    <div class="col-lg-7">
+      <div class="card shadow-sm h-100">
+        <div class="card-header d-flex align-items-center justify-content-between py-2">
+          <%= link_to "Today's Dispatches", kanban_dispatches_path(start_date: Date.today, end_date: Date.today), class: 'section-card-link' %>
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-primary"><%= @today_dispatches.count %></span>
+            <%= link_to "Kanban →", kanban_dispatches_path(start_date: Date.today, end_date: Date.today), class: 'btn btn-sm btn-outline-primary', style: 'font-size:.75rem;padding:.15rem .5rem;' %>
+          </div>
+        </div>
+        <% if @today_dispatches.empty? %>
+          <div class="card-body text-muted fst-italic" style="font-size:.9rem;">No dispatches scheduled for today.</div>
+        <% else %>
+          <div class="table-responsive">
+            <table class="table table-hover mb-0" style="font-size:.85rem;">
+              <thead class="table-light">
+                <tr>
+                  <th class="ps-3">#</th>
+                  <th>Driver</th>
+                  <th>Status</th>
+                  <th>From</th>
+                  <th>To</th>
+                  <th>Orders</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @today_dispatches.each do |d| %>
+                  <% first_order = d.customer_orders.first %>
+                  <tr style="cursor:pointer;" onclick="location.href='<%= dispatch_path(d) %>'">
+                    <td class="ps-3"><%= link_to "##{d.id}", dispatch_path(d), class: 'fw-semibold text-decoration-none' %></td>
+                    <td><%= d.driver&.full_name || '<span class="text-danger">Unassigned</span>'.html_safe %></td>
+                    <td>
+                      <% cls = d.status == "Sent to Driver" ? "bg-warning text-dark" : "bg-primary" %>
+                      <span class="badge <%= cls %>" style="font-size:.7rem;"><%= d.status %></span>
+                    </td>
+                    <td class="text-muted"><%= d.origin.presence || "—" %></td>
+                    <td><%= first_order&.location&.company_name || d.destination.presence || "—" %></td>
+                    <td><%= d.customer_orders.size %></td>
+                  </tr>
                 <% end %>
-              </td>
-            </tr>
-
-            <!-- Collapsible Row -->
-            <tr class="collapse" id="detailsDispatch<%= dispatch.id %>" data-bs-parent="#dispatchAccordion">
-              <td colspan="7" class="p-3">
-                <div class="border rounded bg-light p-4">
-                  <h5>Dispatch Details</h5>
-                  <div class="row">
-                    <div class="col-md-6">
-                      <ul class="list-unstyled">
-                        <li><strong>Dispatch ID:</strong> <%= dispatch.id %></li>
-                        <li>
-                          <strong>Status:</strong> 
-                          <span class="badge <%= status_classes[dispatch.status.humanize.titleize] || 'bg-secondary' %>">
-                            <%= dispatch.status.humanize.titleize || "N/A" %>
-                          </span>
-                        </li>
-                        <li><strong>Driver:</strong> <%= dispatch.driver&.full_name || "No Driver Assigned" %></li>
-                        <li><strong>Dispatch Date:</strong> <%= dispatch.dispatch_date || "No Date" %></li>
-                      </ul>
-                    </div>
-                    <div class="col-md-6">
-                      <ul class="list-unstyled">
-                        <li><strong>Origin:</strong> <%= dispatch.origin || "No Origin" %></li>
-                        <li><strong>Destination:</strong> <%= dispatch.destination || "No Destination" %></li>
-                        <li><strong>Notes:</strong> <%= dispatch.notes.presence || "No Notes Available" %></li>
-                      </ul>
-                    </div>
-                  </div>
-                  <div class="row mt-3">
-                    <div class="col-md-12">
-                      <% dispatch.customer_orders.each do |order| %>
-                        <div class="card mt-2">
-                          <div class="card-body">
-                            <h5 class="card-title">Order Details</h5>
-                            <p><strong>Order ID:</strong> <%= order.id %></p>
-                            <p><strong>Delivery Date:</strong> <%= order.required_delivery_date || "No Date" %></p>
-                            <p><strong>Location:</strong> <%= order.location&.company_name || "No Location Available" %></p>
-                            <p>
-                              <strong>Freight Only:</strong> 
-                              <% if order.freight_only? %>
-                                <span class="badge bg-warning text-dark">Yes</span>
-                              <% else %>
-                                <span class="text-muted">No</span>
-                              <% end %>
-                            </p>
-                            <h6>Products in Order</h6>
-                            <ul class="list-group">
-                              <% order.customer_order_products.each do |cop| %>
-                                <li class="list-group-item">
-                                  <strong><%= cop.product&.name || cop.product_name %></strong> -
-                                  <%= cop.quantity %> <%= cop.product&.unit_of_measurement %>
-                                </li>
-                              <% end %>
-                            </ul>
-                            <div class="mt-3">
-                              <%= link_to 'View Order', customer_order_path(order), class: 'btn btn-primary btn-sm' %>
-                            </div>
-                          </div>
-                        </div>
-                      <% end %>
-                    </div>
-                  </div>
-                  <div class="mt-3">
-                    <%= link_to 'View Dispatch', dispatch_path(dispatch), class: 'btn btn-primary' %>
-                  </div>
-                </div>
-              </td>
-            </tr>
-            <% end %>
-          </tbody>
-        </table>
+              </tbody>
+            </table>
+          </div>
+        <% end %>
       </div>
     </div>
-  </div>
-   <div class="accordion-item">
-    <h2 class="accordion-header" id="headingCompletedDispatches">
-      <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCompletedDispatches" aria-expanded="true" aria-controls="collapseCompletedDispatches" style="font-weight: 600;">
-        Completed Dispatches
-      </button>
-    </h2>
-    <div id="collapseCompletedDispatches" class="accordion-collapse collapse show" aria-labelledby="headingCompletedDispatches">
-      <div class="accordion-body">
-        <table class="table table-hover">
-          <thead>
-            <tr>
-              <th>Dispatch ID</th>
-              <th>Status</th>
-              <th>Driver</th>
-              <th>Dispatch Date</th>
-              <th>Origin</th>
-              <th>Destination</th>
-            </tr>
-          </thead>
-          <tbody id="completedDispatchAccordion">
-            <% @completed_dispatches.each do |dispatch| %>
-              <!-- Row Header -->
-              <tr data-bs-toggle="collapse" data-bs-target="#detailsCompletedDispatch<%= dispatch.id %>" aria-expanded="false" aria-controls="detailsCompletedDispatch<%= dispatch.id %>">
-                <td><%= dispatch.id %></td>
-                <td><span class="badge bg-success">Completed</span></td>
-                <td><%= dispatch.driver&.full_name || "No Driver Assigned" %></td>
-                <td><%= dispatch.dispatch_date.present? ? dispatch.dispatch_date.strftime("%B %d, %Y") : "N/A" %></td>
-                <td><%= dispatch.origin || "No Origin" %></td>
-                <td>
-                  <p>
-                    <% if dispatch.customer_orders.any? %>
-                      <% destination_location = dispatch.customer_orders.first.location %>
-                      <%= "#{destination_location.company_name} - #{destination_location.city}" %>
-                    <% else %>
-                      No destination location found
-                    <% end %>
-                  </p>
-                  <% if dispatch.freight_only? %>
-                    <span class="badge bg-dark">Freight Only</span>
-                  <% end %>
-                </td>
-              </tr>
-              <!-- Collapsible Row -->
-              <tr class="collapse" id="detailsCompletedDispatch<%= dispatch.id %>" data-bs-parent="#completedDispatchAccordion">
-                <td colspan="7" class="p-3">
-                  <div class="border rounded bg-light p-4">
-                    <h5>Dispatch Details</h5>
-                    <div class="row">
-                      <div class="col-md-6">
-                        <ul class="list-unstyled">
-                          <li><strong>Dispatch ID:</strong> <%= dispatch.id %></li>
-                          <li><strong>Status:</strong> <span class="badge bg-success">Completed</span></li>
-                          <li><strong>Driver:</strong> <%= dispatch.driver&.full_name || "No Driver Assigned" %></li>
-                          <li><strong>Dispatch Date:</strong> <%= dispatch.dispatch_date || "No Date" %></li>
-                        </ul>
-                      </div>
-                      <div class="col-md-6">
-                        <ul class="list-unstyled">
-                          <li><strong>Origin:</strong> <%= dispatch.origin || "No Origin" %></li>
-                          <li><strong>Destination:</strong> <%= dispatch.destination || "No Destination" %></li>
-                          <li><strong>Notes:</strong> <%= dispatch.notes.presence || "No Notes Available" %></li>
-                        </ul>
-                      </div>
-                    </div>
-                    <div class="mt-3">
-                      <%= link_to 'View Dispatch', dispatch_path(dispatch), class: 'btn btn-primary' %>
-                    </div>
-                  </div>
-                </td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
+
+    <%# Unassigned orders %>
+    <div class="col-lg-5">
+      <div class="card shadow-sm h-100">
+        <div class="card-header d-flex align-items-center justify-content-between py-2">
+          <%= link_to "Unassigned Orders", customer_orders_path(order_status: "unassigned"), class: 'section-card-link' %>
+          <div class="d-flex gap-2 align-items-center">
+            <span class="badge bg-danger"><%= @stat_unassigned %></span>
+            <%= link_to "View All →", customer_orders_path(order_status: "unassigned"), class: 'btn btn-sm btn-outline-danger', style: 'font-size:.75rem;padding:.15rem .5rem;' %>
+          </div>
+        </div>
+        <% if @unassigned_orders.empty? %>
+          <div class="card-body text-muted fst-italic" style="font-size:.9rem;">All orders are assigned.</div>
+        <% else %>
+          <div style="max-height:320px;overflow-y:auto;">
+            <table class="table table-hover mb-0" style="font-size:.83rem;">
+              <thead class="table-light" style="position:sticky;top:0;z-index:1;">
+                <tr>
+                  <th class="ps-3">#</th>
+                  <th>Location</th>
+                  <th>Due</th>
+                  <th>Product</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @unassigned_orders.each do |o| %>
+                  <% top = o.customer_order_products.select { |c| c.product }.max_by { |c| c.quantity || 0 } %>
+                  <% due = o.required_delivery_date %>
+                  <% overdue = due && due < Date.today %>
+                  <tr style="cursor:pointer;" onclick="location.href='<%= customer_order_path(o) %>'">
+                    <td class="ps-3"><%= link_to "##{o.id}", customer_order_path(o), class: 'text-decoration-none fw-semibold' %></td>
+                    <td><%= o.location&.company_name || "—" %></td>
+                    <td class="<%= overdue ? 'text-danger fw-semibold' : '' %>">
+                      <%= due ? due.strftime("%b %-d") : "—" %>
+                      <% if overdue %><i class="bi bi-exclamation-circle ms-1"></i><% end %>
+                    </td>
+                    <td class="text-muted">
+                      <%= top ? (top.product&.name || top.product_name) : "—" %>
+                      <% extras = o.customer_order_products.count - 1 %>
+                      <% if extras > 0 %><span class="text-muted"> +<%= extras %></span><% end %>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% end %>
       </div>
     </div>
   </div>
 
-  <!-- On Hold Orders Section -->
-  <div class="accordion-item">
-    <h2 class="accordion-header" id="headingDispatches">
-      <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOnHoldOrders" aria-expanded="true" aria-controls="collapseDispatches" style="font-weight: 600;">
-        On Hold Orders
-      </button>
-    </h2>
-    <div id="collapseOnHoldOrders" class="accordion-collapse collapse show" aria-labelledby="headingOnHoldOrders" >
-      <div class="accordion-body">
-        <table class="table table-hover">
-          <thead>
+  <%# ── Upcoming dispatches ── %>
+  <% if @upcoming_dispatches.any? %>
+    <div class="card shadow-sm mb-3">
+      <div class="card-header d-flex align-items-center justify-content-between py-2">
+        <%= link_to "Upcoming Dispatches", kanban_dispatches_path(start_date: Date.today + 1, end_date: Date.today + 7), class: 'section-card-link' %>
+        <div class="d-flex align-items-center gap-2">
+          <span class="text-muted fw-normal" style="font-size:.8rem;">next 7 days</span>
+          <%= link_to "Kanban →", kanban_dispatches_path(start_date: Date.today + 1, end_date: Date.today + 7), class: 'btn btn-sm btn-outline-secondary', style: 'font-size:.75rem;padding:.15rem .5rem;' %>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0" style="font-size:.85rem;">
+          <thead class="table-light">
             <tr>
-              <th>Order ID</th>
+              <th class="ps-3">#</th>
+              <th>Date</th>
+              <th>Driver</th>
               <th>Status</th>
-              <th>Product</th>
-              <th>Delivery Date</th>
-              <th>Location</th>
-              <th>Amount</th>
-              <th></th> <!-- Freight Only Column -->
+              <th>From</th>
+              <th>To</th>
+              <th>Orders</th>
             </tr>
           </thead>
           <tbody>
-            <% @on_hold_orders.each do |order| %>
-              <% companyName = order.location&.company_name || "No Company Name Available" %>
-
-              <% # Determine top product and total product count %>
-              <% top_product = order.customer_order_products.select { |cop| cop.product }.max_by { |cop| cop.quantity || 0 } %>
-              <% unit_of_measurement = top_product&.product&.unit_of_measurement || "units" %>
-              <% total_products_count = order.customer_order_products.count { |cop| cop.product } %>
-              <% product_display = total_products_count > 1 ? "#{top_product&.product&.name || "Not Set"} + #{total_products_count - 1}" : (top_product&.product&.name || "No Products") %>
-
-              <% # Calculate total quantity %>
-              <% total_quantity = order.customer_order_products.sum { |cop| cop.quantity || 0 } %>
-              <% top_product_quantity = top_product&.quantity || 0 %>
-              <% additional_products_count = total_products_count - 1 %>
-              <% quantity_display = if total_products_count > 1
-                        "#{top_product_quantity} #{unit_of_measurement} #{top_product&.product&.name || "Not Set"} + #{additional_products_count}"
-                      elsif total_products_count == 1
-                        "#{top_product_quantity} #{unit_of_measurement} #{top_product&.product&.name || "Not Set"}"
-                      else
-                        "Not Set"
-                      end %>
-
-              <!-- Row to trigger collapse -->
-              <tr data-bs-toggle="collapse" data-bs-target="#detailsOnHoldOrder<%= order.id %>">
-                <td><%= order.id %></td>
+            <% @upcoming_dispatches.each do |d| %>
+              <% first_order = d.customer_orders.first %>
+              <% days_out = (d.dispatch_date - Date.today).to_i %>
+              <tr style="cursor:pointer;" onclick="location.href='<%= dispatch_path(d) %>'">
+                <td class="ps-3"><%= link_to "##{d.id}", dispatch_path(d), class: 'fw-semibold text-decoration-none' %></td>
                 <td>
-                  <span class="badge bg-warning text-dark">On Hold</span>
+                  <%= d.dispatch_date.strftime("%a, %b %-d") %>
+                  <span class="text-muted ms-1" style="font-size:.75rem;">in <%= days_out %> <%= "day".pluralize(days_out) %></span>
                 </td>
-                <td><%= product_display %></td>
-                <td><%= order.required_delivery_date || "No Date" %></td>
-                <td><%= companyName %></td>
-                <td><%= quantity_display %></td>
+                <td><%= d.driver&.full_name || '<span class="text-muted fst-italic">Unassigned</span>'.html_safe %></td>
                 <td>
-                  <% if order.freight_only? %>
-                    <span class="badge bg-warning text-dark">Freight Only</span>
-                  <% end %>
+                  <% cls = d.status == "Sent to Driver" ? "bg-warning text-dark" : "bg-primary" %>
+                  <span class="badge <%= cls %>" style="font-size:.7rem;"><%= d.status %></span>
                 </td>
-              </tr>
-
-              <!-- Collapsible Row -->
-              <tr class="collapse" id="detailsOnHoldOrder<%= order.id %>">
-                <td colspan="7">
-                  <div class="border rounded bg-light p-4">
-                    <h5>Order Details</h5>
-                    <div class="row">
-                      <div class="col">
-                        <ul class="list-unstyled">
-                          <li><strong>Order ID:</strong> <%= order.id %></li>
-                          <li><strong>Delivery Date:</strong> <%= order.required_delivery_date || "No Date" %></li>
-                          <li><strong>Location:</strong> <%= companyName %></li>
-                          <li>
-                            <strong>Freight Only:</strong> 
-                            <% if order.freight_only? %>
-                              <span class="badge bg-warning text-dark">Yes</span>
-                            <% else %>
-                              <span class="text-muted">No</span>
-                            <% end %>
-                          </li>
-                        </ul>
-                      </div>
-                      <div class="col">
-                        <ul class="list-unstyled">
-                          <li><strong>Status:</strong> 
-                            <span class="badge bg-warning text-dark">On Hold</span>
-                          </li>
-                        </ul>
-                      </div>
-                      <div class="col">
-                        <div id="map<%= order.id %>" style="height: 20vh;"></div>
-                      </div>
-                    </div>
-                    <div class="row mt-3">
-                      <div class="col">
-                        <h6>Products in Order</h6>
-<table class="table table-bordered">
-  <thead>
-    <tr>
-      <th>Product Name</th>
-      <th>Unit of Measurement</th>
-      <th>Quantity</th>
-      <th>Price</th>
-      <th>Total</th>
-    </tr>
-  </thead>
-  <% total_weight = 0 %>
-  <% total_price = 0 %>
-  <tbody>
-    <% order.customer_order_products.each do |cop| %>
-      <tr>
-        <td><%= cop.product&.name || cop.product_name %></td>
-        <td><%= cop.product&.unit_of_measurement %></td>
-        <td><%= cop.quantity %></td>
-        <td><%= number_to_currency(cop.price) %></td>
-        <td><%= number_to_currency((cop.quantity || 0) * (cop.price || 0.0)) %></td>
-      </tr>
-      <% total_weight += (cop.quantity || 0) * (cop.product&.weight || 0) %>
-      <% total_price += (cop.quantity || 0) * (cop.price || 0.0) %>
-    <% end %>
-  </tbody>
-  <tfoot>
-    <tr>
-      <td colspan="2" class="text-end"><strong>Total Weight:</strong></td>
-      <td><strong><%= total_weight %> lbs</strong></td>
-      <td class="text-end"><strong>Total Price:</strong></td>
-      <td><strong><%= number_to_currency(total_price) %></strong></td>
-    </tr>
-  </tfoot>
-</table>
-                      </div>
-                    </div>
-                    <div class="mt-3">
-                      <%= link_to 'View Order', customer_order_path(order), class: 'btn btn-primary' %>
-                    </div>
-                  </div>
-                </td>
+                <td class="text-muted"><%= d.origin.presence || "—" %></td>
+                <td><%= first_order&.location&.company_name || d.destination.presence || "—" %></td>
+                <td><%= d.customer_orders.size %></td>
               </tr>
             <% end %>
           </tbody>
         </table>
       </div>
     </div>
-  </div>
+  <% end %>
+
+  <%# ── On Hold Orders ── %>
+  <% if @on_hold_orders.any? %>
+    <div class="card shadow-sm mb-3">
+      <div class="card-header d-flex align-items-center justify-content-between py-2">
+        <%= link_to "On Hold Orders", customer_orders_path(order_status: "On Hold"), class: 'section-card-link' %>
+        <div class="d-flex align-items-center gap-2">
+          <span class="badge bg-warning text-dark"><%= @on_hold_orders.count %></span>
+          <%= link_to "View All →", customer_orders_path(order_status: "On Hold"), class: 'btn btn-sm btn-outline-warning', style: 'font-size:.75rem;padding:.15rem .5rem;' %>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0" style="font-size:.85rem;">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-3">#</th>
+              <th>Location</th>
+              <th>Due</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @on_hold_orders.each do |o| %>
+              <tr style="cursor:pointer;" onclick="location.href='<%= customer_order_path(o) %>'">
+                <td class="ps-3"><%= link_to "##{o.id}", customer_order_path(o), class: 'fw-semibold text-decoration-none' %></td>
+                <td><%= o.location&.company_name || "—" %></td>
+                <td><%= o.required_delivery_date&.strftime("%b %-d, %Y") || "—" %></td>
+                <td class="text-muted"><%= o.try(:notes).presence || "—" %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% end %>
+
 </div>
-
-<style>
-.collapse > div {
-  transition: all 0.3s ease;
-}
-
-.table-hover tbody tr:hover {
-  background-color: #f8f9fa; /* Light gray hover effect */
-}
-
-.list-unstyled li {
-  margin-bottom: 10px;
-}
-
-#map {
-  height: 20vh; /* 100% of the viewport height */
-}
-.announcements-container {
-  padding: 1rem;
-  background-color: #d9edf7; /* Light blue background */
-  border: 1px solid #bce8f1; /* Border color */
-  border-radius: 0.25rem;
-  margin-bottom: 1rem;
-}
-
-.announcement {
-  position: relative;
-  padding: 1rem;
-  background-color: #ffffff; /* White background for each announcement */
-  border: 1px solid #bce8f1; /* Border color */
-  border-radius: 0.25rem;
-  margin-bottom: 1rem; /* Space between announcements */
-  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); /* Subtle shadow */
-}
-
-.announcement .close {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-}
-
-.announcement.hidden {
-  display: none;
-  margin: 0;
-  padding: 0;
-}
-</style>
