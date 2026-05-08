@@ -11,7 +11,7 @@
           </div>
           <button class="btn-close btn-sm" onclick="document.getElementById('ann-<%= ann.id %>').remove()"></button>
         </div>
-        <div class="card-body py-2" style="white-space:pre-wrap;font-size:.9rem;line-height:1.6;"><%= ann.content %></div>
+        <div class="card-body py-2" style="font-size:.9rem;line-height:1.6;"><%= ann.content.html_safe %></div>
       </div>
     <% end %>
   </div>
