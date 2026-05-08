@@ -1,5 +1,7 @@
+require 'csv'
+
 class PurchaseOrdersController < ApplicationController
-  before_action :set_purchase_order, only: [:show, :approve, :receive]
+  before_action :set_purchase_order, only: [:show, :approve, :submit, :receive]
 
   def index
     @purchase_orders = PurchaseOrder.includes(:product, :vendor)
@@ -29,9 +31,43 @@ class PurchaseOrdersController < ApplicationController
   def show
   end
 
+  PDI_SITE_ID = 2
+
+  def export_pdi
+    pos = PurchaseOrder.includes(:product, :vendor)
+                       .where(status: %w[approved submitted])
+                       .order(:id)
+
+    csv = CSV.generate do |out|
+      pos.each do |po|
+        vendor     = po.vendor
+        product    = po.product
+        today      = Date.today.strftime('%-m/%-d/%Y')
+        delivery   = (po.expected_delivery_date || Date.today).strftime('%-m/%-d/%Y')
+        total      = po.total_cost&.to_f || 0
+
+        out << ['REM', 'Vendor ID', 'PO Number', 'Business Date', 'Order Date', 'Delivery Date', '', '', '', '', '', '', 'Invoice Total']
+        out << ['POH', vendor.pdi_vendor_id, '', today, today, delivery, '', '', '', '', '', '', total]
+        out << ['REM', 'Site ID', 'Product ID', 'Package Code', '', '', 'Inventory Package Qty', 'Invoice Qty', 'Delivery qty', '', 'Billing Units Costs', '', '']
+        out << ['POD', PDI_SITE_ID, product&.id, product&.pdi_package_code, '', '', po.quantity.to_f, po.quantity.to_f, '', '', po.unit_cost&.to_f, '', '']
+      end
+    end
+
+    send_data csv,
+              type:        'text/csv; charset=utf-8',
+              disposition: "attachment; filename=\"PDI_PO_Export_#{Date.today}.csv\""
+  end
+
   def approve
     @purchase_order.approve!(current_user)
     redirect_to @purchase_order, notice: 'Purchase order approved.'
+  end
+
+  def submit
+    @purchase_order.update!(status: 'submitted', submitted_at: Time.current)
+    redirect_to @purchase_order, notice: 'Purchase order submitted — PDI export queued.'
+  rescue => e
+    redirect_to @purchase_order, alert: "Could not submit: #{e.message}"
   end
 
   def receive

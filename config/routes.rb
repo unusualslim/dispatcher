@@ -85,7 +85,11 @@ Rails.application.routes.draw do
   resources :purchase_orders, only: [:index, :new, :create, :show] do
     member do
       patch :approve
+      patch :submit
       patch :receive
+    end
+    collection do
+      get :export_pdi
     end
   end
 
@@ -117,7 +121,7 @@ Rails.application.routes.draw do
 
   resources :dispatch_messages, only: [:index, :show]
 
-  resources :vendors, only: [:index, :new, :create, :destroy, :show]
+  resources :vendors, only: [:index, :new, :create, :destroy, :show, :edit, :update]
 
   delete 'dispatches/:dispatch_id/files/:id', to: 'dispatches#destroy_file', as: 'dispatch_file'
 

@@ -79,9 +79,14 @@
             data: { confirm: 'Approve this purchase order?' } %>
     <% end %>
     <% if @purchase_order.status == 'approved' %>
+      <%= button_to 'Submit to PDI', submit_purchase_order_path(@purchase_order),
+            method: :patch, class: 'btn btn-info',
+            data: { confirm: 'Submit this PO? A PDI import file will be sent to the FTP server.' } %>
+    <% end %>
+    <% if @purchase_order.status == 'submitted' %>
       <%= button_to 'Mark Received', receive_purchase_order_path(@purchase_order),
             method: :patch, class: 'btn btn-primary',
-            data: { confirm: "Mark received? This will add #{number_with_precision(@purchase_order.quantity, precision: 1)} #{@purchase_order.product.unit_of_measurement} to inventory." } %>
+            data: { confirm: "Mark received? This will add #{number_with_precision(@purchase_order.quantity, precision: 1)} #{@purchase_order.product&.unit_of_measurement} to inventory." } %>
     <% end %>
   </div>
 </div>

@@ -11,9 +11,23 @@ class PurchaseOrder < ApplicationRecord
   validates :trigger_type, inclusion: { in: TRIGGER_TYPES }, allow_nil: true
   validates :quantity,     numericality: { greater_than: 0 }
 
+  after_update_commit :enqueue_pdi_export, if: :submitted?
+
+  def submitted?
+    status == 'submitted' && saved_change_to_status?
+  end
+
   scope :pending_approval, -> { where(status: 'pending_approval') }
   scope :draft,            -> { where(status: 'draft') }
   scope :active,           -> { where(status: %w[draft pending_approval approved submitted]) }
+
+  private
+
+  def enqueue_pdi_export
+    PdiExportJob.perform_later(id)
+  end
+
+  public
 
   def total_cost
     return nil if quantity.nil? || unit_cost.nil?
