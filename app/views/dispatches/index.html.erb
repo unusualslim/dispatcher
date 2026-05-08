@@ -1,14 +1,17 @@
 <%# ── Announcements ── %>
 <% if Announcement.active.any? %>
-  <div style="background:#d1ecf1;border-bottom:1px solid #bee5eb;padding:.6rem 1rem;">
+  <div class="px-4 pt-3">
     <% Announcement.active.order(published_at: :desc).each do |ann| %>
-      <div class="d-flex align-items-start gap-2 mb-1" id="ann-<%= ann.id %>">
-        <i class="bi bi-megaphone-fill text-info mt-1"></i>
-        <div class="flex-grow-1">
-          <strong><%= ann.title %></strong>
-          <span class="text-muted ms-2" style="font-size:.85rem;"><%= ann.published_at.in_time_zone('Eastern Time (US & Canada)').strftime("%b %-d") %></span>
+      <div class="card border-info shadow-sm mb-3" id="ann-<%= ann.id %>" style="border-left:4px solid #0dcaf0 !important;">
+        <div class="card-header d-flex align-items-center justify-content-between py-2" style="background:#e8f7fb;">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-megaphone-fill text-info"></i>
+            <strong><%= ann.title %></strong>
+            <span class="text-muted" style="font-size:.8rem;"><%= ann.published_at.in_time_zone('Eastern Time (US & Canada)').strftime("%b %-d, %Y") %></span>
+          </div>
+          <button class="btn-close btn-sm" onclick="document.getElementById('ann-<%= ann.id %>').remove()"></button>
         </div>
-        <button class="btn-close btn-sm" onclick="document.getElementById('ann-<%= ann.id %>').remove()"></button>
+        <div class="card-body py-2" style="white-space:pre-wrap;font-size:.9rem;line-height:1.6;"><%= ann.content %></div>
       </div>
     <% end %>
   </div>
