@@ -1,5 +1,5 @@
 class VendorsController < ApplicationController
-  before_action :set_vendor, only: [:destroy]
+  before_action :set_vendor, only: [:show, :edit, :update, :destroy]
 
   def index
     @vendors = Vendor.all
@@ -7,7 +7,17 @@ class VendorsController < ApplicationController
   end
 
   def show
-    @vendor = Vendor.find(params[:id])
+  end
+
+  def edit
+  end
+
+  def update
+    if @vendor.update(vendor_params)
+      redirect_to @vendor, notice: "Vendor updated."
+    else
+      render :edit, status: :unprocessable_entity
+    end
   end
 
   def create
@@ -32,6 +42,6 @@ class VendorsController < ApplicationController
   end
 
   def vendor_params
-    params.require(:vendor).permit(:name)
+    params.require(:vendor).permit(:name, :pdi_vendor_id, :contact_name, :email, :phone, :lead_time_days)
   end
 end

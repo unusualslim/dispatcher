@@ -19,6 +19,7 @@
     <thead>
       <tr>
         <th>Name</th>
+        <th>PDI Vendor ID</th>
         <th>Actions</th>
       </tr>
     </thead>
@@ -27,8 +28,16 @@
         <tr>
           <td><%= vendor.name %></td>
           <td>
+            <% if vendor.pdi_vendor_id.present? %>
+              <code><%= vendor.pdi_vendor_id %></code>
+            <% else %>
+              <span class="text-muted">—</span>
+            <% end %>
+          </td>
+          <td>
             <div class="btn-group">
               <%= link_to "View", vendor_path(vendor), class: "btn btn-primary btn-sm" %>
+              <%= link_to "Edit", edit_vendor_path(vendor), class: "btn btn-outline-secondary btn-sm" %>
               <%= button_to "Delete", vendor_path(vendor), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger btn-sm" %>
             </div>
           </td>
