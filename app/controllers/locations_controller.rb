@@ -111,8 +111,12 @@ class LocationsController < ApplicationController
     end
 
     def dispatch_routes
-      active_dispatches = Dispatch.where(status: "Sent to Driver")
-                                  .includes(customer_orders: :location)
+      active_dispatches = if params[:ids].present?
+                           Dispatch.where(id: params[:ids])
+                         else
+                           Dispatch.where(status: "Sent to Driver")
+                         end
+      active_dispatches = active_dispatches.includes(customer_orders: :location)
 
       origin_locations = Location.where.not(latitude: nil, longitude: nil)
                                   .index_by(&:full_address_with_company)
