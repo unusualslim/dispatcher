@@ -290,6 +290,38 @@
       padding: .1rem .45rem;
       color: #555;
     }
+    .card-orders {
+      margin-top: .45rem;
+      border-top: 1px solid #f0f0f0;
+      padding-top: .35rem;
+      display: flex;
+      flex-direction: column;
+      gap: .2rem;
+    }
+    .card-order-row {
+      font-size: .76rem;
+      color: #444;
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .card-order-loc {
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .card-order-product {
+      color: #777;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .card-order-more {
+      font-size: .72rem;
+      color: #999;
+      font-style: italic;
+    }
     .card-notes {
       font-size: .78rem;
       color: #888;
@@ -437,6 +469,24 @@
                   <span class="card-meta-chip"><%= number_with_delimiter(total_qty.to_i) %> gal</span>
                 <% end %>
               </div>
+
+              <% if dispatch.customer_orders.any? %>
+                <div class="card-orders">
+                  <% dispatch.customer_orders.first(3).each do |o| %>
+                    <% top = o.customer_order_products.max_by { |c| c.quantity || 0 } %>
+                    <% product_str = top ? "#{top.product&.name || top.product_name}#{top.quantity ? " · #{number_with_delimiter(top.quantity.to_i)}" : ""}" : nil %>
+                    <div class="card-order-row">
+                      <span class="card-order-loc"><%= o.location&.company_name || "—" %></span>
+                      <% if product_str %>
+                        <span class="card-order-product"><%= product_str %></span>
+                      <% end %>
+                    </div>
+                  <% end %>
+                  <% if dispatch.customer_orders.size > 3 %>
+                    <div class="card-order-more">+<%= dispatch.customer_orders.size - 3 %> more</div>
+                  <% end %>
+                </div>
+              <% end %>
 
               <% if dispatch.notes.present? %>
                 <div class="card-notes"><%= dispatch.notes %></div>

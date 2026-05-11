@@ -306,7 +306,7 @@ class DispatchesController < ApplicationController
     @end_date   = params[:end_date].present?   ? (Date.parse(params[:end_date])   rescue Date.today + 6) : Date.today + 6
     @start_date, @end_date = @end_date, @start_date if @start_date > @end_date
 
-    dispatches = Dispatch.includes(:driver, customer_orders: :customer_order_products)
+    dispatches = Dispatch.includes(:driver, customer_orders: [:location, { customer_order_products: :product }])
                          .where.not(status: :deleted)
                          .where(dispatch_date: @start_date..@end_date)
                          .order(:dispatch_date)
