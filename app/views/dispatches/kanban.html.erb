@@ -317,11 +317,7 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .card-order-more {
-      font-size: .72rem;
-      color: #999;
-      font-style: italic;
-    }
+
     .card-notes {
       font-size: .78rem;
       color: #888;
@@ -472,7 +468,7 @@
 
               <% if dispatch.customer_orders.any? %>
                 <div class="card-orders">
-                  <% dispatch.customer_orders.first(3).each do |o| %>
+                  <% dispatch.customer_orders.each do |o| %>
                     <% top = o.customer_order_products.max_by { |c| c.quantity || 0 } %>
                     <% product_str = top ? "#{top.product&.name || top.product_name}#{top.quantity ? " · #{number_with_delimiter(top.quantity.to_i)}" : ""}" : nil %>
                     <div class="card-order-row">
@@ -481,9 +477,6 @@
                         <span class="card-order-product"><%= product_str %></span>
                       <% end %>
                     </div>
-                  <% end %>
-                  <% if dispatch.customer_orders.size > 3 %>
-                    <div class="card-order-more">+<%= dispatch.customer_orders.size - 3 %> more</div>
                   <% end %>
                 </div>
               <% end %>
