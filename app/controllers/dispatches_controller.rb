@@ -168,7 +168,7 @@ class DispatchesController < ApplicationController
     @sort_by = params[:sort_by].presence || "dispatch_date"
 
     # Start with a relation (includes prevents N+1 in your view)
-    dispatches = Dispatch.includes(:driver, customer_orders: :location)
+    dispatches = Dispatch.includes(:driver, customer_orders: { location: {}, customer_order_products: :product })
 
     # Status filter
     if @selected_status == "exclude_complete_deleted"
@@ -197,6 +197,47 @@ class DispatchesController < ApplicationController
 
     # Pagination (LAST)
     @dispatches = dispatches.paginate(page: params[:page], per_page: 25)
+
+    origin_locations = Location.where.not(latitude: nil, longitude: nil)
+                                     .index_by(&:full_address_with_company)
+
+    @map_data = @dispatches.filter_map do |dispatch|
+      origin = origin_locations[dispatch.origin]
+      next unless origin
+      dest = dispatch.customer_orders.map(&:location).find { |l| l&.latitude && l&.longitude }
+      next unless dest
+      {
+        id:           dispatch.id,
+        origin:       { lat: origin.latitude, lng: origin.longitude, name: origin.company_name },
+        destination:  { lat: dest.latitude,   lng: dest.longitude,   name: dest.company_name },
+        driver:       dispatch.driver&.full_name,
+        dispatch_date: dispatch.dispatch_date&.to_s,
+        status:       dispatch.status
+      }
+    end
+
+    @dispatch_detail_data = @dispatches.map do |dispatch|
+      {
+        id:           dispatch.id,
+        driver:       dispatch.driver&.full_name,
+        dispatch_date: dispatch.dispatch_date&.strftime("%B %-d, %Y"),
+        status:       dispatch.status,
+        origin:       dispatch.origin.presence || '—',
+        notes:        dispatch.notes.presence,
+        orders: dispatch.customer_orders.map do |o|
+          {
+            id:       o.id,
+            location: o.location&.company_name,
+            city:     o.location&.city,
+            due:      o.required_delivery_date&.strftime("%b %-d, %Y"),
+            status:   o.order_status,
+            products: o.customer_order_products.map do |cop|
+              { name: cop.product&.name || cop.product_name, quantity: cop.quantity }
+            end
+          }
+        end
+      }
+    end
   end
 
   

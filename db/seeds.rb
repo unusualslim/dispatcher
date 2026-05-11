@@ -20,6 +20,8 @@ Dispatch.destroy_all
 ProductionOrderBatch.destroy_all
 ProductionOrderComponent.destroy_all
 ProductionOrder.destroy_all
+InventoryTransaction.destroy_all
+PurchaseOrder.destroy_all
 LocationContact.destroy_all
 LocationProduct.destroy_all
 CustomerLocation.destroy_all
@@ -43,14 +45,14 @@ destination_cat = LocationCategory.create!(name: 'Destination')
 # ---------------------------------------------------------------------------
 puts "Seeding products..."
 products = {
-  regular:     Product.create!(name: 'Regular',      unit_of_measurement: 'gallons', weight: 6.073),
-  plus:        Product.create!(name: 'Plus',          unit_of_measurement: 'gallons', weight: 6.073),
-  super_fuel:  Product.create!(name: 'Super',         unit_of_measurement: 'gallons', weight: 6.073),
-  def_fluid:   Product.create!(name: 'DEF',           unit_of_measurement: 'gallons', weight: 9.08),
-  uls:         Product.create!(name: 'ULS',           unit_of_measurement: 'gallons', weight: 7.05),
-  dyed_uls:    Product.create!(name: 'Dyed ULS',      unit_of_measurement: 'gallons', weight: 7.05),
-  reg_e10:     Product.create!(name: 'Reg-E10',       unit_of_measurement: 'gallons', weight: 6.10),
-  eth_regular: Product.create!(name: 'Eth-Regular',   unit_of_measurement: 'gallons', weight: 6.10),
+  regular:     Product.create!(id: 'REG001',  name: 'Regular',      unit_of_measurement: 'gallons', weight: 6.073),
+  plus:        Product.create!(id: 'PLUS001', name: 'Plus',          unit_of_measurement: 'gallons', weight: 6.073),
+  super_fuel:  Product.create!(id: 'SUP001',  name: 'Super',         unit_of_measurement: 'gallons', weight: 6.073),
+  def_fluid:   Product.create!(id: 'DEF001',  name: 'DEF',           unit_of_measurement: 'gallons', weight: 9.08),
+  uls:         Product.create!(id: 'ULS001',  name: 'ULS',           unit_of_measurement: 'gallons', weight: 7.05),
+  dyed_uls:    Product.create!(id: 'DULS001', name: 'Dyed ULS',      unit_of_measurement: 'gallons', weight: 7.05),
+  reg_e10:     Product.create!(id: 'E10001',  name: 'Reg-E10',       unit_of_measurement: 'gallons', weight: 6.10),
+  eth_regular: Product.create!(id: 'ETH001',  name: 'Eth-Regular',   unit_of_measurement: 'gallons', weight: 6.10),
 }
 
 # ---------------------------------------------------------------------------
