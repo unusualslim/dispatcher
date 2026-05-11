@@ -473,6 +473,10 @@
                     <% product_str = top ? "#{top.product&.name || top.product_name}#{top.quantity ? " · #{number_with_delimiter(top.quantity.to_i)}" : ""}" : nil %>
                     <div class="card-order-row">
                       <span class="card-order-loc"><%= o.location&.company_name || "—" %></span>
+                      <% city_state = [o.location&.city, o.location&.state].compact.join(", ") %>
+                      <% if city_state.present? %>
+                        <span class="card-order-product"><%= city_state %></span>
+                      <% end %>
                       <% if product_str %>
                         <span class="card-order-product"><%= product_str %></span>
                       <% end %>
