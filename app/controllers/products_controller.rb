@@ -2,7 +2,32 @@ class ProductsController < ApplicationController
     before_action :set_product, only: %i[edit update destroy, :components]
   
     def index
-      @products = Product.all
+      @products = Product.order(:name)
+
+      if params[:query].present?
+        @products = @products.where("name ILIKE ?", "%#{params[:query]}%")
+      end
+
+      case params[:type]
+      when 'raw'      then @products = @products.where(is_raw_material: true)
+      when 'finished' then @products = @products.where(is_raw_material: false)
+      end
+
+      case params[:status]
+      when 'critical'
+        @products = @products.where("reorder_point IS NOT NULL AND current_stock <= COALESCE(safety_stock, 0)")
+      when 'low'
+        @products = @products.where("reorder_point IS NOT NULL AND current_stock > COALESCE(safety_stock, 0) AND current_stock <= reorder_point")
+      when 'ok'
+        @products = @products.where("reorder_point IS NOT NULL AND current_stock > reorder_point")
+      end
+
+      @products = case params[:sort]
+                  when 'stock_asc'  then @products.order(current_stock: :asc)
+                  when 'stock_desc' then @products.order(current_stock: :desc)
+                  when 'cost'       then @products.order(cost_per_unit: :desc)
+                  else @products
+                  end
     end
   
     def new
@@ -56,9 +81,16 @@ class ProductsController < ApplicationController
 
     def show
       @product = Product.find(params[:id])
-
-      # ensure at least one row renders in the HTML form
       @product.product_components.build if @product.product_components.empty?
+
+      @recent_transactions = @product.inventory_transactions
+                                     .order(created_at: :desc)
+                                     .includes(:created_by)
+                                     .limit(10)
+      @open_purchase_orders = @product.purchase_orders
+                                      .where(status: PurchaseOrder::STATUSES - %w[received cancelled])
+                                      .includes(:vendor)
+                                      .order(created_at: :desc)
 
       respond_to do |format|
         format.html

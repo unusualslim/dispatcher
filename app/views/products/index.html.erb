@@ -6,53 +6,118 @@
   </div>
 </div>
 
-<table class="table table-hover">
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Type</th>
-      <th>Unit</th>
-      <th>Stock</th>
-      <th>Reorder Point</th>
-      <th>Status</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @products.each do |product| %>
-      <tr>
-        <td><%= link_to product.name, product_path(product), class: "text-decoration-none fw-semibold" %></td>
-        <td>
-          <% if product.is_raw_material? %>
-            <span class="badge bg-secondary">Raw Material</span>
-          <% else %>
-            <span class="badge bg-info text-dark">Finished Good</span>
-          <% end %>
-        </td>
-        <td><%= product.unit_of_measurement %></td>
-        <td><%= number_with_precision(product.current_stock, precision: 1) %></td>
-        <td><%= product.reorder_point ? number_with_precision(product.reorder_point, precision: 1) : '—' %></td>
-        <td>
-          <% status = product.stock_status %>
-          <% if status == :critical %>
-            <span class="badge bg-danger">Critical</span>
-          <% elsif status == :low %>
-            <span class="badge bg-warning text-dark">Low</span>
-          <% elsif status == :ok %>
-            <span class="badge bg-success">OK</span>
-          <% else %>
-            <span class="badge bg-light text-muted">—</span>
-          <% end %>
-        </td>
-        <td>
-          <%= link_to 'Edit', edit_product_path(product), class: 'btn btn-warning btn-sm' %>
-          <%= button_to 'Delete', product_path(product),
-                method: :delete,
-                data: { confirm: 'Are you sure?' },
-                class: 'btn btn-danger btn-sm',
-                form: { style: 'display: inline;' } %>
-        </td>
-      </tr>
+<%# Search + filters %>
+<div class="card shadow-sm mb-3">
+  <div class="card-body py-2">
+    <%= form_with url: products_path, method: :get, local: true,
+          data: { turbo_frame: "products-results" } do |f| %>
+      <div class="d-flex gap-2 flex-wrap align-items-center">
+        <div class="input-group" style="max-width: 280px;">
+          <%= f.text_field :query, value: params[:query], placeholder: 'Search products…',
+                class: 'form-control form-control-sm', id: 'product-search',
+                autocomplete: 'off' %>
+        </div>
+
+        <select name="type" class="form-select form-select-sm" style="max-width: 160px;" onchange="this.form.requestSubmit()">
+          <option value="">All Types</option>
+          <option value="raw"      <%= 'selected' if params[:type] == 'raw' %>>Raw Materials</option>
+          <option value="finished" <%= 'selected' if params[:type] == 'finished' %>>Finished Goods</option>
+        </select>
+
+        <select name="status" class="form-select form-select-sm" style="max-width: 160px;" onchange="this.form.requestSubmit()">
+          <option value="">All Statuses</option>
+          <option value="critical" <%= 'selected' if params[:status] == 'critical' %>>Critical</option>
+          <option value="low"      <%= 'selected' if params[:status] == 'low' %>>Low</option>
+          <option value="ok"       <%= 'selected' if params[:status] == 'ok' %>>OK</option>
+        </select>
+
+        <% if params[:query].present? || params[:type].present? || params[:status].present? || params[:sort].present? %>
+          <%= link_to 'Clear', products_path, class: 'btn btn-outline-danger btn-sm' %>
+        <% end %>
+
+        <%= f.hidden_field :sort, value: params[:sort] %>
+      </div>
     <% end %>
-  </tbody>
-</table>
+  </div>
+</div>
+
+<%# helper for sortable column headers %>
+<% sort_url = ->(col) {
+  products_path(query: params[:query], type: params[:type], status: params[:status], sort: col)
+} %>
+
+<turbo-frame id="products-results">
+  <% if @products.empty? %>
+    <div class="text-center text-muted py-5">No products match your filters.</div>
+  <% else %>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th><%= link_to "Name", sort_url.call(params[:sort] == 'name_asc' ? 'name_desc' : 'name_asc'), class: 'text-decoration-none text-dark' %></th>
+            <th>Type</th>
+            <th>Unit</th>
+            <th><%= link_to "Stock", sort_url.call(params[:sort] == 'stock_asc' ? 'stock_desc' : 'stock_asc'), class: 'text-decoration-none text-dark' %></th>
+            <th>Reorder Point</th>
+            <th><%= link_to "Cost/Unit", sort_url.call('cost'), class: 'text-decoration-none text-dark' %></th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @products.each do |product| %>
+            <tr>
+              <td><%= link_to product.name, product_path(product), class: "text-decoration-none fw-semibold" %></td>
+              <td>
+                <% if product.is_raw_material? %>
+                  <span class="badge bg-secondary">Raw Material</span>
+                <% else %>
+                  <span class="badge bg-info text-dark">Finished Good</span>
+                <% end %>
+              </td>
+              <td class="text-muted"><%= product.unit_of_measurement %></td>
+              <td><%= number_with_precision(product.current_stock, precision: 1) %></td>
+              <td><%= product.reorder_point ? number_with_precision(product.reorder_point, precision: 1) : '—' %></td>
+              <td><%= product.cost_per_unit ? number_to_currency(product.cost_per_unit) : '—' %></td>
+              <td>
+                <% status = product.stock_status %>
+                <% if status == :critical %>
+                  <span class="badge bg-danger">Critical</span>
+                <% elsif status == :low %>
+                  <span class="badge bg-warning text-dark">Low</span>
+                <% elsif status == :ok %>
+                  <span class="badge bg-success">OK</span>
+                <% else %>
+                  <span class="badge bg-light text-muted">—</span>
+                <% end %>
+              </td>
+              <td>
+                <div class="d-flex gap-1">
+                  <%= link_to 'Edit', edit_product_path(product), class: 'btn btn-warning btn-sm' %>
+                  <%= link_to 'Adjust', new_inventory_adjustment_path(product_id: product.id), class: 'btn btn-outline-secondary btn-sm' %>
+                  <%= button_to 'Delete', product_path(product),
+                        method: :delete,
+                        data: { confirm: 'Are you sure?' },
+                        class: 'btn btn-danger btn-sm',
+                        form: { style: 'display: inline;' } %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+</turbo-frame>
+
+<script>
+  (function() {
+    var input = document.getElementById('product-search');
+    if (!input) return;
+    var timer;
+    input.addEventListener('input', function() {
+      clearTimeout(timer);
+      timer = setTimeout(function() { input.closest('form').requestSubmit(); }, 300);
+    });
+  })();
+</script>
