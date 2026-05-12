@@ -67,7 +67,7 @@
         <tbody>
           <% @products.each do |product| %>
             <tr>
-              <td><%= link_to product.name, product_path(product), class: "text-decoration-none fw-semibold" %></td>
+              <td><%= link_to product.name, product_path(product), class: "text-decoration-none fw-semibold", data: { turbo_frame: "_top" } %></td>
               <td>
                 <% if product.is_raw_material? %>
                   <span class="badge bg-secondary">Raw Material</span>
@@ -93,7 +93,7 @@
               </td>
               <td>
                 <div class="d-flex gap-1">
-                  <%= link_to 'Edit', edit_product_path(product), class: 'btn btn-warning btn-sm' %>
+                  <%= link_to 'Edit', edit_product_path(product), class: 'btn btn-warning btn-sm', data: { turbo_frame: "_top" } %>
                   <%= link_to 'Adjust', new_inventory_adjustment_path(product_id: product.id), class: 'btn btn-outline-secondary btn-sm' %>
                   <%= button_to 'Delete', product_path(product),
                         method: :delete,
