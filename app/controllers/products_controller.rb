@@ -1,5 +1,5 @@
 class ProductsController < ApplicationController
-    before_action :set_product, only: %i[edit update destroy, :components]
+    before_action :set_product, only: %i[show edit update destroy components]
   
     def index
       @products = Product.order(:name)
@@ -80,7 +80,6 @@ class ProductsController < ApplicationController
     end
 
     def show
-      @product = Product.find(params[:id])
       @product.product_components.build if @product.product_components.empty?
 
       @recent_transactions = @product.inventory_transactions
