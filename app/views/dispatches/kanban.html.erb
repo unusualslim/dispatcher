@@ -393,7 +393,7 @@
 
           <%= link_to customer_order_path(order), class: 'order-card', style: "border-left: 4px solid #{card_color};" do %>
             <h3>Order #<%= order.id %></h3>
-            <p><strong>Location:</strong> <%= company_name %></p>
+            <p><strong>Location:</strong> <%= company_name %><% city_state = [order.location&.city, order.location&.state].compact.join(", "); %><% if city_state.present? %> <span class="text-muted" style="font-size:.85em;"><%= city_state %></span><% end %></p>
             <p><strong>Product:</strong> <%= product_display %></p>
             <p><strong>Amount:</strong> <%= qty_display %></p>
             <p><strong>Deliver by:</strong> <%= order.required_delivery_date&.strftime("%b %d") || "—" %></p>
