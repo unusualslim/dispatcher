@@ -35,8 +35,8 @@
         <tbody>
           <% @requirements.each do |req| %>
             <tr class="<%= req.urgent ? 'table-danger' : '' %>">
-              <td class="fw-semibold"><%= req.product.name %></td>
-              <td><%= number_with_precision(req.total_needed, precision: 1) %> <%= req.product.unit_of_measurement %></td>
+              <td class="fw-semibold"><%= req.description %></td>
+              <td><%= number_with_precision(req.total_needed, precision: 1) %> <%= req.product&.unit_of_measurement %></td>
               <td><%= number_with_precision(req.available_stock, precision: 1) %></td>
               <td>
                 <% if req.shortfall > 0 %>
@@ -50,7 +50,7 @@
               <td>
                 <% if req.shortfall > 0 %>
                   <%= link_to 'Create PO',
-                        new_purchase_order_path(product_id: req.product.id),
+                        new_purchase_order_path(product_id: req.product&.id),
                         class: 'btn btn-sm btn-danger' %>
                 <% end %>
               </td>

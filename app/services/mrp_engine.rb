@@ -1,6 +1,6 @@
 class MrpEngine
   Requirement = Struct.new(
-    :product, :total_needed, :available_stock, :shortfall,
+    :product, :description, :total_needed, :available_stock, :shortfall,
     :vendor, :lead_time_days, :order_by_date, :urgent,
     keyword_init: true
   )
@@ -10,39 +10,50 @@ class MrpEngine
   end
 
   def run
-    requirements = Hash.new(0)  # product_id => total quantity needed
+    # key => { description:, total_needed:, product: }
+    requirements = {}
 
     open_production_order_components.each do |comp|
-      product_id = comp.product_id.presence || comp.part_number.presence
-      next if product_id.nil?
       quantity = comp.quantity || 0
       next if quantity <= 0
-      requirements[product_id] += quantity
+
+      product    = comp.product || Product.find_by(id: comp.part_number.presence)
+      key        = product&.id || comp.part_number.presence || comp.description.presence
+      next if key.nil?
+
+      if requirements[key]
+        requirements[key][:total_needed] += quantity
+      else
+        requirements[key] = {
+          description:  comp.description.presence || product&.name || key,
+          total_needed: quantity,
+          product:      product
+        }
+      end
     end
 
-    requirements.map do |product_id, total_needed|
-      product = Product.find_by(id: product_id)
-      next unless product
-
-      available     = product.available_stock
-      shortfall     = [total_needed - available, 0].max
-      vendor        = PurchaseOrder.joins(:vendor).where(product: product)
-                        .order(created_at: :desc).first&.vendor
-      lead_time     = vendor&.lead_time_days
+    requirements.map do |_key, data|
+      product      = data[:product]
+      total_needed = data[:total_needed]
+      available    = product ? product.available_stock : 0
+      shortfall    = [total_needed - available, 0].max
+      vendor       = product ? PurchaseOrder.joins(:vendor).where(product: product)
+                                 .order(created_at: :desc).first&.vendor : nil
+      lead_time    = vendor&.lead_time_days
       order_by_date = lead_time ? Date.today + lead_time.days : nil
-      urgent        = shortfall > 0
 
       Requirement.new(
         product:         product,
+        description:     data[:description],
         total_needed:    total_needed,
         available_stock: available,
         shortfall:       shortfall,
         vendor:          vendor,
         lead_time_days:  lead_time,
         order_by_date:   order_by_date,
-        urgent:          urgent
+        urgent:          shortfall > 0
       )
-    end.compact
+    end.sort_by { |r| [r.urgent ? 0 : 1, r.description.to_s] }
   end
 
   private
