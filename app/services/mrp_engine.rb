@@ -17,7 +17,9 @@ class MrpEngine
       quantity = comp.quantity || 0
       next if quantity <= 0
 
-      product    = comp.product || Product.find_by(id: comp.part_number.presence)
+      product    = comp.product ||
+                   Product.find_by(id: comp.part_number.presence) ||
+                   Product.find_by(name: comp.description.presence)
       key        = product&.id || comp.part_number.presence || comp.description.presence
       next if key.nil?
 
