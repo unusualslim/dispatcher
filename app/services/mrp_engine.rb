@@ -13,10 +13,11 @@ class MrpEngine
     requirements = Hash.new(0)  # product_id => total quantity needed
 
     open_production_order_components.each do |comp|
-      next if comp.product_id.nil?
+      product_id = comp.product_id.presence || comp.part_number.presence
+      next if product_id.nil?
       quantity = comp.quantity || 0
       next if quantity <= 0
-      requirements[comp.product_id] += quantity
+      requirements[product_id] += quantity
     end
 
     requirements.map do |product_id, total_needed|

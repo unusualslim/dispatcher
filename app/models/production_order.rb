@@ -60,11 +60,12 @@ class ProductionOrder < ApplicationRecord
 
     product.product_components.includes(:component_product).each_with_index do |pc, idx|
       production_order_components.build(
-        position: idx + 1,
-        quantity: (pc.quantity_per_unit.to_d * qty_to_make.to_d),
-        uom: pc.uom.presence || "",
+        position:   idx + 1,
+        quantity:   (pc.quantity_per_unit.to_d * qty_to_make.to_d),
+        uom:        pc.uom.presence || "",
         part_number: pc.component_product&.id,
-        description: pc.component_product&.name
+        description: pc.component_product&.name,
+        product_id:  pc.component_product&.id
       )
     end
   end

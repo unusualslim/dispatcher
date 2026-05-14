@@ -162,8 +162,8 @@
           <% if components.any? %>
             <% components.each do |c| %>
               <% needed  = c.quantity.to_d %>
-              <% product = c.product %>
-              <% stock   = product&.current_stock.to_d %>
+              <% product = c.product || (c.part_number.present? ? Product.find_by(id: c.part_number) : nil) %>
+              <% stock   = product&.current_stock.to_d || 0.to_d %>
               <% if product.nil?
                    status_badge = '<span class="badge bg-secondary">No link</span>'
                  elsif stock >= needed
