@@ -22,7 +22,7 @@ class MrpEngine
 
     requirements.map do |product_id, total_needed|
       product = Product.find_by(id: product_id)
-      next unless product&.is_raw_material?
+      next unless product
 
       available     = product.available_stock
       shortfall     = [total_needed - available, 0].max
