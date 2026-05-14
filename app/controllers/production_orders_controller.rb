@@ -113,7 +113,9 @@ class ProductionOrdersController < ApplicationController
     end
 
   def set_production_order
-    @production_order = ProductionOrder.find(params[:id])
+    @production_order = ProductionOrder
+      .includes(production_order_components: :product)
+      .find(params[:id])
   end
 
   def production_order_params

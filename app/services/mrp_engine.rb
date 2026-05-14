@@ -12,16 +12,11 @@ class MrpEngine
   def run
     requirements = Hash.new(0)  # product_id => total quantity needed
 
-    open_orders.each do |order_product|
-      product  = order_product.product
-      next if product.nil?
-      quantity = order_product.quantity || 0
+    open_production_order_components.each do |comp|
+      next if comp.product_id.nil?
+      quantity = comp.quantity || 0
       next if quantity <= 0
-
-      bom_lines = ProductComponent.where(product_id: product.id)
-      bom_lines.each do |line|
-        requirements[line.component_product_id] += line.quantity_per_unit * quantity
-      end
+      requirements[comp.product_id] += quantity
     end
 
     requirements.map do |product_id, total_needed|
@@ -51,16 +46,10 @@ class MrpEngine
 
   private
 
-  def open_orders
-    CustomerOrderProduct
-      .joins(:customer_order)
-      .where(customer_orders: { order_status: open_statuses })
-      .where(customer_orders: { required_delivery_date: ...(Date.today + @horizon_days) })
-      .includes(:product, :customer_order)
-  end
-
-  def open_statuses
-    # Matches actual CustomerOrder enum values: "New" and "On Hold"
-    ['New', 'On Hold']
+  def open_production_order_components
+    ProductionOrderComponent
+      .joins(:production_order)
+      .where(production_orders: { status: %w[pending in_progress] })
+      .includes(:product)
   end
 end

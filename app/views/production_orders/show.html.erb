@@ -150,8 +150,10 @@
         <thead class="table-light">
           <tr>
             <th>Description</th>
-            <th style="width: 140px;">Qty</th>
+            <th style="width: 140px;">Qty Needed</th>
+            <th style="width: 120px;">In Stock</th>
             <th style="width: 100px;">UOM</th>
+            <th style="width: 100px;">Status</th>
           </tr>
         </thead>
         <tbody>
@@ -159,15 +161,29 @@
 
           <% if components.any? %>
             <% components.each do |c| %>
-              <tr>
+              <% needed  = c.quantity.to_d %>
+              <% product = c.product %>
+              <% stock   = product&.current_stock.to_d %>
+              <% if product.nil?
+                   status_badge = '<span class="badge bg-secondary">No link</span>'
+                 elsif stock >= needed
+                   status_badge = '<span class="badge bg-success">OK</span>'
+                 elsif stock > 0
+                   status_badge = '<span class="badge bg-warning text-dark">Low</span>'
+                 else
+                   status_badge = '<span class="badge bg-danger">Short</span>'
+                 end %>
+              <tr class="<%= 'table-danger' if product && stock < needed %>">
                 <td><%= c.description.presence || "—" %></td>
-                <td><%= c.quantity.present? ? c.quantity : "—" %></td>
+                <td><%= c.quantity.present? ? number_with_delimiter(c.quantity.to_i) : "—" %></td>
+                <td><%= product ? number_with_delimiter(stock.to_i) : "—" %></td>
                 <td><%= c.uom.presence || "—" %></td>
+                <td><%= status_badge.html_safe %></td>
               </tr>
             <% end %>
           <% else %>
             <tr>
-              <td colspan="3" class="text-center text-muted py-4">
+              <td colspan="5" class="text-center text-muted py-4">
                 No components added yet.
               </td>
             </tr>
