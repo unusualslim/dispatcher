@@ -35,7 +35,13 @@
         <tbody>
           <% @requirements.each do |req| %>
             <tr class="<%= req.urgent ? 'table-danger' : '' %>">
-              <td class="fw-semibold"><%= req.description %></td>
+              <td class="fw-semibold">
+                <% if req.product %>
+                  <%= link_to req.description, product_path(req.product), class: 'text-decoration-none' %>
+                <% else %>
+                  <%= req.description %>
+                <% end %>
+              </td>
               <td><%= number_with_precision(req.total_needed, precision: 1) %> <%= req.product&.unit_of_measurement %></td>
               <td><%= number_with_precision(req.available_stock, precision: 1) %></td>
               <td>
