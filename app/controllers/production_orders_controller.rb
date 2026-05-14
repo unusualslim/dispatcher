@@ -85,6 +85,8 @@ class ProductionOrdersController < ApplicationController
   end
 
   def update
+    params[:production_order][:location_id] = nil if params[:production_order][:location_id].to_s == "0"
+    params[:production_order][:customer_id] = nil if params[:production_order][:customer_id].to_s == "0"
     if @production_order.update(production_order_params)
       respond_to do |format|
         format.html { redirect_to @production_order, notice: "Production order updated." }
