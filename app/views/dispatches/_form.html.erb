@@ -1,18 +1,10 @@
-<!-- jQuery -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<%= form_with model: @dispatch, local: true, html: { multipart: true }, data: { turbo: false } do |form| %>
 
-<!-- Select2 CSS -->
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-
-<!-- Select2 JS -->
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
-<%= form_with model: @dispatch, local: true, html: { multipart: true } do |form| %>
+  <%# ── Errors ─────────────────────────────────────────────────────────────── %>
   <% if dispatch.errors.any? %>
-    <div style="color: red">
-      <h2><%= pluralize(dispatch.errors.count, "error") %> prohibited this dispatch from being saved:</h2>
-
-      <ul>
+    <div class="alert alert-danger mb-4">
+      <strong><%= pluralize(dispatch.errors.count, "error") %> prevented this dispatch from being saved:</strong>
+      <ul class="mb-0 mt-1">
         <% dispatch.errors.each do |error| %>
           <li><%= error.full_message %></li>
         <% end %>
@@ -20,128 +12,208 @@
     </div>
   <% end %>
 
-  <div>
-    <%= form.label :driver_id, style: "display: block" %>
-    <%= form.collection_select(:driver_id, User.workers, :id, :first_name, prompt: "Select a Worker") %>
+  <div class="row g-4">
+
+    <%# ── Left column: Driver & Equipment ───────────────────────────────────── %>
+    <div class="col-lg-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-header fw-semibold">Driver & Equipment</div>
+        <div class="card-body d-flex flex-column gap-3">
+
+          <%# Driver %>
+          <div>
+            <%= form.label :driver_id, "Driver", class: "form-label fw-semibold mb-1" %>
+            <%= form.collection_select :driver_id, User.workers, :id, :first_name,
+                  { include_blank: "— Select a driver —" },
+                  class: "form-select dispatch-driver-select" %>
+          </div>
+
+          <%# Truck %>
+          <div>
+            <%= form.label :truck_id, "Truck", class: "form-label fw-semibold mb-1" %>
+            <%= form.select :truck_id,
+                  options_for_select(Thing.where(category: "truck").map { |t| [t.name, t.id] }, dispatch.truck_id),
+                  { include_blank: "— Select a truck —" },
+                  class: "form-select dispatch-truck-select" %>
+          </div>
+
+          <%# Trailer %>
+          <div>
+            <%= form.label :trailer_id, "Trailer", class: "form-label fw-semibold mb-1" %>
+            <%= form.select :trailer_id,
+                  options_for_select(Thing.where(category: "trailer").map { |t| [t.name, t.id] }, dispatch.trailer_id),
+                  { include_blank: "— Select a trailer —" },
+                  class: "form-select dispatch-trailer-select" %>
+          </div>
+
+          <%# Vendor %>
+          <div>
+            <%= form.label :vendor_id, "Vendor", class: "form-label fw-semibold mb-1" %>
+            <%= form.collection_select :vendor_id, Vendor.all, :id, :name,
+                  { include_blank: "— Select a vendor —" },
+                  class: "form-select" %>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <%# ── Right column: Dispatch Details ────────────────────────────────────── %>
+    <div class="col-lg-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-header fw-semibold">Dispatch Details</div>
+        <div class="card-body d-flex flex-column gap-3">
+
+          <%# Origin %>
+          <div>
+            <%= form.label :origin, "Origin Terminal", class: "form-label fw-semibold mb-1" %>
+            <%= form.collection_select :origin,
+                  @origin_locations,
+                  :full_address_with_company,
+                  :full_address_with_company,
+                  { include_blank: "— Select an origin —" },
+                  class: "form-select" %>
+          </div>
+
+          <%# Dispatch Date %>
+          <div>
+            <%= form.label :dispatch_date, "Dispatch Date", class: "form-label fw-semibold mb-1" %>
+            <%= form.date_field :dispatch_date, class: "form-control" %>
+          </div>
+
+          <%# Status %>
+          <div>
+            <%= form.label :status, "Status", class: "form-label fw-semibold mb-1" %>
+            <%= form.select :status,
+                  Dispatch.dispatch_statuses.keys.map { |s| [s.humanize, s] },
+                  { selected: dispatch.status || "New" },
+                  class: "form-select" %>
+          </div>
+
+          <%# Notes %>
+          <div>
+            <%= form.label :notes, "Notes", class: "form-label fw-semibold mb-1" %>
+            <%= form.text_area :notes,
+                  class: "form-control",
+                  rows: 3,
+                  placeholder: "Any special instructions or notes for the driver..." %>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <%# ── Customer Orders ────────────────────────────────────────────────────── %>
+    <div class="col-12">
+      <div class="card shadow-sm">
+        <div class="card-header fw-semibold">Customer Orders</div>
+        <div class="card-body">
+          <div class="mb-2">
+            <input type="text" id="orderSearch" class="form-control form-control-sm"
+                   placeholder="Search by order #, company, or date…">
+          </div>
+          <div class="table-responsive" style="max-height: 320px; overflow-y: auto;">
+            <table class="table table-sm table-hover align-middle mb-0" id="orders-table">
+              <thead class="table-light sticky-top">
+                <tr>
+                  <th style="width: 40px;"></th>
+                  <th>Order #</th>
+                  <th>Company</th>
+                  <th>Delivery Date</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @recent_customer_orders.each do |co| %>
+                  <% selected = @dispatch.customer_order_ids.include?(co.id) %>
+                  <tr class="order-row<%= selected ? ' table-primary' : '' %>" style="cursor:pointer;"
+                      data-search="<%= "#{co.id} #{co.location&.company_name} #{co.required_delivery_date}".downcase %>">
+                    <td>
+                      <input type="checkbox" name="dispatch[customer_order_ids][]"
+                             value="<%= co.id %>"
+                             class="form-check-input order-checkbox"
+                             <%= 'checked' if selected %>>
+                    </td>
+                    <td class="fw-semibold">#<%= co.id %></td>
+                    <td><%= co.location&.company_name || "—" %></td>
+                    <td><%= co.required_delivery_date&.strftime("%b %-d, %Y") || "No date" %></td>
+                    <td><%= co.approximate_product_amount.present? ? "#{number_with_delimiter(co.approximate_product_amount)} gal" : "—" %></td>
+                    <td><span class="badge bg-secondary"><%= co.order_status %></span></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+          <div class="form-text mt-1">Click a row or checkbox to select orders for this dispatch.</div>
+        </div>
+      </div>
+    </div>
+
+    <%# ── File Uploads ───────────────────────────────────────────────────────── %>
+    <div class="col-12">
+      <div class="card shadow-sm">
+        <div class="card-header fw-semibold">Attachments</div>
+        <div class="card-body">
+          <%= form.file_field :files, multiple: true, direct_upload: true, class: "form-control" %>
+          <div class="form-text">Upload any relevant files (BOLs, manifests, etc.)</div>
+        </div>
+      </div>
+    </div>
+
+    <%# ── Actions ────────────────────────────────────────────────────────────── %>
+    <div class="col-12 d-flex justify-content-end gap-2 pb-4">
+      <%= link_to "Cancel", dispatches_path, class: "btn btn-outline-secondary", data: { turbo: false } %>
+      <%= form.submit dispatch.persisted? ? "Save Changes" : "Create Dispatch",
+            class: "btn btn-primary px-4" %>
+    </div>
+
   </div>
 
-    <div class="mb-3">
-    <%= form.label 'Customer Orders:', style: "display: block" %>
-
-    <!-- Search Input -->
-    <input type="text" id="orderSearch" class="form-control mb-3" placeholder="Search orders...">
-
-    <!-- Orders Select Box -->
-    <%= form.select :customer_order_ids, 
-                    options_for_select(@recent_customer_orders.map { |co| ["#{co.id} - #{co.location.company_name} - #{co.required_delivery_date || 'No Delivery Date'}", co.id] }, @selected_customer_order_id), 
-                    { include_hidden: false }, 
-                    { id: 'customer_order_ids', multiple: true, prompt: 'Select Customer Orders', style: "height: 150px; width: 100%;" } %>
-
-    <small id="selectHelp" class="form-text text-muted">Try ctrl+click to select multiple. (Use cmd+click on OSX.)</small>
-  </div>
-
-  <div class="mb-3">
-    <%= form.label 'Trucks:', style: "display: block" %>
-    <%= select_tag 'dispatch[truck_id]', 
-                  options_for_select(Thing.where(category: "truck").map { |truck| ["#{truck.id} - #{truck.name}", truck.id] }, @dispatch.truck_id), 
-                  prompt: 'Select a Truck', 
-                  class: 'form-control select2' %>
-    <small id="truckHelp" class="form-text text-muted">Search and select a truck for this dispatch.</small>
-  </div>
-
-  <div class="mb-3">
-    <%= form.label 'Trailers:', style: "display: block" %>
-    <%= select_tag 'dispatch[trailer_id]', 
-                  options_for_select(Thing.where(category: "trailer").map { |trailer| ["#{trailer.id} - #{trailer.name}", trailer.id] }, @dispatch.trailer_id), 
-                  prompt: 'Select a Trailer', 
-                  class: 'form-control select2' %>
-    <small id="trailerHelp" class="form-text text-muted">Search and select a trailer for this dispatch.</small>
-  </div>
-
-  <div class="field">
-    <%= form.label :origin, style: "display: block" %>
-    <%= form.collection_select(:origin, @origin_locations, :full_address_with_company, :full_address_with_company, prompt: "Select a Location") %>
-    <%= link_to 'New Location', new_location_path, class: 'btn btn-primary' %>
-  </div>
-
-  <div class="field">
-    <%= form.label :vendor_id, "Vendor" %>
-    <%= form.collection_select :vendor_id, Vendor.all, :id, :name, { include_blank: "Select a Vendor" }, class: "form-control" %>
-  </div>
-
-  <div>
-    <%= form.label :dispatch_date, style: "display: block" %>
-    <%= form.date_field :dispatch_date %>
-  </div>
-
-  <div>
-    <%= form.label :status, style: "display: block" %>
-    <%= form.collection_select :status, Dispatch.dispatch_statuses.keys, :to_s, :humanize, { class: "form-control" } %>
-  </div>
-
-  <div>
-    <%= form.label :notes, style: "display: block" %>
-    <%= form.text_area :notes %>
-  </div>
-
-  <div class="field">
-    <%= form.label :files, "Upload Files" %>
-    <%= form.file_field :files, multiple: true, direct_upload: true, class: "form-control" %>
-  </div>
-
-  <div>
-    <%= form.submit 'Submit', class: 'btn btn-success' %>
-  </div>
 <% end %>
 
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const searchInput = document.getElementById("orderSearch");
-    const selectBox = document.getElementById("customer_order_ids");
+(function() {
+  function initDispatchForm() {
+    // ── Select2 dropdowns ──────────────────────────────────────────────────
+    if (window.$) {
+      ['.dispatch-driver-select', '.dispatch-truck-select', '.dispatch-trailer-select'].forEach(function(sel) {
+        $(sel).select2({ placeholder: $(sel).find('option:first').text(), allowClear: true, width: '100%' });
+      });
+    }
 
-    searchInput.addEventListener("keyup", function () {
-      const searchValue = searchInput.value.toLowerCase();
-      const options = selectBox.options;
+    // ── Order table: row click toggles checkbox ────────────────────────────
+    var table = document.getElementById('orders-table');
+    if (table) {
+      table.addEventListener('click', function(e) {
+        var row = e.target.closest('tr.order-row');
+        if (!row) return;
+        var cb = row.querySelector('.order-checkbox');
+        if (e.target === cb) return; // let checkbox handle itself
+        cb.checked = !cb.checked;
+        row.classList.toggle('table-primary', cb.checked);
+      });
 
-      for (let i = 0; i < options.length; i++) {
-        const optionText = options[i].text.toLowerCase();
-        if (optionText.includes(searchValue)) {
-          options[i].style.display = "block";
-        } else {
-          options[i].style.display = "none";
+      table.addEventListener('change', function(e) {
+        if (e.target.classList.contains('order-checkbox')) {
+          e.target.closest('tr').classList.toggle('table-primary', e.target.checked);
         }
-      }
-    });
-  });
-</script>
+      });
+    }
 
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const searchInput = document.getElementById("thingSearch");
-    const selectBox = document.getElementById("thing_ids");
+    // ── Order search ───────────────────────────────────────────────────────
+    var searchInput = document.getElementById('orderSearch');
+    if (searchInput) {
+      searchInput.addEventListener('input', function() {
+        var q = this.value.toLowerCase();
+        document.querySelectorAll('#orders-table tr.order-row').forEach(function(row) {
+          row.style.display = row.dataset.search.includes(q) ? '' : 'none';
+        });
+      });
+    }
+  }
 
-    searchInput.addEventListener("keyup", function () {
-      const searchValue = searchInput.value.toLowerCase();
-      const options = selectBox.options;
-
-      for (let i = 0; i < options.length; i++) {
-        const optionText = options[i].text.toLowerCase();
-        if (optionText.includes(searchValue)) {
-          options[i].style.display = "block";
-        } else {
-          options[i].style.display = "none";
-        }
-      }
-    });
-  });
-
-document.addEventListener("DOMContentLoaded", function () {
-  // Initialize Select2 for all elements with the 'select2' class
-  $('.select2').select2({
-    width: '100%', // Ensure the dropdown takes up the full width
-    placeholder: 'Select an option', // Placeholder text
-    allowClear: true, // Allow clearing the selection
-    minimumResultsForSearch: 0 // Enable search bar even for single-select dropdowns
-  });
-});
+  document.addEventListener('turbo:load', initDispatchForm);
+  if (document.readyState !== 'loading') initDispatchForm();
+})();
 </script>

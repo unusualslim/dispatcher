@@ -12,7 +12,7 @@
             </h5>
             
             <!-- Order Status Badge -->
-            <% status_class = case customer_order.order_status.downcase %>
+            <% status_class = case customer_order.order_status.to_s.downcase %>
               <% when "new" then "bg-primary" %>
               <% when "complete" then "bg-success" %>
               <% when "on hold" then "bg-warning text-dark" %>
@@ -21,7 +21,7 @@
             <% end %>
 
             <span class="badge <%= status_class %>">
-              <%= customer_order.order_status.humanize %>
+              <%= customer_order.order_status.to_s.humanize.presence || "Unknown" %>
             </span>
 
             <p><%= Location.find(customer_order.location_id).full_address %></p>

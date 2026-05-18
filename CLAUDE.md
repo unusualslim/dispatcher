@@ -112,6 +112,5 @@ Full MRP module added directly to the app. Key files:
 - Production order completion UI improvements
 
 ### Known issues / notes
-- CustomerOrder has an after_create callback that creates a blank product (product_id: 1) — intentional
 - dispatch_customer_orders join table still exists in schema but is legacy
 - Zone.Identifier files from Windows show as deleted in git status — safe to ignore

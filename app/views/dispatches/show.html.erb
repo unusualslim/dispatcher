@@ -1,10 +1,349 @@
-<p style="color: green"><%= notice %></p>
+<%
+  origin_location = @origin_locations.find { |l| l.full_address_with_company == @dispatch.origin }
+  destination_location = @dispatch.customer_orders.first&.location
+%>
 
-<%= render @dispatch %>
+<%# ── Page header ──────────────────────────────────────────────────────────── %>
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+  <div>
+    <h1 class="mb-0">Dispatch #<%= @dispatch.id %></h1>
+    <div class="text-muted small">
+      <%= @dispatch.dispatch_date&.strftime("%B %-d, %Y") || "No date set" %>
+      &mdash;
+      <% status_class = { "New" => "secondary", "Sent to Driver" => "primary", "Complete" => "success", "Billed" => "warning", "Deleted" => "danger" }.fetch(@dispatch.status, "secondary") %>
+      <span class="badge bg-<%= status_class %>"><%= @dispatch.status %></span>
+    </div>
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    <% if @dispatch.driver_id && @dispatch.dispatch_customer_order.any? %>
+      <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#notificationModal">
+        <i class="bi bi-bell"></i> Send Notification
+      </button>
+    <% end %>
+    <%= form_with url: mark_as_sent_to_driver_dispatch_path(@dispatch), method: :patch, local: true do |f| %>
+      <%= f.submit "Sent to Driver", class: "btn btn-primary btn-sm" %>
+    <% end %>
+    <%= form_with url: mark_as_complete_dispatch_path(@dispatch), method: :patch, local: true do |f| %>
+      <%= f.submit "Complete", class: "btn btn-success btn-sm" %>
+    <% end %>
+    <%= form_with url: mark_as_billed_dispatch_path(@dispatch), method: :patch, local: true do |f| %>
+      <%= f.submit "Billed", class: "btn btn-warning btn-sm" %>
+    <% end %>
+    <%= link_to "Edit", edit_dispatch_path(@dispatch), class: "btn btn-outline-secondary btn-sm" %>
+    <%= link_to "All Dispatches", dispatches_path, class: "btn btn-outline-secondary btn-sm", data: { turbo: false } %>
+  </div>
+</div>
 
-<div style="padding-left: 20px;">
-  <%= link_to "Edit this dispatch", edit_dispatch_path(@dispatch) %> |
-  <%= link_to "Back to dispatches", dispatches_path, data: { turbo: false } %>
+<% if notice.present? %>
+  <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+    <%= notice %>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+<% end %>
 
-  <%= button_to "Destroy this dispatch", @dispatch, method: :delete, data: { confirm: 'Are you sure you want to delete this dispatch?', turbo: false }, class: "btn btn-danger" %>
+<div class="row g-4">
+
+  <%# ── Left column: Driver, Equipment, Vendor ────────────────────────────── %>
+  <div class="col-lg-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-header fw-semibold">Driver & Equipment</div>
+      <div class="card-body d-flex flex-column gap-3">
+
+        <div>
+          <div class="text-muted small text-uppercase fw-semibold mb-1">Driver</div>
+          <% driver = User.find_by(id: @dispatch.driver_id) %>
+          <% if driver %>
+            <div class="fw-semibold"><%= driver.full_name %></div>
+          <% else %>
+            <span class="text-muted">Unassigned</span>
+          <% end %>
+        </div>
+
+        <div>
+          <div class="text-muted small text-uppercase fw-semibold mb-1">Truck</div>
+          <% if @dispatch.truck.present? %>
+            <%= link_to @dispatch.truck.name, thing_path(@dispatch.truck), class: "fw-semibold text-decoration-none" %>
+          <% else %>
+            <span class="text-muted">None assigned</span>
+          <% end %>
+        </div>
+
+        <div>
+          <div class="text-muted small text-uppercase fw-semibold mb-1">Trailer</div>
+          <% if @dispatch.trailer.present? %>
+            <%= link_to @dispatch.trailer.name, thing_path(@dispatch.trailer), class: "fw-semibold text-decoration-none" %>
+          <% else %>
+            <span class="text-muted">None assigned</span>
+          <% end %>
+        </div>
+
+        <div>
+          <div class="text-muted small text-uppercase fw-semibold mb-1">Vendor</div>
+          <% if @dispatch.vendor.present? %>
+            <%= link_to @dispatch.vendor.name, vendor_path(@dispatch.vendor), class: "fw-semibold text-decoration-none" %>
+          <% else %>
+            <span class="text-muted">None assigned</span>
+          <% end %>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <%# ── Middle column: Origin & Destination ───────────────────────────────── %>
+  <div class="col-lg-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-header fw-semibold">Route</div>
+      <div class="card-body d-flex flex-column gap-3">
+
+        <div>
+          <div class="text-muted small text-uppercase fw-semibold mb-1">Origin</div>
+          <% if origin_location %>
+            <%= link_to origin_location.full_address_with_company, location_path(origin_location), class: "fw-semibold text-decoration-none d-block" %>
+            <% if origin_location.notes.present? %>
+              <div class="text-muted small mt-1"><%= origin_location.notes %></div>
+            <% end %>
+          <% else %>
+            <span class="text-muted">No origin set</span>
+          <% end %>
+        </div>
+
+        <div>
+          <div class="text-muted small text-uppercase fw-semibold mb-1">Destination</div>
+          <% if destination_location %>
+            <%= link_to destination_location.full_address_with_company, location_path(destination_location), class: "fw-semibold text-decoration-none d-block" %>
+            <% if destination_location.notes.present? %>
+              <div class="text-muted small mt-1"><%= destination_location.notes %></div>
+            <% end %>
+          <% else %>
+            <span class="text-muted">No destination found</span>
+          <% end %>
+        </div>
+
+        <% if @road_distance %>
+          <div>
+            <div class="text-muted small text-uppercase fw-semibold mb-1">Road Distance</div>
+            <div class="fw-semibold"><%= @road_distance %> miles</div>
+          </div>
+        <% end %>
+
+      </div>
+    </div>
+  </div>
+
+  <%# ── Right column: Notes ────────────────────────────────────────────────── %>
+  <div class="col-lg-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-header fw-semibold">Notes</div>
+      <div class="card-body">
+        <% if @dispatch.notes.present? %>
+          <p class="mb-0"><%= simple_format(@dispatch.notes) %></p>
+        <% else %>
+          <span class="text-muted">No notes.</span>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Customer Orders ────────────────────────────────────────────────────── %>
+  <div class="col-12">
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold">Customer Orders</div>
+      <% if @dispatch.dispatch_customer_order.any? %>
+        <div class="card-body p-0">
+          <% @dispatch.dispatch_customer_order.each do |dco| %>
+            <% co = dco.customer_order %>
+            <div class="border-bottom p-3 p-md-4">
+              <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+                <div>
+                  <a href="<%= customer_order_path(co) %>" class="fw-semibold text-decoration-none fs-6">
+                    Order #<%= co.id %>
+                    <% if co.freight_only? %>
+                      <span class="badge bg-dark ms-1">Freight Only</span>
+                    <% end %>
+                  </a>
+                  <div class="text-muted small">
+                    <%= co.location&.company_name %>
+                    <% if co.customer.present? %> &mdash; <%= co.customer.name %><% end %>
+                  </div>
+                </div>
+                <% if co.required_delivery_date %>
+                  <span class="badge bg-light text-dark border">Due <%= co.required_delivery_date.strftime("%b %-d, %Y") %></span>
+                <% end %>
+              </div>
+
+              <% if co.customer_order_products.any? %>
+                <div class="table-responsive">
+                  <table class="table table-sm align-middle mb-0">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Product</th>
+                        <th>Unit</th>
+                        <th>Qty (gal)</th>
+                        <th>Price</th>
+                        <th class="text-end">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <% order_total = 0 %>
+                      <% co.customer_order_products.each do |cop| %>
+                        <% product = Product.find_by(id: cop.product_id) %>
+                        <% line_total = (cop.quantity || 0) * (cop.price || 0) %>
+                        <% order_total += line_total %>
+                        <tr>
+                          <td><%= product&.name || "Unknown" %></td>
+                          <td class="text-muted"><%= product&.unit_of_measurement || "—" %></td>
+                          <td><%= number_with_delimiter(cop.quantity) %></td>
+                          <td><%= cop.price ? number_to_currency(cop.price) : "—" %></td>
+                          <td class="text-end"><%= cop.price ? number_to_currency(line_total) : "—" %></td>
+                        </tr>
+                      <% end %>
+                    </tbody>
+                    <tfoot>
+                      <tr class="fw-semibold">
+                        <td colspan="4" class="text-end">Order Total</td>
+                        <td class="text-end"><%= number_to_currency(order_total) %></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              <% else %>
+                <p class="text-muted small mb-0">No products on this order.</p>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="card-body text-muted">No customer orders assigned.</div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── Attached Files ─────────────────────────────────────────────────────── %>
+  <div class="col-12">
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold">Attachments</div>
+      <div class="card-body">
+        <% if @dispatch.files.attached? %>
+          <div class="row g-3">
+            <% @dispatch.files.each do |file| %>
+              <div class="col-6 col-md-3 col-lg-2">
+                <div class="card h-100 text-center shadow-sm">
+                  <div class="card-body p-2">
+                    <% if file.content_type.start_with?('image/') %>
+                      <img src="<%= url_for(file) %>" class="img-fluid rounded mb-2" alt="<%= file.filename %>">
+                    <% else %>
+                      <i class="bi bi-file-earmark-text" style="font-size: 2rem;"></i>
+                    <% end %>
+                    <p class="text-truncate small mb-2" title="<%= file.filename %>"><%= file.filename %></p>
+                    <div class="d-flex gap-1 justify-content-center">
+                      <a href="<%= url_for(file) %>" class="btn btn-outline-primary btn-sm" target="_blank">View</a>
+                      <%= button_to "Delete", dispatch_file_path(@dispatch, file), method: :delete,
+                            class: "btn btn-outline-danger btn-sm",
+                            data: { confirm: "Delete this file?" } %>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        <% else %>
+          <p class="text-muted mb-0">No files attached.</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Message Logs ────────────────────────────────────────────────────────── %>
+  <div class="col-12 pb-4">
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold">Message Logs</div>
+      <% if @dispatch.dispatch_messages.any? %>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Sent</th>
+                <th>User</th>
+                <th>Message</th>
+                <th>Method</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @dispatch.dispatch_messages.each do |msg| %>
+                <tr style="cursor:pointer;" onclick="window.location='<%= dispatch_message_path(msg) %>'">
+                  <td class="text-nowrap"><%= msg.sent_at&.strftime("%b %-d %H:%M") || "Not sent" %></td>
+                  <td><%= msg.user&.full_name || "Unknown" %></td>
+                  <td><%= truncate(msg.message_body, length: 60) %></td>
+                  <td><%= msg.delivery_method&.capitalize %></td>
+                  <td>
+                    <% badge = { "sent" => "success", "pending" => "warning", "failed" => "danger" }.fetch(msg.status, "secondary") %>
+                    <span class="badge bg-<%= badge %>"><%= msg.status&.capitalize %></span>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% else %>
+        <div class="card-body text-muted">No messages logged yet.</div>
+      <% end %>
+    </div>
+  </div>
+
+</div>
+
+<%# ── Send Notification Modal ─────────────────────────────────────────────── %>
+<% if @dispatch.driver_id && @dispatch.dispatch_customer_order.any? %>
+  <%
+    origin_loc = @origin_locations.find { |l| l.full_address_with_company == @dispatch.origin } ||
+                 @origin_locations.find { |l| l.city == @dispatch.origin }
+    dest_loc = @dispatch.customer_orders.first&.location
+    order_lines = @dispatch.customer_orders.each_with_index.map do |order, i|
+      products = order.customer_order_products.map { |cop|
+        "#{cop.product&.name || 'Unknown'} (#{cop.quantity} #{cop.product&.unit_of_measurement || 'units'})"
+      }.join(", ")
+      "ORDER #{i+1}:\nCUSTOMER: #{order.customer&.name || 'Unknown'}\nLOCATION: #{order.location&.full_address_with_company || 'Unknown'}\nPRODUCTS: #{products}"
+    end.join("\n\n")
+    default_msg = "You have been assigned a new dispatch.\nORIGIN: #{origin_loc&.full_address_with_company || 'Unknown'}\nORIGIN NOTES: #{origin_loc&.notes || 'None'}\nDESTINATION: #{dest_loc&.full_address_with_company || 'Unknown'}\nDESTINATION NOTES: #{dest_loc&.notes || 'None'}\nDISPATCH DATE: #{@dispatch.dispatch_date}\nNOTES: #{@dispatch.notes}\n\n#{order_lines}\n\nVIEW: loadntrucks.com/dispatches/#{@dispatch.id}"
+  %>
+  <div class="modal fade" id="notificationModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Send Notification</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <%= form_with url: send_notification_dispatch_path(@dispatch), method: :post, local: true, id: "notificationForm" do |f| %>
+          <div class="modal-body d-flex flex-column gap-3">
+            <div>
+              <%= f.label :email_message, "Email Message", class: "form-label fw-semibold" %>
+              <%= f.text_area :email_message, value: default_msg, rows: 8, class: "form-control" %>
+            </div>
+            <div>
+              <%= f.label :sms_message, "SMS Message", class: "form-label fw-semibold" %>
+              <%= f.text_area :sms_message, value: default_msg, rows: 4, class: "form-control" %>
+            </div>
+            <%= f.hidden_field :dispatch_id, value: @dispatch.id %>
+            <%= f.hidden_field :user_id, value: current_user.id %>
+            <%= f.hidden_field :delivery_method, value: "email" %>
+            <%= f.hidden_field :status, value: "pending" %>
+            <%= f.hidden_field :sent_at, value: Time.current %>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" form="notificationForm" class="btn btn-primary">Send Notification</button>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<%# ── Danger zone ─────────────────────────────────────────────────────────── %>
+<div class="border-top pt-3 pb-4 mt-2 text-end">
+  <%= button_to "Delete Dispatch", @dispatch, method: :delete,
+        class: "btn btn-outline-danger btn-sm",
+        data: { confirm: "Are you sure you want to delete this dispatch?", turbo: false } %>
 </div>

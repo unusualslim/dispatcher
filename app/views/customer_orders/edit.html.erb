@@ -1,10 +1,9 @@
-<h1>Editing order</h1>
-
-<%= render "form" %>
-
-<br>
-
-<div>
-  <%= link_to "Show this order", @customer_order %> |
-  <%= link_to "Back to orders", customer_orders_path %>
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="mb-0">Edit Order</h1>
+    <div class="text-muted small">Update the details for this order</div>
+  </div>
+  <%= link_to "Back", @customer_order, class: "btn btn-outline-secondary btn-sm" %>
 </div>
+
+<%= render "form", customer_order: @customer_order %>

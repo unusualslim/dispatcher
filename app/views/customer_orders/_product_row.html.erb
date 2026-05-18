@@ -1,0 +1,35 @@
+<tr class="product-row">
+  <td>
+    <select name="customer_order[customer_order_products_attributes][<%= index %>][product_id]"
+            class="form-select form-select-sm co-product-select">
+      <option value="">— Select product —</option>
+      <% Product.order(:name).each do |p| %>
+        <option value="<%= p.id %>" <%= 'selected' if cop.product_id.to_s == p.id.to_s %>><%= p.name %></option>
+      <% end %>
+    </select>
+  </td>
+  <td>
+    <input type="number" step="any" min="0"
+           name="customer_order[customer_order_products_attributes][<%= index %>][quantity]"
+           class="form-control form-control-sm"
+           placeholder="0"
+           value="<%= cop.quantity %>">
+  </td>
+  <td>
+    <div class="input-group input-group-sm">
+      <span class="input-group-text">$</span>
+      <input type="number" step="0.01" min="0"
+             name="customer_order[customer_order_products_attributes][<%= index %>][price]"
+             class="form-control"
+             placeholder="0.00"
+             value="<%= cop.price %>">
+    </div>
+  </td>
+  <td>
+    <input type="hidden" name="customer_order[customer_order_products_attributes][<%= index %>][id]" value="<%= cop.id %>">
+    <input type="hidden" name="customer_order[customer_order_products_attributes][<%= index %>][_destroy]" value="0" class="destroy-flag">
+    <button type="button" class="btn btn-sm btn-outline-danger remove-product-row" title="Remove">
+      &times;
+    </button>
+  </td>
+</tr>
