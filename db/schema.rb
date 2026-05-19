@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_05_07_100003) do
+ActiveRecord::Schema[7.0].define(version: 2026_05_08_100002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -339,6 +339,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_07_100003) do
     t.decimal "reorder_point", precision: 14, scale: 3
     t.decimal "safety_stock", precision: 14, scale: 3, default: "0.0"
     t.decimal "cost_per_unit", precision: 12, scale: 4
+    t.string "pdi_package_code"
   end
 
   create_table "purchase_orders", force: :cascade do |t|
@@ -399,6 +400,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_07_100003) do
     t.string "contact_name"
     t.string "email"
     t.string "phone"
+    t.string "pdi_vendor_id"
   end
 
   create_table "work_orders", force: :cascade do |t|

@@ -4,16 +4,20 @@
             class="form-select form-select-sm co-product-select">
       <option value="">— Select product —</option>
       <% Product.order(:name).each do |p| %>
-        <option value="<%= p.id %>" <%= 'selected' if cop.product_id.to_s == p.id.to_s %>><%= p.name %></option>
+        <option value="<%= p.id %>" data-weight="<%= p.weight.to_f %>" <%= 'selected' if cop.product_id.to_s == p.id.to_s %>><%= p.name %></option>
       <% end %>
     </select>
   </td>
   <td>
     <input type="number" step="any" min="0"
            name="customer_order[customer_order_products_attributes][<%= index %>][quantity]"
-           class="form-control form-control-sm"
+           class="form-control form-control-sm product-qty-input"
            placeholder="0"
            value="<%= cop.quantity %>">
+  </td>
+  <% weight = cop.quantity.to_f * (cop.product&.weight&.to_f || 0) %>
+  <td class="product-weight-display text-muted small align-middle">
+    <%= weight > 0 ? "#{number_with_delimiter(weight.round(1))} lb" : "—" %>
   </td>
   <td>
     <div class="input-group input-group-sm">

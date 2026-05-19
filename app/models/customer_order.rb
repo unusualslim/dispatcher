@@ -11,6 +11,13 @@ class CustomerOrder < ApplicationRecord
 
   accepts_nested_attributes_for :customer_order_products, allow_destroy: true
 
+  after_save :sync_approximate_amount
+
+  def sync_approximate_amount
+    total = customer_order_products.reload.sum(:quantity).to_f
+    update_column(:approximate_product_amount, total) unless approximate_product_amount == total
+  end
+
   attribute :freight_only, :boolean, default: false
   enum order_status: { New: "New", complete: "Complete", deleted: "Deleted", on_hold: "On Hold" }
 

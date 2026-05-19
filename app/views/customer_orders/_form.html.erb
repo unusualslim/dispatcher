@@ -65,18 +65,6 @@
             <%= form.date_field :required_delivery_date, class: "form-control" %>
           </div>
 
-          <%# Approximate Amount %>
-          <div>
-            <%= form.label :approximate_product_amount, "Approximate Amount", class: "form-label fw-semibold mb-1" %>
-            <div class="input-group">
-              <%= form.number_field :approximate_product_amount,
-                    class: "form-control",
-                    placeholder: "e.g. 5000",
-                    step: "any", min: 0 %>
-              <span class="input-group-text">gal</span>
-            </div>
-          </div>
-
           <%# Order Status (only on edit) %>
           <% if customer_order.persisted? %>
             <div>
@@ -114,7 +102,8 @@
               <thead class="table-light">
                 <tr>
                   <th>Product</th>
-                  <th style="width: 150px;">Quantity</th>
+                  <th style="width: 130px;">Quantity</th>
+                  <th style="width: 120px;">Weight</th>
                   <th style="width: 150px;">Price / unit</th>
                   <th style="width: 48px;"></th>
                 </tr>
@@ -197,15 +186,16 @@
               class="form-select form-select-sm co-product-select">
         <option value="">— Select product —</option>
         <% Product.order(:name).each do |p| %>
-          <option value="<%= p.id %>"><%= p.name %></option>
+          <option value="<%= p.id %>" data-weight="<%= p.weight.to_f %>"><%= p.name %></option>
         <% end %>
       </select>
     </td>
     <td>
       <input type="number" step="any" min="0"
              name="customer_order[customer_order_products_attributes][__INDEX__][quantity]"
-             class="form-control form-control-sm" placeholder="0">
+             class="form-control form-control-sm product-qty-input" placeholder="0">
     </td>
+    <td class="product-weight-display text-muted small align-middle">—</td>
     <td>
       <div class="input-group input-group-sm">
         <span class="input-group-text">$</span>
@@ -224,16 +214,29 @@
 
 <script>
 (function() {
+  var select2TabHandlerInstalled = false;
+
   function initOrderForm() {
-    // ── Select2: Customer ──────────────────────────────────────────────────
     if (window.$) {
+      // ── Select2 tab-to-open fix (installed once, globally) ────────────────
+      if (!select2TabHandlerInstalled) {
+        $(document).on('focus', '.select2-selection--single', function() {
+          var $container = $(this).closest('.select2-container');
+          if (!$container.hasClass('select2-container--open')) {
+            $container.siblings('select:enabled').select2('open');
+          }
+        });
+        select2TabHandlerInstalled = true;
+      }
+
+      // ── Select2: Customer ────────────────────────────────────────────────
       $('.co-customer-select').select2({
         placeholder: '— Select a customer —',
         allowClear: true,
         width: '100%'
       });
 
-      // ── Select2: Location AJAX ─────────────────────────────────────────
+      // ── Select2: Location AJAX ───────────────────────────────────────────
       $('#co_location_search').select2({
         placeholder: 'Search by company or city…',
         allowClear: true,
@@ -263,7 +266,7 @@
         document.getElementById('co_location_id').value = '';
       });
 
-      // ── Select2: Product selects ───────────────────────────────────────
+      // ── Select2: Product selects ─────────────────────────────────────────
       initProductSelects();
     }
 
@@ -312,12 +315,10 @@
           return r.json();
         })
         .then(function(loc) {
-          // Add to Select2 and select it
           var opt = new Option(loc.city_with_company, loc.id, true, true);
           $('#co_location_search').append(opt).trigger('change');
           document.getElementById('co_location_id').value = loc.id;
 
-          // Reset & close modal
           document.getElementById('new-company-name').value = '';
           document.getElementById('new-city').value = '';
           document.getElementById('new-state').value = '';
@@ -338,11 +339,10 @@
       });
     }
 
-    // ── Product rows: Remove (existing rows) ──────────────────────────────
+    // ── Product rows: Remove ───────────────────────────────────────────────
     document.getElementById('product-rows').addEventListener('click', function(e) {
       if (e.target.classList.contains('remove-product-row')) {
         var row = e.target.closest('tr');
-        // If persisted row, mark for destroy instead of removing
         var destroyInput = row.querySelector('input[name*="_destroy"]');
         if (destroyInput) {
           destroyInput.value = '1';
@@ -353,27 +353,52 @@
         updateNoProductsMsg();
       }
     });
+
+    // ── Product rows: qty change → update weight ───────────────────────────
+    document.getElementById('product-rows').addEventListener('input', function(e) {
+      if (e.target.classList.contains('product-qty-input')) {
+        updateRowWeight(e.target.closest('tr'));
+      }
+    });
+
+    // ── Initialize weights for any existing rows ───────────────────────────
+    document.querySelectorAll('#product-rows tr.product-row').forEach(function(row) {
+      updateRowWeight(row);
+    });
+  }
+
+  function updateRowWeight(row) {
+    if (!row) return;
+    var select    = row.querySelector('.co-product-select');
+    var qtyInput  = row.querySelector('.product-qty-input');
+    var weightCell = row.querySelector('.product-weight-display');
+    if (!weightCell) return;
+
+    var selectedOption = select ? select.options[select.selectedIndex] : null;
+    var weightPerUnit  = parseFloat(selectedOption && selectedOption.dataset.weight) || 0;
+    var qty            = parseFloat(qtyInput && qtyInput.value) || 0;
+    var total          = weightPerUnit * qty;
+    weightCell.textContent = total > 0
+      ? total.toLocaleString(undefined, { maximumFractionDigits: 1 }) + ' lb'
+      : '—';
   }
 
   var rowIndex = <%= customer_order.customer_order_products.size %>;
 
   function addProductRow() {
     var template = document.getElementById('product-row-template');
-    var clone = template.content.cloneNode(true);
-    var html = clone.querySelector('tr').outerHTML;
-    html = html.replace(/__INDEX__/g, rowIndex);
+    var clone    = template.content.cloneNode(true);
+    var html     = clone.querySelector('tr').outerHTML.replace(/__INDEX__/g, rowIndex);
     rowIndex++;
 
     var tbody = document.getElementById('product-rows');
     tbody.insertAdjacentHTML('beforeend', html);
 
-    // Init Select2 on the new select
     if (window.$) {
-      var newSelect = tbody.querySelectorAll('.co-product-select');
-      $(newSelect[newSelect.length - 1]).select2({
-        placeholder: '— Select product —',
-        width: '100%'
-      });
+      var selects   = tbody.querySelectorAll('.co-product-select');
+      var lastSelect = selects[selects.length - 1];
+      $(lastSelect).select2({ placeholder: '— Select product —', width: '100%' })
+                   .on('change', function() { updateRowWeight(this.closest('tr')); });
     }
 
     updateNoProductsMsg();
@@ -382,7 +407,8 @@
   function initProductSelects() {
     $('.co-product-select').each(function() {
       if (!$(this).hasClass('select2-hidden-accessible')) {
-        $(this).select2({ placeholder: '— Select product —', width: '100%' });
+        $(this).select2({ placeholder: '— Select product —', width: '100%' })
+               .on('change', function() { updateRowWeight(this.closest('tr')); });
       }
     });
   }
@@ -393,7 +419,6 @@
     if (msg) msg.style.display = rows.length === 0 ? '' : 'none';
   }
 
-  // Fire on Turbo navigation and initial page load
   document.addEventListener('turbo:load', initOrderForm);
   if (document.readyState !== 'loading') {
     initOrderForm();
