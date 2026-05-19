@@ -1,4 +1,5 @@
 class VendorsController < ApplicationController
+  before_action :require_admin!
   before_action :set_vendor, only: [:show, :edit, :update, :destroy]
 
   def index

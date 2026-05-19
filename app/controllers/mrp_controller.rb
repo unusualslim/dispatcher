@@ -1,4 +1,5 @@
 class MrpController < ApplicationController
+  before_action :require_admin!
   def index
     @requirements     = MrpEngine.new(horizon_days: 30).run
     @low_stock        = Product.raw_materials.where.not(reorder_point: nil)

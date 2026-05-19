@@ -1,4 +1,5 @@
 class CustomerOrdersController < ApplicationController
+  before_action :require_admin!
 
 def index
   @view = params[:view] || 'card'  # Default to card view

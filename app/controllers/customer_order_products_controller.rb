@@ -1,4 +1,5 @@
 class CustomerOrderProductsController < ApplicationController
+  before_action :require_admin!
     before_action :set_customer_order
   
     # Create a new product for a customer order

@@ -9,8 +9,10 @@
   <!-- Quick actions -->
   <div class="d-flex align-items-center gap-2">
     <% if user_signed_in? %>
-      <%= link_to "New Order", new_customer_order_path, class: "btn btn-success btn-sm" %>
-      <%= link_to "New Dispatch", new_dispatch_path, class: "btn btn-primary btn-sm" %>
+      <% unless driver? %>
+        <%= link_to "New Order", new_customer_order_path, class: "btn btn-success btn-sm" %>
+        <%= link_to "New Dispatch", new_dispatch_path, class: "btn btn-primary btn-sm" %>
+      <% end %>
     <% else %>
       <%= link_to 'Sign In', new_user_session_path, class: 'btn btn-outline-light btn-sm' %>
     <% end %>

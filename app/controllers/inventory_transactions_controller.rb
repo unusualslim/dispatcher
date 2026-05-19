@@ -1,4 +1,5 @@
 class InventoryTransactionsController < ApplicationController
+  before_action :require_admin!
   def index
     @transactions = InventoryTransaction.includes(:product, :created_by)
 

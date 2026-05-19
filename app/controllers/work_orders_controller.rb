@@ -1,4 +1,5 @@
 class WorkOrdersController < ApplicationController
+  before_action :require_admin!
   before_action :set_work_order, only: [:show, :edit, :update, :destroy, :change_status]
 
   def index

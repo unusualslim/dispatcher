@@ -1,4 +1,5 @@
 class ThingsController < ApplicationController
+  before_action :require_admin!
   before_action :set_thing, only: [:show, :edit, :update, :destroy]
 
   def index

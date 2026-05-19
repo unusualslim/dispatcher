@@ -1,4 +1,5 @@
 class CustomersController < ApplicationController
+  before_action :require_admin!
     before_action :set_customer, only: [:edit, :update, :destroy]
   
     # GET /customers

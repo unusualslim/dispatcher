@@ -225,7 +225,7 @@
       <div class="card-header fw-semibold">Attachments</div>
       <div class="card-body">
         <% if @dispatch.files.attached? %>
-          <div class="row g-3">
+          <div class="row g-3 mb-3">
             <% @dispatch.files.each do |file| %>
               <div class="col-6 col-md-3 col-lg-2">
                 <div class="card h-100 text-center shadow-sm">
@@ -238,9 +238,11 @@
                     <p class="text-truncate small mb-2" title="<%= file.filename %>"><%= file.filename %></p>
                     <div class="d-flex gap-1 justify-content-center">
                       <a href="<%= url_for(file) %>" class="btn btn-outline-primary btn-sm" target="_blank">View</a>
-                      <%= button_to "Delete", dispatch_file_path(@dispatch, file), method: :delete,
-                            class: "btn btn-outline-danger btn-sm",
-                            data: { confirm: "Delete this file?" } %>
+                      <% unless driver? %>
+                        <%= button_to "Delete", dispatch_file_path(@dispatch, file), method: :delete,
+                              class: "btn btn-outline-danger btn-sm",
+                              data: { confirm: "Delete this file?" } %>
+                      <% end %>
                     </div>
                   </div>
                 </div>
@@ -248,7 +250,17 @@
             <% end %>
           </div>
         <% else %>
-          <p class="text-muted mb-0">No files attached.</p>
+          <p class="text-muted mb-3">No files attached.</p>
+        <% end %>
+
+        <%# Upload form — visible to both drivers and admins %>
+        <%= form_with url: upload_files_dispatch_path(@dispatch), method: :post, multipart: true, local: true do |f| %>
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <input type="file" name="files[]" multiple accept=".pdf,.jpg,.jpeg,.png"
+                   class="form-control form-control-sm" style="max-width: 320px;">
+            <%= f.submit "Upload", class: "btn btn-sm btn-outline-primary" %>
+          </div>
+          <div class="form-text">Accepted: PDF, JPG, PNG</div>
         <% end %>
       </div>
     </div>

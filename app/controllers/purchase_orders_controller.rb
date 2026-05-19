@@ -1,6 +1,7 @@
 require 'csv'
 
 class PurchaseOrdersController < ApplicationController
+  before_action :require_admin!
   before_action :set_purchase_order, only: [:show, :approve, :submit, :receive]
 
   def index

@@ -7,7 +7,9 @@
 <div class="content">
   <p style="color: green"><%= notice %></p>
   <h1>Customer Orders</h1>
-  <%= link_to "New Order", new_customer_order_path, class: "btn btn-primary mb-3" %>
+  <% unless driver? %>
+    <%= link_to "New Order", new_customer_order_path, class: "btn btn-primary mb-3" %>
+  <% end %>
 
   <!-- Search and Sorting Form -->
   <div class="mb-4">

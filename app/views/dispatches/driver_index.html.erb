@@ -1,0 +1,187 @@
+<div class="container-fluid px-4 py-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-semibold mb-0">My Dispatches</h4>
+    <div class="btn-group" role="group">
+      <button type="button" class="btn btn-sm btn-outline-secondary active" id="btn-cards">
+        <i class="bi bi-card-list"></i> Cards
+      </button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-table">
+        <i class="bi bi-table"></i> Table
+      </button>
+    </div>
+  </div>
+
+  <%# ── Search (table view only) ───────────────────────────────────────────────── %>
+  <div id="table-search" style="display:none;">
+    <%= form_with url: dispatches_path, method: :get, local: true, data: { turbo: false } do |f| %>
+      <%= f.hidden_field :view, value: "table" %>
+      <div class="row g-2 mb-4">
+        <div class="col-sm-6 col-md-4">
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <%= f.text_field :query, value: params[:query], placeholder: "Search destination, origin, notes…", class: "form-control" %>
+          </div>
+        </div>
+        <div class="col-sm-4 col-md-2">
+          <%= f.select :status,
+                [["All statuses", ""]] + @statuses.map { |s| [s, s] },
+                {},
+                class: "form-select", selected: params[:status] %>
+        </div>
+        <div class="col-auto">
+          <%= f.submit "Search", class: "btn btn-outline-primary" %>
+          <% if params[:query].present? || params[:status].present? %>
+            <%= link_to "Clear", dispatches_path(view: "table"), class: "btn btn-outline-secondary" %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <%# ── Cards view ─────────────────────────────────────────────────────────────── %>
+  <div id="view-cards">
+    <% if @my_dispatches.empty? %>
+      <div class="card shadow-sm">
+        <div class="card-body text-muted text-center py-5">No dispatches assigned to you yet.</div>
+      </div>
+    <% else %>
+      <%# Show only upcoming/active dispatches in card view %>
+      <% card_dispatches = @my_dispatches.reject { |d| ["Complete", "Billed"].include?(d.status) } %>
+      <% if card_dispatches.empty? %>
+        <div class="card shadow-sm">
+          <div class="card-body text-muted text-center py-5">No active dispatches. Switch to Table to see history.</div>
+        </div>
+      <% else %>
+        <div class="d-flex flex-column gap-3">
+          <% card_dispatches.each do |dispatch| %>
+            <% status_class = case dispatch.status
+                 when "Sent to Driver" then "border-primary"
+                 else "border-secondary"
+               end %>
+            <div class="card shadow-sm border-start border-4 <%= status_class %>" style="cursor:pointer;"
+                 onclick="window.location='<%= dispatch_path(dispatch) %>'">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                  <div>
+                    <div class="fw-semibold mb-1">
+                      <%= dispatch.dispatch_date ? dispatch.dispatch_date.strftime("%A, %B %-d, %Y") : "No date set" %>
+                    </div>
+                    <% if dispatch.origin.present? %>
+                      <div class="text-muted small mb-1"><i class="bi bi-geo-alt"></i> From: <%= dispatch.origin %></div>
+                    <% end %>
+                    <% destinations = dispatch.customer_orders.map { |o| [o.location&.company_name, o.location&.city, o.location&.state].compact.join(", ") }.uniq.reject(&:blank?) %>
+                    <% if destinations.any? %>
+                      <div class="text-muted small"><i class="bi bi-geo"></i> To: <%= destinations.join(" / ") %></div>
+                    <% end %>
+                  </div>
+                  <div class="text-end">
+                    <span class="badge <%= dispatch.status == 'Sent to Driver' ? 'bg-primary' : 'bg-secondary' %>">
+                      <%= dispatch.status || "New" %>
+                    </span>
+                    <% if dispatch.customer_orders.any? %>
+                      <div class="text-muted small mt-1"><%= dispatch.customer_orders.size %> order<%= dispatch.customer_orders.size == 1 ? '' : 's' %></div>
+                    <% end %>
+                  </div>
+                </div>
+                <% if dispatch.notes.present? %>
+                  <div class="mt-2 small text-muted border-top pt-2"><%= dispatch.notes %></div>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+
+  <%# ── Table view ──────────────────────────────────────────────────────────────── %>
+  <div id="view-table" style="display:none;">
+    <div class="card shadow-sm">
+      <% if @my_dispatches.empty? %>
+        <div class="card-body text-muted text-center py-5">No dispatches found.</div>
+      <% else %>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Date</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Orders</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @my_dispatches.each do |dispatch| %>
+                <tr style="cursor:pointer;" onclick="window.location='<%= dispatch_path(dispatch) %>'">
+                  <td class="text-nowrap"><%= dispatch.dispatch_date ? dispatch.dispatch_date.strftime("%b %-d, %Y") : "—" %></td>
+                  <td><%= dispatch.origin.presence || "—" %></td>
+                  <td>
+                    <% destinations = dispatch.customer_orders.map { |o| [o.location&.company_name, o.location&.city].compact.join(", ") }.uniq.reject(&:blank?) %>
+                    <%= destinations.any? ? destinations.join(" / ") : "—" %>
+                  </td>
+                  <td><%= dispatch.customer_orders.size %></td>
+                  <td>
+                    <% badge = case dispatch.status
+                         when "Sent to Driver" then "bg-primary"
+                         when "Complete", "Billed" then "bg-success"
+                         else "bg-secondary"
+                       end %>
+                    <span class="badge <%= badge %>"><%= dispatch.status || "New" %></span>
+                  </td>
+                  <td>
+                    <%= link_to "View", dispatch_path(dispatch), class: "btn btn-sm btn-outline-secondary",
+                          onclick: "event.stopPropagation()" %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  var btnCards  = document.getElementById('btn-cards');
+  var btnTable  = document.getElementById('btn-table');
+  var viewCards = document.getElementById('view-cards');
+  var viewTable = document.getElementById('view-table');
+  var tableSearch = document.getElementById('table-search');
+
+  var saved = sessionStorage.getItem('driverDispatchView');
+  if (saved === 'table' || '<%= params[:view] %>' === 'table') {
+    showTable();
+  }
+
+  btnCards.addEventListener('click', function() {
+    sessionStorage.setItem('driverDispatchView', 'cards');
+    showCards();
+  });
+  btnTable.addEventListener('click', function() {
+    sessionStorage.setItem('driverDispatchView', 'table');
+    showTable();
+  });
+
+  function showCards() {
+    viewCards.style.display = '';
+    viewTable.style.display = 'none';
+    tableSearch.style.display = 'none';
+    btnCards.classList.add('active');
+    btnTable.classList.remove('active');
+  }
+
+  function showTable() {
+    viewCards.style.display = 'none';
+    viewTable.style.display = '';
+    tableSearch.style.display = '';
+    btnCards.classList.remove('active');
+    btnTable.classList.add('active');
+  }
+})();
+</script>

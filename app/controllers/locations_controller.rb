@@ -1,6 +1,7 @@
 require 'net/http'
 
 class LocationsController < ApplicationController
+  before_action :require_admin!
     before_action :set_products, only: [:new, :edit, :create, :update]
     before_action :set_location, only: [:show, :edit, :update, :destroy]
 

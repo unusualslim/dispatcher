@@ -2,10 +2,33 @@ require 'csv'
 require 'net/http'
 
 class DispatchesController < ApplicationController
-  before_action :set_dispatch, only: %i[show edit update destroy mark_as_complete mark_as_billed send_notification]
+  before_action :set_dispatch, only: %i[show edit update destroy mark_as_complete mark_as_billed send_notification upload_files]
+  before_action :require_admin!, only: %i[new create edit update destroy view_dispatches kanban export_csv send_notification mark_as_complete mark_as_billed mark_as_sent_to_driver destroy_file search]
 
   # GET / (dashboard)
   def index
+    if driver?
+      dispatches = current_user.dispatches
+        .where.not(status: ["deleted"])
+        .includes(customer_orders: :location)
+
+      if params[:query].present?
+        q = "%#{params[:query].downcase}%"
+        dispatches = dispatches.left_joins(customer_orders: :location)
+          .where("LOWER(locations.company_name) LIKE :q OR LOWER(locations.city) LIKE :q OR LOWER(dispatches.origin) LIKE :q OR LOWER(dispatches.notes) LIKE :q", q: q)
+          .distinct
+      end
+
+      if params[:status].present?
+        dispatches = dispatches.where(status: params[:status])
+      end
+
+      @my_dispatches = dispatches.order(dispatch_date: :desc)
+      @statuses = current_user.dispatches.where.not(status: ["deleted"]).distinct.pluck(:status).compact.sort
+      render :driver_index
+      return
+    end
+
     today = Date.today
 
     # Stat card counts
@@ -51,7 +74,11 @@ class DispatchesController < ApplicationController
 
   # GET /dispatches/1 or /dispatches/1.json
   def show
-    @dispatch = Dispatch.find(params[:id])
+    if driver? && @dispatch.driver_id != current_user.id
+      redirect_to dispatches_path, alert: "You can only view your own dispatches."
+      return
+    end
+
     @customer_orders = @dispatch.customer_orders
     @origin_locations = Location.where(location_category_id: 1)
     @destination_locations = Location.where(location_category_id: 2)
@@ -69,6 +96,21 @@ class DispatchesController < ApplicationController
       rescue StandardError
         @road_distance = nil
       end
+    end
+  end
+
+  # POST /dispatches/1/upload_files
+  def upload_files
+    if driver? && @dispatch.driver_id != current_user.id
+      redirect_to dispatches_path, alert: "Access denied."
+      return
+    end
+
+    if params[:files].present?
+      @dispatch.files.attach(params[:files])
+      redirect_to dispatch_path(@dispatch), notice: "File(s) uploaded successfully."
+    else
+      redirect_to dispatch_path(@dispatch), alert: "Please select a file to upload."
     end
   end
 

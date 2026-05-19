@@ -17,12 +17,13 @@ Rails.application.routes.draw do
   
   resources :users
 
-  resources :dispatches do 
+  resources :dispatches do
     member do
       post 'send_notification'
       patch :mark_as_complete
       patch :mark_as_billed
       patch :mark_as_sent_to_driver
+      post :upload_files
     end
     collection do
       get 'kanban'

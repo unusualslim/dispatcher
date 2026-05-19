@@ -14,140 +14,156 @@
   <div class="sidebar-body flex-grow-1">
     <% if user_signed_in? %>
 
-      <!-- DISPATCH -->
-      <div class="sidebar-section-label">Dispatch</div>
-      <ul class="sidebar-nav">
-        <li class="<%= 'active' if current == 'customer_orders' %>">
-          <%= link_to customer_orders_path do %>
-            <i class="bi bi-cart3"></i> Orders
-          <% end %>
-        </li>
-        <li class="<%= 'active' if action_name == 'view_dispatches' %>">
-          <%= link_to view_dispatches_path do %>
-            <i class="bi bi-table"></i> Dispatches
-          <% end %>
-        </li>
-        <li class="<%= 'active' if current == 'dispatches' && action_name == 'kanban' %>">
-          <%= link_to kanban_dispatches_path do %>
-            <i class="bi bi-kanban"></i> Dispatch Kanban
-          <% end %>
-        </li>
-        <li class="<%= 'active' if current == 'calendar' %>">
-          <%= link_to calendar_path do %>
-            <i class="bi bi-calendar3"></i> Calendar
-          <% end %>
-        </li>
-        <li class="<%= 'active' if current == 'locations' && action_name == 'map' %>">
-          <%= link_to locations_map_path do %>
-            <i class="bi bi-map"></i> Map
-          <% end %>
-        </li>
-      </ul>
+      <% if driver? %>
 
-      <!-- MANUFACTURING -->
-      <div class="sidebar-section-label">Manufacturing</div>
-      <ul class="sidebar-nav">
-        <li class="<%= 'active' if current == 'production_orders' && action_name == 'kanban' %>">
-          <%= link_to kanban_production_orders_path do %>
-            <i class="bi bi-layout-three-columns"></i> Prod. Orders
-          <% end %>
-        </li>
-        <li class="<%= 'active' if current == 'production_orders' && action_name == 'index' %>">
-          <%= link_to production_orders_path do %>
-            <i class="bi bi-table"></i> Orders Table
-          <% end %>
-        </li>
-      </ul>
+        <!-- DRIVER NAV -->
+        <div class="sidebar-section-label">My Dispatches</div>
+        <ul class="sidebar-nav">
+          <li class="<%= 'active' if current == 'dispatches' && action_name == 'index' %>">
+            <%= link_to dispatches_path do %>
+              <i class="bi bi-truck"></i> My Dispatches
+            <% end %>
+          </li>
+        </ul>
 
-      <!-- INVENTORY / MRP -->
-      <div class="sidebar-section-label">Inventory & MRP</div>
-      <ul class="sidebar-nav">
-        <li class="<%= 'active' if current == 'mrp' %>">
-          <%= link_to mrp_path do %>
-            <i class="bi bi-graph-up-arrow"></i> MRP Dashboard
-          <% end %>
-        </li>
-        <li class="<%= 'active' if current == 'products' %>">
-          <%= link_to products_path do %>
-            <i class="bi bi-box-seam"></i> Products
-          <% end %>
-        </li>
-        <li class="<%= 'active' if current == 'purchase_orders' %>">
-          <%= link_to purchase_orders_path do %>
-            <i class="bi bi-bag-check"></i> Purchase Orders
-          <% end %>
-        </li>
-        <li class="<%= 'active' if current == 'inventory_adjustments' %>">
-          <%= link_to new_inventory_adjustment_path do %>
-            <i class="bi bi-sliders"></i> Adjust Inventory
-          <% end %>
-        </li>
-        <li class="<%= 'active' if current == 'inventory_transactions' %>">
-          <%= link_to inventory_transactions_path do %>
-            <i class="bi bi-clock-history"></i> Inventory History
-          <% end %>
-        </li>
-        <li class="<%= 'active' if current == 'inventory_imports' %>">
-          <%= link_to new_inventory_import_path do %>
-            <i class="bi bi-upload"></i> Import from PDI
-          <% end %>
-        </li>
-        <li class="<%= 'active' if current == 'docs' %>">
-          <%= link_to docs_mrp_guide_path do %>
-            <i class="bi bi-journal-text"></i> MRP Guide
-          <% end %>
-        </li>
-      </ul>
+      <% else %>
 
-      <!-- MASTER DATA -->
-      <div class="sidebar-section-label">Master Data</div>
-      <ul class="sidebar-nav">
-        <li class="<%= 'active' if current == 'customers' %>">
-          <%= link_to customers_path do %>
-            <i class="bi bi-people"></i> Customers
-          <% end %>
-        </li>
-        <li class="<%= 'active' if current == 'locations' && action_name != 'map' %>">
-          <%= link_to locations_path do %>
-            <i class="bi bi-geo-alt"></i> Locations
-          <% end %>
-        </li>
-        <li class="<%= 'active' if current == 'vendors' %>">
-          <%= link_to vendors_path do %>
-            <i class="bi bi-building"></i> Vendors
-          <% end %>
-        </li>
-        <li class="<%= 'active' if current == 'users' %>">
-          <%= link_to users_path do %>
-            <i class="bi bi-person-badge"></i> Drivers
-          <% end %>
-        </li>
-        <li class="<%= 'active' if current == 'things' %>">
-          <%= link_to things_path do %>
-            <i class="bi bi-tools"></i> Assets
-          <% end %>
-        </li>
-        <li class="<%= 'active' if current == 'work_orders' %>">
-          <%= link_to work_orders_path do %>
-            <i class="bi bi-wrench-adjustable"></i> Work Orders
-          <% end %>
-        </li>
-      </ul>
+        <!-- DISPATCH -->
+        <div class="sidebar-section-label">Dispatch</div>
+        <ul class="sidebar-nav">
+          <li class="<%= 'active' if current == 'customer_orders' %>">
+            <%= link_to customer_orders_path do %>
+              <i class="bi bi-cart3"></i> Orders
+            <% end %>
+          </li>
+          <li class="<%= 'active' if action_name == 'view_dispatches' %>">
+            <%= link_to view_dispatches_path do %>
+              <i class="bi bi-table"></i> Dispatches
+            <% end %>
+          </li>
+          <li class="<%= 'active' if current == 'dispatches' && action_name == 'kanban' %>">
+            <%= link_to kanban_dispatches_path do %>
+              <i class="bi bi-kanban"></i> Dispatch Kanban
+            <% end %>
+          </li>
+          <li class="<%= 'active' if current == 'calendar' %>">
+            <%= link_to calendar_path do %>
+              <i class="bi bi-calendar3"></i> Calendar
+            <% end %>
+          </li>
+          <li class="<%= 'active' if current == 'locations' && action_name == 'map' %>">
+            <%= link_to locations_map_path do %>
+              <i class="bi bi-map"></i> Map
+            <% end %>
+          </li>
+        </ul>
 
-      <!-- COMMS -->
-      <div class="sidebar-section-label">Communications</div>
-      <ul class="sidebar-nav">
-        <li class="<%= 'active' if current == 'dispatch_messages' %>">
-          <%= link_to dispatch_messages_path do %>
-            <i class="bi bi-chat-dots"></i> Messages
-          <% end %>
-        </li>
-        <li class="<%= 'active' if current == 'announcements' %>">
-          <%= link_to announcements_path do %>
-            <i class="bi bi-megaphone"></i> Announcements
-          <% end %>
-        </li>
-      </ul>
+        <!-- MANUFACTURING -->
+        <div class="sidebar-section-label">Manufacturing</div>
+        <ul class="sidebar-nav">
+          <li class="<%= 'active' if current == 'production_orders' && action_name == 'kanban' %>">
+            <%= link_to kanban_production_orders_path do %>
+              <i class="bi bi-layout-three-columns"></i> Prod. Orders
+            <% end %>
+          </li>
+          <li class="<%= 'active' if current == 'production_orders' && action_name == 'index' %>">
+            <%= link_to production_orders_path do %>
+              <i class="bi bi-table"></i> Orders Table
+            <% end %>
+          </li>
+        </ul>
+
+        <!-- INVENTORY / MRP -->
+        <div class="sidebar-section-label">Inventory & MRP</div>
+        <ul class="sidebar-nav">
+          <li class="<%= 'active' if current == 'mrp' %>">
+            <%= link_to mrp_path do %>
+              <i class="bi bi-graph-up-arrow"></i> MRP Dashboard
+            <% end %>
+          </li>
+          <li class="<%= 'active' if current == 'products' %>">
+            <%= link_to products_path do %>
+              <i class="bi bi-box-seam"></i> Products
+            <% end %>
+          </li>
+          <li class="<%= 'active' if current == 'purchase_orders' %>">
+            <%= link_to purchase_orders_path do %>
+              <i class="bi bi-bag-check"></i> Purchase Orders
+            <% end %>
+          </li>
+          <li class="<%= 'active' if current == 'inventory_adjustments' %>">
+            <%= link_to new_inventory_adjustment_path do %>
+              <i class="bi bi-sliders"></i> Adjust Inventory
+            <% end %>
+          </li>
+          <li class="<%= 'active' if current == 'inventory_transactions' %>">
+            <%= link_to inventory_transactions_path do %>
+              <i class="bi bi-clock-history"></i> Inventory History
+            <% end %>
+          </li>
+          <li class="<%= 'active' if current == 'inventory_imports' %>">
+            <%= link_to new_inventory_import_path do %>
+              <i class="bi bi-upload"></i> Import from PDI
+            <% end %>
+          </li>
+          <li class="<%= 'active' if current == 'docs' %>">
+            <%= link_to docs_mrp_guide_path do %>
+              <i class="bi bi-journal-text"></i> MRP Guide
+            <% end %>
+          </li>
+        </ul>
+
+        <!-- MASTER DATA -->
+        <div class="sidebar-section-label">Master Data</div>
+        <ul class="sidebar-nav">
+          <li class="<%= 'active' if current == 'customers' %>">
+            <%= link_to customers_path do %>
+              <i class="bi bi-people"></i> Customers
+            <% end %>
+          </li>
+          <li class="<%= 'active' if current == 'locations' && action_name != 'map' %>">
+            <%= link_to locations_path do %>
+              <i class="bi bi-geo-alt"></i> Locations
+            <% end %>
+          </li>
+          <li class="<%= 'active' if current == 'vendors' %>">
+            <%= link_to vendors_path do %>
+              <i class="bi bi-building"></i> Vendors
+            <% end %>
+          </li>
+          <li class="<%= 'active' if current == 'users' %>">
+            <%= link_to users_path do %>
+              <i class="bi bi-person-badge"></i> Drivers
+            <% end %>
+          </li>
+          <li class="<%= 'active' if current == 'things' %>">
+            <%= link_to things_path do %>
+              <i class="bi bi-tools"></i> Assets
+            <% end %>
+          </li>
+          <li class="<%= 'active' if current == 'work_orders' %>">
+            <%= link_to work_orders_path do %>
+              <i class="bi bi-wrench-adjustable"></i> Work Orders
+            <% end %>
+          </li>
+        </ul>
+
+        <!-- COMMS -->
+        <div class="sidebar-section-label">Communications</div>
+        <ul class="sidebar-nav">
+          <li class="<%= 'active' if current == 'dispatch_messages' %>">
+            <%= link_to dispatch_messages_path do %>
+              <i class="bi bi-chat-dots"></i> Messages
+            <% end %>
+          </li>
+          <li class="<%= 'active' if current == 'announcements' %>">
+            <%= link_to announcements_path do %>
+              <i class="bi bi-megaphone"></i> Announcements
+            <% end %>
+          </li>
+        </ul>
+
+      <% end %>
 
     <% end %>
   </div>

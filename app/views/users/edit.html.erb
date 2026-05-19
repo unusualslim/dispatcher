@@ -1,10 +1,12 @@
-<h1>Editing user</h1>
+<div class="container-fluid px-4 py-4">
 
-<%= render "form", user: @user %>
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <%= link_to users_path, class: "btn btn-sm btn-outline-secondary" do %>
+      &larr; Users
+    <% end %>
+    <h4 class="mb-0 fw-semibold">Edit User</h4>
+  </div>
 
-<br>
+  <%= render "form", user: @user %>
 
-<div>
-  <%= link_to "Show this user", @user %> |
-  <%= link_to "Back to users", users_path %>
 </div>

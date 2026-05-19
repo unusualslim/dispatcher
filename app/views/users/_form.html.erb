@@ -1,9 +1,8 @@
 <%= form_with(model: @user) do |form| %>
   <% if user.errors.any? %>
-    <div style="color: red">
-      <h2><%= pluralize(user.errors.count, "error") %> prohibited this user from being saved:</h2>
-
-      <ul>
+    <div class="alert alert-danger mb-4">
+      <strong><%= pluralize(user.errors.count, "error") %> prevented this user from being saved:</strong>
+      <ul class="mb-0 mt-1">
         <% user.errors.each do |error| %>
           <li><%= error.full_message %></li>
         <% end %>
@@ -11,42 +10,70 @@
     </div>
   <% end %>
 
-  <div>
-    <%= form.label :email, style: "display: block" %>
-    <%= form.text_field :email %>
-  </div>
+  <div class="row g-4">
 
-  <div>
-    <%= form.label :first_name, style: "display: block" %>
-    <%= form.text_field :first_name %>
-  </div>
+    <div class="col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-header fw-semibold">Account Info</div>
+        <div class="card-body d-flex flex-column gap-3">
 
-  <div>
-    <%= form.label :last_name, style: "display: block" %>
-    <%= form.text_field :last_name %>
-  </div>
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <%= form.label :first_name, class: "form-label fw-semibold mb-1" %>
+              <%= form.text_field :first_name, class: "form-control" %>
+            </div>
+            <div class="col-sm-6">
+              <%= form.label :last_name, class: "form-label fw-semibold mb-1" %>
+              <%= form.text_field :last_name, class: "form-control" %>
+            </div>
+          </div>
 
-  <div>
-    <%= form.label :phone_number, style: "display: block" %>
-    <%= form.text_field :phone_number %>
-  </div>
+          <div>
+            <%= form.label :email, class: "form-label fw-semibold mb-1" %>
+            <%= form.text_field :email, class: "form-control" %>
+          </div>
 
-  <div>
-    <%= form.label :role, style: "display: block" %>
-    <%= form.select :role, ['worker', 'admin'], { include_blank: 'Select a Role' }, style: "display: block" %>
-  </div>
+          <div>
+            <%= form.label :phone_number, class: "form-label fw-semibold mb-1" %>
+            <%= form.text_field :phone_number, class: "form-control", placeholder: "e.g. 229-555-0100" %>
+          </div>
 
-  <div>
-    <%= form.label :email_opt_in %>
-    <%= form.check_box :email_opt_in %>
-  </div>
+          <div>
+            <%= form.label :role, class: "form-label fw-semibold mb-1" %>
+            <%= form.select :role, [["Driver (worker)", "worker"], ["Admin", "admin"]],
+                  { include_blank: "— Select role —" },
+                  class: "form-select" %>
+          </div>
 
-  <div>
-    <%= form.label :sms_opt_in %>
-    <%= form.check_box :sms_opt_in %>
-  </div>
+        </div>
+      </div>
+    </div>
 
-  <div>
-    <%= form.submit %>
+    <div class="col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-header fw-semibold">Notification Preferences</div>
+        <div class="card-body d-flex flex-column gap-3">
+
+          <div class="form-check form-switch">
+            <%= form.check_box :email_opt_in, class: "form-check-input", role: "switch", id: "email_opt_in_toggle" %>
+            <%= form.label :email_opt_in, "Email notifications", class: "form-check-label", for: "email_opt_in_toggle" %>
+            <div class="form-text">Send dispatch notifications via email</div>
+          </div>
+
+          <div class="form-check form-switch">
+            <%= form.check_box :sms_opt_in, class: "form-check-input", role: "switch", id: "sms_opt_in_toggle" %>
+            <%= form.label :sms_opt_in, "SMS notifications", class: "form-check-label", for: "sms_opt_in_toggle" %>
+            <div class="form-text">Send dispatch notifications via text message</div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 d-flex justify-content-end gap-2 pb-4">
+      <%= link_to "Cancel", @user, class: "btn btn-outline-secondary" %>
+      <%= form.submit "Save Changes", class: "btn btn-primary px-4" %>
+    </div>
+
   </div>
 <% end %>

@@ -1,4 +1,5 @@
 class InventoryAdjustmentsController < ApplicationController
+  before_action :require_admin!
   REASON_CODES = [
     'Count Correction',
     'Spill / Loss',

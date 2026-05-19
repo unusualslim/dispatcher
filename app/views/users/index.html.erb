@@ -1,52 +1,75 @@
-<div class="container mt-4">
-  <h1>Users</h1>
+<div class="container-fluid px-4 py-4">
 
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-semibold mb-0">Users</h4>
+    <%= link_to new_user_registration_path, class: "btn btn-primary btn-sm" do %>
+      <i class="bi bi-person-plus"></i> Add User
+    <% end %>
+  </div>
 
-<%= link_to 'Add New User', new_user_registration_path, class: 'btn btn-primary' %>
+  <%# ── Admins ──────────────────────────────────────────────────────────────────── %>
+  <% admins  = @users.select { |u| u.role == 'admin' } %>
+  <% drivers = @users.select { |u| u.role != 'admin' } %>
 
-  <table class="table table-bordered">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Email</th>
-        <th>Phone</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @users.each do |user| %>
-        <tr>
-          <td><%= link_to user.full_name, user_path(user) %></td>
-          <td><%= user.email %></td>
-          <td><%= user.phone_number %></td>
-          <td>
-            <%= link_to 'Edit', edit_user_path(user), class: 'btn btn-primary btn-sm' %>
-            <%= form_with url: user_path(user), method: :delete, class: 'd-inline' do %>
-              <%= submit_tag 'Delete', class: 'btn btn-danger btn-sm', data: { confirm: 'Are you sure?' } %>
-            <% end %>
-          </td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
+  <% [["Admins", admins], ["Drivers", drivers]].each do |section_title, group| %>
+    <div class="mb-4">
+      <h6 class="text-muted text-uppercase fw-semibold mb-2" style="font-size:.75rem; letter-spacing:.05em;">
+        <%= section_title %> (<%= group.size %>)
+      </h6>
+      <div class="card shadow-sm">
+        <% if group.empty? %>
+          <div class="card-body text-muted fst-italic">None.</div>
+        <% else %>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Notifications</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% group.each do |user| %>
+                  <tr style="cursor:pointer;" onclick="window.location='<%= user_path(user) %>'">
+                    <td>
+                      <div class="fw-semibold"><%= user.full_name.presence || "—" %></div>
+                      <div class="text-muted small"><%= user.role&.capitalize %></div>
+                    </td>
+                    <td><%= user.email %></td>
+                    <td><%= user.phone_number.presence || "—" %></td>
+                    <td>
+                      <% if user.email_opt_in? %>
+                        <span class="badge bg-light text-dark border me-1"><i class="bi bi-envelope"></i> Email</span>
+                      <% end %>
+                      <% if user.sms_opt_in? %>
+                        <span class="badge bg-light text-dark border"><i class="bi bi-phone"></i> SMS</span>
+                      <% end %>
+                      <% unless user.email_opt_in? || user.sms_opt_in? %>
+                        <span class="text-muted small">None</span>
+                      <% end %>
+                    </td>
+                    <td class="text-end" onclick="event.stopPropagation()">
+                      <%= link_to edit_user_path(user), class: "btn btn-sm btn-outline-secondary me-1" do %>
+                        <i class="bi bi-pencil"></i>
+                      <% end %>
+                      <%= form_with url: user_path(user), method: :delete, class: "d-inline" do %>
+                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete"
+                                data-confirm="Delete <%= user.full_name %>?">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      <% end %>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
 </div>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  const toggleButton = document.getElementById('toggleFormButton');
-  const form = document.getElementById('newUserForm');
-
-  toggleButton.addEventListener('click', function() {
-    if (form.style.display === 'none') {
-      form.style.display = 'block';
-      toggleButton.textContent = 'Cancel';
-      toggleButton.classList.remove('btn-success');
-      toggleButton.classList.add('btn-danger');
-    } else {
-      form.style.display = 'none';
-      toggleButton.textContent = 'Add New User';
-      toggleButton.classList.remove('btn-danger');
-      toggleButton.classList.add('btn-success');
-    }
-  });
-});
-</script>

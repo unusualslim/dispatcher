@@ -1,4 +1,5 @@
 class ProductionOrdersController < ApplicationController
+  before_action :require_admin!
   before_action :authenticate_user!
   before_action :set_production_order, only: %i[show edit update destroy]
 
