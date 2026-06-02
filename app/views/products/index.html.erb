@@ -24,6 +24,13 @@
           <option value="finished" <%= 'selected' if params[:type] == 'finished' %>>Finished Goods</option>
         </select>
 
+        <select name="category" class="form-select form-select-sm" style="max-width: 200px;" onchange="this.form.requestSubmit()">
+          <option value="">All Categories</option>
+          <% @categories.each do |cat| %>
+            <option value="<%= cat %>" <%= 'selected' if params[:category] == cat %>><%= cat %></option>
+          <% end %>
+        </select>
+
         <select name="status" class="form-select form-select-sm" style="max-width: 160px;" onchange="this.form.requestSubmit()">
           <option value="">All Statuses</option>
           <option value="critical" <%= 'selected' if params[:status] == 'critical' %>>Critical</option>
@@ -31,11 +38,12 @@
           <option value="ok"       <%= 'selected' if params[:status] == 'ok' %>>OK</option>
         </select>
 
-        <% if params[:query].present? || params[:type].present? || params[:status].present? || params[:sort].present? %>
+        <% if params[:query].present? || params[:type].present? || params[:category].present? || params[:status].present? || params[:sort].present? %>
           <%= link_to 'Clear', products_path, class: 'btn btn-outline-danger btn-sm' %>
         <% end %>
 
         <%= f.hidden_field :sort, value: params[:sort] %>
+        <%= f.hidden_field :category, value: params[:category] %>
       </div>
     <% end %>
   </div>
@@ -43,7 +51,7 @@
 
 <%# helper for sortable column headers %>
 <% sort_url = ->(col) {
-  products_path(query: params[:query], type: params[:type], status: params[:status], sort: col)
+  products_path(query: params[:query], type: params[:type], category: params[:category], status: params[:status], sort: col)
 } %>
 
 <turbo-frame id="products-results">
@@ -55,6 +63,7 @@
         <thead class="table-light">
           <tr>
             <th><%= link_to "Name", sort_url.call(params[:sort] == 'name_asc' ? 'name_desc' : 'name_asc'), class: 'text-decoration-none text-dark' %></th>
+            <th><%= link_to "Category", sort_url.call(params[:sort] == 'category_asc' ? 'category_desc' : 'category_asc'), class: 'text-decoration-none text-dark' %></th>
             <th>Type</th>
             <th>Unit</th>
             <th><%= link_to "Stock", sort_url.call(params[:sort] == 'stock_asc' ? 'stock_desc' : 'stock_asc'), class: 'text-decoration-none text-dark' %></th>
@@ -68,6 +77,7 @@
           <% @products.each do |product| %>
             <tr>
               <td><%= link_to product.name, product_path(product), class: "text-decoration-none fw-semibold", data: { turbo_frame: "_top" } %></td>
+              <td><span class="badge bg-secondary"><%= product.category.presence || '—' %></span></td>
               <td>
                 <% if product.is_raw_material? %>
                   <span class="badge bg-secondary">Raw Material</span>

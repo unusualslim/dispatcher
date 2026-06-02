@@ -19,6 +19,7 @@ gem 'dotenv-rails'
 
 gem 'will_paginate'
 gem 'roo'
+gem 'roo-xls'
 gem 'net-ftp'
 gem 'redcarpet'
 

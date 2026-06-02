@@ -3,9 +3,6 @@
     <div>
       <h1 class="mb-1">Preview Import</h1>
       <p class="text-muted mb-0">
-        <span class="badge <%= @product_type == 'finished_good' ? 'bg-warning text-dark' : 'bg-secondary' %> me-1">
-          <%= @product_type == 'finished_good' ? 'Finished Products' : 'Components' %>
-        </span>
         <span class="text-success fw-semibold"><%= @update_count %> products will be updated</span>
         &nbsp;&middot;&nbsp;
         <span class="text-primary fw-semibold"><%= @create_count %> new products will be created</span>
@@ -33,6 +30,7 @@
               <th>Description</th>
               <th>Category</th>
               <th class="text-end">Qty</th>
+              <th class="text-end">Cost/Unit</th>
               <th>Action</th>
               <th>Current Stock</th>
             </tr>
@@ -49,6 +47,7 @@
                 <td><%= row.description %></td>
                 <td><span class="badge bg-secondary"><%= row.category %></span></td>
                 <td class="text-end"><%= number_with_precision(row.quantity, precision: 2, strip_insignificant_zeros: true) %></td>
+                <td class="text-end"><%= row.cost_per_unit ? number_to_currency(row.cost_per_unit) : '—' %></td>
                 <td>
                   <% if row.action == :update %>
                     <span class="badge bg-success">Update</span>

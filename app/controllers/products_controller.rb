@@ -3,7 +3,8 @@ class ProductsController < ApplicationController
     before_action :set_product, only: %i[show edit update destroy components]
   
     def index
-      @products = Product.order(:name)
+      @products = Product.all
+      @categories = Product.where.not(category: [nil, '']).distinct.order(:category).pluck(:category)
 
       if params[:query].present?
         @products = @products.where("name ILIKE ?", "%#{params[:query]}%")
@@ -12,6 +13,10 @@ class ProductsController < ApplicationController
       case params[:type]
       when 'raw'      then @products = @products.where(is_raw_material: true)
       when 'finished' then @products = @products.where(is_raw_material: false)
+      end
+
+      if params[:category].present?
+        @products = @products.where(category: params[:category])
       end
 
       case params[:status]
@@ -24,10 +29,12 @@ class ProductsController < ApplicationController
       end
 
       @products = case params[:sort]
-                  when 'stock_asc'  then @products.order(current_stock: :asc)
-                  when 'stock_desc' then @products.order(current_stock: :desc)
-                  when 'cost'       then @products.order(cost_per_unit: :desc)
-                  else @products
+                  when 'stock_asc'      then @products.order(current_stock: :asc)
+                  when 'stock_desc'     then @products.order(current_stock: :desc)
+                  when 'cost'           then @products.order(cost_per_unit: :desc)
+                  when 'category_asc'   then @products.order(Arel.sql("COALESCE(category, '') ASC, name ASC"))
+                  when 'category_desc'  then @products.order(Arel.sql("COALESCE(category, '') DESC, name ASC"))
+                  else @products.order(:name)
                   end
     end
   
@@ -155,6 +162,7 @@ class ProductsController < ApplicationController
         :safety_stock,
         :cost_per_unit,
         :pdi_package_code,
+        :category,
         product_components_attributes: [
           :id,
           :component_product_id,

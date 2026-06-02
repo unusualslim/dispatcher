@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_05_08_100002) do
+ActiveRecord::Schema[7.0].define(version: 2026_06_01_203504) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -160,10 +160,10 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_08_100002) do
     t.string "destination"
     t.boolean "needs_updating"
     t.bigint "vendor_id"
+    t.integer "destination_location_id"
     t.bigint "asset_id"
     t.integer "truck_id"
     t.integer "trailer_id"
-    t.integer "destination_location_id"
     t.index ["asset_id"], name: "index_dispatches_on_asset_id"
     t.index ["vendor_id"], name: "index_dispatches_on_vendor_id"
   end
@@ -340,6 +340,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_08_100002) do
     t.decimal "safety_stock", precision: 14, scale: 3, default: "0.0"
     t.decimal "cost_per_unit", precision: 12, scale: 4
     t.string "pdi_package_code"
+    t.string "category"
   end
 
   create_table "purchase_orders", force: :cascade do |t|

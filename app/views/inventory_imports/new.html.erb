@@ -6,21 +6,8 @@
     <div class="card shadow-sm">
       <div class="card-body">
         <div class="mb-3">
-          <label class="form-label fw-semibold">Product Type</label>
-          <div class="d-flex gap-3">
-            <div class="form-check">
-              <input class="form-check-input" type="radio" name="product_type" id="typeComponents" value="raw_material" checked>
-              <label class="form-check-label" for="typeComponents">Components (raw materials)</label>
-            </div>
-            <div class="form-check">
-              <input class="form-check-input" type="radio" name="product_type" id="typeFinished" value="finished_good">
-              <label class="form-check-label" for="typeFinished">Finished Products</label>
-            </div>
-          </div>
-        </div>
-        <div class="mb-3">
-          <label class="form-label fw-semibold">PDI Inventory Export (.xlsx)</label>
-          <%= f.file_field :file, accept: '.xlsx', class: 'form-control', required: true %>
+          <label class="form-label fw-semibold">PDI Inventory Export (.xls or .xlsx)</label>
+          <%= f.file_field :file, accept: '.xls,.xlsx', class: 'form-control', required: true %>
           <div class="form-text">Use the "Warehouse Inventory Report" export from PDI.</div>
         </div>
         <%= f.submit "Preview Import", class: "btn btn-primary" %>
