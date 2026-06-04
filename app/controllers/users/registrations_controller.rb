@@ -48,15 +48,15 @@ class Users::RegistrationsController < Devise::RegistrationsController
   # POST /users
   def create
     @user = User.new(sign_up_params)
-    
-    if verify_recaptcha(model: @user)
-      puts "reCAPTCHA verification succeeded"
-      if @user.save
-        sign_in(@user)
-        redirect_to dispatches_path, notice: "Account successfully created."
-      else
-        render :new, status: :unprocessable_entity
-      end
+
+    unless verify_recaptcha
+      flash.now[:recaptcha_error] = "Please check the reCAPTCHA box and try again."
+      return render :new, status: :unprocessable_entity
+    end
+
+    if @user.save
+      sign_in(@user)
+      redirect_to dispatches_path, notice: "Account successfully created."
     else
       render :new, status: :unprocessable_entity
     end

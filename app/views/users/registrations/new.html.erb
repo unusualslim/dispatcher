@@ -7,6 +7,10 @@
         </div>
         <div class="card-body p-4">
 
+          <% if flash[:recaptcha_error].present? %>
+            <div class="alert alert-warning"><%= flash[:recaptcha_error] %></div>
+          <% end %>
+
           <% if @user.errors.any? %>
             <div class="alert alert-danger">
               <ul class="mb-0 ps-3">
@@ -72,3 +76,10 @@
     </div>
   </div>
 </div>
+
+<% if flash[:recaptcha_error].present? %>
+<script>
+  // Reset the reCAPTCHA widget so the spent token doesn't cause every retry to fail
+  if (typeof grecaptcha !== 'undefined') { grecaptcha.reset(); }
+</script>
+<% end %>
