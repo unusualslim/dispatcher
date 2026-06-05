@@ -74,16 +74,20 @@ class ProductsController < ApplicationController
         if q.blank?
           Product.order(:name).limit(25)
         else
-          Product.where("name ILIKE ?", "%#{q}%")
-                .order(:name)
+          Product.where("name ILIKE ? OR id ILIKE ?", "%#{q}%", "%#{q}%")
+                .order(Arel.sql(<<~SQL.squish))
+                    CASE
+                      WHEN name ILIKE #{ActiveRecord::Base.connection.quote(q)}        THEN 0
+                      WHEN id   ILIKE #{ActiveRecord::Base.connection.quote(q)}        THEN 0
+                      WHEN name ILIKE #{ActiveRecord::Base.connection.quote("#{q}%")}  THEN 1
+                      ELSE 2
+                    END, name
+                SQL
                 .limit(25)
         end
 
       render json: products.map { |p|
-        {
-          id: p.id,
-          text: [p.name, (p.respond_to?(:sku) ? p.sku : nil)].compact.join(" — ")
-        }
+        { id: p.id, text: "#{p.name} (#{p.id})" }
       }
     end
 
