@@ -59,6 +59,7 @@ class ProductsController < ApplicationController
         redirect_to products_path, notice: 'Product was successfully updated.'
       else
         @product.product_components.build if @product.product_components.empty?
+        load_show_data
         render :show, status: :unprocessable_entity
       end
     end
@@ -93,15 +94,7 @@ class ProductsController < ApplicationController
 
     def show
       @product.product_components.build if @product.product_components.empty?
-
-      @recent_transactions = @product.inventory_transactions
-                                     .order(created_at: :desc)
-                                     .includes(:created_by)
-                                     .limit(10)
-      @open_purchase_orders = @product.purchase_orders
-                                      .where(status: PurchaseOrder::STATUSES - %w[received cancelled])
-                                      .includes(:vendor)
-                                      .order(created_at: :desc)
+      load_show_data
 
       respond_to do |format|
         format.html
@@ -150,6 +143,17 @@ class ProductsController < ApplicationController
   
     def set_product
       @product = Product.find(params[:id])
+    end
+
+    def load_show_data
+      @recent_transactions = @product.inventory_transactions
+                                     .order(created_at: :desc)
+                                     .includes(:created_by)
+                                     .limit(10)
+      @open_purchase_orders = @product.purchase_orders
+                                      .where(status: PurchaseOrder::STATUSES - %w[received cancelled])
+                                      .includes(:vendor)
+                                      .order(created_at: :desc)
     end
   
     def product_params

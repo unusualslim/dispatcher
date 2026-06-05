@@ -13,7 +13,7 @@ class Product < ApplicationRecord
   has_many :inventory_transactions
   has_many :purchase_orders
 
-  accepts_nested_attributes_for :product_components, allow_destroy: true
+  accepts_nested_attributes_for :product_components, allow_destroy: true, reject_if: :all_blank
 
   validates :name, presence: true
   validates :id, presence: true
