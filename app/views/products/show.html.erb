@@ -182,7 +182,8 @@
 document.addEventListener("turbo:load", function () {
   var container = document.getElementById("bom-rows");
   var addBtn    = document.getElementById("add-bom-row");
-  if (!container || !addBtn) return;
+  if (!container || !addBtn || addBtn.dataset.bound) return;
+  addBtn.dataset.bound = "1";
 
   function nextIndex() {
     var max = -1;
