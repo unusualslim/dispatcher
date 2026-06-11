@@ -145,15 +145,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
     sheet.innerHTML = "";
 
-    // Group labels into sheets of 4 (matches one 4×6 label)
-    for (let i = 0; i < data.labels.length; i += 4) {
+    // One 4×6 sheet per batch entry — 4 identical QR codes, one for each placement
+    data.labels.forEach(function (label, i) {
+      const item    = items[i] || {};
       const sheetEl = document.createElement("div");
       sheetEl.className = "label-sheet";
 
-      for (let j = i; j < Math.min(i + 4, data.labels.length); j++) {
-        const label  = data.labels[j];
-        const item   = items[j] || {};
-
+      for (let copy = 0; copy < 4; copy++) {
         const wrapper = document.createElement("div");
         wrapper.className = "qr-label";
 
@@ -172,7 +170,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       sheet.appendChild(sheetEl);
-    }
+    });
 
     sheet.style.display = "";
     if (printBtn) printBtn.style.display = "";
