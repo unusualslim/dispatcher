@@ -1,0 +1,19 @@
+<div class="d-flex align-items-center justify-content-center" style="min-height:100vh;">
+  <div class="card shadow-sm" style="width:100%;max-width:360px;">
+    <div class="card-body p-4">
+      <h5 class="card-title mb-4 text-center">Batch Labels</h5>
+      <%= form_tag gate_path, method: :post do %>
+        <%= hidden_field_tag :return_to, params[:return_to] %>
+        <div class="mb-3">
+          <label for="password" class="form-label">Password</label>
+          <%= password_field_tag :password, nil,
+                id: "password",
+                class: "form-control form-control-lg",
+                autofocus: true,
+                autocomplete: "current-password" %>
+        </div>
+        <%= submit_tag "Enter", class: "btn btn-primary w-100 btn-lg" %>
+      <% end %>
+    </div>
+  </div>
+</div>

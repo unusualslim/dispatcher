@@ -1,4 +1,11 @@
 Rails.application.routes.draw do
+  # Batch QR label routes — BatchController uses its own session gate, not Devise
+  get  '/gate',          to: 'batch#gate',          as: :gate
+  post '/gate',          to: 'batch#authenticate'
+  get  '/labels',        to: 'batch#new',            as: :labels
+  post '/labels/encode', to: 'batch#encode',         as: :labels_encode
+  get  '/l',             to: 'batch#show',           as: :label
+
   #get 'assets/index'
   #get 'assets/show'
   get 'calendar', to: 'calendar#index'

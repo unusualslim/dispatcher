@@ -15,6 +15,7 @@
     "nodemon": "^3.0.1",
     "postcss": "^8.4.31",
     "postcss-cli": "^10.1.0",
+    "qrcode-generator": "^2.0.4",
     "sass": "^1.69.5",
     "sortablejs": "^1.15.0",
     "trix": "^2.0.8"
