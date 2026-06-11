@@ -53,7 +53,8 @@ function escAttr(str) {
     .replace(/</g, "&lt;");
 }
 
-document.addEventListener("DOMContentLoaded", function () {
+// Fire on both plain page load and Turbo Drive navigation
+function init() {
   const addBtn       = document.getElementById("add-entry");
   const entriesList  = document.getElementById("entries-list");
   const generateBtn  = document.getElementById("generate-btn");
@@ -187,4 +188,7 @@ document.addEventListener("DOMContentLoaded", function () {
   if (printBtn) {
     printBtn.addEventListener("click", () => window.print());
   }
-});
+}
+
+document.addEventListener("DOMContentLoaded", init);
+document.addEventListener("turbo:load", init);
