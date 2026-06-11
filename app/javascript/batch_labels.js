@@ -8,17 +8,21 @@ if (qrcode.stringToBytesFuncs) {
 
 /**
  * Draw a QR code for `url` onto `canvas`.
+ * Renders at ~560px so it prints sharply at 1.75in / 300 DPI.
  * Quiet zone is 4 modules on every side.
  */
 function drawQR(url, canvas) {
-  const qr = qrcode(0, "M"); // type 0 = auto, M = ~15% error correction
+  const qr = qrcode(0, "M");
   qr.addData(url);
   qr.make();
 
-  const moduleCount = qr.getModuleCount();
-  const margin      = 4;   // quiet-zone modules
-  const cellSize    = 6;   // px per module
-  const totalPx     = (moduleCount + margin * 2) * cellSize;
+  const moduleCount  = qr.getModuleCount();
+  const margin       = 4;
+  const totalModules = moduleCount + margin * 2;
+
+  // Target ~560px so 1.75in CSS = ~320 DPI on a 300 DPI printer
+  const cellSize = Math.max(4, Math.floor(560 / totalModules));
+  const totalPx  = totalModules * cellSize;
 
   canvas.width  = totalPx;
   canvas.height = totalPx;
@@ -57,17 +61,36 @@ document.addEventListener("DOMContentLoaded", function () {
   const captionCheck = document.getElementById("show-captions");
   const printBtn     = document.getElementById("print-btn");
 
-  // Only the generator page has these elements
   if (!addBtn) return;
 
-  function addEntry(batch, date) {
+  function addEntry(batch, date, product, notes) {
     const today = new Date().toISOString().slice(0, 10);
     const row = document.createElement("div");
-    row.className = "d-flex gap-2 align-items-center mb-2 entry-row";
+    row.className = "entry-row card mb-2";
     row.innerHTML =
-      `<input type="text"  class="form-control entry-batch" placeholder="Batch #" value="${escAttr(batch || "")}" required>` +
-      `<input type="date"  class="form-control entry-date"  value="${escAttr(date  || today)}">` +
-      `<button type="button" class="btn btn-outline-danger btn-sm remove-entry" aria-label="Remove">&times;</button>`;
+      `<div class="card-body p-2">` +
+        `<div class="row g-2 align-items-center">` +
+          `<div class="col-6 col-md-2">` +
+            `<input type="text" class="form-control form-control-sm entry-batch" placeholder="Batch #" value="${escAttr(batch || "")}" required>` +
+          `</div>` +
+          `<div class="col-6 col-md-2">` +
+            `<input type="date" class="form-control form-control-sm entry-date" value="${escAttr(date || today)}">` +
+          `</div>` +
+          `<div class="col-12 col-md-4">` +
+            `<input type="text" class="form-control form-control-sm entry-product" placeholder="Product name">` +
+          `</div>` +
+          `<div class="col-10 col-md">` +
+            `<input type="text" class="form-control form-control-sm entry-notes" placeholder="Notes (optional)">` +
+          `</div>` +
+          `<div class="col-2 col-md-auto">` +
+            `<button type="button" class="btn btn-outline-danger btn-sm remove-entry w-100" aria-label="Remove">&times;</button>` +
+          `</div>` +
+        `</div>` +
+      `</div>`;
+
+    if (product) row.querySelector(".entry-product").value = product;
+    if (notes)   row.querySelector(".entry-notes").value   = notes;
+
     row.querySelector(".remove-entry").addEventListener("click", () => row.remove());
     entriesList.appendChild(row);
     row.querySelector(".entry-batch").focus();
@@ -82,9 +105,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const rows  = entriesList.querySelectorAll(".entry-row");
     const items = [];
     rows.forEach(function (row) {
-      const batch = row.querySelector(".entry-batch").value.trim();
-      const date  = row.querySelector(".entry-date").value.trim();
-      if (batch) items.push({ batch, date });
+      const batch   = row.querySelector(".entry-batch").value.trim();
+      const date    = row.querySelector(".entry-date").value.trim();
+      const product = row.querySelector(".entry-product").value.trim();
+      const notes   = row.querySelector(".entry-notes").value.trim();
+      if (batch) items.push({ batch, date, product, notes });
     });
 
     if (!items.length) {
@@ -92,7 +117,7 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    generateBtn.disabled = true;
+    generateBtn.disabled    = true;
     generateBtn.textContent = "Generating…";
 
     const csrfMeta = document.querySelector('meta[name="csrf-token"]');
@@ -112,37 +137,47 @@ document.addEventListener("DOMContentLoaded", function () {
       alert("Failed to generate codes: " + err.message);
       return;
     } finally {
-      generateBtn.disabled = false;
+      generateBtn.disabled    = false;
       generateBtn.textContent = "Generate codes";
     }
 
     const showCaptions = captionCheck && captionCheck.checked;
 
     sheet.innerHTML = "";
-    data.labels.forEach(function (label, i) {
-      const item    = items[i] || {};
-      const wrapper = document.createElement("div");
-      wrapper.className = "qr-label";
 
-      const canvas = document.createElement("canvas");
-      drawQR(label.url, canvas);
-      wrapper.appendChild(canvas);
+    // Group labels into sheets of 4 (matches one 4×6 label)
+    for (let i = 0; i < data.labels.length; i += 4) {
+      const sheetEl = document.createElement("div");
+      sheetEl.className = "label-sheet";
 
-      // Always create caption; visibility toggled by checkbox
-      const cap = document.createElement("div");
-      cap.className    = "qr-caption";
-      cap.textContent  = [item.batch, item.date].filter(Boolean).join(" — ");
-      cap.style.display = showCaptions ? "" : "none";
-      wrapper.appendChild(cap);
+      for (let j = i; j < Math.min(i + 4, data.labels.length); j++) {
+        const label  = data.labels[j];
+        const item   = items[j] || {};
 
-      sheet.appendChild(wrapper);
-    });
+        const wrapper = document.createElement("div");
+        wrapper.className = "qr-label";
+
+        const canvas = document.createElement("canvas");
+        drawQR(label.url, canvas);
+        wrapper.appendChild(canvas);
+
+        // Caption: product · batch · date  (always created, toggled by checkbox)
+        const cap = document.createElement("div");
+        cap.className    = "qr-caption";
+        cap.textContent  = [item.product, item.batch, item.date].filter(Boolean).join(" · ");
+        cap.style.display = showCaptions ? "" : "none";
+        wrapper.appendChild(cap);
+
+        sheetEl.appendChild(wrapper);
+      }
+
+      sheet.appendChild(sheetEl);
+    }
 
     sheet.style.display = "";
     if (printBtn) printBtn.style.display = "";
   });
 
-  // Toggle captions on already-rendered sheet
   if (captionCheck) {
     captionCheck.addEventListener("change", function () {
       sheet.querySelectorAll(".qr-caption").forEach(function (el) {

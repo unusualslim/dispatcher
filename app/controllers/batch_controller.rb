@@ -39,16 +39,23 @@ class BatchController < ActionController::Base
     items = params.require(:items)
     crypt  = encryptor
     labels = Array(items).map do |item|
-      token = crypt.encrypt_and_sign({ "b" => item[:batch].to_s, "d" => item[:date].to_s })
+      token = crypt.encrypt_and_sign({
+        "b" => item[:batch].to_s,
+        "d" => item[:date].to_s,
+        "p" => item[:product].to_s,
+        "n" => item[:notes].to_s
+      })
       { url: label_url(d: token) }
     end
     render json: { labels: labels }
   end
 
   def show
-    data   = encryptor.decrypt_and_verify(params[:d].to_s)
-    @batch = data["b"]
-    @date  = data["d"]
+    data     = encryptor.decrypt_and_verify(params[:d].to_s)
+    @batch   = data["b"]
+    @date    = data["d"]
+    @product = data["p"]
+    @notes   = data["n"]
   rescue ActiveSupport::MessageEncryptor::InvalidMessage,
          ActiveSupport::MessageVerifier::InvalidSignature
     render :invalid, status: :unprocessable_entity

@@ -10,42 +10,87 @@
     <style>
       body { background: #f8f9fa; }
 
-      /* ── QR sheet ────────────────────────────────────────── */
+      /* ── QR sheet — screen ──────────────────────────────────── */
       .qr-sheet {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 16px;
         padding: 16px;
       }
+      /* One 4×6 label = 2×2 grid of QR codes */
+      .label-sheet {
+        display: inline-grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        padding: 12px;
+        background: #fff;
+        border: 2px solid #adb5bd;
+        border-radius: 4px;
+        margin-bottom: 20px;
+      }
       .qr-label {
-        display: inline-flex;
+        display: flex;
         flex-direction: column;
         align-items: center;
-        padding: 8px;
-        background: #fff;
-        border: 1px solid #dee2e6;
-        page-break-inside: avoid;
-        break-inside: avoid;
+        padding: 6px;
+      }
+      /* Scale down high-res canvas for screen preview */
+      .qr-label canvas {
+        width: 140px;
+        height: 140px;
       }
       .qr-caption {
-        margin-top: 6px;
-        font-size: 11px;
+        margin-top: 5px;
+        font-size: 10px;
         font-family: monospace;
         text-align: center;
         color: #333;
+        max-width: 140px;
+        overflow-wrap: break-word;
       }
 
-      /* ── Print ───────────────────────────────────────────── */
+      /* ── Print — 4 QR codes per 4×6 inch label ──────────── */
       @media print {
         .no-print { display: none !important; }
         body { background: #fff; margin: 0; padding: 0; }
-        .qr-sheet {
-          display: flex !important;
-          flex-wrap: wrap;
-          gap: 12px;
-          padding: 12px;
+
+        .qr-sheet { padding: 0; }
+
+        .label-sheet {
+          display: grid !important;
+          grid-template-columns: 2in 2in;
+          grid-template-rows: 3in 3in;
+          width: 4in;
+          height: 6in;
+          gap: 0;
+          padding: 0;
+          margin: 0;
+          border: none;
+          page-break-after: always;
+          break-after: page;
+          overflow: hidden;
         }
-        .qr-label { border: 1px solid #ccc; }
+
+        .qr-label {
+          width: 2in;
+          height: 3in;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 0.1in;
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
+
+        /* Override screen canvas size — fill the cell at print DPI */
+        .qr-label canvas {
+          width: 1.75in !important;
+          height: 1.75in !important;
+        }
+
+        .qr-caption {
+          font-size: 7pt;
+          margin-top: 3px;
+          max-width: 1.75in;
+        }
       }
     </style>
     <%= yield :head %>

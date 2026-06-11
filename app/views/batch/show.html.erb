@@ -1,11 +1,22 @@
-<div class="container text-center py-5">
-  <p class="text-muted mb-1" style="font-size:0.85rem;letter-spacing:0.08em;text-transform:uppercase;">Batch</p>
+<div class="container text-center py-5" style="max-width:480px;">
+  <% if @product.present? %>
+    <p class="text-muted mb-1" style="font-size:0.8rem;letter-spacing:0.08em;text-transform:uppercase;">Product</p>
+    <div class="fw-semibold mb-4" style="font-size:clamp(1.2rem,5vw,2rem);line-height:1.2;">
+      <%= @product %>
+    </div>
+  <% end %>
+
+  <p class="text-muted mb-1" style="font-size:0.8rem;letter-spacing:0.08em;text-transform:uppercase;">Batch</p>
   <div class="fw-bold mb-4" style="font-size:clamp(2rem,10vw,4rem);line-height:1.1;font-family:monospace;">
     <%= @batch %>
   </div>
 
-  <p class="text-muted mb-1" style="font-size:0.85rem;letter-spacing:0.08em;text-transform:uppercase;">Date</p>
+  <p class="text-muted mb-1" style="font-size:0.8rem;letter-spacing:0.08em;text-transform:uppercase;">Date</p>
   <div class="fw-bold" style="font-size:clamp(1.5rem,7vw,3rem);line-height:1.2;">
     <%= @date %>
   </div>
+
+  <% if @notes.present? %>
+    <p class="text-muted mt-4" style="font-size:0.95rem;"><%= @notes %></p>
+  <% end %>
 </div>
