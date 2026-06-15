@@ -49,8 +49,8 @@ class Users::RegistrationsController < Devise::RegistrationsController
   def create
     @user = User.new(sign_up_params)
 
-    unless verify_recaptcha
-      flash.now[:recaptcha_error] = "Please check the reCAPTCHA box and try again."
+    unless verify_turnstile
+      flash.now[:alert] = "Security check failed. Please try again."
       return render :new, status: :unprocessable_entity
     end
 
@@ -91,6 +91,22 @@ class Users::RegistrationsController < Devise::RegistrationsController
   #   super(resource)
   # end
   private
+
+  def verify_turnstile
+    token = params["cf-turnstile-response"].to_s
+    return false if token.blank?
+
+    secret = Rails.application.credentials.dig(:turnstile, :secret_key) ||
+             ENV["TURNSTILE_SECRET_KEY"]
+    return false if secret.blank?
+
+    uri      = URI("https://challenges.cloudflare.com/turnstile/v0/siteverify")
+    response = Net::HTTP.post_form(uri, "secret" => secret, "response" => token)
+    JSON.parse(response.body)["success"] == true
+  rescue => e
+    Rails.logger.error "Turnstile verification error: #{e.message}"
+    false
+  end
 
   def sign_up_params
     params.require(:user).permit(:email, :password, :password_confirmation, :first_name, :last_name, :phone_number, :role)

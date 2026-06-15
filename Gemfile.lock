@@ -227,7 +227,6 @@ GEM
     rake (13.1.0)
     rdoc (6.6.0)
       psych (>= 4.0.0)
-    recaptcha (5.19.0)
     redcarpet (3.6.1)
     regexp_parser (2.8.2)
     reline (0.3.9)
@@ -334,7 +333,6 @@ DEPENDENCIES
   pg (~> 1.1)
   puma (~> 5.0)
   rails (~> 7.0.3, >= 7.0.3.1)
-  recaptcha
   redcarpet
   roo
   roo-xls

@@ -13,7 +13,6 @@ gem 'devise'
 
 gem 'twilio-ruby'
 
-gem 'recaptcha', require: 'recaptcha/rails'
 
 gem 'dotenv-rails'
 

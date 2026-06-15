@@ -7,10 +7,6 @@
         </div>
         <div class="card-body p-4">
 
-          <% if flash[:recaptcha_error].present? %>
-            <div class="alert alert-warning"><%= flash[:recaptcha_error] %></div>
-          <% end %>
-
           <% if @user.errors.any? %>
             <div class="alert alert-danger">
               <ul class="mb-0 ps-3">
@@ -63,7 +59,9 @@
             </div>
 
             <div class="mb-4">
-              <%= recaptcha_tags %>
+              <div class="cf-turnstile"
+                   data-sitekey="<%= Rails.application.credentials.dig(:turnstile, :site_key) || ENV['TURNSTILE_SITE_KEY'] %>"
+                   data-theme="light"></div>
             </div>
 
             <div class="d-grid">
@@ -76,10 +74,3 @@
     </div>
   </div>
 </div>
-
-<% if flash[:recaptcha_error].present? %>
-<script>
-  // Reset the reCAPTCHA widget so the spent token doesn't cause every retry to fail
-  if (typeof grecaptcha !== 'undefined') { grecaptcha.reset(); }
-</script>
-<% end %>
