@@ -1,79 +1,103 @@
-<%= form_with(model: @user) do |form| %>
+<div style="max-width:560px;">
+
   <% if user.errors.any? %>
     <div class="alert alert-danger mb-4">
-      <strong><%= pluralize(user.errors.count, "error") %> prevented this user from being saved:</strong>
-      <ul class="mb-0 mt-1">
-        <% user.errors.each do |error| %>
-          <li><%= error.full_message %></li>
+      <ul class="mb-0 ps-3">
+        <% user.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
         <% end %>
       </ul>
     </div>
   <% end %>
 
-  <div class="row g-4">
+  <%= form_with(model: user, data: { turbo: false }) do |form| %>
+    <div class="card shadow-sm">
 
-    <div class="col-lg-6">
-      <div class="card shadow-sm">
-        <div class="card-header fw-semibold">Account Info</div>
-        <div class="card-body d-flex flex-column gap-3">
+      <%# ── User header ───────────────────────────────────────── %>
+      <div class="card-body border-bottom d-flex align-items-center gap-3 py-3">
+        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold flex-shrink-0"
+             style="width:48px;height:48px;font-size:1.1rem;">
+          <%= [user.first_name&.first, user.last_name&.first].compact.join.upcase.presence || "?" %>
+        </div>
+        <div>
+          <div class="fw-semibold"><%= user.full_name.presence || "New User" %></div>
+          <div class="text-muted small"><%= user.email %></div>
+        </div>
+      </div>
 
-          <div class="row g-3">
-            <div class="col-sm-6">
-              <%= form.label :first_name, class: "form-label fw-semibold mb-1" %>
-              <%= form.text_field :first_name, class: "form-control" %>
-            </div>
-            <div class="col-sm-6">
-              <%= form.label :last_name, class: "form-label fw-semibold mb-1" %>
-              <%= form.text_field :last_name, class: "form-control" %>
-            </div>
+      <%# ── Account info ──────────────────────────────────────── %>
+      <div class="card-body border-bottom">
+        <h6 class="text-muted text-uppercase fw-semibold mb-3" style="font-size:.72rem;letter-spacing:.06em;">Account</h6>
+
+        <div class="row g-3 mb-3">
+          <div class="col-sm-6">
+            <%= form.label :first_name, class: "form-label mb-1" %>
+            <%= form.text_field :first_name, class: "form-control" %>
           </div>
-
-          <div>
-            <%= form.label :email, class: "form-label fw-semibold mb-1" %>
-            <%= form.text_field :email, class: "form-control" %>
+          <div class="col-sm-6">
+            <%= form.label :last_name, class: "form-label mb-1" %>
+            <%= form.text_field :last_name, class: "form-control" %>
           </div>
+        </div>
 
-          <div>
-            <%= form.label :phone_number, class: "form-label fw-semibold mb-1" %>
+        <div class="mb-3">
+          <%= form.label :email, class: "form-label mb-1" %>
+          <%= form.email_field :email, class: "form-control" %>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <%= form.label :phone_number, class: "form-label mb-1" %>
             <%= form.text_field :phone_number, class: "form-control", placeholder: "e.g. 229-555-0100" %>
           </div>
-
-          <div>
-            <%= form.label :role, class: "form-label fw-semibold mb-1" %>
-            <%= form.select :role, [["Driver (worker)", "worker"], ["Admin", "admin"]],
-                  { include_blank: "— Select role —" },
+          <div class="col-sm-6">
+            <%= form.label :role, class: "form-label mb-1" %>
+            <%= form.select :role,
+                  [["Driver", "worker"], ["Admin", "admin"]],
+                  { include_blank: "— select —" },
                   class: "form-select" %>
           </div>
-
         </div>
       </div>
-    </div>
 
-    <div class="col-lg-6">
-      <div class="card shadow-sm">
-        <div class="card-header fw-semibold">Notification Preferences</div>
-        <div class="card-body d-flex flex-column gap-3">
+      <%# ── Password reset ────────────────────────────────────── %>
+      <div class="card-body border-bottom">
+        <h6 class="text-muted text-uppercase fw-semibold mb-1" style="font-size:.72rem;letter-spacing:.06em;">Set New Password</h6>
+        <p class="text-muted small mb-3">Leave blank to keep the current password.</p>
 
-          <div class="form-check form-switch">
-            <%= form.check_box :email_opt_in, class: "form-check-input", role: "switch", id: "email_opt_in_toggle" %>
-            <%= form.label :email_opt_in, "Email notifications", class: "form-check-label", for: "email_opt_in_toggle" %>
-            <div class="form-text">Send dispatch notifications via email</div>
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <%= form.label :password, class: "form-label mb-1" %>
+            <%= form.password_field :password, class: "form-control", autocomplete: "new-password", placeholder: "New password" %>
           </div>
-
-          <div class="form-check form-switch">
-            <%= form.check_box :sms_opt_in, class: "form-check-input", role: "switch", id: "sms_opt_in_toggle" %>
-            <%= form.label :sms_opt_in, "SMS notifications", class: "form-check-label", for: "sms_opt_in_toggle" %>
-            <div class="form-text">Send dispatch notifications via text message</div>
+          <div class="col-sm-6">
+            <%= form.label :password_confirmation, "Confirm", class: "form-label mb-1" %>
+            <%= form.password_field :password_confirmation, class: "form-control", autocomplete: "new-password", placeholder: "Confirm password" %>
           </div>
-
         </div>
       </div>
-    </div>
 
-    <div class="col-12 d-flex justify-content-end gap-2 pb-4">
-      <%= link_to "Cancel", @user, class: "btn btn-outline-secondary" %>
-      <%= form.submit "Save Changes", class: "btn btn-primary px-4" %>
-    </div>
+      <%# ── Notifications ─────────────────────────────────────── %>
+      <div class="card-body border-bottom">
+        <h6 class="text-muted text-uppercase fw-semibold mb-3" style="font-size:.72rem;letter-spacing:.06em;">Notifications</h6>
 
-  </div>
-<% end %>
+        <div class="form-check form-switch mb-2">
+          <%= form.check_box :email_opt_in, class: "form-check-input", role: "switch", id: "email_opt_in_toggle" %>
+          <%= form.label :email_opt_in, "Email notifications", class: "form-check-label", for: "email_opt_in_toggle" %>
+        </div>
+        <div class="form-check form-switch">
+          <%= form.check_box :sms_opt_in, class: "form-check-input", role: "switch", id: "sms_opt_in_toggle" %>
+          <%= form.label :sms_opt_in, "SMS notifications", class: "form-check-label", for: "sms_opt_in_toggle" %>
+        </div>
+      </div>
+
+      <%# ── Actions ───────────────────────────────────────────── %>
+      <div class="card-body d-flex gap-2">
+        <%= form.submit "Save Changes", class: "btn btn-primary" %>
+        <%= link_to "Cancel", users_path, class: "btn btn-outline-secondary" %>
+      </div>
+
+    </div>
+  <% end %>
+
+</div>

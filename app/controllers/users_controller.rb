@@ -45,7 +45,7 @@ class UsersController < ApplicationController
   def update
     respond_to do |format|
       if @user.update(user_params)
-        format.html { redirect_to user_url(@user), notice: "User was successfully updated." }
+        format.html { redirect_to users_url, notice: "User updated." }
         format.json { render :show, status: :ok, location: @user }
       else
         format.html { render :edit, status: :unprocessable_entity }
@@ -74,6 +74,15 @@ class UsersController < ApplicationController
     end
 
     def user_params
-      params.require(:user).permit(:email, :first_name, :last_name, :phone_number, :role, :sms_opt_in, :email_opt_in)
+      permitted = params.require(:user).permit(
+        :email, :first_name, :last_name, :phone_number, :role,
+        :sms_opt_in, :email_opt_in, :password, :password_confirmation
+      )
+      # Don't touch the password if the field was left blank
+      if permitted[:password].blank?
+        permitted.delete(:password)
+        permitted.delete(:password_confirmation)
+      end
+      permitted
     end    
 end

@@ -27,6 +27,7 @@
                   <th>Name</th>
                   <th>Email</th>
                   <th>Phone</th>
+                  <th>Role</th>
                   <th>Notifications</th>
                   <th></th>
                 </tr>
@@ -36,10 +37,19 @@
                   <tr style="cursor:pointer;" onclick="window.location='<%= user_path(user) %>'">
                     <td>
                       <div class="fw-semibold"><%= user.full_name.presence || "—" %></div>
-                      <div class="text-muted small"><%= user.role&.capitalize %></div>
                     </td>
                     <td><%= user.email %></td>
                     <td><%= user.phone_number.presence || "—" %></td>
+                    <td onclick="event.stopPropagation()">
+                      <%= form_with url: user_path(user), method: :patch, data: { turbo: false } do |f| %>
+                        <%= f.select :role,
+                              [["Driver", "worker"], ["Admin", "admin"]],
+                              { selected: user.role },
+                              class: "form-select form-select-sm",
+                              style: "min-width:100px",
+                              onchange: "this.form.requestSubmit()" %>
+                      <% end %>
+                    </td>
                     <td>
                       <% if user.email_opt_in? %>
                         <span class="badge bg-light text-dark border me-1"><i class="bi bi-envelope"></i> Email</span>
