@@ -131,6 +131,12 @@ Rails.application.routes.draw do
 
   resources :vendors, only: [:index, :new, :create, :destroy, :show, :edit, :update]
 
+  resources :automated_processes, only: [:index, :show], param: :id do
+    member do
+      post :trigger
+    end
+  end
+
   delete 'dispatches/:dispatch_id/files/:id', to: 'dispatches#destroy_file', as: 'dispatch_file'
 
   resources :phone_numbers, only: [:destroy]

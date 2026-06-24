@@ -1,0 +1,65 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h1 class="mb-0"><%= @process_name %></h1>
+      <p class="text-muted mb-0">Run history</p>
+    </div>
+    <div class="d-flex gap-2">
+      <%= button_to "Run Now", trigger_automated_process_path(params[:id]), method: :post, class: "btn btn-primary btn-sm" %>
+      <%= link_to "Back", automated_processes_path, class: "btn btn-outline-secondary btn-sm" %>
+    </div>
+  </div>
+
+  <% if @logs.any? %>
+    <div class="table-responsive">
+      <table class="table table-bordered table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Started</th>
+            <th>Status</th>
+            <th>File</th>
+            <th>Created</th>
+            <th>Updated</th>
+            <th>Skipped</th>
+            <th>Duration</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @logs.each do |log| %>
+            <tr>
+              <td class="text-nowrap"><%= log.started_at.strftime('%b %-d %Y %-I:%M %p') %></td>
+              <td>
+                <span class="badge <%= log.status == 'success' ? 'bg-success' : log.status == 'failed' ? 'bg-danger' : 'bg-warning text-dark' %>">
+                  <%= log.status %>
+                </span>
+              </td>
+              <td><code class="small"><%= log.file_name %></code></td>
+              <td><%= log.records_created %></td>
+              <td><%= log.records_updated %></td>
+              <td><%= log.records_skipped %></td>
+              <td class="text-nowrap"><%= log.duration_s %></td>
+              <td>
+                <% if log.error_message.present? %>
+                  <span class="text-danger small"><%= log.error_message.truncate(80) %></span>
+                <% elsif log.warnings.present? %>
+                  <button class="btn btn-outline-warning btn-sm py-0" type="button"
+                          data-bs-toggle="collapse"
+                          data-bs-target="#warnings-<%= log.id %>">
+                    <%= log.warnings.lines.count %> warning(s)
+                  </button>
+                  <div class="collapse mt-1" id="warnings-<%= log.id %>">
+                    <pre class="small text-muted mb-0" style="white-space: pre-wrap;"><%= log.warnings %></pre>
+                  </div>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <%= will_paginate @logs %>
+  <% else %>
+    <p class="text-muted">No runs recorded yet.</p>
+  <% end %>
+</div>

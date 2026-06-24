@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_06_24_150544) do
+ActiveRecord::Schema[7.0].define(version: 2026_06_24_160142) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -362,6 +362,21 @@ ActiveRecord::Schema[7.0].define(version: 2026_06_24_150544) do
     t.index ["product_id"], name: "index_purchase_orders_on_product_id"
     t.index ["status"], name: "index_purchase_orders_on_status"
     t.index ["trigger_type"], name: "index_purchase_orders_on_trigger_type"
+  end
+
+  create_table "sync_logs", force: :cascade do |t|
+    t.string "process_name"
+    t.string "status"
+    t.string "file_name"
+    t.datetime "started_at"
+    t.datetime "completed_at"
+    t.integer "records_created"
+    t.integer "records_updated"
+    t.integer "records_skipped"
+    t.text "error_message"
+    t.text "warnings"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "things", force: :cascade do |t|

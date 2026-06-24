@@ -1,0 +1,42 @@
+<div class="container mt-4">
+  <h1>Automated Processes</h1>
+  <p class="text-muted">Background jobs that run on a schedule to keep data in sync.</p>
+
+  <div class="row g-3">
+    <% @processes.each do |process| %>
+      <div class="col-12">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <h5 class="card-title mb-1"><%= process[:name] %></h5>
+                <p class="text-muted mb-2 small"><%= process[:description] %></p>
+                <span class="badge bg-secondary me-2">Schedule: <%= process[:schedule] %></span>
+                <span class="badge bg-light text-dark me-2"><%= process[:run_count] %> runs</span>
+                <span class="badge bg-success me-1"><%= process[:success_count] %> success</span>
+                <% if process[:failed_count] > 0 %>
+                  <span class="badge bg-danger"><%= process[:failed_count] %> failed</span>
+                <% end %>
+              </div>
+              <div class="text-end">
+                <% if process[:last_run] %>
+                  <% log = process[:last_run] %>
+                  <span class="badge <%= log.status == 'success' ? 'bg-success' : log.status == 'failed' ? 'bg-danger' : 'bg-warning text-dark' %> mb-1">
+                    Last run: <%= log.status %>
+                  </span>
+                  <div class="text-muted small"><%= log.started_at.strftime('%b %-d %Y %-I:%M %p') %></div>
+                <% else %>
+                  <span class="badge bg-secondary">Never run</span>
+                <% end %>
+                <div class="mt-2 d-flex gap-2 justify-content-end">
+                  <%= link_to "History", automated_process_path(process[:name].tr(' ', '-').downcase), class: "btn btn-outline-secondary btn-sm" %>
+                  <%= button_to "Run Now", trigger_automated_process_path(process[:name].tr(' ', '-').downcase), method: :post, class: "btn btn-primary btn-sm" %>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

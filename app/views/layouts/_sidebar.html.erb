@@ -149,6 +149,15 @@
         </ul>
 
         <!-- COMMS -->
+        <div class="sidebar-section-label">System</div>
+        <ul class="sidebar-nav">
+          <li class="<%= 'active' if current == 'automated_processes' %>">
+            <%= link_to automated_processes_path do %>
+              <i class="bi bi-arrow-repeat"></i> Automated Processes
+            <% end %>
+          </li>
+        </ul>
+
         <div class="sidebar-section-label">Communications</div>
         <ul class="sidebar-nav">
           <li class="<%= 'active' if current == 'dispatch_messages' %>">
