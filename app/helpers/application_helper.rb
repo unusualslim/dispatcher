@@ -1,5 +1,8 @@
 module ApplicationHelper
   CRON_PRESETS = {
+    'Every 1 minute'               => '* * * * *',
+    'Every 2 minutes'              => '*/2 * * * *',
+    'Every 5 minutes'              => '*/5 * * * *',
     'Every 15 minutes'             => '*/15 * * * *',
     'Every 30 minutes'             => '*/30 * * * *',
     'Every hour'                   => '0 * * * *',

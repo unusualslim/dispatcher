@@ -19,6 +19,9 @@
             <%= label_tag :schedule_preset, "Run Frequency", class: "form-label" %>
             <%= select_tag :schedule_preset,
                 options_for_select([
+                  ['Every 1 minute',   '* * * * *'],
+                  ['Every 2 minutes',  '*/2 * * * *'],
+                  ['Every 5 minutes',  '*/5 * * * *'],
                   ['Every 15 minutes', '*/15 * * * *'],
                   ['Every 30 minutes', '*/30 * * * *'],
                   ['Every hour',       '0 * * * *'],
