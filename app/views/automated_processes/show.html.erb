@@ -14,33 +14,73 @@
     <div class="card-header fw-semibold">Schedule</div>
     <div class="card-body">
       <%= form_with url: update_config_automated_process_path(params[:id]), method: :patch, local: true do |f| %>
-        <%= f.hidden_field :automated_process_config %>
         <div class="row g-3 align-items-end">
           <div class="col-md-4">
-            <%= label_tag :schedule, "Cron Expression", class: "form-label" %>
-            <%= f.text_field :schedule, value: @config.schedule, name: "automated_process_config[schedule]",
-                class: "form-control font-monospace", placeholder: "0 * * * *" %>
-            <div class="form-text">
-              Current: runs <strong><%= cron_description(@config.schedule) %></strong>.
-              <a href="https://crontab.guru" target="_blank">crontab.guru</a>
-            </div>
+            <%= label_tag :schedule_preset, "Run Frequency", class: "form-label" %>
+            <%= select_tag :schedule_preset,
+                options_for_select([
+                  ['Every 15 minutes', '*/15 * * * *'],
+                  ['Every 30 minutes', '*/30 * * * *'],
+                  ['Every hour',       '0 * * * *'],
+                  ['Every 2 hours',    '0 */2 * * *'],
+                  ['Every 6 hours',    '0 */6 * * *'],
+                  ['Every 12 hours',   '0 */12 * * *'],
+                  ['Once a day (midnight)', '0 0 * * *'],
+                  ['Once a day (6am)',  '0 6 * * *'],
+                  ['Once a week (Sunday midnight)', '0 0 * * 0'],
+                  ['Custom…',          'custom'],
+                ], @config.schedule),
+                class: "form-select",
+                onchange: "toggleCustomSchedule(this)" %>
           </div>
-          <div class="col-md-6">
+          <div class="col-md-4" id="custom-schedule-field" style="<%= @config.schedule.in?(ApplicationHelper::CRON_PRESETS.values) ? 'display:none' : '' %>">
+            <%= label_tag :schedule, "Custom Cron Expression", class: "form-label" %>
+            <%= f.text_field :schedule, value: @config.schedule, name: "automated_process_config[schedule]",
+                class: "form-control font-monospace", placeholder: "0 * * * *", id: "custom-schedule-input" %>
+          </div>
+          <%= f.hidden_field :schedule, value: @config.schedule, name: "automated_process_config[schedule]",
+              id: "schedule-hidden" %>
+          <div class="col-md-3">
             <%= label_tag :notes, "Notes", class: "form-label" %>
             <%= f.text_field :notes, value: @config.notes, name: "automated_process_config[notes]",
                 class: "form-control", placeholder: "Optional notes" %>
           </div>
-          <div class="col-md-2">
+          <div class="col-md-1">
             <%= f.submit "Save", class: "btn btn-outline-primary w-100" %>
           </div>
         </div>
       <% end %>
       <div class="alert alert-info mt-3 mb-0 small">
         <i class="bi bi-info-circle"></i>
-        The scheduler runs every minute via Render and fires this job when it's due. Changing the schedule here takes effect immediately — no Render changes needed.
+        Changes take effect immediately — no Render changes needed.
       </div>
     </div>
   </div>
+
+  <script>
+    function toggleCustomSchedule(select) {
+      const customField = document.getElementById('custom-schedule-field');
+      const hiddenInput = document.getElementById('schedule-hidden');
+      const customInput = document.getElementById('custom-schedule-input');
+
+      if (select.value === 'custom') {
+        customField.style.display = '';
+        customInput.name = 'automated_process_config[schedule]';
+        hiddenInput.name = '';
+      } else {
+        customField.style.display = 'none';
+        customInput.name = '';
+        hiddenInput.name = 'automated_process_config[schedule]';
+        hiddenInput.value = select.value;
+      }
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      const select = document.querySelector('[name="schedule_preset"]');
+      if (select) toggleCustomSchedule(select);
+    });
+  </script>
 
   <h4>Run History</h4>
   <% if @logs.any? %>

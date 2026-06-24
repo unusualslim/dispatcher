@@ -1,14 +1,17 @@
 module ApplicationHelper
-  CRON_DESCRIPTIONS = {
-    '0 * * * *'   => 'every hour',
-    '*/30 * * * *' => 'every 30 minutes',
-    '0 */2 * * *' => 'every 2 hours',
-    '0 0 * * *'   => 'daily at midnight',
-    '0 6 * * *'   => 'daily at 6am',
-    '0 0 * * 0'   => 'weekly on Sunday',
+  CRON_PRESETS = {
+    'Every 15 minutes'             => '*/15 * * * *',
+    'Every 30 minutes'             => '*/30 * * * *',
+    'Every hour'                   => '0 * * * *',
+    'Every 2 hours'                => '0 */2 * * *',
+    'Every 6 hours'                => '0 */6 * * *',
+    'Every 12 hours'               => '0 */12 * * *',
+    'Once a day (midnight)'        => '0 0 * * *',
+    'Once a day (6am)'             => '0 6 * * *',
+    'Once a week (Sunday midnight)'=> '0 0 * * 0',
   }.freeze
 
   def cron_description(expr)
-    CRON_DESCRIPTIONS[expr] || expr
+    CRON_PRESETS.key(expr) || expr
   end
 end
