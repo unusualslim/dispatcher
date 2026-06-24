@@ -6,4 +6,16 @@ class AutomatedProcessConfig < ApplicationRecord
       c.schedule = '0 * * * *'
     end
   end
+
+  def due?
+    return false if schedule.blank?
+    cron = Fugit.parse_cron(schedule)
+    return false unless cron
+    next_time = cron.next_time(last_triggered_at || 1.year.ago)
+    next_time <= Time.current
+  end
+
+  def mark_triggered!
+    update!(last_triggered_at: Time.current)
+  end
 end
