@@ -5,7 +5,7 @@ namespace :scheduler do
       config = AutomatedProcessConfig.for_slug(process[:slug])
       next unless config.due?
 
-      process[:job].constantize.perform_later
+      process[:job].constantize.perform_now
       config.mark_triggered!
       Rails.logger.info "[Scheduler] Triggered #{process[:name]}"
     end
