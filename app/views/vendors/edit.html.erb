@@ -45,9 +45,9 @@
       <div class="card-header fw-semibold">PDI Integration</div>
       <div class="card-body">
         <div class="col-12">
-          <%= form.label :pdi_vendor_id, "PDI Vendor ID", class: 'form-label' %>
-          <%= form.text_field :pdi_vendor_id, class: 'form-control', placeholder: 'e.g. 3481' %>
-          <div class="form-text">The vendor number used in PDI purchase order imports.</div>
+          <%= form.label :id, "PDI Vendor ID", class: 'form-label' %>
+          <%= form.text_field :id, class: 'form-control', disabled: true %>
+          <div class="form-text">The vendor ID is set by PDI and synced automatically.</div>
         </div>
       </div>
     </div>

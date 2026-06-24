@@ -4,11 +4,7 @@
     <%= link_to 'Edit', edit_vendor_path(@vendor), class: 'btn btn-outline-secondary btn-sm' %>
   </div>
 
-  <% if @vendor.pdi_vendor_id.present? %>
-    <p class="text-muted mb-2">PDI Vendor ID: <strong><%= @vendor.pdi_vendor_id %></strong></p>
-  <% else %>
-    <p class="text-muted mb-2"><%= link_to 'Set PDI Vendor ID', edit_vendor_path(@vendor) %> for PDI export support.</p>
-  <% end %>
+  <p class="text-muted mb-2">PDI Vendor ID: <strong><%= @vendor.id %></strong></p>
 
   <hr>
 
