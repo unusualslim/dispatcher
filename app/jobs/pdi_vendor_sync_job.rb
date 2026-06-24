@@ -76,7 +76,6 @@ class PdiVendorSyncJob < ApplicationJob
       match = files.find { |f| File.basename(f, '.csv').match?(pattern) }
       return match if match
     end
-    # Last resort: if there's only one CSV, use it
-    files.first if files.size == 1
+    nil
   end
 end
