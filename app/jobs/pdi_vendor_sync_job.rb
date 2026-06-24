@@ -3,7 +3,7 @@ require 'net/ftp'
 class PdiVendorSyncJob < ApplicationJob
   queue_as :default
 
-  VENDOR_FILE = ENV.fetch('PDI_FTP_VENDOR_FILE', '/LoadNTrucks Imports/AP Vendor List.csv')
+  VENDOR_FILE = ENV.fetch('PDI_FTP_VENDOR_FILE', '/Imports/AP Vendor List.csv')
 
   def perform
     csv_content = download_from_ftp
