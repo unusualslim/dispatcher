@@ -2,7 +2,7 @@
   <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
       <h1 class="mb-0"><%= @process[:name] %></h1>
-      <p class="text-muted mb-0">Run history</p>
+      <p class="text-muted mb-0"><%= @process[:description] %></p>
     </div>
     <div class="d-flex gap-2">
       <%= button_to "Run Now", trigger_automated_process_path(params[:id]), method: :post, class: "btn btn-primary btn-sm" %>
@@ -10,6 +10,39 @@
     </div>
   </div>
 
+  <div class="card shadow-sm mb-4">
+    <div class="card-header fw-semibold">Schedule</div>
+    <div class="card-body">
+      <%= form_with url: update_config_automated_process_path(params[:id]), method: :patch, local: true do |f| %>
+        <%= f.hidden_field :automated_process_config %>
+        <div class="row g-3 align-items-end">
+          <div class="col-md-4">
+            <%= label_tag :schedule, "Cron Expression", class: "form-label" %>
+            <%= f.text_field :schedule, value: @config.schedule, name: "automated_process_config[schedule]",
+                class: "form-control font-monospace", placeholder: "0 * * * *" %>
+            <div class="form-text">
+              Current: runs <strong><%= cron_description(@config.schedule) %></strong>.
+              <a href="https://crontab.guru" target="_blank">crontab.guru</a>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <%= label_tag :notes, "Notes", class: "form-label" %>
+            <%= f.text_field :notes, value: @config.notes, name: "automated_process_config[notes]",
+                class: "form-control", placeholder: "Optional notes" %>
+          </div>
+          <div class="col-md-2">
+            <%= f.submit "Save", class: "btn btn-outline-primary w-100" %>
+          </div>
+        </div>
+      <% end %>
+      <div class="alert alert-warning mt-3 mb-0 small">
+        <i class="bi bi-exclamation-triangle"></i>
+        Changing the schedule here updates the record only — you must also update the cron expression in the <strong>Render dashboard</strong> to match.
+      </div>
+    </div>
+  </div>
+
+  <h4>Run History</h4>
   <% if @logs.any? %>
     <div class="table-responsive">
       <table class="table table-bordered table-hover align-middle">
@@ -34,7 +67,13 @@
                   <%= log.status %>
                 </span>
               </td>
-              <td><code class="small"><%= log.file_name %></code></td>
+              <td>
+                <% if log.file_content.present? %>
+                  <%= link_to log.file_name, download_file_automated_process_path(params[:id], log_id: log.id), class: "small" %>
+                <% else %>
+                  <span class="text-muted small"><%= log.file_name %></span>
+                <% end %>
+              </td>
               <td><%= log.records_created %></td>
               <td><%= log.records_updated %></td>
               <td><%= log.records_skipped %></td>

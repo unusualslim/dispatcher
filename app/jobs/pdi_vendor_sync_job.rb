@@ -18,6 +18,7 @@ class PdiVendorSyncJob < ApplicationJob
     result      = PdiVendorImportService.call(csv_content)
 
     log.update!(
+      file_content: csv_content,
       status:          'success',
       completed_at:    Time.current,
       records_created: result.created,

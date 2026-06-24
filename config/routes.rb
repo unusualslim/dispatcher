@@ -133,7 +133,9 @@ Rails.application.routes.draw do
 
   resources :automated_processes, only: [:index, :show], param: :id do
     member do
-      post :trigger
+      post  :trigger
+      patch :update_config
+      get   'download/:log_id', action: :download_file, as: :download_file
     end
   end
 
