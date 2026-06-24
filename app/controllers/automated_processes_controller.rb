@@ -1,8 +1,11 @@
+require 'base64'
+
 class AutomatedProcessesController < ApplicationController
   before_action :require_admin!
 
   PROCESSES = [
-    { slug: 'pdi-vendor-sync', name: 'PDI Vendor Sync', job: 'PdiVendorSyncJob', description: 'Syncs vendor list from PDI FTP (AP Vendor List.csv)' }
+    { slug: 'pdi-vendor-sync',  name: 'PDI Vendor Sync',  job: 'PdiVendorSyncJob',  description: 'Syncs vendor list from PDI FTP (AP Vendor List.csv)' },
+    { slug: 'pdi-product-sync', name: 'PDI Product Sync', job: 'PdiProductSyncJob', description: 'Syncs product inventory from PDI FTP (LoadNTrucks-CurrentInventory.xls)' },
   ].freeze
 
   def index
@@ -42,9 +45,15 @@ class AutomatedProcessesController < ApplicationController
     log = SyncLog.find(params[:log_id])
     return redirect_to automated_process_path(params[:id]), alert: "File not available." if log.file_content.blank?
 
-    send_data log.file_content,
-              type:        'text/csv',
-              disposition: "attachment; filename=\"#{log.file_name || 'export.csv'}\""
+    if log.file_binary?
+      send_data Base64.strict_decode64(log.file_content),
+                type:        'application/octet-stream',
+                disposition: "attachment; filename=\"#{log.file_name}\""
+    else
+      send_data log.file_content,
+                type:        'text/csv',
+                disposition: "attachment; filename=\"#{log.file_name || 'export.csv'}\""
+    end
   end
 
   private
