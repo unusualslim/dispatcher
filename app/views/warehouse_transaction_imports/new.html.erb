@@ -1,0 +1,39 @@
+<div class="container mt-4" style="max-width: 640px;">
+  <h1>Import Warehouse Transaction History</h1>
+  <p class="text-muted">One-time import of historical PDI warehouse transactions into inventory activity.</p>
+
+  <% if @existing_count > 0 %>
+    <div class="alert alert-warning">
+      <strong><%= @existing_count %> historical transactions already imported.</strong>
+      Uploading again will skip duplicates, but any new rows in the file will still be added.
+    </div>
+  <% end %>
+
+  <%= form_with url: warehouse_transaction_imports_path, method: :post, local: true, multipart: true do |f| %>
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <div class="mb-3">
+          <%= f.label :file, "Warehouse Transaction Report (.xls / .xlsx)", class: "form-label fw-semibold" %>
+          <%= f.file_field :file, class: "form-control", accept: ".xls,.xlsx" %>
+          <div class="form-text">Export from PDI: <em>Reports → Warehouse Transaction Report</em></div>
+        </div>
+        <%= f.submit "Import", class: "btn btn-primary" %>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="card shadow-sm mt-3">
+    <div class="card-header fw-semibold">What this does</div>
+    <div class="card-body small text-muted">
+      <ul class="mb-0">
+        <li>Reads each purchase transaction row and links it to the matching product by PDI product ID</li>
+        <li>Skips rows where the product doesn't exist in LoadNTrucks yet</li>
+        <li>Skips zero-quantity and duplicate rows automatically</li>
+        <li>Transactions are tagged <code>[PDI Historical Import]</code> in the notes field</li>
+        <li>Safe to run multiple times — duplicates are detected and skipped</li>
+      </ul>
+    </div>
+  </div>
+
+  <%= link_to "← Back", inventory_transactions_path, class: "btn btn-outline-secondary mt-3" %>
+</div>

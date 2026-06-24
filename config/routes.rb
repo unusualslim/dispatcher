@@ -113,6 +113,7 @@ Rails.application.routes.draw do
   resource :inventory_import, only: [:new, :create] do
     post :preview, on: :collection
   end
+  resource :warehouse_transaction_import, only: [:new, :create]
 
   resources :things
 
