@@ -43,6 +43,7 @@ class VendorsController < ApplicationController
   end
 
   def vendor_params
-    params.require(:vendor).permit(:name, :pdi_vendor_id, :contact_name, :email, :phone, :lead_time_days)
+    params.require(:vendor).permit(:name, :contact_name, :email, :phone, :lead_time_days,
+                                   :address_1, :address_2, :city, :state, :zip, :payment_terms, :payment_method)
   end
 end

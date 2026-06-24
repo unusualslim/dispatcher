@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_06_01_203504) do
+ActiveRecord::Schema[7.0].define(version: 2026_06_24_150544) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -159,13 +159,12 @@ ActiveRecord::Schema[7.0].define(version: 2026_06_01_203504) do
     t.integer "driver_id"
     t.string "destination"
     t.boolean "needs_updating"
-    t.bigint "vendor_id"
     t.integer "destination_location_id"
     t.bigint "asset_id"
     t.integer "truck_id"
     t.integer "trailer_id"
+    t.string "vendor_id"
     t.index ["asset_id"], name: "index_dispatches_on_asset_id"
-    t.index ["vendor_id"], name: "index_dispatches_on_vendor_id"
   end
 
   create_table "dispatches_things", id: false, force: :cascade do |t|
@@ -344,7 +343,6 @@ ActiveRecord::Schema[7.0].define(version: 2026_06_01_203504) do
   end
 
   create_table "purchase_orders", force: :cascade do |t|
-    t.bigint "vendor_id", null: false
     t.decimal "quantity", precision: 14, scale: 3, null: false
     t.decimal "unit_cost", precision: 12, scale: 4
     t.string "status", default: "draft", null: false
@@ -360,10 +358,10 @@ ActiveRecord::Schema[7.0].define(version: 2026_06_01_203504) do
     t.datetime "updated_at", null: false
     t.string "product_name"
     t.string "product_id"
+    t.string "vendor_id"
     t.index ["product_id"], name: "index_purchase_orders_on_product_id"
     t.index ["status"], name: "index_purchase_orders_on_status"
     t.index ["trigger_type"], name: "index_purchase_orders_on_trigger_type"
-    t.index ["vendor_id"], name: "index_purchase_orders_on_vendor_id"
   end
 
   create_table "things", force: :cascade do |t|
@@ -393,7 +391,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_06_01_203504) do
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
-  create_table "vendors", force: :cascade do |t|
+  create_table "vendors", id: :string, force: :cascade do |t|
     t.string "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -401,21 +399,26 @@ ActiveRecord::Schema[7.0].define(version: 2026_06_01_203504) do
     t.string "contact_name"
     t.string "email"
     t.string "phone"
-    t.string "pdi_vendor_id"
+    t.string "address_1"
+    t.string "address_2"
+    t.string "city"
+    t.string "state"
+    t.string "zip"
+    t.string "payment_terms"
+    t.string "payment_method"
   end
 
   create_table "work_orders", force: :cascade do |t|
     t.string "subject"
     t.integer "assigned_to"
     t.string "attachments"
-    t.bigint "vendor_id"
     t.string "status"
     t.text "description"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "workable_type", null: false
     t.bigint "workable_id", null: false
-    t.index ["vendor_id"], name: "index_work_orders_on_vendor_id"
+    t.string "vendor_id"
     t.index ["workable_type", "workable_id"], name: "index_work_orders_on_workable"
   end
 

@@ -33,7 +33,7 @@ class PdiExportJob < ApplicationJob
 
     CSV.generate do |out|
       out << ['REM', 'Vendor ID', 'PO Number', 'Business Date', 'Order Date', 'Delivery Date', '', '', '', '', '', '', 'Invoice Total']
-      out << ['POH', vendor.pdi_vendor_id, '', today, today, delivery, '', '', '', '', '', '', total]
+      out << ['POH', vendor.id, '', today, today, delivery, '', '', '', '', '', '', total]
       out << ['REM', 'Site ID', 'Product ID', 'Package Code', '', '', 'Inventory Package Qty', 'Invoice Qty', 'Delivery qty', '', 'Billing Units Costs', '', '']
       out << ['POD', PDI_SITE_ID, product&.id, product&.pdi_package_code, '', '', po.quantity.to_f, po.quantity.to_f, '', '', po.unit_cost&.to_f, '', '']
     end
