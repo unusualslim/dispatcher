@@ -6,6 +6,51 @@
 
   <p class="text-muted mb-2">PDI Vendor ID: <strong><%= @vendor.id %></strong></p>
 
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-header fw-semibold">Contact & Address</div>
+        <div class="card-body">
+          <% if @vendor.phone.present? %>
+            <p class="mb-1"><strong>Phone:</strong> <%= @vendor.phone %></p>
+          <% end %>
+          <% if @vendor.email.present? %>
+            <p class="mb-1"><strong>Email:</strong> <%= @vendor.email %></p>
+          <% end %>
+          <% if @vendor.contact_name.present? %>
+            <p class="mb-1"><strong>Contact:</strong> <%= @vendor.contact_name %></p>
+          <% end %>
+          <% if [@vendor.address_1, @vendor.city, @vendor.state].any?(&:present?) %>
+            <p class="mb-1 mt-2">
+              <% if @vendor.address_1.present? %><%= @vendor.address_1 %><br><% end %>
+              <% if @vendor.address_2.present? %><%= @vendor.address_2 %><br><% end %>
+              <%= [@vendor.city, @vendor.state].select(&:present?).join(', ') %>
+              <%= @vendor.zip %>
+            </p>
+          <% end %>
+          <% if [@vendor.phone, @vendor.email, @vendor.contact_name, @vendor.address_1].none?(&:present?) %>
+            <p class="text-muted mb-0">No contact information on file.</p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+    <% if @vendor.payment_terms.present? || @vendor.payment_method.present? %>
+    <div class="col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-header fw-semibold">Payment</div>
+        <div class="card-body">
+          <% if @vendor.payment_terms.present? %>
+            <p class="mb-1"><strong>Terms:</strong> <%= @vendor.payment_terms %></p>
+          <% end %>
+          <% if @vendor.payment_method.present? %>
+            <p class="mb-1"><strong>Method:</strong> <%= @vendor.payment_method %></p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+    <% end %>
+  </div>
+
   <hr>
 
   <h3>Related Dispatches</h3>

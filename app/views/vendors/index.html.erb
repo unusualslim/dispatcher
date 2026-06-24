@@ -19,7 +19,9 @@
     <thead>
       <tr>
         <th>Name</th>
-        <th>PDI Vendor ID</th>
+        <th>PDI ID</th>
+        <th>Address</th>
+        <th>Phone</th>
         <th>Actions</th>
       </tr>
     </thead>
@@ -28,6 +30,10 @@
         <tr>
           <td><%= vendor.name %></td>
           <td><code><%= vendor.id %></code></td>
+          <td class="text-nowrap">
+            <%= [vendor.city, vendor.state].select(&:present?).join(', ') %>
+          </td>
+          <td class="text-nowrap"><%= vendor.phone %></td>
           <td>
             <div class="btn-group">
               <%= link_to "View", vendor_path(vendor), class: "btn btn-primary btn-sm" %>
