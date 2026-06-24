@@ -7,7 +7,7 @@ class ProductsController < ApplicationController
       @categories = Product.where.not(category: [nil, '']).distinct.order(:category).pluck(:category)
 
       if params[:query].present?
-        @products = @products.where("name ILIKE ?", "%#{params[:query]}%")
+        @products = @products.where("name ILIKE ? OR id ILIKE ?", "%#{params[:query]}%", "%#{params[:query]}%")
       end
 
       case params[:type]
