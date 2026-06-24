@@ -21,10 +21,11 @@ class PdiVendorSyncJob < ApplicationJob
     ftp_connect do |ftp|
       filename    = ftp_find_file(ftp, FTP_DIR, ['.csv'], FILE_PATTERNS)
       csv_content = ftp_download_text(ftp, filename)
-      ftp_delete(ftp, filename)
     end
 
     result = PdiVendorImportService.call(csv_content)
+
+    ftp_connect { |ftp| ftp_delete(ftp, filename) }
 
     log.update!(
       file_name:       filename,

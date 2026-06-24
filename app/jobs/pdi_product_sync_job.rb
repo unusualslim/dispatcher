@@ -25,10 +25,11 @@ class PdiProductSyncJob < ApplicationJob
       tempfile  = ftp_download_tempfile(ftp, filename)
       raw_bytes = tempfile.read
       tempfile.rewind
-      ftp_delete(ftp, filename)
     end
 
     result = InventoryImportService.new(tempfile).import
+
+    ftp_connect { |ftp| ftp_delete(ftp, filename) }
 
     log.update!(
       file_name:       filename,
