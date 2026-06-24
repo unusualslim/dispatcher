@@ -29,8 +29,8 @@
                   <span class="badge bg-secondary">Never run</span>
                 <% end %>
                 <div class="mt-2 d-flex gap-2 justify-content-end">
-                  <%= link_to "History", automated_process_path(process[:name].tr(' ', '-').downcase), class: "btn btn-outline-secondary btn-sm" %>
-                  <%= button_to "Run Now", trigger_automated_process_path(process[:name].tr(' ', '-').downcase), method: :post, class: "btn btn-primary btn-sm" %>
+                  <%= link_to "History", automated_process_path(process[:slug]), class: "btn btn-outline-secondary btn-sm" %>
+                  <%= button_to "Run Now", trigger_automated_process_path(process[:slug]), method: :post, class: "btn btn-primary btn-sm" %>
                 </div>
               </div>
             </div>
