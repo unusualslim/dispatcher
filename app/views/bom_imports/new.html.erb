@@ -1,0 +1,50 @@
+<div class="container mt-4" style="max-width: 640px;">
+  <h1>Import BOM from PDI</h1>
+  <p class="text-muted">One-time import of Bill of Materials from a PDI SQL export CSV.</p>
+
+  <% if @existing_count > 0 %>
+    <div class="alert alert-info">
+      <strong><%= @product_count %> products already have a BOM</strong> (<%= @existing_count %> total component records).
+      Products that already have components will be skipped automatically.
+    </div>
+  <% end %>
+
+  <% if flash[:warnings]&.any? %>
+    <div class="alert alert-warning">
+      <strong>Warnings:</strong>
+      <ul class="mb-0 mt-1">
+        <% flash[:warnings].each do |w| %>
+          <li><%= w %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%= form_with url: bom_import_path, method: :post, local: true, multipart: true do |f| %>
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <div class="mb-3">
+          <%= f.label :file, "BOM Export (.csv)", class: "form-label fw-semibold" %>
+          <%= f.file_field :file, class: "form-control", accept: ".csv" %>
+          <div class="form-text">Export from PDI SQL Server using the BOM join query.</div>
+        </div>
+        <%= f.submit "Import BOM", class: "btn btn-primary" %>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="card shadow-sm mt-3">
+    <div class="card-header fw-semibold">What this does</div>
+    <div class="card-body small text-muted">
+      <ul class="mb-0">
+        <li>Reads each row: finished product ID, package code, component ID, component package, quantity</li>
+        <li>When a product has multiple package BOMs, picks primary using priority: <strong>EA → 55GA → 5GA → GA → first available</strong></li>
+        <li>Skips products not found in LoadNTrucks</li>
+        <li>Skips products that already have BOM components (safe to re-run)</li>
+        <li>Skips components whose product ID doesn't exist in LoadNTrucks</li>
+      </ul>
+    </div>
+  </div>
+
+  <%= link_to "← Back", products_path, class: "btn btn-outline-secondary mt-3" %>
+</div>
