@@ -116,6 +116,11 @@
               <i class="bi bi-diagram-3"></i> Import BOM
             <% end %>
           </li>
+          <li class="<%= 'active' if current == 'min_max_imports' %>">
+            <%= link_to new_min_max_import_path do %>
+              <i class="bi bi-sliders2"></i> Import Min/Max
+            <% end %>
+          </li>
           <li class="<%= 'active' if current == 'docs' %>">
             <%= link_to docs_mrp_guide_path do %>
               <i class="bi bi-journal-text"></i> MRP Guide

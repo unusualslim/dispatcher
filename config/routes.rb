@@ -115,6 +115,7 @@ Rails.application.routes.draw do
   end
   resource :warehouse_transaction_import, only: [:new, :create]
   resource :bom_import, only: [:new, :create]
+  resource :min_max_import, only: [:new, :create]
 
   resources :things
 
