@@ -168,6 +168,7 @@ class ProductsController < ApplicationController
         :current_stock,
         :reorder_point,
         :safety_stock,
+        :max_stock,
         :cost_per_unit,
         :pdi_package_code,
         :category,

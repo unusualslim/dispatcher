@@ -1,0 +1,29 @@
+<div class="container py-4" style="max-width: 860px;">
+  <div class="mb-4">
+    <h1 class="h3 mb-1">Help & User Guides</h1>
+    <p class="text-muted mb-0">Step-by-step guides for every section of LoadNTrucks.</p>
+  </div>
+
+  <div class="row g-3">
+    <% @guides.each do |guide| %>
+      <div class="col-md-4">
+        <%= link_to guide[:path], class: "text-decoration-none" do %>
+          <div class="card shadow-sm h-100 border-0">
+            <div class="card-body d-flex flex-column gap-2 p-4">
+              <div class="mb-1">
+                <span class="bg-<%= guide[:color] %> bg-opacity-10 text-<%= guide[:color] %> rounded p-2 d-inline-flex">
+                  <i class="bi <%= guide[:icon] %> fs-4"></i>
+                </span>
+              </div>
+              <h5 class="mb-1 text-dark"><%= guide[:title] %></h5>
+              <p class="text-muted small mb-0"><%= guide[:description] %></p>
+            </div>
+            <div class="card-footer bg-transparent border-top-0 pt-0 pb-3 px-4">
+              <span class="text-<%= guide[:color] %> small fw-semibold">Read guide <i class="bi bi-arrow-right"></i></span>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>

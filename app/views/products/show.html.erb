@@ -35,6 +35,10 @@
           <div class="text-muted small">Safety Stock</div>
           <div class="fs-5 fw-bold"><%= number_with_precision(@product.safety_stock, precision: 1) %></div>
         </div>
+        <div class="col-3">
+          <div class="text-muted small">Max Stock</div>
+          <div class="fs-5 fw-bold"><%= @product.max_stock ? number_with_precision(@product.max_stock, precision: 1) : '—' %></div>
+        </div>
       </div>
       <% status = @product.stock_status %>
       <% if status != :unknown %>
