@@ -3,6 +3,8 @@ require 'net/ftp'
 module PdiFtpConcern
   extend ActiveSupport::Concern
 
+  class NoFileFound < StandardError; end
+
   def ftp_connect
     Net::FTP.open(
       ENV.fetch('PDI_FTP_HOST'),
@@ -17,13 +19,13 @@ module PdiFtpConcern
   def ftp_find_file(ftp, dir, extensions, patterns)
     ftp.chdir(dir)
     files = ftp.nlst.select { |f| extensions.any? { |ext| f.downcase.end_with?(ext) } }
-    raise "No #{extensions.join('/')} files found in #{dir}" if files.empty?
+    raise NoFileFound, "No #{extensions.join('/')} files found in #{dir}" if files.empty?
 
     match = patterns.lazy.filter_map do |pattern|
       files.find { |f| File.basename(f).match?(pattern) }
     end.first
 
-    raise "No matching file found in #{dir} (files: #{files.join(', ')})" unless match
+    raise NoFileFound, "No matching file found in #{dir} (files: #{files.join(', ')})" unless match
     match
   end
 

@@ -106,7 +106,7 @@
             <tr>
               <td class="text-nowrap"><%= log.started_at.strftime('%b %-d %Y %-I:%M %p') %></td>
               <td>
-                <span class="badge <%= log.status == 'success' ? 'bg-success' : log.status == 'failed' ? 'bg-danger' : 'bg-warning text-dark' %>">
+                <span class="badge <%= log.status == 'success' ? 'bg-success' : log.status == 'failed' ? 'bg-danger' : log.status == 'skipped' ? 'bg-secondary' : 'bg-warning text-dark' %>">
                   <%= log.status %>
                 </span>
               </td>

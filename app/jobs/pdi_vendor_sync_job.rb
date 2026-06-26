@@ -40,6 +40,9 @@ class PdiVendorSyncJob < ApplicationJob
 
     Rails.logger.info "[PdiVendorSyncJob] Sync complete (#{filename}) — " \
       "created: #{result.created}, updated: #{result.updated}, skipped: #{result.skipped}"
+  rescue PdiFtpConcern::NoFileFound => e
+    log&.update!(status: 'skipped', completed_at: Time.current, error_message: e.message)
+    Rails.logger.info "[PdiVendorSyncJob] No file found — skipping"
   rescue => e
     log&.update!(status: 'failed', completed_at: Time.current, error_message: e.message)
     Rails.logger.error "[PdiVendorSyncJob] Failed: #{e.message}"

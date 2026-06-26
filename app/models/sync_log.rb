@@ -1,5 +1,5 @@
 class SyncLog < ApplicationRecord
-  STATUSES = %w[running success failed].freeze
+  STATUSES = %w[running success failed skipped].freeze
 
   scope :recent, -> { order(started_at: :desc) }
   scope :for_process, ->(name) { where(process_name: name).order(started_at: :desc) }

@@ -18,7 +18,7 @@
           <tr>
             <td class="text-nowrap"><%= log.started_at.strftime('%b %-d %Y %-I:%M %p') %></td>
             <td>
-              <span class="badge <%= log.status == 'success' ? 'bg-success' : 'bg-danger' %>">
+              <span class="badge <%= log.status == 'success' ? 'bg-success' : log.status == 'skipped' ? 'bg-secondary' : 'bg-danger' %>">
                 <%= log.status %>
               </span>
             </td>
