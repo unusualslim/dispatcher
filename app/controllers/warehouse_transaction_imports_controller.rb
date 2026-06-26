@@ -41,8 +41,7 @@ class WarehouseTransactionImportsController < ApplicationController
                 "#{result.skipped_duplicate} duplicates skipped."
       summary += " #{result.errors.count} rows had errors." if result.errors.any?
 
-      flash[:notice]   = summary
-      flash[:warnings] = result.errors if result.errors.any?
+      flash[:notice] = summary
     rescue => e
       log.update!(status: 'failed', completed_at: Time.current, error_message: e.message)
       flash[:alert] = "Import failed: #{e.message}"

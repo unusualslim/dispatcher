@@ -41,8 +41,7 @@ class MinMaxImportsController < ApplicationController
                 "#{result.skipped_no_values} rows skipped (no values set)."
       summary += " #{result.errors.count} errors." if result.errors.any?
 
-      flash[:notice]   = summary
-      flash[:warnings] = result.errors if result.errors.any?
+      flash[:notice] = summary
     rescue => e
       log.update!(status: 'failed', completed_at: Time.current, error_message: e.message)
       flash[:alert] = "Import failed: #{e.message}"

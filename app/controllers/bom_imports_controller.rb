@@ -42,8 +42,7 @@ class BomImportsController < ApplicationController
                 "#{result.skipped_already_has_bom} already had a BOM (skipped)."
       summary += " #{result.errors.count} warnings." if result.errors.any?
 
-      flash[:notice]   = summary
-      flash[:warnings] = result.errors if result.errors.any?
+      flash[:notice] = summary
     rescue => e
       log.update!(status: 'failed', completed_at: Time.current, error_message: e.message)
       flash[:alert] = "Import failed: #{e.message}"
