@@ -33,6 +33,7 @@ class BomImportService
       product = Product.find_by(id: finished_id)
       unless product
         result.skipped_no_product += 1
+        result.errors << "Finished product #{finished_id} (#{product_rows.first[COL_FINISHED_NAME]}) not found in LoadNTrucks — skipped"
         next
       end
 
