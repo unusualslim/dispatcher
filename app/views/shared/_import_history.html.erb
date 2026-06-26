@@ -1,0 +1,56 @@
+<h5 class="mt-4 mb-3">Import History</h5>
+<% if logs.any? %>
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover align-middle small">
+      <thead class="table-light">
+        <tr>
+          <th>Date</th>
+          <th>Status</th>
+          <th>File</th>
+          <th>Created</th>
+          <th>Updated</th>
+          <th>Skipped</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% logs.each do |log| %>
+          <tr>
+            <td class="text-nowrap"><%= log.started_at.strftime('%b %-d %Y %-I:%M %p') %></td>
+            <td>
+              <span class="badge <%= log.status == 'success' ? 'bg-success' : 'bg-danger' %>">
+                <%= log.status %>
+              </span>
+            </td>
+            <td>
+              <% if log.file_content.present? && defined?(download_path) %>
+                <%= link_to log.file_name, send(download_path, log_id: log.id), class: "small" %>
+              <% else %>
+                <span class="text-muted small"><%= log.file_name %></span>
+              <% end %>
+            </td>
+            <td><%= log.records_created || '—' %></td>
+            <td><%= log.records_updated || '—' %></td>
+            <td><%= log.records_skipped || '—' %></td>
+            <td>
+              <% if log.error_message.present? %>
+                <span class="text-danger"><%= log.error_message.truncate(100) %></span>
+              <% elsif log.warnings.present? %>
+                <button class="btn btn-outline-warning btn-sm py-0" type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#warnings-<%= log.id %>">
+                  <%= log.warnings.lines.count %> warning(s)
+                </button>
+                <div class="collapse mt-1" id="warnings-<%= log.id %>">
+                  <pre class="small text-muted mb-0" style="white-space: pre-wrap;"><%= log.warnings %></pre>
+                </div>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% else %>
+  <p class="text-muted small">No imports recorded yet.</p>
+<% end %>

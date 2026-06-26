@@ -118,7 +118,13 @@ Rails.application.routes.draw do
   end
   resource :warehouse_transaction_import, only: [:new, :create]
   resource :bom_import, only: [:new, :create]
+  get 'bom_import/download/:log_id', to: 'bom_imports#download', as: :download_bom_import
+
   resource :min_max_import, only: [:new, :create]
+  get 'min_max_import/download/:log_id', to: 'min_max_imports#download', as: :download_min_max_import
+
+  resource :warehouse_transaction_import, only: [:new, :create]
+  get 'warehouse_transaction_import/download/:log_id', to: 'warehouse_transaction_imports#download', as: :download_warehouse_transaction_import
 
   resources :things
 

@@ -49,4 +49,6 @@
   </div>
 
   <%= link_to "← Back", products_path, class: "btn btn-outline-secondary mt-3" %>
+
+  <%= render 'shared/import_history', logs: @logs, download_path: :download_min_max_import_path %>
 </div>

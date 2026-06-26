@@ -36,4 +36,6 @@
   </div>
 
   <%= link_to "← Back", inventory_transactions_path, class: "btn btn-outline-secondary mt-3" %>
+
+  <%= render 'shared/import_history', logs: @logs, download_path: :download_warehouse_transaction_import_path %>
 </div>
