@@ -1,0 +1,69 @@
+<div class="container-fluid px-4 py-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h4 class="mb-0">Link ODOR Products to MRP</h4>
+      <p class="text-muted small mb-0 mt-1">
+        Match ODOR product codes to MRP products so imported orders count toward production demand.
+      </p>
+    </div>
+    <% if @unlinked.any? %>
+      <span class="badge bg-warning text-dark fs-6"><%= @unlinked.count %> unlinked codes &middot; <%= @total_lines %> order lines</span>
+    <% else %>
+      <span class="badge bg-success fs-6">All codes linked</span>
+    <% end %>
+  </div>
+
+  <% if @unlinked.empty? %>
+    <div class="alert alert-success">
+      Every imported product code is linked to an MRP product.
+    </div>
+  <% else %>
+    <%= form_with url: link_product_codes_path, method: :post, local: true do |f| %>
+      <div class="card shadow-sm">
+        <div class="card-body p-0">
+          <table class="table table-sm table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-3">ODOR Code</th>
+                <th style="width: 80px;">Orders</th>
+                <th>MRP Product</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @unlinked.each do |item| %>
+                <tr>
+                  <td class="ps-3 font-monospace fw-semibold"><%= item[:code] %></td>
+                  <td class="text-muted"><%= item[:count] %></td>
+                  <td style="max-width: 420px;">
+                    <%= select_tag "mappings[#{item[:code]}]",
+                          options_from_collection_for_select(@products, :id, :name),
+                          include_blank: "— Skip for now —",
+                          class: "form-select form-select-sm product-link-select" %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="mt-3 d-flex gap-2 align-items-center">
+        <%= f.submit "Save Links", class: "btn btn-primary" %>
+        <span class="text-muted small">Only rows with a product selected will be updated. Rows set to "Skip for now" are ignored.</span>
+      </div>
+    <% end %>
+  <% end %>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    if (window.$) {
+      $('.product-link-select').select2({
+        placeholder: '— Skip for now —',
+        allowClear: true,
+        width: '100%',
+        theme: 'bootstrap-5'
+      });
+    }
+  });
+</script>

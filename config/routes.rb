@@ -62,7 +62,13 @@ Rails.application.routes.draw do
   resources :customer_orders do
     post 'create_dispatch', on: :member
     resources :customer_order_products, only: [:create, :update, :destroy]
+    collection do
+      get :dashboard
+    end
   end
+
+  get  'product_code_links',        to: 'customer_order_products#unlinked',   as: :product_code_links
+  post 'product_code_links/update', to: 'customer_order_products#link_codes', as: :link_product_codes
   
   resource :messages do
     collection do
@@ -83,6 +89,7 @@ Rails.application.routes.draw do
   resources :production_orders do
     collection do
       get :kanban
+      get :dashboard
     end
   end
 
@@ -125,6 +132,9 @@ Rails.application.routes.draw do
 
   resource :warehouse_transaction_import, only: [:new, :create]
   get 'warehouse_transaction_import/download/:log_id', to: 'warehouse_transaction_imports#download', as: :download_warehouse_transaction_import
+
+  resource :customer_order_import, only: [:new, :create]
+  get 'customer_order_import/download/:log_id', to: 'customer_order_imports#download', as: :download_customer_order_import
 
   resources :things
 

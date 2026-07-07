@@ -1,0 +1,41 @@
+<div class="container mt-4" style="max-width: 640px;">
+  <h1>Import Customer Orders</h1>
+  <p class="text-muted">Upload the "Trailing 30-Day Orders" PDF report exported from ODOR to create or update customer orders.</p>
+
+  <% if @order_count > 0 %>
+    <div class="alert alert-info">
+      <strong><%= @order_count %> customer orders</strong> currently in LoadNTrucks.
+      Orders already imported (matched by Order No) will be updated with fresh data from the report.
+    </div>
+  <% end %>
+
+  <%= form_with url: customer_order_import_path, method: :post, local: true, multipart: true do |f| %>
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <div class="mb-3">
+          <%= f.label :file, "ODOR Report (.pdf)", class: "form-label fw-semibold" %>
+          <%= f.file_field :file, class: "form-control", accept: ".pdf" %>
+          <div class="form-text">Export "Trailing 30-Day Orders" from ODOR with Order Detail format.</div>
+        </div>
+        <%= f.submit "Import Orders", class: "btn btn-primary" %>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="card shadow-sm mt-3">
+    <div class="card-header fw-semibold">What this does</div>
+    <div class="card-body small text-muted">
+      <ul class="mb-0">
+        <li>Reads each order from the PDF: order number, dates, customer, delivery location, status, and line items</li>
+        <li>Creates new customers and locations automatically if not already in LoadNTrucks</li>
+        <li>Maps ODOR statuses: <strong>Billed → Complete</strong>, Cancelled → Deleted, all others → New</li>
+        <li>Handles amendments (<code>-26A</code>) and credit memos (<code>-26C</code>) as separate orders</li>
+        <li>Safe to re-run — existing orders are updated, not duplicated (matched by Order No)</li>
+      </ul>
+    </div>
+  </div>
+
+  <%= link_to "← Back to Orders", customer_orders_path, class: "btn btn-outline-secondary mt-3" %>
+
+  <%= render 'shared/import_history', logs: @logs, download_path: :download_customer_order_import_path %>
+</div>

@@ -1,0 +1,195 @@
+<%# ── Header ──────────────────────────────────────────────────────────────── %>
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="mb-0">Customer Order Dashboard</h1>
+  <div class="d-flex gap-2">
+    <%= link_to "All Orders", customer_orders_path, class: "btn btn-outline-secondary btn-sm" %>
+    <%= link_to "Import Orders", new_customer_order_import_path, class: "btn btn-outline-primary btn-sm" %>
+    <%= link_to "New Order", new_customer_order_path, class: "btn btn-primary btn-sm" %>
+  </div>
+</div>
+
+<%# ── Stat cards ──────────────────────────────────────────────────────────── %>
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="card text-center shadow-sm h-100">
+      <div class="card-body py-3">
+        <div class="fs-2 fw-bold text-primary"><%= @stats[:new] %></div>
+        <div class="small text-muted">Open Orders</div>
+      </div>
+      <div class="card-footer p-1">
+        <%= link_to "View", customer_orders_path(order_status: 'New'), class: "small text-decoration-none" %>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card text-center shadow-sm h-100 <%= 'border-warning' if @stats[:due_this_week] > 0 %>">
+      <div class="card-body py-3">
+        <div class="fs-2 fw-bold <%= @stats[:due_this_week] > 0 ? 'text-warning' : 'text-secondary' %>">
+          <%= @stats[:due_this_week] %>
+        </div>
+        <div class="small text-muted">Due This Week</div>
+      </div>
+      <div class="card-footer p-1">
+        <%= link_to "View", customer_orders_path(order_status: 'New', sort_by: 'required_delivery_date'), class: "small text-decoration-none" %>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card text-center shadow-sm h-100 <%= 'border-danger' if @stats[:overdue] > 0 %>">
+      <div class="card-body py-3">
+        <div class="fs-2 fw-bold <%= @stats[:overdue] > 0 ? 'text-danger' : 'text-secondary' %>">
+          <%= @stats[:overdue] %>
+        </div>
+        <div class="small text-muted">Overdue</div>
+      </div>
+      <div class="card-footer p-1">
+        <%= link_to "View", customer_orders_path(order_status: 'New', sort_by: 'oldest'), class: "small text-decoration-none" %>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card text-center shadow-sm h-100">
+      <div class="card-body py-3">
+        <div class="fs-2 fw-bold text-success"><%= @stats[:complete_this_month] %></div>
+        <div class="small text-muted">Completed This Month</div>
+      </div>
+      <div class="card-footer p-1">
+        <%= link_to "View", customer_orders_path(order_status: 'Complete'), class: "small text-decoration-none" %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%# ── Production shortfalls ───────────────────────────────────────────────── %>
+<% if @orders_needing_production.any? %>
+  <div class="card shadow-sm mb-4 border-warning">
+    <div class="card-header fw-semibold text-warning-emphasis bg-warning-subtle d-flex justify-content-between align-items-center">
+      <span><i class="bi bi-exclamation-triangle me-1"></i> Orders Waiting on Production (<%= @orders_needing_production.size %>)</span>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Order</th>
+            <th>Customer</th>
+            <th>Delivery Date</th>
+            <th>Production Needed</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @orders_needing_production.each do |row| %>
+            <tr>
+              <td>
+                <%= link_to customer_order_path(row[:order]), class: "fw-semibold text-decoration-none" do %>
+                  #<%= row[:order].id %>
+                  <% if row[:order].external_order_no.present? %>
+                    <span class="text-muted fw-normal small"><%= row[:order].external_order_no %></span>
+                  <% end %>
+                <% end %>
+              </td>
+              <td class="text-muted small"><%= row[:order].customer&.name %></td>
+              <td class="text-nowrap small">
+                <% if row[:order].required_delivery_date %>
+                  <% overdue = row[:order].required_delivery_date < Date.today %>
+                  <span class="<%= overdue ? 'text-danger fw-semibold' : '' %>">
+                    <%= row[:order].required_delivery_date.strftime("%b %-d, %Y") %>
+                    <%= "(overdue)" if overdue %>
+                  </span>
+                <% else %>
+                  <span class="text-muted">—</span>
+                <% end %>
+              </td>
+              <td>
+                <% row[:shortfalls].each do |sf| %>
+                  <div class="small">
+                    <strong><%= sf[:product].name %></strong>
+                    — need <%= number_with_delimiter(sf[:needed]) %>,
+                    have <%= number_with_delimiter(sf[:in_stock]) %>,
+                    <span class="text-danger">short <%= number_with_delimiter(sf[:shortfall]) %></span>
+                  </div>
+                <% end %>
+              </td>
+              <td>
+                <% row[:shortfalls].each do |sf| %>
+                  <%= link_to "Make #{sf[:product].name}",
+                        new_production_order_path(
+                          product_id:  sf[:product].id,
+                          item:        sf[:product].name,
+                          qty_to_make: sf[:shortfall],
+                          due_date:    row[:order].required_delivery_date
+                        ),
+                        class: "btn btn-sm btn-warning d-block mb-1" %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% end %>
+
+<%# ── Upcoming deliveries ─────────────────────────────────────────────────── %>
+<div class="card shadow-sm mb-4">
+  <div class="card-header fw-semibold">Upcoming Deliveries</div>
+  <% if @upcoming.any? %>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Order</th>
+            <th>Customer</th>
+            <th>Location</th>
+            <th>Delivery Date</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @upcoming.each do |order| %>
+            <tr>
+              <td>
+                <%= link_to customer_order_path(order), class: "fw-semibold text-decoration-none" do %>
+                  #<%= order.id %>
+                  <% if order.external_order_no.present? %>
+                    <span class="text-muted fw-normal small"><%= order.external_order_no %></span>
+                  <% end %>
+                <% end %>
+              </td>
+              <td class="text-muted small"><%= order.customer&.name %></td>
+              <td class="text-muted small"><%= order.location&.company_name %></td>
+              <td class="text-nowrap small">
+                <%= order.required_delivery_date&.strftime("%b %-d, %Y") || "—" %>
+              </td>
+              <td>
+                <% days = order.required_delivery_date ? (order.required_delivery_date - Date.today).to_i : nil %>
+                <% badge = days && days <= 2 ? 'bg-danger' : days && days <= 7 ? 'bg-warning text-dark' : 'bg-secondary' %>
+                <span class="badge <%= badge %>">
+                  <%= days ? "#{days}d" : "—" %>
+                </span>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="card-body text-muted">No upcoming open orders.</div>
+  <% end %>
+</div>
+
+<%# ── Last import ─────────────────────────────────────────────────────────── %>
+<div class="card shadow-sm">
+  <div class="card-header fw-semibold">Last Import</div>
+  <div class="card-body small">
+    <% if @last_import %>
+      <span class="badge <%= @last_import.status == 'success' ? 'bg-success' : 'bg-danger' %>"><%= @last_import.status %></span>
+      <span class="ms-2 text-muted"><%= @last_import.started_at.strftime("%b %-d %Y %-I:%M %p") %></span>
+      — <%= @last_import.records_created %> created, <%= @last_import.records_updated %> updated
+      <%= link_to "Import Again", new_customer_order_import_path, class: "btn btn-sm btn-outline-secondary ms-3" %>
+    <% else %>
+      <span class="text-muted">No imports yet.</span>
+      <%= link_to "Import Orders", new_customer_order_import_path, class: "btn btn-sm btn-primary ms-2" %>
+    <% end %>
+  </div>
+</div>

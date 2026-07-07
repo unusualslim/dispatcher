@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_06_25_195000) do
+ActiveRecord::Schema[7.0].define(version: 2026_07_02_110000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -97,6 +97,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_06_25_195000) do
     t.datetime "updated_at", null: false
     t.string "product_name"
     t.string "product_id"
+    t.string "warehouse"
+    t.string "item_type", default: "buy", null: false
     t.index ["customer_order_id"], name: "index_customer_order_products_on_customer_order_id"
     t.index ["product_id"], name: "index_customer_order_products_on_product_id"
   end
@@ -113,7 +115,15 @@ ActiveRecord::Schema[7.0].define(version: 2026_06_25_195000) do
     t.string "card_color"
     t.bigint "customer_id"
     t.boolean "freight_only"
+    t.string "external_order_no"
+    t.datetime "order_date"
+    t.string "invoice_no"
+    t.string "odor_status"
+    t.string "carrier"
+    t.date "invoice_date"
+    t.string "salesperson"
     t.index ["customer_id"], name: "index_customer_orders_on_customer_id"
+    t.index ["external_order_no"], name: "index_customer_orders_on_external_order_no"
     t.index ["location_id"], name: "index_customer_orders_on_location_id"
   end
 

@@ -24,6 +24,29 @@ class ProductionOrdersController < ApplicationController
       .ordered_default
   end
 
+  # GET /production_orders/dashboard
+  def dashboard
+    today = Date.today
+
+    @stats = {
+      pending:              ProductionOrder.where(status: 'pending').count,
+      in_progress:          ProductionOrder.where(status: 'in_progress').count,
+      due_this_week:        ProductionOrder.where(status: %w[pending in_progress])
+                              .where(due_date: today..today + 7).count,
+      completed_this_month: ProductionOrder.where(status: 'completed')
+                              .where('created_at >= ?', today.beginning_of_month).count,
+    }
+
+    @open_orders = ProductionOrder
+      .where(status: %w[pending in_progress])
+      .order(due_date: :asc)
+      .includes(:product, :customer, :location)
+
+    @orders_needing_production = production_demand_from_customer_orders
+
+    @finished_goods = Product.finished_goods.order(:name)
+  end
+
   # GET /production_orders/kanban
     def kanban
     @search_term     = params[:search]
@@ -53,7 +76,13 @@ class ProductionOrdersController < ApplicationController
 
   # GET /production_orders/new
   def new
-    @production_order = ProductionOrder.new(due_date: Date.today, status: "pending")
+    @production_order = ProductionOrder.new(
+      due_date:    params[:due_date].present? ? (Date.parse(params[:due_date]) rescue Date.today) : Date.today,
+      status:      "pending",
+      product_id:  params[:product_id],
+      item:        params[:item],
+      qty_to_make: params[:qty_to_make]
+    )
     5.times { |i| @production_order.production_order_components.build(position: i + 1) }
 
     # ✅ ensure the form renders one blank batch row
@@ -109,6 +138,35 @@ class ProductionOrdersController < ApplicationController
 
 
   private
+
+  def production_demand_from_customer_orders
+    cops = CustomerOrderProduct
+      .where(item_type: 'production')
+      .where.not(product_id: nil)
+      .includes(:product, customer_order: [:customer, :location])
+
+    result = {}
+    cops.each do |cop|
+      next unless cop.product
+      needed    = (cop.quantity || 0).to_f
+      in_stock  = cop.product.current_stock.to_f
+      shortfall = needed - in_stock
+      next unless shortfall > 0
+
+      order = cop.customer_order
+      next if order.order_status == 'Deleted'
+
+      result[order.id] ||= { order: order, shortfalls: [] }
+      result[order.id][:shortfalls] << {
+        product:   cop.product,
+        needed:    needed,
+        in_stock:  in_stock,
+        shortfall: shortfall,
+      }
+    end
+
+    result.values.sort_by { |r| r[:order].required_delivery_date || Date.new(9999) }
+  end
 
   def safe_date(str)
     return nil if str.blank?

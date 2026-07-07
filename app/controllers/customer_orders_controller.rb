@@ -1,6 +1,31 @@
 class CustomerOrdersController < ApplicationController
   before_action :require_admin!
 
+  def dashboard
+    today = Date.today
+
+    @stats = {
+      new:                 CustomerOrder.where(order_status: 'New').count,
+      due_this_week:       CustomerOrder.where(order_status: 'New')
+                             .where(required_delivery_date: today..today + 7).count,
+      overdue:             CustomerOrder.where(order_status: 'New')
+                             .where('required_delivery_date < ?', today).count,
+      complete_this_month: CustomerOrder.where(order_status: 'Complete')
+                             .where('created_at >= ?', today.beginning_of_month).count,
+    }
+
+    @upcoming = CustomerOrder
+      .where(order_status: 'New')
+      .where('required_delivery_date >= ?', today)
+      .order(required_delivery_date: :asc)
+      .includes(:customer, :location)
+      .limit(20)
+
+    @orders_needing_production = production_shortfalls
+
+    @last_import = SyncLog.for_process('Customer Order Import').first
+  end
+
 def index
   @view = params[:view] || 'card'  # Default to card view
 
@@ -13,7 +38,22 @@ def index
   @customer_orders = CustomerOrder
                        .includes(:location, :customer, customer_order_products: :product)
 
-  # NEW: filter by customer
+  # Text search: order no, invoice no, customer name, location name
+  if params[:q].present?
+    q = "%#{params[:q]}%"
+    @customer_orders = @customer_orders
+                         .left_joins(:customer, :location)
+                         .where(
+                           'customer_orders.external_order_no ILIKE ? OR
+                            customer_orders.invoice_no ILIKE ? OR
+                            customers.name ILIKE ? OR
+                            locations.company_name ILIKE ?',
+                           q, q, q, q
+                         )
+                         .references(:customer, :location)
+  end
+
+  # filter by customer
   if params[:customer_id].present?
     @customer_orders = @customer_orders.where(customer_id: params[:customer_id])
   end
@@ -64,6 +104,8 @@ def index
   else
     @customer_orders = @customer_orders.order(required_delivery_date: :asc)
   end
+
+  @customer_orders = @customer_orders.paginate(page: params[:page], per_page: 25)
 end
   
     def show
@@ -138,6 +180,36 @@ end
     end
 
     private
+
+    def production_shortfalls
+      cops = CustomerOrderProduct
+        .where(item_type: 'production')
+        .where.not(product_id: nil)
+        .includes(:product, customer_order: [:customer, :location])
+
+      result = {}
+      cops.each do |cop|
+        next unless cop.product
+        needed    = (cop.quantity || 0).to_f
+        in_stock  = cop.product.current_stock.to_f
+        shortfall = needed - in_stock
+        next unless shortfall > 0
+
+        order = cop.customer_order
+        next if order.order_status == 'Deleted'
+
+        result[order.id] ||= { order: order, shortfalls: [] }
+        result[order.id][:shortfalls] << {
+          product:   cop.product,
+          needed:    needed,
+          in_stock:  in_stock,
+          shortfall: shortfall,
+        }
+      end
+
+      result.values.sort_by { |r| r[:order].required_delivery_date || Date.new(9999) }
+    end
+
     def customer_order_params
       params.require(:customer_order).permit(:required_delivery_date, :product, :freight_only, :customer_id, :location_id, :approximate_product_amount, :notes, :order_status, customer_order_products_attributes: [:id, :product_id, :quantity, :price, :_destroy], thing_ids: [])
     end

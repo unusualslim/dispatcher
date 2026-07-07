@@ -10,6 +10,9 @@
                 <span class="badge bg-warning text-dark">Freight Only</span>
               <% end %>
             </h5>
+            <% if customer_order.external_order_no.present? %>
+              <div class="text-muted small mb-1"><%= customer_order.external_order_no %></div>
+            <% end %>
             
             <!-- Order Status Badge -->
             <% status_class = case customer_order.order_status.to_s.downcase %>

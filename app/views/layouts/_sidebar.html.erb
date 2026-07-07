@@ -31,9 +31,19 @@
         <!-- DISPATCH -->
         <div class="sidebar-section-label">Dispatch</div>
         <ul class="sidebar-nav">
-          <li class="<%= 'active' if current == 'customer_orders' %>">
+          <li class="<%= 'active' if current == 'customer_orders' && action_name == 'dashboard' %>">
+            <%= link_to dashboard_customer_orders_path do %>
+              <i class="bi bi-speedometer2"></i> Order Dashboard
+            <% end %>
+          </li>
+          <li class="<%= 'active' if current == 'customer_orders' && action_name != 'dashboard' %>">
             <%= link_to customer_orders_path do %>
-              <i class="bi bi-cart3"></i> Orders
+              <i class="bi bi-cart3"></i> All Orders
+            <% end %>
+          </li>
+          <li class="<%= 'active' if request.path == product_code_links_path %>">
+            <%= link_to product_code_links_path do %>
+              <i class="bi bi-link-45deg"></i> Link ODOR Products
             <% end %>
           </li>
           <li class="<%= 'active' if action_name == 'view_dispatches' %>">
@@ -61,14 +71,19 @@
         <!-- MANUFACTURING -->
         <div class="sidebar-section-label">Manufacturing</div>
         <ul class="sidebar-nav">
+          <li class="<%= 'active' if current == 'production_orders' && action_name == 'dashboard' %>">
+            <%= link_to dashboard_production_orders_path do %>
+              <i class="bi bi-speedometer2"></i> Production Dashboard
+            <% end %>
+          </li>
           <li class="<%= 'active' if current == 'production_orders' && action_name == 'kanban' %>">
             <%= link_to kanban_production_orders_path do %>
-              <i class="bi bi-layout-three-columns"></i> Prod. Orders
+              <i class="bi bi-layout-three-columns"></i> Kanban
             <% end %>
           </li>
           <li class="<%= 'active' if current == 'production_orders' && action_name == 'index' %>">
             <%= link_to production_orders_path do %>
-              <i class="bi bi-table"></i> Orders Table
+              <i class="bi bi-table"></i> All Orders
             <% end %>
           </li>
         </ul>

@@ -13,7 +13,31 @@
 
   <!-- Search and Sorting Form -->
   <div class="mb-4">
-    <%= form_with url: customer_orders_path, method: :get, local: true, data: { turbo: false } do |f| %>
+    <%= form_with url: customer_orders_path, method: :get, local: true,
+          data: { turbo_frame: "orders-results" }, id: "orders-filter-form" do |f| %>
+      <div class="row mb-3">
+        <!-- Text search -->
+        <div class="col-md-6">
+          <%= f.label :q, 'Search' %>
+          <%= f.text_field :q, value: params[:q], placeholder: 'Order no, invoice, customer, or location…',
+                class: 'form-control', id: 'order-search', autocomplete: 'off' %>
+        </div>
+
+        <!-- Order Status -->
+        <div class="col-md-3">
+          <%= f.label :order_status, 'Status' %>
+          <%= f.select :order_status,
+                options_for_select([
+                  ['New', 'New'],
+                  ['Complete', 'Complete'],
+                  ['On Hold', 'On Hold'],
+                  ['Deleted', 'Deleted'],
+                ], params[:order_status]),
+                { include_blank: 'All Statuses' },
+                class: 'form-control' %>
+        </div>
+      </div>
+
       <div class="row mb-3">
         <!-- Customer Select (NEW) -->
         <div class="col-md-3">
@@ -86,36 +110,49 @@
     <% end %>
   </div>
 
-  <!-- Toggle View Buttons -->
-  <div class="mb-4">
-    <%= link_to "Card View",
-                customer_orders_path(view: "card", sort_by: params[:sort_by], customer_id: params[:customer_id]),
-                class: "btn btn-secondary me-2" %>
-    <%= link_to "Table View",
-                customer_orders_path(view: "table", sort_by: params[:sort_by], customer_id: params[:customer_id]),
-                class: "btn btn-secondary" %>
-  </div>
+  <%= turbo_frame_tag "orders-results", target: "_top" do %>
+    <!-- Toggle View Buttons -->
+    <div class="mb-4">
+      <%= link_to "Card View",
+                  customer_orders_path(view: "card", sort_by: params[:sort_by], customer_id: params[:customer_id]),
+                  class: "btn btn-secondary me-2" %>
+      <%= link_to "Table View",
+                  customer_orders_path(view: "table", sort_by: params[:sort_by], customer_id: params[:customer_id]),
+                  class: "btn btn-secondary" %>
+    </div>
 
-  <!-- Display Content -->
-  <% if params[:view] == "table" %>
-    <%= render partial: "customer_orders_table", locals: { customer_orders: @customer_orders } %>
-  <% else %>
-    <%= render partial: "customer_orders_cards", locals: { customer_orders: @customer_orders } %>
+    <!-- Display Content -->
+    <% if params[:view] == "table" %>
+      <%= render partial: "customer_orders_table", locals: { customer_orders: @customer_orders } %>
+    <% else %>
+      <%= render partial: "customer_orders_cards", locals: { customer_orders: @customer_orders } %>
+    <% end %>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-4 mb-2">
+      <div class="text-muted small">
+        Showing <%= @customer_orders.offset + 1 %>–<%= [@customer_orders.offset + @customer_orders.length, @customer_orders.total_entries].min %>
+        of <%= @customer_orders.total_entries %> orders
+      </div>
+      <nav aria-label="Orders pagination">
+        <%= will_paginate @customer_orders, renderer: BootstrapPaginationRenderer %>
+      </nav>
+    </div>
   <% end %>
 </div>
 
 <script>
   $(document).ready(function() {
-    // Apply Select2 to the new customer select
-    $('.customer-select').select2({
-      placeholder: 'Filter by customer',
-      allowClear: true
-    });
+    $('.customer-select').select2({ placeholder: 'Filter by customer', allowClear: true });
+    $('.location-select').select2({ placeholder: 'Search for a location', allowClear: true });
 
-    // Existing location select
-    $('.location-select').select2({
-      placeholder: 'Search for a location',
-      allowClear: true
+    // Live search — debounce 500ms, use requestSubmit() so Turbo intercepts it
+    let searchTimer;
+    $('#order-search').on('input', function() {
+      clearTimeout(searchTimer);
+      var form = document.getElementById('orders-filter-form');
+      searchTimer = setTimeout(function() {
+        form.requestSubmit();
+      }, 500);
     });
   });
 </script>
