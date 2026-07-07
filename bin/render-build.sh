@@ -2,7 +2,7 @@
 # exit on error
 set -o errexit
 
-sudo apt-get install -y poppler-utils
+apt-get update -qq && apt-get install -y --no-install-recommends poppler-utils || true
 
 bundle install
 bundle exec rake assets:precompile RAILS_ENV=production
