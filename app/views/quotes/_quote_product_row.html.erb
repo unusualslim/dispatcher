@@ -1,0 +1,19 @@
+<tr>
+  <%= pf.hidden_field :id %>
+  <%= pf.hidden_field :_destroy, class: 'destroy-field' %>
+  <td>
+    <%= pf.select :product_name,
+          Product.finished_goods.order(:name).map { |p| [p.name, p.name] },
+          { include_blank: '— Select product —', selected: pf.object.product_name },
+          class: 'form-select form-select-sm product-select' %>
+  </td>
+  <td><%= pf.number_field :quantity, class: 'form-control form-control-sm qty-field', step: 'any', placeholder: '0' %></td>
+  <td>
+    <div class="input-group input-group-sm">
+      <span class="input-group-text">$</span>
+      <%= pf.number_field :price, class: 'form-control price-field', step: '0.0001', placeholder: '0.00' %>
+    </div>
+  </td>
+  <td class="text-muted small row-total"><%= number_to_currency(pf.object.line_total) %></td>
+  <td><a href="#" class="remove-product-row text-danger"><i class="bi bi-x-lg"></i></a></td>
+</tr>

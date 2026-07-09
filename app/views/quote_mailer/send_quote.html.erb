@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: Arial, sans-serif; color: #333; font-size: 14px; }
+    .header { background: #1e2a3a; color: #fff; padding: 20px 30px; }
+    .header h1 { margin: 0; font-size: 20px; }
+    .header p { margin: 4px 0 0; opacity: 0.7; font-size: 13px; }
+    .body { padding: 30px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th { background: #f0f2f5; text-align: left; padding: 8px 12px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #666; }
+    td { padding: 10px 12px; border-bottom: 1px solid #eee; }
+    .total-row td { font-weight: bold; border-top: 2px solid #ccc; border-bottom: none; }
+    .footer { padding: 20px 30px; border-top: 1px solid #eee; font-size: 12px; color: #999; }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; background: #e8f5e9; color: #2e7d32; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Five Points Service, Inc.</h1>
+    <p>Quote <%= @quote.quote_number %></p>
+  </div>
+
+  <div class="body">
+    <p>Dear <%= @quote.customer.name %>,</p>
+    <p>Thank you for your interest. Please find your quote details below.</p>
+
+    <table>
+      <tr><th>Quote #</th><td><%= @quote.quote_number %></td></tr>
+      <tr><th>Date</th><td><%= @quote.created_at.strftime("%B %-d, %Y") %></td></tr>
+      <% if @quote.expiry_date %>
+        <tr><th>Valid Until</th><td><%= @quote.expiry_date.strftime("%B %-d, %Y") %></td></tr>
+      <% end %>
+      <% if @quote.location %>
+        <tr><th>Delivery Location</th><td><%= @quote.location.company_name %></td></tr>
+      <% end %>
+    </table>
+
+    <table style="margin-top: 24px;">
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th style="text-align:right;">Qty</th>
+          <th style="text-align:right;">Unit Price</th>
+          <th style="text-align:right;">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @quote.quote_products.each do |qp| %>
+          <tr>
+            <td><%= qp.product&.name || qp.product_name %></td>
+            <td style="text-align:right;"><%= qp.quantity&.to_i %></td>
+            <td style="text-align:right;"><%= number_to_currency(qp.price) %></td>
+            <td style="text-align:right;"><%= number_to_currency(qp.line_total) %></td>
+          </tr>
+        <% end %>
+        <tr class="total-row">
+          <td colspan="3">Total</td>
+          <td style="text-align:right;"><%= number_to_currency(@quote.total) %></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <% if @quote.notes.present? %>
+      <p style="margin-top: 24px;"><strong>Notes:</strong><br><%= @quote.notes %></p>
+    <% end %>
+
+    <p style="margin-top: 32px;">To accept this quote or for any questions, please contact us at <a href="mailto:admin@perrybrothersoil.com">admin@perrybrothersoil.com</a>.</p>
+  </div>
+
+  <div class="footer">
+    Five Points Service, Inc. &nbsp;|&nbsp; Americus, GA &nbsp;|&nbsp; This quote is valid until <%= @quote.expiry_date&.strftime("%B %-d, %Y") || "further notice" %>.
+  </div>
+</body>
+</html>

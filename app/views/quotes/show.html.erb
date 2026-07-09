@@ -1,0 +1,143 @@
+<div class="container-fluid px-4 py-3" style="max-width: 860px;">
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+      <h4 class="mb-0"><%= @quote.quote_number %></h4>
+      <span class="badge <%= status_badge_class(@quote.status) %> mt-1"><%= @quote.status.capitalize %></span>
+    </div>
+    <div class="d-flex gap-2 d-print-none">
+      <% if @quote.draft? || @quote.sent? %>
+        <%= link_to edit_quote_path(@quote), class: "btn btn-outline-secondary btn-sm" do %>
+          <i class="bi bi-pencil"></i> Edit
+        <% end %>
+      <% end %>
+      <% if @quote.draft? || @quote.sent? %>
+        <%= button_to send_quote_quote_path(@quote), method: :post, class: "btn btn-primary btn-sm",
+              data: { confirm: "Send quote to #{@quote.customer.email}?" } do %>
+          <i class="bi bi-envelope"></i> Send
+        <% end %>
+      <% end %>
+      <% if @quote.sent? %>
+        <%= button_to accept_quote_path(@quote), method: :post, class: "btn btn-success btn-sm",
+              data: { confirm: "Accept this quote and create a customer order?" } do %>
+          <i class="bi bi-check-lg"></i> Accept
+        <% end %>
+        <%= button_to reject_quote_path(@quote), method: :post, class: "btn btn-outline-danger btn-sm",
+              data: { confirm: "Mark this quote as rejected?" } do %>
+          <i class="bi bi-x-lg"></i> Reject
+        <% end %>
+      <% end %>
+      <button onclick="window.print()" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-printer"></i>
+      </button>
+      <% if @quote.draft? %>
+        <%= button_to quote_path(@quote), method: :delete, class: "btn btn-outline-danger btn-sm",
+              data: { confirm: "Delete this quote?" } do %>
+          <i class="bi bi-trash"></i>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Details -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <div class="mb-2">
+            <div class="text-muted small">Customer</div>
+            <div class="fw-semibold"><%= @quote.customer.name %></div>
+            <% if @quote.customer.email.present? %>
+              <div class="text-muted small"><%= @quote.customer.email %></div>
+            <% end %>
+          </div>
+          <% if @quote.location %>
+            <div>
+              <div class="text-muted small">Delivery Location</div>
+              <div><%= @quote.location.company_name %></div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <div class="mb-2">
+            <div class="text-muted small">Quote Date</div>
+            <div><%= @quote.created_at.strftime("%B %-d, %Y") %></div>
+          </div>
+          <% if @quote.expiry_date %>
+            <div class="mb-2">
+              <div class="text-muted small">Valid Until</div>
+              <div><%= @quote.expiry_date.strftime("%B %-d, %Y") %></div>
+            </div>
+          <% end %>
+          <% if @quote.sent_at %>
+            <div>
+              <div class="text-muted small">Sent</div>
+              <div><%= @quote.sent_at.strftime("%B %-d, %Y at %l:%M %p") %></div>
+            </div>
+          <% end %>
+          <% if @quote.customer_order %>
+            <div class="mt-2">
+              <div class="text-muted small">Linked Order</div>
+              <div><%= link_to @quote.customer_order_id, customer_order_path(@quote.customer_order) %></div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Line Items -->
+  <div class="card shadow-sm mb-4">
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Product</th>
+            <th class="text-end" style="width:100px;">Qty</th>
+            <th class="text-end" style="width:130px;">Unit Price</th>
+            <th class="text-end" style="width:130px;">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @quote.quote_products.each do |qp| %>
+            <tr>
+              <td><%= qp.product&.name || qp.product_name %></td>
+              <td class="text-end"><%= qp.quantity&.to_i %></td>
+              <td class="text-end"><%= number_to_currency(qp.price) %></td>
+              <td class="text-end"><%= number_to_currency(qp.line_total) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+        <tfoot>
+          <tr class="fw-bold">
+            <td colspan="3" class="text-end">Total</td>
+            <td class="text-end"><%= number_to_currency(@quote.total) %></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <% if @quote.notes.present? %>
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <div class="text-muted small mb-1">Notes</div>
+        <div><%= @quote.notes %></div>
+      </div>
+    </div>
+  <% end %>
+
+  <%= link_to "← All Quotes", quotes_path, class: "text-muted small d-print-none" %>
+</div>
+
+<style>
+  @media print {
+    #sidebar, .sidebar, nav, .sidebar-overlay, .d-print-none { display: none !important; }
+    .main-content { margin-left: 0 !important; }
+  }
+</style>

@@ -42,6 +42,11 @@
               <i class="bi bi-cart3"></i> All Orders
             <% end %>
           </li>
+          <li class="<%= 'active' if current == 'quotes' %>">
+            <%= link_to quotes_path do %>
+              <i class="bi bi-file-earmark-text"></i> Quotes
+            <% end %>
+          </li>
           <li class="<%= 'active' if action_name == 'view_dispatches' %>">
             <%= link_to view_dispatches_path do %>
               <i class="bi bi-table"></i> Dispatches

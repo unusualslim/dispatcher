@@ -1,0 +1,207 @@
+<% products_data = Product.finished_goods.where.not(cost_per_unit: nil).each_with_object({}) { |p, h|
+     h[p.name] = p.cost_per_unit.to_f
+   }.to_json %>
+
+<%= form_with model: quote, local: true, data: { turbo: false } do |f| %>
+  <% if quote.errors.any? %>
+    <div class="alert alert-danger">
+      <% quote.errors.full_messages.each do |msg| %>
+        <div><%= msg %></div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-6">
+      <label class="form-label fw-semibold">Customer</label>
+      <%= f.collection_select :customer_id, Customer.order(:name), :id, :name,
+            { include_blank: "— Select customer —", selected: quote.customer_id },
+            class: "form-select select2-customer" %>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label fw-semibold">Delivery Location <span class="text-muted fw-normal">(optional)</span></label>
+      <%= f.collection_select :location_id, Location.where(location_category_id: 2).order(:company_name), :id, :company_name,
+            { include_blank: "— Select location —", selected: quote.location_id },
+            class: "form-select select2-location" %>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label fw-semibold">Valid Until</label>
+      <%= f.date_field :expiry_date, value: quote.expiry_date, class: "form-control" %>
+    </div>
+    <div class="col-12">
+      <label class="form-label fw-semibold">Notes</label>
+      <%= f.text_area :notes, rows: 3, class: "form-control", placeholder: "Any special terms or notes..." %>
+    </div>
+  </div>
+
+  <!-- Line Items -->
+  <div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span class="fw-semibold">Products</span>
+      <div class="d-flex align-items-center gap-2">
+        <div class="form-check form-switch mb-0">
+          <input class="form-check-input" type="checkbox" id="markupToggle">
+          <label class="form-check-label small fw-semibold" for="markupToggle">Markup</label>
+        </div>
+        <div class="input-group input-group-sm" style="width: 100px;" id="markupInputGroup">
+          <input type="number" id="markupPercent" class="form-control form-control-sm"
+                 value="20" min="0" max="999" step="0.1" style="text-align:right;">
+          <span class="input-group-text">%</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body p-0">
+      <table class="table table-sm align-middle mb-0" id="quote-products-table">
+        <thead class="table-light">
+          <tr>
+            <th>Product</th>
+            <th style="width:120px;">Qty</th>
+            <th style="width:160px;">Unit Price</th>
+            <th style="width:120px;">Total</th>
+            <th style="width:40px;"></th>
+          </tr>
+        </thead>
+        <tbody id="quote-products-body">
+          <%= f.fields_for :quote_products do |pf| %>
+            <%= render 'quote_product_row', pf: pf %>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <div class="card-footer">
+      <%= link_to "Add Product", "#", class: "btn btn-outline-secondary btn-sm", id: "add-product-row" %>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2">
+    <%= f.submit quote.new_record? ? "Create Quote" : "Save Changes", class: "btn btn-primary" %>
+    <%= link_to "Cancel", quotes_path, class: "btn btn-outline-secondary" %>
+  </div>
+<% end %>
+
+<script>
+  var PRODUCT_COSTS = <%= products_data.html_safe %>;
+  var productIndex  = <%= quote.quote_products.count %>;
+
+  var markupToggle = document.getElementById('markupToggle');
+  var markupInput  = document.getElementById('markupPercent');
+  var markupGroup  = document.getElementById('markupInputGroup');
+
+  function markupEnabled() { return markupToggle.checked; }
+  function markupMultiplier() { return 1 + (parseFloat(markupInput.value) || 0) / 100; }
+
+  function priceForProduct(name) {
+    var cost = PRODUCT_COSTS[name];
+    if (cost == null) return null;
+    return markupEnabled() ? (cost * markupMultiplier()) : cost;
+  }
+
+  function updateRowTotal(row) {
+    var qty   = parseFloat(row.querySelector('.qty-field')?.value) || 0;
+    var price = parseFloat(row.querySelector('.price-field')?.value) || 0;
+    var total = row.querySelector('.row-total');
+    if (total) total.textContent = '$' + (qty * price).toFixed(2);
+  }
+
+  function recalcAllPrices() {
+    document.querySelectorAll('#quote-products-body tr').forEach(function(row) {
+      if (row.style.display === 'none') return;
+      var select     = row.querySelector('.product-select');
+      var priceField = row.querySelector('.price-field');
+      if (!select || !priceField) return;
+      var price = priceForProduct(select.value);
+      if (price != null) {
+        priceField.value = price.toFixed(4);
+        updateRowTotal(row);
+      }
+    });
+  }
+
+  markupToggle.addEventListener('change', function() {
+    markupGroup.style.opacity = markupEnabled() ? '1' : '0.4';
+    recalcAllPrices();
+  });
+
+  markupInput.addEventListener('input', function() {
+    if (markupEnabled()) recalcAllPrices();
+  });
+
+  // Initial state
+  markupGroup.style.opacity = '0.4';
+
+  document.getElementById('add-product-row').addEventListener('click', function(e) {
+    e.preventDefault();
+    var template = document.getElementById('quote-product-template').innerHTML
+      .replace(/\[NEW_INDEX\]/g, productIndex);
+    document.getElementById('quote-products-body').insertAdjacentHTML('beforeend', template);
+    productIndex++;
+  });
+
+  document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('product-select')) {
+      var row   = e.target.closest('tr');
+      var price = priceForProduct(e.target.value);
+      var priceField = row.querySelector('.price-field');
+      if (price != null && priceField) {
+        priceField.value = price.toFixed(4);
+        updateRowTotal(row);
+      }
+    }
+    if (e.target.classList.contains('qty-field') || e.target.classList.contains('price-field')) {
+      updateRowTotal(e.target.closest('tr'));
+    }
+  });
+
+  document.addEventListener('input', function(e) {
+    if (e.target.classList.contains('qty-field') || e.target.classList.contains('price-field')) {
+      updateRowTotal(e.target.closest('tr'));
+    }
+  });
+
+  document.addEventListener('click', function(e) {
+    if (e.target.closest('.remove-product-row')) {
+      e.preventDefault();
+      var row = e.target.closest('tr');
+      var destroyField = row.querySelector('.destroy-field');
+      if (destroyField) {
+        destroyField.value = '1';
+        row.style.display = 'none';
+      } else {
+        row.remove();
+      }
+    }
+  });
+
+  if (window.$) {
+    $('.select2-customer').select2({ placeholder: '— Select customer —', allowClear: true, width: '100%', theme: 'bootstrap-5' });
+    $('.select2-location').select2({ placeholder: '— Select location —', allowClear: true, width: '100%', theme: 'bootstrap-5' });
+  }
+</script>
+
+<!-- Template for new rows -->
+<script type="text/html" id="quote-product-template">
+  <tr>
+    <td>
+      <select name="quote[quote_products_attributes][NEW_INDEX][product_name]"
+              class="form-select form-select-sm product-select">
+        <option value="">— Select product —</option>
+        <% Product.finished_goods.order(:name).each do |p| %>
+          <option value="<%= p.name %>"><%= p.name %></option>
+        <% end %>
+      </select>
+    </td>
+    <td>
+      <input type="number" name="quote[quote_products_attributes][NEW_INDEX][quantity]"
+             class="form-control form-control-sm qty-field" step="any" placeholder="0">
+    </td>
+    <td>
+      <div class="input-group input-group-sm">
+        <span class="input-group-text">$</span>
+        <input type="number" name="quote[quote_products_attributes][NEW_INDEX][price]"
+               class="form-control price-field" step="0.0001" placeholder="0.00">
+      </div>
+    </td>
+    <td class="text-muted small row-total">—</td>
+    <td><a href="#" class="remove-product-row text-danger"><i class="bi bi-x-lg"></i></a></td>
+  </tr>
+</script>

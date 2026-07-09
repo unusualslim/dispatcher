@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_07_02_110000) do
+ActiveRecord::Schema[7.0].define(version: 2026_07_09_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -384,6 +384,34 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_02_110000) do
     t.index ["trigger_type"], name: "index_purchase_orders_on_trigger_type"
   end
 
+  create_table "quote_products", force: :cascade do |t|
+    t.bigint "quote_id", null: false
+    t.string "product_id"
+    t.string "product_name"
+    t.decimal "quantity", precision: 14, scale: 3
+    t.decimal "price", precision: 12, scale: 4
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["quote_id"], name: "index_quote_products_on_quote_id"
+  end
+
+  create_table "quotes", force: :cascade do |t|
+    t.string "quote_number", null: false
+    t.bigint "customer_id", null: false
+    t.bigint "location_id"
+    t.string "status", default: "draft", null: false
+    t.date "expiry_date"
+    t.text "notes"
+    t.datetime "sent_at"
+    t.bigint "customer_order_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["customer_id"], name: "index_quotes_on_customer_id"
+    t.index ["customer_order_id"], name: "index_quotes_on_customer_order_id"
+    t.index ["location_id"], name: "index_quotes_on_location_id"
+    t.index ["quote_number"], name: "index_quotes_on_quote_number", unique: true
+  end
+
   create_table "sync_logs", force: :cascade do |t|
     t.string "process_name"
     t.string "status"
@@ -491,6 +519,11 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_02_110000) do
   add_foreign_key "production_orders", "products"
   add_foreign_key "purchase_orders", "products"
   add_foreign_key "purchase_orders", "vendors"
+  add_foreign_key "quote_products", "products"
+  add_foreign_key "quote_products", "quotes"
+  add_foreign_key "quotes", "customer_orders"
+  add_foreign_key "quotes", "customers"
+  add_foreign_key "quotes", "locations"
   add_foreign_key "things", "dispatches"
   add_foreign_key "work_orders", "vendors"
 end

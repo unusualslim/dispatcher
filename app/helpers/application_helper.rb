@@ -17,4 +17,14 @@ module ApplicationHelper
   def cron_description(expr)
     CRON_PRESETS.key(expr) || expr
   end
+
+  def status_badge_class(status)
+    case status.to_s
+    when 'draft'    then 'bg-secondary'
+    when 'sent'     then 'bg-primary'
+    when 'accepted' then 'bg-success'
+    when 'rejected' then 'bg-danger'
+    else 'bg-secondary'
+    end
+  end
 end

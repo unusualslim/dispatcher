@@ -60,6 +60,14 @@ Rails.application.routes.draw do
     end
   end
   
+  resources :quotes do
+    member do
+      post :send_quote
+      post :accept
+      post :reject
+    end
+  end
+
   resources :customer_orders do
     post 'create_dispatch', on: :member
     resources :customer_order_products, only: [:create, :update, :destroy]
