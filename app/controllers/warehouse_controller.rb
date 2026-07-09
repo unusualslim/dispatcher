@@ -5,7 +5,7 @@ class WarehouseController < ApplicationController
     yesterday = Date.today - 1
     tomorrow  = Date.today + 1
 
-    @terminals = Location.where(location_category_id: 1).order(:company_name)
+    @terminals = Location.where(id: [3, 408]).order(:company_name)
 
     # Filter by terminal if selected
     if params[:location_id].present?
