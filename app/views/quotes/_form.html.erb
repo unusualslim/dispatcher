@@ -81,7 +81,7 @@
 
 <script>
   var PRODUCT_COSTS = <%= products_data.html_safe %>;
-  var productIndex  = <%= quote.quote_products.count %>;
+  var productIndex  = <%= quote.quote_products.size %>;
 
   var markupToggle = document.getElementById('markupToggle');
   var markupInput  = document.getElementById('markupPercent');
