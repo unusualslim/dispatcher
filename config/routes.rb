@@ -99,6 +99,7 @@ Rails.application.routes.draw do
   get 'docs/dispatch-guide',   to: 'docs#dispatch_guide', as: :docs_dispatch
   get 'docs/manufacturing',    to: 'docs#manufacturing',  as: :docs_manufacturing
   get 'docs/mrp-guide',        to: 'docs#mrp_guide',     as: :docs_mrp_guide
+  get 'docs/changelog',        to: 'docs#changelog',     as: :docs_changelog
 
   resources :purchase_orders, only: [:index, :new, :create, :show] do
     member do

@@ -46,6 +46,9 @@ class DocsController < ApplicationController
     render_guide('mrp_user_guide.md')
   end
 
+  def changelog
+  end
+
   private
 
   def render_guide(filename)

@@ -1,0 +1,122 @@
+<div class="container py-4" style="max-width: 860px;">
+
+  <div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+      <h1 class="h3 mb-1">What's New in LoadNTrucks</h1>
+      <p class="text-muted mb-0">A summary of recent updates and improvements.</p>
+    </div>
+    <button onclick="window.print()" class="btn btn-outline-secondary btn-sm d-print-none">
+      <i class="bi bi-printer"></i> Print / Save PDF
+    </button>
+  </div>
+
+  <%# ── July 2026 ── %>
+  <div class="mb-5">
+    <h5 class="text-muted fw-semibold border-bottom pb-2 mb-3">July 2026</h5>
+
+    <div class="mb-4">
+      <h6 class="fw-bold"><i class="bi bi-file-earmark-arrow-up text-primary me-2"></i>Import Orders from ODOR</h6>
+      <p class="text-muted small mb-2">You can now upload the Trailing 30-Day Orders PDF report directly from ODOR into LoadNTrucks. The system reads the file and automatically creates or updates customer orders — no manual data entry needed.</p>
+      <ul class="text-muted small mb-0">
+        <li>Go to <strong>Imports → Customer Orders</strong> and upload the PDF</li>
+        <li>Orders are matched by order number — existing orders are updated, new ones are created</li>
+        <li>Product codes from ODOR are automatically linked to the matching products in the MRP system</li>
+        <li>For any codes that don't automatically match, use <strong>Imports → Link ODOR Products</strong> to connect them manually (one-time setup per product)</li>
+      </ul>
+    </div>
+
+    <div class="mb-4">
+      <h6 class="fw-bold"><i class="bi bi-layout-sidebar text-secondary me-2"></i>Cleaner Navigation</h6>
+      <p class="text-muted small mb-0">The left sidebar has been reorganized. All import-related links are now grouped under a collapsible <strong>Imports</strong> section, keeping the main navigation less cluttered. Click "Imports" to expand it when you need it.</p>
+    </div>
+
+  </div>
+
+  <%# ── June 2026 ── %>
+  <div class="mb-5">
+    <h5 class="text-muted fw-semibold border-bottom pb-2 mb-3">June 2026</h5>
+
+    <div class="mb-4">
+      <h6 class="fw-bold"><i class="bi bi-clock-history text-info me-2"></i>Import History & File Downloads</h6>
+      <p class="text-muted small mb-0">Every import page now shows a history of past imports — when it ran, how many records were created or updated, and whether it succeeded. You can also re-download the original file from any past import for reference.</p>
+    </div>
+
+    <div class="mb-4">
+      <h6 class="fw-bold"><i class="bi bi-speedometer2 text-success me-2"></i>New Dashboards</h6>
+      <p class="text-muted small mb-0">New dashboard pages for both <strong>Customer Orders</strong> and <strong>Production</strong> give you a quick snapshot of what's open, in progress, and completed — without having to dig through the full list.</p>
+    </div>
+
+    <div class="mb-4">
+      <h6 class="fw-bold"><i class="bi bi-diagram-3 text-warning me-2"></i>BOM & Min/Max Imports from PDI</h6>
+      <p class="text-muted small mb-0">Bill of Materials and product reorder levels can now be imported directly from PDI CSV exports, keeping your MRP data in sync with your product catalog without manual entry.</p>
+    </div>
+
+  </div>
+
+  <%# ── May 2026 ── %>
+  <div class="mb-5">
+    <h5 class="text-muted fw-semibold border-bottom pb-2 mb-3">May 2026</h5>
+
+    <div class="mb-4">
+      <h6 class="fw-bold"><i class="bi bi-arrow-repeat text-primary me-2"></i>Automated Processes & Scheduling</h6>
+      <p class="text-muted small mb-0">The system now runs several automated jobs on a schedule — vendor data syncs from PDI, inventory levels update automatically, and reorder alerts fire when stock falls below your set thresholds. You can view the run history and adjust the schedule from the <strong>Automated Processes</strong> page.</p>
+    </div>
+
+    <div class="mb-4">
+      <h6 class="fw-bold"><i class="bi bi-building text-secondary me-2"></i>Vendor Sync from PDI</h6>
+      <p class="text-muted small mb-0">Vendor records are now automatically pulled from PDI via FTP and kept up to date in LoadNTrucks. Vendor names, addresses, and contact info stay in sync without manual updates.</p>
+    </div>
+
+    <div class="mb-4">
+      <h6 class="fw-bold"><i class="bi bi-bag-check text-success me-2"></i>Purchase Order PDI Export</h6>
+      <p class="text-muted small mb-0">When a purchase order is submitted in LoadNTrucks, it is automatically exported to PDI via FTP — eliminating double-entry between the two systems.</p>
+    </div>
+
+    <div class="mb-4">
+      <h6 class="fw-bold"><i class="bi bi-qr-code text-dark me-2"></i>QR Batch Labels</h6>
+      <p class="text-muted small mb-0">Production batches can now generate printable QR code labels. Each label encodes the batch, product, and lot number for traceability. Labels are formatted for standard 4×6 label stock.</p>
+    </div>
+
+  </div>
+
+  <%# ── April 2026 ── %>
+  <div class="mb-5">
+    <h5 class="text-muted fw-semibold border-bottom pb-2 mb-3">April 2026</h5>
+
+    <div class="mb-4">
+      <h6 class="fw-bold"><i class="bi bi-graph-up-arrow text-warning me-2"></i>Full MRP System</h6>
+      <p class="text-muted small mb-2">A complete materials planning system was added to LoadNTrucks, covering the full manufacturing workflow:</p>
+      <ul class="text-muted small mb-0">
+        <li><strong>Products & Bill of Materials</strong> — define what raw materials go into each finished product</li>
+        <li><strong>Production Orders & Batch QC</strong> — track batches through production, record QC results, and assign lot numbers</li>
+        <li><strong>Inventory Tracking</strong> — every stock movement is logged with a full audit trail</li>
+        <li><strong>Purchase Orders</strong> — create and approve orders for raw materials, with automatic reorder suggestions when stock runs low</li>
+        <li><strong>MRP Dashboard</strong> — see at a glance which raw materials are short based on open production orders</li>
+      </ul>
+    </div>
+
+    <div class="mb-4">
+      <h6 class="fw-bold"><i class="bi bi-person-badge text-primary me-2"></i>Driver Logins</h6>
+      <p class="text-muted small mb-0">Drivers can now log in to LoadNTrucks with a restricted view showing only their own dispatches. They can upload delivery documents directly from their phone.</p>
+    </div>
+
+  </div>
+
+  <div class="text-muted small mt-5 d-print-none">
+    <%= link_to "← Back to Help & Guides", docs_path %>
+  </div>
+
+  <div class="text-muted small mt-3 d-none d-print-block">
+    LoadNTrucks — Five Points Service, Inc. &nbsp;|&nbsp; Printed <%= Date.today.strftime("%B %d, %Y") %>
+  </div>
+
+</div>
+
+<style>
+  @media print {
+    #sidebar, .sidebar, nav, .sidebar-overlay, .navbar, footer { display: none !important; }
+    .main-content { margin-left: 0 !important; }
+    body { font-size: 12px; }
+    h5 { margin-top: 1.5rem; }
+  }
+</style>

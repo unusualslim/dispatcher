@@ -1,4 +1,5 @@
 <% current = controller_name %>
+<% imports_active = %w[customer_order_imports inventory_imports warehouse_transaction_imports bom_imports min_max_imports customer_order_products].include?(current) && (current != 'customer_order_products' || request.path == product_code_links_path) %>
 
 <nav id="sidebar" class="sidebar d-flex flex-column">
   <!-- Brand -->
@@ -39,11 +40,6 @@
           <li class="<%= 'active' if current == 'customer_orders' && action_name != 'dashboard' %>">
             <%= link_to customer_orders_path do %>
               <i class="bi bi-cart3"></i> All Orders
-            <% end %>
-          </li>
-          <li class="<%= 'active' if request.path == product_code_links_path %>">
-            <%= link_to product_code_links_path do %>
-              <i class="bi bi-link-45deg"></i> Link ODOR Products
             <% end %>
           </li>
           <li class="<%= 'active' if action_name == 'view_dispatches' %>">
@@ -116,32 +112,53 @@
               <i class="bi bi-clock-history"></i> Inventory History
             <% end %>
           </li>
-          <li class="<%= 'active' if current == 'inventory_imports' %>">
-            <%= link_to new_inventory_import_path do %>
-              <i class="bi bi-upload"></i> Import from PDI
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'warehouse_transaction_imports' %>">
-            <%= link_to new_warehouse_transaction_import_path do %>
-              <i class="bi bi-clock-history"></i> Import Tx History
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'bom_imports' %>">
-            <%= link_to new_bom_import_path do %>
-              <i class="bi bi-diagram-3"></i> Import BOM
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'min_max_imports' %>">
-            <%= link_to new_min_max_import_path do %>
-              <i class="bi bi-sliders2"></i> Import Min/Max
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'docs' %>">
-            <%= link_to docs_path do %>
-              <i class="bi bi-journal-text"></i> Help & Guides
-            <% end %>
-          </li>
         </ul>
+
+        <!-- IMPORTS (collapsible) -->
+        <div class="sidebar-section-label">
+          <a class="sidebar-collapse-toggle d-flex justify-content-between align-items-center"
+             data-bs-toggle="collapse"
+             href="#importsCollapse"
+             aria-expanded="<%= imports_active ? 'true' : 'false' %>"
+             aria-controls="importsCollapse">
+            <span>Imports</span>
+            <i class="bi bi-chevron-down sidebar-collapse-chevron"></i>
+          </a>
+        </div>
+        <div class="collapse <%= 'show' if imports_active %>" id="importsCollapse">
+          <ul class="sidebar-nav">
+            <li class="<%= 'active' if current == 'customer_order_imports' %>">
+              <%= link_to new_customer_order_import_path do %>
+                <i class="bi bi-file-earmark-arrow-up"></i> Customer Orders
+              <% end %>
+            </li>
+            <li class="<%= 'active' if request.path == product_code_links_path %>">
+              <%= link_to product_code_links_path do %>
+                <i class="bi bi-link-45deg"></i> Link ODOR Products
+              <% end %>
+            </li>
+            <li class="<%= 'active' if current == 'inventory_imports' %>">
+              <%= link_to new_inventory_import_path do %>
+                <i class="bi bi-upload"></i> PDI Inventory
+              <% end %>
+            </li>
+            <li class="<%= 'active' if current == 'warehouse_transaction_imports' %>">
+              <%= link_to new_warehouse_transaction_import_path do %>
+                <i class="bi bi-clock-history"></i> Tx History
+              <% end %>
+            </li>
+            <li class="<%= 'active' if current == 'bom_imports' %>">
+              <%= link_to new_bom_import_path do %>
+                <i class="bi bi-diagram-3"></i> BOM
+              <% end %>
+            </li>
+            <li class="<%= 'active' if current == 'min_max_imports' %>">
+              <%= link_to new_min_max_import_path do %>
+                <i class="bi bi-sliders2"></i> Min/Max
+              <% end %>
+            </li>
+          </ul>
+        </div>
 
         <!-- MASTER DATA -->
         <div class="sidebar-section-label">Master Data</div>
@@ -178,7 +195,7 @@
           </li>
         </ul>
 
-        <!-- COMMS -->
+        <!-- SYSTEM -->
         <div class="sidebar-section-label">System</div>
         <ul class="sidebar-nav">
           <li class="<%= 'active' if current == 'automated_processes' %>">
@@ -186,10 +203,11 @@
               <i class="bi bi-arrow-repeat"></i> Automated Processes
             <% end %>
           </li>
-        </ul>
-
-        <div class="sidebar-section-label">Communications</div>
-        <ul class="sidebar-nav">
+          <li class="<%= 'active' if current == 'docs' %>">
+            <%= link_to docs_path do %>
+              <i class="bi bi-journal-text"></i> Help & Guides
+            <% end %>
+          </li>
           <li class="<%= 'active' if current == 'dispatch_messages' %>">
             <%= link_to dispatch_messages_path do %>
               <i class="bi bi-chat-dots"></i> Messages

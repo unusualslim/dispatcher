@@ -82,6 +82,25 @@ html, body {
   padding: 16px 16px 4px;
 }
 
+.sidebar-collapse-toggle {
+  color: var(--sidebar-label);
+  text-decoration: none;
+  width: 100%;
+}
+
+.sidebar-collapse-toggle:hover {
+  color: var(--sidebar-text);
+}
+
+.sidebar-collapse-chevron {
+  font-size: 0.65rem;
+  transition: transform 0.2s ease;
+}
+
+.sidebar-collapse-toggle[aria-expanded="true"] .sidebar-collapse-chevron {
+  transform: rotate(180deg);
+}
+
 .sidebar-nav {
   list-style: none;
   padding: 0;
