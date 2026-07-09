@@ -36,8 +36,10 @@ class CustomerOrderImportService
   def parse_orders
     full_text = extract_text
 
-    # Split on each "Order No:" occurrence (2+ spaces of indent before it)
-    blocks = full_text.split(/(?=[ \t]{2,}Order No:\s+OD-)/)
+    # Split on newlines immediately before each indented "Order No:" line.
+    # Using \n in the pattern (rather than a lookahead alone) prevents the
+    # lookahead from matching at every leading-space position on the same line.
+    blocks = full_text.split(/\n(?=[ \t]{2,}Order No:\s+OD-)/)
     blocks.shift # discard text before the first order (page 1 report settings)
 
     blocks.filter_map { |block| parse_order_block(block) }
