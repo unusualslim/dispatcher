@@ -1,0 +1,303 @@
+<div class="wh-kanban">
+
+  <div class="wh-header">
+    <div class="wh-header-title">
+      <i class="bi bi-boxes"></i> Warehouse Dispatch Board
+    </div>
+    <div class="wh-header-date"><%= Date.today.strftime("%A, %B %-d, %Y") %></div>
+  </div>
+
+  <div class="wh-columns">
+
+    <% [@yesterday, @today, @tomorrow].each do |date| %>
+      <div class="wh-column">
+
+        <div class="wh-column-header <%= date == @today ? 'wh-today' : '' %>">
+          <% if date == @yesterday %>
+            <span class="wh-day-label">Yesterday</span>
+          <% elsif date == @today %>
+            <span class="wh-day-label">Today</span>
+          <% else %>
+            <span class="wh-day-label">Tomorrow</span>
+          <% end %>
+          <span class="wh-day-date"><%= date.strftime("%a %-d") %></span>
+        </div>
+
+        <div class="wh-cards">
+          <% dispatches_for_date = @dispatches[date] || [] %>
+
+          <% if dispatches_for_date.empty? %>
+            <div class="wh-empty">No dispatches</div>
+          <% end %>
+
+          <% dispatches_for_date.each do |dispatch| %>
+            <%
+              changed_today = dispatch.customer_orders.any? { |o|
+                o.updated_at >= Time.zone.today.beginning_of_day
+              }
+            %>
+            <div class="wh-card <%= 'wh-card-changed' if changed_today %>">
+
+              <div class="wh-card-header">
+                <div class="wh-card-driver">
+                  <i class="bi bi-truck"></i>
+                  <%= dispatch.driver&.full_name || "Unassigned" %>
+                  <% if dispatch.truck %>
+                    <span class="wh-truck-badge"><%= dispatch.truck.name %></span>
+                  <% end %>
+                </div>
+                <% if changed_today %>
+                  <span class="wh-changed-badge">Updated Today</span>
+                <% end %>
+              </div>
+
+              <% dispatch.customer_orders.each do |order| %>
+                <div class="wh-order">
+                  <div class="wh-order-header">
+                    <span class="wh-customer"><%= order.customer&.name || "—" %></span>
+                    <% if order.external_order_no.present? %>
+                      <span class="wh-ode"><%= order.external_order_no %></span>
+                    <% end %>
+                  </div>
+                  <% if order.location %>
+                    <div class="wh-location">
+                      <i class="bi bi-geo-alt"></i> <%= order.location.company_name %>
+                    </div>
+                  <% end %>
+                  <% if order.customer_order_products.any? %>
+                    <ul class="wh-products">
+                      <% order.customer_order_products.each do |cop| %>
+                        <li>
+                          <span class="wh-qty"><%= cop.quantity&.to_i %></span>
+                          <span class="wh-product-name"><%= cop.product&.name || cop.product_name %></span>
+                        </li>
+                      <% end %>
+                    </ul>
+                  <% end %>
+                </div>
+              <% end %>
+
+              <% if dispatch.customer_orders.empty? %>
+                <div class="wh-order text-muted fst-italic">No orders assigned</div>
+              <% end %>
+
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+  </div>
+</div>
+
+<style>
+  /* ── Layout ── */
+  .wh-kanban {
+    min-height: 100vh;
+    background: #f0f2f5;
+    padding: 0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+  }
+
+  .wh-header {
+    background: #1e2a3a;
+    color: #fff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 24px;
+  }
+
+  .wh-header-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+  }
+
+  .wh-header-date {
+    font-size: 1rem;
+    opacity: 0.7;
+  }
+
+  .wh-columns {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    height: calc(100vh - 56px);
+    overflow: hidden;
+  }
+
+  .wh-column {
+    display: flex;
+    flex-direction: column;
+    border-right: 2px solid #d0d7e2;
+    overflow: hidden;
+  }
+
+  .wh-column:last-child { border-right: none; }
+
+  .wh-column-header {
+    background: #dde3ed;
+    padding: 10px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 2px solid #c0c8d8;
+    flex-shrink: 0;
+  }
+
+  .wh-column-header.wh-today {
+    background: #1e2a3a;
+    color: #fff;
+    border-bottom-color: #375a7f;
+  }
+
+  .wh-day-label {
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .wh-day-date {
+    font-size: 0.85rem;
+    opacity: 0.65;
+  }
+
+  .wh-cards {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  /* ── Cards ── */
+  .wh-card {
+    background: #fff;
+    border-radius: 8px;
+    border: 2px solid #d0d7e2;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  }
+
+  .wh-card-changed {
+    border-color: #f0b429;
+    background: #fffdf0;
+  }
+
+  .wh-card-header {
+    background: #f7f9fb;
+    padding: 8px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e4e9f0;
+  }
+
+  .wh-card-changed .wh-card-header {
+    background: #fef9e7;
+    border-bottom-color: #f0d080;
+  }
+
+  .wh-card-driver {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1e2a3a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .wh-truck-badge {
+    font-size: 0.72rem;
+    font-weight: 600;
+    background: #e2e8f0;
+    color: #4a5568;
+    border-radius: 4px;
+    padding: 1px 6px;
+  }
+
+  .wh-changed-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    background: #f0b429;
+    color: #7b5200;
+    border-radius: 4px;
+    padding: 2px 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── Orders within a card ── */
+  .wh-order {
+    padding: 8px 12px;
+    border-bottom: 1px solid #edf0f5;
+  }
+
+  .wh-order:last-child { border-bottom: none; }
+
+  .wh-order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 2px;
+  }
+
+  .wh-customer {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #2d3748;
+  }
+
+  .wh-ode {
+    font-size: 0.72rem;
+    font-family: monospace;
+    color: #718096;
+    background: #edf2f7;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  .wh-location {
+    font-size: 0.78rem;
+    color: #718096;
+    margin-bottom: 4px;
+  }
+
+  .wh-products {
+    list-style: none;
+    margin: 4px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .wh-products li {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: #2d3748;
+  }
+
+  .wh-qty {
+    font-weight: 800;
+    font-size: 1rem;
+    color: #1e2a3a;
+    min-width: 28px;
+    text-align: right;
+  }
+
+  .wh-product-name { color: #4a5568; }
+
+  .wh-empty {
+    color: #a0aec0;
+    font-style: italic;
+    text-align: center;
+    padding: 24px;
+    font-size: 0.9rem;
+  }
+</style>

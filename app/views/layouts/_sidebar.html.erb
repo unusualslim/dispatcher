@@ -62,6 +62,11 @@
               <i class="bi bi-map"></i> Map
             <% end %>
           </li>
+          <li class="<%= 'active' if current == 'warehouse' %>">
+            <%= link_to warehouse_kanban_path do %>
+              <i class="bi bi-tv"></i> Warehouse Board
+            <% end %>
+          </li>
         </ul>
 
         <!-- MANUFACTURING -->
