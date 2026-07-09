@@ -5,7 +5,19 @@ class WarehouseController < ApplicationController
     yesterday = Date.today - 1
     tomorrow  = Date.today + 1
 
-    @dispatches = Dispatch
+    @terminals = Location.where(location_category_id: 1).order(:company_name)
+
+    # Filter by terminal if selected
+    if params[:location_id].present?
+      @selected_terminal = @terminals.find_by(id: params[:location_id])
+      origin_string = @selected_terminal&.full_address_with_company
+      dispatches_scope = Dispatch.where(origin: origin_string)
+    else
+      @selected_terminal = nil
+      dispatches_scope = Dispatch.all
+    end
+
+    @dispatches = dispatches_scope
       .includes(:driver, :truck, customer_orders: [:customer, :location, { customer_order_products: :product }])
       .where.not(status: :deleted)
       .where(dispatch_date: yesterday..tomorrow)

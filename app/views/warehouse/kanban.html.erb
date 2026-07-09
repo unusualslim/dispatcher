@@ -7,6 +7,19 @@
     <div class="wh-header-date"><%= Date.today.strftime("%A, %B %-d, %Y") %></div>
   </div>
 
+  <div class="wh-terminals">
+    <%= link_to warehouse_kanban_path,
+          class: "wh-terminal-tab #{@selected_terminal.nil? ? 'active' : ''}" do %>
+      <i class="bi bi-grid"></i> All
+    <% end %>
+    <% @terminals.each do |terminal| %>
+      <%= link_to warehouse_kanban_path(location_id: terminal.id),
+            class: "wh-terminal-tab #{@selected_terminal&.id == terminal.id ? 'active' : ''}" do %>
+        <i class="bi bi-building"></i> <%= terminal.company_name %>
+      <% end %>
+    <% end %>
+  </div>
+
   <div class="wh-columns">
 
     <% [@yesterday, @today, @tomorrow].each do |date| %>
@@ -119,11 +132,39 @@
     opacity: 0.7;
   }
 
+  .wh-terminals {
+    background: #16202e;
+    display: flex;
+    gap: 4px;
+    padding: 0 16px;
+    border-bottom: 2px solid #0d1520;
+  }
+
+  .wh-terminal-tab {
+    color: #7a9bbf;
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-bottom: 3px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+  }
+
+  .wh-terminal-tab:hover {
+    color: #c8d6e5;
+  }
+
+  .wh-terminal-tab.active {
+    color: #fff;
+    border-bottom-color: #4a9eff;
+  }
+
   .wh-columns {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 0;
-    height: calc(100vh - 56px);
+    height: calc(100vh - 98px);
     overflow: hidden;
   }
 
