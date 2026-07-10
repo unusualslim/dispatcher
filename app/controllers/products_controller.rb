@@ -10,9 +10,10 @@ class ProductsController < ApplicationController
         @products = @products.where("name ILIKE ? OR id ILIKE ?", "%#{params[:query]}%", "%#{params[:query]}%")
       end
 
-      case params[:type]
+      case params[:type].presence || 'finished'
       when 'raw'      then @products = @products.where(is_raw_material: true)
       when 'finished' then @products = @products.where(is_raw_material: false)
+      # 'all' — no filter
       end
 
       if params[:category].present?

@@ -18,10 +18,11 @@
                 autocomplete: 'off' %>
         </div>
 
+        <% active_type = params[:type].presence || 'finished' %>
         <select name="type" class="form-select form-select-sm" style="max-width: 160px;" onchange="this.form.requestSubmit()">
-          <option value="">All Types</option>
-          <option value="raw"      <%= 'selected' if params[:type] == 'raw' %>>Raw Materials</option>
-          <option value="finished" <%= 'selected' if params[:type] == 'finished' %>>Finished Goods</option>
+          <option value="all"     <%= 'selected' if active_type == 'all' %>>All Types</option>
+          <option value="finished" <%= 'selected' if active_type == 'finished' %>>Finished Goods</option>
+          <option value="raw"      <%= 'selected' if active_type == 'raw' %>>Raw Materials</option>
         </select>
 
         <select name="category" class="form-select form-select-sm" style="max-width: 200px;" onchange="this.form.requestSubmit()">
@@ -58,6 +59,7 @@
   <% if @products.empty? %>
     <div class="text-center text-muted py-5">No products match your filters.</div>
   <% else %>
+    <div class="text-muted small mb-2"><%= @products.size %> product<%= 's' unless @products.size == 1 %> found</div>
     <div class="table-responsive">
       <table class="table table-hover align-middle">
         <thead class="table-light">
