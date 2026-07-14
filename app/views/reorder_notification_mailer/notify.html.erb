@@ -14,11 +14,13 @@
   </thead>
   <tbody>
     <% @purchase_orders.each do |po| %>
+      <% line = po.line_items.first %>
+      <% product = line&.product %>
       <tr>
-        <td><%= po.product&.name || po.product_name %></td>
-        <td><%= number_with_precision(po.product&.current_stock, precision: 1) %> <%= po.product&.unit_of_measurement %></td>
-        <td><%= number_with_precision(po.product&.reorder_point, precision: 1) %></td>
-        <td><%= number_with_precision(po.quantity, precision: 1) %></td>
+        <td><%= product&.name || line&.display_name %></td>
+        <td><%= number_with_precision(product&.current_stock, precision: 1) %> <%= product&.unit_of_measurement %></td>
+        <td><%= number_with_precision(product&.reorder_point, precision: 1) %></td>
+        <td><%= number_with_precision(line&.quantity, precision: 1) %></td>
         <td><%= po.vendor&.name || 'None assigned' %></td>
       </tr>
     <% end %>

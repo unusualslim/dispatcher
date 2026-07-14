@@ -3,7 +3,8 @@ Hi <%= @user.first_name %>,
 The automated reorder check has created <%= @purchase_orders.count %> draft purchase order(s).
 
 <% @purchase_orders.each do |po| %>
-- <%= po.product&.name || po.product_name %>: <%= po.product&.current_stock %> on hand (reorder point: <%= po.product&.reorder_point %>), ordering <%= po.quantity %> from <%= po.vendor&.name || 'TBD' %>
+<% line = po.line_items.first; product = line&.product %>
+- <%= product&.name || line&.display_name %>: <%= product&.current_stock %> on hand (reorder point: <%= product&.reorder_point %>), ordering <%= line&.quantity %> from <%= po.vendor&.name || 'TBD' %>
 <% end %>
 
 Review and approve at: <%= purchase_orders_url %>

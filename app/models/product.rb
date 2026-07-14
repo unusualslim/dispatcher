@@ -11,7 +11,8 @@ class Product < ApplicationRecord
 
   has_many :production_order_components
   has_many :inventory_transactions
-  has_many :purchase_orders
+  has_many :purchase_order_line_items, foreign_key: :product_id, primary_key: :id
+  has_many :purchase_orders, through: :purchase_order_line_items
 
   accepts_nested_attributes_for :product_components, allow_destroy: true, reject_if: :all_blank
 

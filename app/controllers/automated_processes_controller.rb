@@ -6,6 +6,7 @@ class AutomatedProcessesController < ApplicationController
   PROCESSES = [
     { slug: 'pdi-vendor-sync',  name: 'PDI Vendor Sync',  job: 'PdiVendorSyncJob',  description: 'Syncs vendor list from PDI FTP (AP Vendor List.csv)' },
     { slug: 'pdi-product-sync', name: 'PDI Product Sync', job: 'PdiProductSyncJob', description: 'Syncs product inventory from PDI FTP (LoadNTrucks-CurrentInventory.xls)' },
+    { slug: 'pdi-po-sync',      name: 'PDI Purchase Order Sync', job: 'PdiPurchaseOrderSyncJob', description: 'Imports purchase orders from PDI FTP (Warehouse Transaction Report.xls)' },
   ].freeze
 
   def index

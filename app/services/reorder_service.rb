@@ -7,20 +7,24 @@ class ReorderService
     created = []
     Product.below_reorder_point.each do |product|
       # Skip if there's already a non-cancelled PO in flight for this product
-      next if PurchaseOrder.active.exists?(product: product)
+      next if PurchaseOrder.active.joins(:line_items)
+                           .where(purchase_order_line_items: { product_id: product.id })
+                           .exists?
 
       vendor       = preferred_vendor_for(product)
       qty_to_order = calculate_order_quantity(product)
 
       po = PurchaseOrder.create!(
-        product:        product,
         vendor:         vendor,
-        quantity:       qty_to_order,
-        unit_cost:      product.cost_per_unit,
         status:         'draft',
         trigger_type:   'auto_reorder',
         trigger_reason: "Stock (#{product.current_stock} #{product.unit_of_measurement}) " \
                         "at or below reorder point (#{product.reorder_point} #{product.unit_of_measurement})"
+      )
+      po.line_items.create!(
+        product:   product,
+        quantity:  qty_to_order,
+        unit_cost: product.cost_per_unit
       )
       created << po
     end
@@ -30,8 +34,11 @@ class ReorderService
   private
 
   def preferred_vendor_for(product)
-    PurchaseOrder.where(product: product).order(created_at: :desc).first&.vendor ||
-      Vendor.first
+    last_po = PurchaseOrder.joins(:line_items)
+                           .where(purchase_order_line_items: { product_id: product.id })
+                           .order(created_at: :desc)
+                           .first
+    last_po&.vendor || Vendor.first
   end
 
   def calculate_order_quantity(product)

@@ -153,7 +153,7 @@ class ProductsController < ApplicationController
                                      .limit(10)
       @open_purchase_orders = @product.purchase_orders
                                       .where(status: PurchaseOrder::STATUSES - %w[received cancelled])
-                                      .includes(:vendor)
+                                      .includes(:vendor, :line_items)
                                       .order(created_at: :desc)
     end
   

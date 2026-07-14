@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_07_09_120000) do
+ActiveRecord::Schema[7.0].define(version: 2026_07_13_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -362,9 +362,20 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_09_120000) do
     t.decimal "max_stock"
   end
 
-  create_table "purchase_orders", force: :cascade do |t|
-    t.decimal "quantity", precision: 14, scale: 3, null: false
+  create_table "purchase_order_line_items", force: :cascade do |t|
+    t.bigint "purchase_order_id", null: false
+    t.string "product_id"
+    t.string "product_name"
+    t.decimal "quantity", precision: 14, scale: 3
     t.decimal "unit_cost", precision: 12, scale: 4
+    t.string "package_code"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_id"], name: "index_purchase_order_line_items_on_product_id"
+    t.index ["purchase_order_id"], name: "index_purchase_order_line_items_on_purchase_order_id"
+  end
+
+  create_table "purchase_orders", force: :cascade do |t|
     t.string "status", default: "draft", null: false
     t.string "trigger_type"
     t.text "trigger_reason"
@@ -376,10 +387,10 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_09_120000) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "product_name"
-    t.string "product_id"
     t.string "vendor_id"
-    t.index ["product_id"], name: "index_purchase_orders_on_product_id"
+    t.string "pdi_reference"
+    t.datetime "posted_at"
+    t.index ["pdi_reference"], name: "index_purchase_orders_on_pdi_reference", unique: true
     t.index ["status"], name: "index_purchase_orders_on_status"
     t.index ["trigger_type"], name: "index_purchase_orders_on_trigger_type"
   end
@@ -517,7 +528,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_09_120000) do
   add_foreign_key "production_orders", "customers"
   add_foreign_key "production_orders", "locations"
   add_foreign_key "production_orders", "products"
-  add_foreign_key "purchase_orders", "products"
+  add_foreign_key "purchase_order_line_items", "purchase_orders"
   add_foreign_key "purchase_orders", "vendors"
   add_foreign_key "quote_products", "products"
   add_foreign_key "quote_products", "quotes"

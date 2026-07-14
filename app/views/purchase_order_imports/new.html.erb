@@ -1,0 +1,24 @@
+<div class="container mt-4" style="max-width: 600px;">
+  <h1 class="mb-1">Import PDI Purchase Orders</h1>
+  <p class="text-muted mb-4">Upload a PDI Warehouse Transaction Report (XLS/XLSX) to import purchase orders.</p>
+
+  <%= form_with url: preview_purchase_order_imports_path, method: :post, multipart: true, data: { turbo: false } do |f| %>
+    <div class="card shadow-sm mb-3">
+      <div class="card-body row g-3">
+        <div class="col-12">
+          <%= f.label :file, "Warehouse Transaction Report", class: "form-label fw-semibold" %>
+          <%= f.file_field :file, accept: ".xls,.xlsx", class: "form-control" %>
+          <div class="form-text">Export from PDI: Reports → Warehouse Transaction Report, filtered to Purchases only.</div>
+        </div>
+        <div class="col-md-4">
+          <%= f.label :import_status, "Import as Status", class: "form-label fw-semibold" %>
+          <%= f.select :import_status,
+                PurchaseOrder::STATUSES.map { |s| [s.humanize, s] },
+                { selected: 'received' }, class: 'form-select' %>
+        </div>
+      </div>
+    </div>
+    <%= f.submit "Preview Import", class: "btn btn-primary" %>
+    <%= link_to "Cancel", purchase_orders_path, class: "btn btn-outline-secondary ms-2" %>
+  <% end %>
+</div>

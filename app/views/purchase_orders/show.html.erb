@@ -1,4 +1,4 @@
-<div class="container mt-4" style="max-width: 700px;">
+<div class="container mt-4" style="max-width: 800px;">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="mb-0">Purchase Order #<%= @purchase_order.id %></h1>
     <%= link_to 'All POs', purchase_orders_path, class: 'btn btn-outline-secondary btn-sm' %>
@@ -20,28 +20,16 @@
                     'submitted' => 'info', 'received' => 'success', 'cancelled' => 'danger' }
              color = bg[@purchase_order.status] || 'secondary' %>
           <span class="badge bg-<%= color %>"><%= @purchase_order.status.humanize %></span>
-        </dd>
-
-        <dt class="col-4">Product</dt>
-        <dd class="col-8">
-          <% if @purchase_order.product %>
-            <%= link_to @purchase_order.product.name, product_path(@purchase_order.product) %>
-          <% else %>
-            <%= @purchase_order.product_name %>
+          <% if @purchase_order.posted? %>
+            <span class="badge bg-success ms-1">Inventory Posted</span>
           <% end %>
         </dd>
 
         <dt class="col-4">Vendor</dt>
         <dd class="col-8"><%= @purchase_order.vendor.name %></dd>
 
-        <dt class="col-4">Quantity</dt>
-        <dd class="col-8"><%= number_with_precision(@purchase_order.quantity, precision: 1) %> <%= @purchase_order.product.unit_of_measurement %></dd>
-
-        <dt class="col-4">Unit Cost</dt>
-        <dd class="col-8"><%= @purchase_order.unit_cost ? number_to_currency(@purchase_order.unit_cost) : '—' %></dd>
-
         <dt class="col-4">Total Cost</dt>
-        <dd class="col-8"><%= @purchase_order.total_cost ? number_to_currency(@purchase_order.total_cost) : '—' %></dd>
+        <dd class="col-8"><%= number_to_currency(@purchase_order.total_cost) %></dd>
 
         <dt class="col-4">Trigger</dt>
         <dd class="col-8"><%= @purchase_order.trigger_type&.humanize || '—' %></dd>
@@ -54,6 +42,11 @@
         <dt class="col-4">Expected Delivery</dt>
         <dd class="col-8"><%= @purchase_order.expected_delivery_date&.strftime('%B %d, %Y') || '—' %></dd>
 
+        <% if @purchase_order.pdi_reference.present? %>
+          <dt class="col-4">PDI Reference</dt>
+          <dd class="col-8 font-monospace"><%= @purchase_order.pdi_reference %></dd>
+        <% end %>
+
         <% if @purchase_order.approved_by.present? %>
           <dt class="col-4">Approved By</dt>
           <dd class="col-8"><%= @purchase_order.approved_by.full_name %></dd>
@@ -61,7 +54,12 @@
 
         <% if @purchase_order.received_at.present? %>
           <dt class="col-4">Received At</dt>
-          <dd class="col-8"><%= @purchase_order.received_at.strftime('%B %d, %Y %H:%M') %></dd>
+          <dd class="col-8"><%= @purchase_order.received_at.strftime('%B %d, %Y') %></dd>
+        <% end %>
+
+        <% if @purchase_order.posted_at.present? %>
+          <dt class="col-4">Posted to Inventory</dt>
+          <dd class="col-8"><%= @purchase_order.posted_at.strftime('%B %d, %Y %H:%M') %></dd>
         <% end %>
 
         <% if @purchase_order.notes.present? %>
@@ -71,6 +69,42 @@
       </dl>
     </div>
   </div>
+
+  <h5 class="mb-2">Line Items</h5>
+  <table class="table table-sm table-bordered mb-4">
+    <thead class="table-light">
+      <tr>
+        <th>Product</th>
+        <th>Package</th>
+        <th class="text-end">Quantity</th>
+        <th class="text-end">Unit Cost</th>
+        <th class="text-end">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @purchase_order.line_items.each do |line| %>
+        <tr>
+          <td>
+            <% if line.product %>
+              <%= link_to line.product.name, product_path(line.product) %>
+            <% else %>
+              <span class="text-muted"><%= line.display_name %></span>
+            <% end %>
+          </td>
+          <td><%= line.package_code.presence || '—' %></td>
+          <td class="text-end"><%= number_with_precision(line.quantity, precision: 2, strip_insignificant_zeros: true) %></td>
+          <td class="text-end"><%= line.unit_cost ? number_to_currency(line.unit_cost) : '—' %></td>
+          <td class="text-end"><%= line.total_cost ? number_to_currency(line.total_cost) : '—' %></td>
+        </tr>
+      <% end %>
+    </tbody>
+    <tfoot>
+      <tr class="fw-semibold">
+        <td colspan="4" class="text-end">Total</td>
+        <td class="text-end"><%= number_to_currency(@purchase_order.total_cost) %></td>
+      </tr>
+    </tfoot>
+  </table>
 
   <div class="d-flex gap-2">
     <% if @purchase_order.status == 'draft' %>
@@ -86,7 +120,12 @@
     <% if @purchase_order.status == 'submitted' %>
       <%= button_to 'Mark Received', receive_purchase_order_path(@purchase_order),
             method: :patch, class: 'btn btn-primary',
-            data: { confirm: "Mark received? This will add #{number_with_precision(@purchase_order.quantity, precision: 1)} #{@purchase_order.product&.unit_of_measurement} to inventory." } %>
+            data: { confirm: 'Confirm physical receipt of this order?' } %>
+    <% end %>
+    <% if @purchase_order.status == 'received' && !@purchase_order.posted? %>
+      <%= button_to 'Post to Inventory', post_to_inventory_purchase_order_path(@purchase_order),
+            method: :patch, class: 'btn btn-success',
+            data: { confirm: 'Post this PO to inventory? This will update stock levels for all matched products.' } %>
     <% end %>
   </div>
 </div>

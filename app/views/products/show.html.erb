@@ -71,10 +71,11 @@
           </thead>
           <tbody>
             <% @open_purchase_orders.each do |po| %>
+              <% line_qty = po.line_items.find { |li| li.product_id == @product.id }&.quantity %>
               <tr>
                 <td><%= link_to "##{po.id}", purchase_order_path(po), class: 'fw-semibold text-decoration-none' %></td>
                 <td><%= po.vendor.name %></td>
-                <td><%= number_with_precision(po.quantity, precision: 1) %> <%= @product.unit_of_measurement %></td>
+                <td><%= line_qty ? "#{number_with_precision(line_qty, precision: 1)} #{@product.unit_of_measurement}" : '—' %></td>
                 <td><span class="badge bg-secondary"><%= po.status.humanize %></span></td>
                 <td><%= po.expected_delivery_date&.strftime("%b %-d, %Y") || '—' %></td>
               </tr>

@@ -115,9 +115,16 @@ Rails.application.routes.draw do
       patch :approve
       patch :submit
       patch :receive
+      patch :post_to_inventory
     end
     collection do
       get :export_pdi
+    end
+  end
+
+  resource :purchase_order_imports, only: [:new, :create] do
+    collection do
+      post :preview
     end
   end
 

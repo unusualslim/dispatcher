@@ -125,13 +125,13 @@
           <div class="p-3 text-muted small text-center">No draft purchase orders.</div>
         <% else %>
           <table class="table table-sm mb-0">
-            <thead class="table-light"><tr><th>Product</th><th>Vendor</th><th>Qty</th><th></th></tr></thead>
+            <thead class="table-light"><tr><th>Items</th><th>Vendor</th><th>Total</th><th></th></tr></thead>
             <tbody>
               <% @draft_pos.each do |po| %>
                 <tr>
-                  <td><%= po.product&.name %></td>
+                  <td><%= po.line_items.map(&:display_name).join(', ').truncate(40) %></td>
                   <td><%= po.vendor&.name %></td>
-                  <td><%= number_with_precision(po.quantity, precision: 1) %></td>
+                  <td><%= number_to_currency(po.total_cost) %></td>
                   <td><%= link_to 'View', purchase_order_path(po), class: 'btn btn-xs btn-sm btn-outline-secondary' %></td>
                 </tr>
               <% end %>
@@ -153,13 +153,13 @@
           <div class="p-3 text-muted small text-center">No POs awaiting approval.</div>
         <% else %>
           <table class="table table-sm mb-0">
-            <thead class="table-light"><tr><th>Product</th><th>Vendor</th><th>Qty</th><th></th></tr></thead>
+            <thead class="table-light"><tr><th>Items</th><th>Vendor</th><th>Total</th><th></th></tr></thead>
             <tbody>
               <% @pending_pos.each do |po| %>
                 <tr>
-                  <td><%= po.product&.name %></td>
+                  <td><%= po.line_items.map(&:display_name).join(', ').truncate(40) %></td>
                   <td><%= po.vendor&.name %></td>
-                  <td><%= number_with_precision(po.quantity, precision: 1) %></td>
+                  <td><%= number_to_currency(po.total_cost) %></td>
                   <td><%= link_to 'View', purchase_order_path(po), class: 'btn btn-sm btn-outline-secondary' %></td>
                 </tr>
               <% end %>

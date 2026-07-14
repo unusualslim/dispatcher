@@ -2,17 +2,21 @@ require 'csv'
 
 class PurchaseOrdersController < ApplicationController
   before_action :require_admin!
-  before_action :set_purchase_order, only: [:show, :approve, :submit, :receive]
+  before_action :set_purchase_order, only: [:show, :approve, :submit, :receive, :post_to_inventory]
 
   def index
-    @purchase_orders = PurchaseOrder.includes(:product, :vendor)
-                                    .order(created_at: :desc)
+    @status_filter = params[:status].presence
+    @status_counts = PurchaseOrder::STATUSES.index_with { |s| PurchaseOrder.where(status: s).count }
+    scope = PurchaseOrder.includes(:vendor, :line_items).order(created_at: :desc)
+    scope = scope.where(status: @status_filter) if @status_filter
+    @purchase_orders = scope
   end
 
   def new
-    @purchase_order = PurchaseOrder.new(product_id: params[:product_id])
-    @products = Product.order(:name)
+    @purchase_order = PurchaseOrder.new
+    @purchase_order.line_items.build
     @vendors  = Vendor.order(:name)
+    @products = Product.order(:name)
   end
 
   def create
@@ -23,8 +27,8 @@ class PurchaseOrdersController < ApplicationController
     if @purchase_order.save
       redirect_to purchase_orders_path, notice: 'Purchase order created.'
     else
-      @products = Product.order(:name)
       @vendors  = Vendor.order(:name)
+      @products = Product.order(:name)
       render :new, status: :unprocessable_entity
     end
   end
@@ -35,22 +39,24 @@ class PurchaseOrdersController < ApplicationController
   PDI_SITE_ID = 2
 
   def export_pdi
-    pos = PurchaseOrder.includes(:product, :vendor)
+    pos = PurchaseOrder.includes(:vendor, line_items: :product)
                        .where(status: %w[approved submitted])
                        .order(:id)
 
     csv = CSV.generate do |out|
       pos.each do |po|
-        vendor     = po.vendor
-        product    = po.product
-        today      = Date.today.strftime('%-m/%-d/%Y')
-        delivery   = (po.expected_delivery_date || Date.today).strftime('%-m/%-d/%Y')
-        total      = po.total_cost&.to_f || 0
+        vendor   = po.vendor
+        today    = Date.today.strftime('%-m/%-d/%Y')
+        delivery = (po.expected_delivery_date || Date.today).strftime('%-m/%-d/%Y')
+        total    = po.total_cost.to_f
 
         out << ['REM', 'Vendor ID', 'PO Number', 'Business Date', 'Order Date', 'Delivery Date', '', '', '', '', '', '', 'Invoice Total']
         out << ['POH', vendor.id, '', today, today, delivery, '', '', '', '', '', '', total]
         out << ['REM', 'Site ID', 'Product ID', 'Package Code', '', '', 'Inventory Package Qty', 'Invoice Qty', 'Delivery qty', '', 'Billing Units Costs', '', '']
-        out << ['POD', PDI_SITE_ID, product&.id, product&.pdi_package_code, '', '', po.quantity.to_f, po.quantity.to_f, '', '', po.unit_cost&.to_f, '', '']
+        po.line_items.each do |line|
+          out << ['POD', PDI_SITE_ID, line.product_id, line.product&.pdi_package_code || line.package_code,
+                  '', '', line.quantity.to_f, line.quantity.to_f, '', '', line.unit_cost&.to_f, '', '']
+        end
       end
     end
 
@@ -73,21 +79,31 @@ class PurchaseOrdersController < ApplicationController
 
   def receive
     @purchase_order.mark_received!(current_user)
-    redirect_to @purchase_order, notice: "Received #{@purchase_order.quantity} #{@purchase_order.product.unit_of_measurement}. Stock updated."
+    redirect_to @purchase_order, notice: 'Marked as received. Post to inventory when ready.'
   rescue => e
     redirect_to @purchase_order, alert: "Could not mark received: #{e.message}"
+  end
+
+  def post_to_inventory
+    if @purchase_order.post_to_inventory!(current_user)
+      redirect_to @purchase_order, notice: 'Inventory updated successfully.'
+    else
+      redirect_to @purchase_order, alert: 'Already posted to inventory.'
+    end
+  rescue => e
+    redirect_to @purchase_order, alert: "Could not post to inventory: #{e.message}"
   end
 
   private
 
   def set_purchase_order
-    @purchase_order = PurchaseOrder.includes(:product, :vendor).find(params[:id])
+    @purchase_order = PurchaseOrder.includes(:vendor, line_items: :product).find(params[:id])
   end
 
   def purchase_order_params
     params.require(:purchase_order).permit(
-      :product_id, :vendor_id, :quantity, :unit_cost,
-      :trigger_type, :notes, :expected_delivery_date
+      :vendor_id, :trigger_type, :notes, :expected_delivery_date,
+      line_items_attributes: [:id, :product_id, :quantity, :unit_cost, :package_code, :_destroy]
     )
   end
 end
