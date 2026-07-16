@@ -15,6 +15,33 @@
     <h5 class="text-muted fw-semibold border-bottom pb-2 mb-3">July 2026</h5>
 
     <div class="mb-4">
+      <h6 class="fw-bold"><i class="bi bi-bag-arrow-up text-success me-2"></i>PDI Purchase Order Import</h6>
+      <p class="text-muted small mb-2">Purchase orders from PDI can now be imported directly into LoadNTrucks from the Warehouse Transaction Report (XLS/XLSX). The import handles multi-line POs, vendor matching, and deduplication automatically.</p>
+      <ul class="text-muted small mb-0">
+        <li>Go to <strong>Purchase Orders → Import from PDI</strong> and upload the report</li>
+        <li>A preview screen shows every PO that will be created before anything is saved</li>
+        <li>For vendors not found in the system, choose to skip, create new, or match to an existing vendor</li>
+        <li>Already-imported POs (matched by PDI reference number) are automatically skipped</li>
+        <li>Choose which status to import as — Received, Draft, Approved, etc.</li>
+      </ul>
+    </div>
+
+    <div class="mb-4">
+      <h6 class="fw-bold"><i class="bi bi-eye text-primary me-2"></i>Preview / Dry Run for All Imports</h6>
+      <p class="text-muted small mb-0">Every import now shows a preview screen before writing anything to the database. You can review exactly what will be created, updated, or skipped — then confirm or cancel. This applies to BOM, Min/Max, Warehouse Transaction, and Customer Order imports.</p>
+    </div>
+
+    <div class="mb-4">
+      <h6 class="fw-bold"><i class="bi bi-clock-history text-info me-2"></i>Purchase Order Import History</h6>
+      <p class="text-muted small mb-0">The PO import page now shows a full history of past imports — when they ran, how many POs were created or skipped, any warnings (such as vendors that couldn't be matched), and a link to re-download the original file.</p>
+    </div>
+
+    <div class="mb-4">
+      <h6 class="fw-bold"><i class="bi bi-table text-secondary me-2"></i>Multi-Line Purchase Orders</h6>
+      <p class="text-muted small mb-0">Purchase orders now support multiple products per order, matching how PDI structures them. Each line item tracks product, quantity, unit cost, and package code. The total cost is calculated across all lines, and inventory is posted per line when the PO is received.</p>
+    </div>
+
+    <div class="mb-4">
       <h6 class="fw-bold"><i class="bi bi-file-earmark-arrow-up text-primary me-2"></i>Import Orders from ODOR</h6>
       <p class="text-muted small mb-2">You can now upload the Trailing 30-Day Orders PDF report directly from ODOR into LoadNTrucks. The system reads the file and automatically creates or updates customer orders — no manual data entry needed.</p>
       <ul class="text-muted small mb-0">
