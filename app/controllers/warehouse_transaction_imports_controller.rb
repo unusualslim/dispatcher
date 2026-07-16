@@ -8,25 +8,44 @@ class WarehouseTransactionImportsController < ApplicationController
     @logs = SyncLog.for_process(PROCESS_NAME).limit(20)
   end
 
-  def create
+  def preview
     file = params[:file]
     return redirect_to new_warehouse_transaction_import_path, alert: "Please select a file." unless file
+    return redirect_to new_warehouse_transaction_import_path, alert: "File must be an XLS or XLSX file." unless file.original_filename.downcase.end_with?('.xls', '.xlsx')
 
-    unless file.original_filename.downcase.end_with?('.xls', '.xlsx')
-      return redirect_to new_warehouse_transaction_import_path, alert: "File must be an XLS or XLSX file."
+    ext = File.extname(file.original_filename).downcase
+    tmp = Tempfile.new(['wt_import', ext], binmode: true)
+    tmp.write(file.read)
+    tmp.flush
+    session[:wt_import_tmp_path]   = tmp.path
+    session[:wt_import_file_name]  = file.original_filename
+    ObjectSpace.undefine_finalizer(tmp)
+
+    @rows              = WarehouseTransactionImportService.new(tmp.path).preview
+    @import_count      = @rows.count { |r| r.action == :import }
+    @skip_no_product   = @rows.count { |r| r.action == :skip_no_product }
+    @skip_duplicate    = @rows.count { |r| r.action == :skip_duplicate }
+  end
+
+  def create
+    unless session[:wt_import_tmp_path].present? && File.exist?(session[:wt_import_tmp_path].to_s)
+      return redirect_to new_warehouse_transaction_import_path, alert: "Import session expired. Please re-upload the file."
     end
+
+    file_path = session[:wt_import_tmp_path]
+    file_name = session[:wt_import_file_name] || File.basename(file_path)
 
     log = SyncLog.create!(
       process_name: PROCESS_NAME,
       status:       'running',
-      file_name:    file.original_filename,
-      file_content: Base64.strict_encode64(file.read),
+      file_name:    file_name,
+      file_content: Base64.strict_encode64(File.binread(file_path)),
       file_binary:  true,
       started_at:   Time.current
     )
 
     begin
-      result = WarehouseTransactionImportService.call(file.path)
+      result = WarehouseTransactionImportService.call(file_path)
 
       log.update!(
         status:          'success',
@@ -45,6 +64,10 @@ class WarehouseTransactionImportsController < ApplicationController
     rescue => e
       log.update!(status: 'failed', completed_at: Time.current, error_message: e.message)
       flash[:alert] = "Import failed: #{e.message}"
+    ensure
+      File.delete(file_path) rescue nil
+      session.delete(:wt_import_tmp_path)
+      session.delete(:wt_import_file_name)
     end
 
     redirect_to new_warehouse_transaction_import_path

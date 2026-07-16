@@ -1,0 +1,54 @@
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <h1 class="mb-1">Preview Customer Order Import</h1>
+    <p class="text-muted mb-0">
+      <span class="text-success fw-semibold"><%= @create_count %> new orders will be created</span>
+      <% if @update_count > 0 %>
+        &nbsp;&middot;&nbsp;<span class="text-primary fw-semibold"><%= @update_count %> existing orders will be updated</span>
+      <% end %>
+    </p>
+  </div>
+  <%= link_to "Cancel", new_customer_order_import_path, class: "btn btn-outline-secondary" %>
+</div>
+
+<%= form_with url: customer_order_import_path, method: :post, data: { turbo: false } do |f| %>
+  <div class="card shadow-sm mb-3">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Order #</th>
+            <th>Customer</th>
+            <th>Order Date</th>
+            <th>ODOR Status</th>
+            <th class="text-end">Lines</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @rows.each do |row| %>
+            <tr>
+              <td class="font-monospace small"><%= row.external_order_no %></td>
+              <td><%= row.customer_name %></td>
+              <td class="small text-nowrap"><%= row.order_date&.strftime('%b %-d, %Y') || '—' %></td>
+              <td class="small"><%= row.odor_status %></td>
+              <td class="text-end"><%= row.line_items_count %></td>
+              <td>
+                <% if row.action == :create %>
+                  <span class="badge bg-success">Create</span>
+                <% else %>
+                  <span class="badge bg-primary">Update</span>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2 mt-3 mb-5">
+    <%= f.submit "Confirm Import", class: "btn btn-success btn-lg" %>
+    <%= link_to "Cancel", new_customer_order_import_path, class: "btn btn-outline-secondary btn-lg" %>
+  </div>
+<% end %>

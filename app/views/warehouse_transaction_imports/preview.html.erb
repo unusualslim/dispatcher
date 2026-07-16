@@ -1,0 +1,67 @@
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <h1 class="mb-1">Preview Warehouse Transaction Import</h1>
+    <p class="text-muted mb-0">
+      <span class="text-success fw-semibold"><%= @import_count %> transactions ready to import</span>
+      <% if @skip_no_product > 0 %>
+        &nbsp;&middot;&nbsp;<span class="text-danger fw-semibold"><%= @skip_no_product %> product(s) not found</span>
+      <% end %>
+      <% if @skip_duplicate > 0 %>
+        &nbsp;&middot;&nbsp;<span class="text-muted"><%= @skip_duplicate %> duplicates (will skip)</span>
+      <% end %>
+    </p>
+  </div>
+  <%= link_to "Cancel", new_warehouse_transaction_import_path, class: "btn btn-outline-secondary" %>
+</div>
+
+<%= form_with url: warehouse_transaction_import_path, method: :post, data: { turbo: false } do |f| %>
+  <div class="card shadow-sm mb-3">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Date</th>
+            <th>Reference</th>
+            <th>Product</th>
+            <th class="text-end">Qty</th>
+            <th class="text-end">Unit Cost</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @rows.each do |row| %>
+            <tr class="<%= row.action != :import ? 'text-muted' : '' %>">
+              <td class="small text-nowrap"><%= row.business_date&.strftime('%b %-d, %Y') || '—' %></td>
+              <td class="font-monospace small"><%= row.reference %></td>
+              <td>
+                <% if row.product %>
+                  <%= row.product.name %>
+                <% else %>
+                  <span class="text-danger"><%= row.description.presence || row.product_id %></span>
+                  <code class="small text-muted ms-1"><%= row.product_id %></code>
+                <% end %>
+              </td>
+              <td class="text-end"><%= number_with_precision(row.quantity, precision: 2, strip_insignificant_zeros: true) %></td>
+              <td class="text-end"><%= row.unit_cost ? number_to_currency(row.unit_cost) : '—' %></td>
+              <td>
+                <% case row.action %>
+                <% when :import %>
+                  <span class="badge bg-success">Import</span>
+                <% when :skip_duplicate %>
+                  <span class="badge bg-secondary">Duplicate</span>
+                <% when :skip_no_product %>
+                  <span class="badge bg-danger">No Product</span>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2 mt-3 mb-5">
+    <%= f.submit "Confirm Import", class: "btn btn-success btn-lg" %>
+    <%= link_to "Cancel", new_warehouse_transaction_import_path, class: "btn btn-outline-secondary btn-lg" %>
+  </div>
+<% end %>

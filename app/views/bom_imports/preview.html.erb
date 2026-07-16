@@ -1,0 +1,100 @@
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <h1 class="mb-1">Preview BOM Import</h1>
+    <p class="text-muted mb-0">
+      <span class="text-success fw-semibold"><%= @create_count %> products will get a BOM created</span>
+      <% if @skip_has_bom > 0 %>
+        &nbsp;&middot;&nbsp;<span class="text-muted"><%= @skip_has_bom %> already have a BOM (will skip)</span>
+      <% end %>
+      <% if @skip_no_product > 0 %>
+        &nbsp;&middot;&nbsp;<span class="text-danger fw-semibold"><%= @skip_no_product %> products not found</span>
+      <% end %>
+    </p>
+  </div>
+  <%= link_to "Cancel", new_bom_import_path, class: "btn btn-outline-secondary" %>
+</div>
+
+<%= form_with url: bom_import_path, method: :post, data: { turbo: false } do |f| %>
+  <div class="card shadow-sm mb-3">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Finished Product</th>
+            <th>Package</th>
+            <th class="text-end">Components</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @rows.each_with_index do |row, i| %>
+            <% collapse_id = "bom-components-#{i}" %>
+            <tr class="<%= row.action == :skip_no_product ? 'text-muted' : '' %>">
+              <td>
+                <% if row.action == :create && row.components.any? %>
+                  <a class="text-decoration-none" data-bs-toggle="collapse" href="#<%= collapse_id %>" style="cursor:pointer">
+                    <% if row.product %>
+                      <%= row.product.name %>
+                    <% else %>
+                      <%= row.finished_name %>
+                    <% end %>
+                    <i class="bi bi-chevron-down small ms-1"></i>
+                  </a>
+                <% else %>
+                  <%= row.product&.name || row.finished_name %>
+                <% end %>
+                <code class="small text-muted ms-1"><%= row.finished_id %></code>
+              </td>
+              <td><%= row.pkg_code || '—' %></td>
+              <td class="text-end"><%= row.components.size > 0 ? row.components.size : '—' %></td>
+              <td>
+                <% case row.action %>
+                <% when :create %>
+                  <span class="badge bg-success">Create BOM</span>
+                  <% if row.components.any? { |c| c.component_product.nil? } %>
+                    <span class="badge bg-warning text-dark ms-1">Some components not found</span>
+                  <% end %>
+                <% when :skip_has_bom %>
+                  <span class="badge bg-secondary">Already has BOM</span>
+                <% when :skip_no_product %>
+                  <span class="badge bg-danger">Product not found</span>
+                <% end %>
+              </td>
+            </tr>
+            <% if row.action == :create && row.components.any? %>
+              <tr class="collapse" id="<%= collapse_id %>">
+                <td colspan="4" class="p-0 border-0">
+                  <table class="table table-sm mb-0 bg-light">
+                    <thead>
+                      <tr class="text-muted small">
+                        <th class="ps-4">Component ID</th>
+                        <th>Name</th>
+                        <th>UOM</th>
+                        <th class="text-end pe-3">Qty/Unit</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <% row.components.each do |comp| %>
+                        <tr class="small <%= comp.component_product.nil? ? 'text-danger' : '' %>">
+                          <td class="ps-4 font-monospace text-muted"><%= comp.component_id %></td>
+                          <td><%= comp.component_name %></td>
+                          <td><%= comp.uom %></td>
+                          <td class="text-end pe-3"><%= number_with_precision(comp.quantity, precision: 4, strip_insignificant_zeros: true) %></td>
+                        </tr>
+                      <% end %>
+                    </tbody>
+                  </table>
+                </td>
+              </tr>
+            <% end %>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2 mt-3 mb-5">
+    <%= f.submit "Confirm Import", class: "btn btn-success btn-lg" %>
+    <%= link_to "Cancel", new_bom_import_path, class: "btn btn-outline-secondary btn-lg" %>
+  </div>
+<% end %>

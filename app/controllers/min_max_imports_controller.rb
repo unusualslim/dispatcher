@@ -8,25 +8,41 @@ class MinMaxImportsController < ApplicationController
     @logs = SyncLog.for_process(PROCESS_NAME).limit(20)
   end
 
-  def create
+  def preview
     file = params[:file]
     return redirect_to new_min_max_import_path, alert: "Please select a file." unless file
+    return redirect_to new_min_max_import_path, alert: "File must be an XLSX file." unless file.original_filename.downcase.end_with?('.xlsx')
 
-    unless file.original_filename.downcase.end_with?('.xlsx')
-      return redirect_to new_min_max_import_path, alert: "File must be an XLSX file."
+    tmp = Tempfile.new(['min_max_import', '.xlsx'], binmode: true)
+    tmp.write(file.read)
+    tmp.flush
+    session[:min_max_import_tmp_path] = tmp.path
+    ObjectSpace.undefine_finalizer(tmp)
+
+    @rows            = MinMaxImportService.new(tmp.path).preview
+    @update_count    = @rows.count { |r| r.action == :update }
+    @skip_no_product = @rows.count { |r| r.action == :skip_no_product }
+    @skip_no_values  = @rows.count { |r| r.action == :skip_no_values }
+  end
+
+  def create
+    unless session[:min_max_import_tmp_path].present? && File.exist?(session[:min_max_import_tmp_path].to_s)
+      return redirect_to new_min_max_import_path, alert: "Import session expired. Please re-upload the file."
     end
+
+    file_path = session[:min_max_import_tmp_path]
 
     log = SyncLog.create!(
       process_name: PROCESS_NAME,
       status:       'running',
-      file_name:    file.original_filename,
-      file_content: Base64.strict_encode64(file.read),
+      file_name:    File.basename(file_path),
+      file_content: Base64.strict_encode64(File.binread(file_path)),
       file_binary:  true,
       started_at:   Time.current
     )
 
     begin
-      result = MinMaxImportService.call(file.path)
+      result = MinMaxImportService.call(file_path)
 
       log.update!(
         status:          'success',
@@ -45,6 +61,9 @@ class MinMaxImportsController < ApplicationController
     rescue => e
       log.update!(status: 'failed', completed_at: Time.current, error_message: e.message)
       flash[:alert] = "Import failed: #{e.message}"
+    ensure
+      File.delete(file_path) rescue nil
+      session.delete(:min_max_import_tmp_path)
     end
 
     redirect_to new_min_max_import_path

@@ -9,7 +9,7 @@
     </div>
   <% end %>
 
-  <%= form_with url: warehouse_transaction_import_path, method: :post, local: true, multipart: true do |f| %>
+  <%= form_with url: preview_warehouse_transaction_import_path, method: :post, local: true, multipart: true do |f| %>
     <div class="card shadow-sm">
       <div class="card-body">
         <div class="mb-3">
@@ -17,7 +17,7 @@
           <%= f.file_field :file, class: "form-control", accept: ".xls,.xlsx" %>
           <div class="form-text">Export from PDI: <em>Reports → Warehouse Transaction Report</em></div>
         </div>
-        <%= f.submit "Import", class: "btn btn-primary" %>
+        <%= f.submit "Preview Import", class: "btn btn-primary" %>
       </div>
     </div>
   <% end %>

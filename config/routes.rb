@@ -140,17 +140,24 @@ Rails.application.routes.draw do
   resource :inventory_import, only: [:new, :create] do
     post :preview, on: :collection
   end
-  resource :warehouse_transaction_import, only: [:new, :create]
-  resource :bom_import, only: [:new, :create]
+  resource :bom_import, only: [:new, :create] do
+    post :preview, on: :collection
+  end
   get 'bom_import/download/:log_id', to: 'bom_imports#download', as: :download_bom_import
 
-  resource :min_max_import, only: [:new, :create]
+  resource :min_max_import, only: [:new, :create] do
+    post :preview, on: :collection
+  end
   get 'min_max_import/download/:log_id', to: 'min_max_imports#download', as: :download_min_max_import
 
-  resource :warehouse_transaction_import, only: [:new, :create]
+  resource :warehouse_transaction_import, only: [:new, :create] do
+    post :preview, on: :collection
+  end
   get 'warehouse_transaction_import/download/:log_id', to: 'warehouse_transaction_imports#download', as: :download_warehouse_transaction_import
 
-  resource :customer_order_import, only: [:new, :create]
+  resource :customer_order_import, only: [:new, :create] do
+    post :preview, on: :collection
+  end
   get 'customer_order_import/download/:log_id', to: 'customer_order_imports#download', as: :download_customer_order_import
 
   resources :things

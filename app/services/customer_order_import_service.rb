@@ -2,7 +2,8 @@ require 'pdf-reader'
 require 'open3'
 
 class CustomerOrderImportService
-  Result = Struct.new(:created, :updated, :skipped, :errors, keyword_init: true)
+  Result     = Struct.new(:created, :updated, :skipped, :errors, keyword_init: true)
+  PreviewRow = Struct.new(:external_order_no, :customer_name, :order_date, :odor_status, :line_items_count, :action, keyword_init: true)
 
   # Maps ODOR order status to CustomerOrder order_status enum key
   STATUS_MAP = {
@@ -17,6 +18,21 @@ class CustomerOrderImportService
 
   def initialize(file_path)
     @file_path = file_path
+  end
+
+  def preview
+    parse_orders.map do |order_data|
+      external_order_no = order_data[:external_order_no]
+      existing = CustomerOrder.find_by(external_order_no: external_order_no)
+      PreviewRow.new(
+        external_order_no: external_order_no,
+        customer_name:     order_data[:customer_name],
+        order_date:        order_data[:order_date],
+        odor_status:       order_data[:odor_status],
+        line_items_count:  order_data[:line_items]&.size || 0,
+        action:            existing ? :update : :create
+      )
+    end
   end
 
   def run

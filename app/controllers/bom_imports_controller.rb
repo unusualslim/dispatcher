@@ -9,25 +9,42 @@ class BomImportsController < ApplicationController
     @logs = SyncLog.for_process(PROCESS_NAME).limit(20)
   end
 
-  def create
+  def preview
     file = params[:file]
     return redirect_to new_bom_import_path, alert: "Please select a file." unless file
+    return redirect_to new_bom_import_path, alert: "File must be a CSV file." unless file.original_filename.downcase.end_with?('.csv')
 
-    unless file.original_filename.downcase.end_with?('.csv')
-      return redirect_to new_bom_import_path, alert: "File must be a CSV file."
+    tmp = Tempfile.new(['bom_import', '.csv'])
+    tmp.write(file.read)
+    tmp.flush
+    session[:bom_import_tmp_path] = tmp.path
+    ObjectSpace.undefine_finalizer(tmp)
+
+    @rows = BomImportService.new(tmp.path).preview
+    @create_count = @rows.count { |r| r.action == :create }
+    @skip_no_product = @rows.count { |r| r.action == :skip_no_product }
+    @skip_has_bom = @rows.count { |r| r.action == :skip_has_bom }
+  end
+
+  def create
+    unless session[:bom_import_tmp_path].present? && File.exist?(session[:bom_import_tmp_path].to_s)
+      return redirect_to new_bom_import_path, alert: "Import session expired. Please re-upload the file."
     end
+
+    file_path = session[:bom_import_tmp_path]
+    file_name = File.basename(file_path)
 
     log = SyncLog.create!(
       process_name: PROCESS_NAME,
       status:       'running',
-      file_name:    file.original_filename,
-      file_content: file.read,
+      file_name:    file_name,
+      file_content: File.read(file_path),
       file_binary:  false,
       started_at:   Time.current
     )
 
     begin
-      result = BomImportService.call(file.path)
+      result = BomImportService.call(file_path)
 
       log.update!(
         status:          'success',
@@ -46,6 +63,9 @@ class BomImportsController < ApplicationController
     rescue => e
       log.update!(status: 'failed', completed_at: Time.current, error_message: e.message)
       flash[:alert] = "Import failed: #{e.message}"
+    ensure
+      File.delete(file_path) rescue nil
+      session.delete(:bom_import_tmp_path)
     end
 
     redirect_to new_bom_import_path

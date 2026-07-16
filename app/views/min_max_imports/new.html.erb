@@ -9,7 +9,7 @@
     </div>
   <% end %>
 
-<%= form_with url: min_max_import_path, method: :post, local: true, multipart: true do |f| %>
+<%= form_with url: preview_min_max_import_path, method: :post, local: true, multipart: true do |f| %>
     <div class="card shadow-sm">
       <div class="card-body">
         <div class="mb-3">
@@ -17,7 +17,7 @@
           <%= f.file_field :file, class: "form-control", accept: ".xlsx" %>
           <div class="form-text">Use the <em>MASTER Product List</em> sheet — reads Min → reorder point, Max → max stock.</div>
         </div>
-        <%= f.submit "Import Min/Max", class: "btn btn-primary" %>
+        <%= f.submit "Preview Import", class: "btn btn-primary" %>
       </div>
     </div>
   <% end %>

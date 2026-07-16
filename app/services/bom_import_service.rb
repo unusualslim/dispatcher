@@ -11,7 +11,9 @@ class BomImportService
   COL_COMPONENT_PKG = 5
   COL_QUANTITY      = 6
 
-  Result = Struct.new(:created, :skipped_no_product, :skipped_already_has_bom, :errors, keyword_init: true)
+  Result      = Struct.new(:created, :skipped_no_product, :skipped_already_has_bom, :errors, keyword_init: true)
+  PreviewRow  = Struct.new(:finished_id, :finished_name, :product, :action, :pkg_code, :components, keyword_init: true)
+  ComponentPreview = Struct.new(:component_id, :component_name, :component_product, :quantity, :uom, keyword_init: true)
 
   def self.call(file_path)
     new(file_path).run
@@ -19,6 +21,45 @@ class BomImportService
 
   def initialize(file_path)
     @file_path = file_path
+  end
+
+  def preview
+    rows = CSV.read(@file_path, headers: false)
+    by_product = rows.group_by { |r| r[COL_FINISHED_ID].to_s.strip }
+
+    by_product.map do |finished_id, product_rows|
+      finished_name = product_rows.first[COL_FINISHED_NAME].to_s.strip
+      product = Product.find_by(id: finished_id)
+
+      unless product
+        next PreviewRow.new(finished_id: finished_id, finished_name: finished_name, product: nil,
+                            action: :skip_no_product, pkg_code: nil, components: [])
+      end
+
+      if product.product_components.any?
+        next PreviewRow.new(finished_id: finished_id, finished_name: finished_name, product: product,
+                            action: :skip_has_bom, pkg_code: nil, components: [])
+      end
+
+      by_pkg = product_rows.group_by { |r| r[COL_FINISHED_PKG].to_s.strip }
+      chosen_pkg = PKG_PRIORITY.find { |pkg| by_pkg.key?(pkg) } || by_pkg.keys.first
+      chosen_rows = by_pkg[chosen_pkg]
+
+      components = chosen_rows.map do |row|
+        component_id  = row[COL_COMPONENT_ID].to_s.strip
+        component_pkg = row[COL_COMPONENT_PKG].to_s.strip
+        quantity      = row[COL_QUANTITY].to_f
+        comp = Product.find_by(id: component_id)
+        ComponentPreview.new(component_id: component_id,
+                             component_name: comp&.name || '(not found in system)',
+                             component_product: comp,
+                             quantity: quantity,
+                             uom: component_pkg.presence || 'EA')
+      end
+
+      PreviewRow.new(finished_id: finished_id, finished_name: finished_name, product: product,
+                     action: :create, pkg_code: chosen_pkg, components: components)
+    end.compact
   end
 
   def run

@@ -9,7 +9,8 @@ class MinMaxImportService
 
   SKIP_PATTERNS = /Part#|PHYSICAL|RAW MATERIAL|FINISHED/i
 
-  Result = Struct.new(:updated, :skipped_no_product, :skipped_no_values, :errors, keyword_init: true)
+  Result     = Struct.new(:updated, :skipped_no_product, :skipped_no_values, :errors, keyword_init: true)
+  PreviewRow = Struct.new(:part_id, :product, :action, :min_old, :max_old, :min_new, :max_new, keyword_init: true)
 
   def self.call(path)
     new(path).run
@@ -17,6 +18,46 @@ class MinMaxImportService
 
   def initialize(path)
     @path = path
+  end
+
+  def preview
+    rows = []
+    wb = Roo::Excelx.new(@path)
+    wb.sheet(SHEET_NAME)
+
+    (1..wb.last_row).each do |i|
+      row = wb.row(i)
+      part_id = row[COL_PART_ID].to_s.strip
+      next if part_id.blank? || part_id.match?(SKIP_PATTERNS)
+
+      min_val = row[COL_MIN]
+      max_val = row[COL_MAX]
+
+      if min_val.nil? && max_val.nil?
+        rows << PreviewRow.new(part_id: part_id, product: nil, action: :skip_no_values,
+                               min_old: nil, max_old: nil, min_new: nil, max_new: nil)
+        next
+      end
+
+      product = Product.find_by(id: part_id)
+      unless product
+        rows << PreviewRow.new(part_id: part_id, product: nil, action: :skip_no_product,
+                               min_old: nil, max_old: nil, min_new: min_val&.to_f, max_new: max_val&.to_f)
+        next
+      end
+
+      rows << PreviewRow.new(
+        part_id: part_id,
+        product: product,
+        action: :update,
+        min_old: product.reorder_point,
+        max_old: product.max_stock,
+        min_new: min_val.present? ? min_val.to_f : product.reorder_point,
+        max_new: max_val.present? ? max_val.to_f : product.max_stock
+      )
+    end
+
+    rows
   end
 
   def run

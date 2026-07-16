@@ -13,7 +13,8 @@ class WarehouseTransactionImportService
     'Purchases' => 'in',
   }.freeze
 
-  Result = Struct.new(:imported, :skipped_no_product, :skipped_unknown_type, :skipped_duplicate, :errors, keyword_init: true)
+  Result     = Struct.new(:imported, :skipped_no_product, :skipped_unknown_type, :skipped_duplicate, :errors, keyword_init: true)
+  PreviewRow = Struct.new(:product_id, :description, :product, :direction, :quantity, :unit_cost, :reference, :business_date, :action, keyword_init: true)
 
   def self.call(path)
     new(path).run
@@ -21,6 +22,53 @@ class WarehouseTransactionImportService
 
   def initialize(path)
     @path = path
+  end
+
+  def preview
+    rows = []
+    wb = Roo::Excel.new(@path)
+
+    (1..wb.last_row).each do |i|
+      row = wb.row(i)
+      next unless data_row?(row)
+
+      type          = row[COL_TYPE].to_s.strip
+      quantity      = row[COL_QUANTITY].to_f
+      reference     = row[COL_REFERENCE].to_s.strip
+      prod_desc     = row[COL_PROD_DESC].to_s.strip
+      unit_cost     = row[COL_UNIT_COST]&.to_f
+      business_date = row[COL_BUSINESS_DATE]
+
+      next if quantity <= 0
+
+      direction = TRANSACTION_TYPE_MAP[type]
+      next unless direction
+
+      product_id, description = prod_desc.split(' / ', 2)
+      product_id = product_id.to_s.strip
+
+      product = Product.find_by(id: product_id)
+      unless product
+        rows << PreviewRow.new(product_id: product_id, description: description.to_s, product: nil,
+                               direction: direction, quantity: quantity, unit_cost: unit_cost,
+                               reference: reference, business_date: business_date, action: :skip_no_product)
+        next
+      end
+
+      if InventoryTransaction.exists?(product_id: product_id, reference_number: reference,
+                                      notes: notes_for(description, unit_cost))
+        rows << PreviewRow.new(product_id: product_id, description: description.to_s, product: product,
+                               direction: direction, quantity: quantity, unit_cost: unit_cost,
+                               reference: reference, business_date: business_date, action: :skip_duplicate)
+        next
+      end
+
+      rows << PreviewRow.new(product_id: product_id, description: description.to_s, product: product,
+                             direction: direction, quantity: quantity, unit_cost: unit_cost,
+                             reference: reference, business_date: business_date, action: :import)
+    end
+
+    rows
   end
 
   def run

@@ -8,33 +8,46 @@ class CustomerOrderImportsController < ApplicationController
     @logs = SyncLog.for_process(PROCESS_NAME).limit(20)
   end
 
-  def create
+  def preview
     file = params[:file]
     return redirect_to new_customer_order_import_path, alert: "Please select a file." unless file
-
-    unless file.original_filename.downcase.end_with?('.pdf')
-      return redirect_to new_customer_order_import_path, alert: "File must be a PDF file."
-    end
+    return redirect_to new_customer_order_import_path, alert: "File must be a PDF file." unless file.original_filename.downcase.end_with?('.pdf')
 
     file_content = file.read
+
+    tmp = Tempfile.new(['customer_order_import', '.pdf'], binmode: true)
+    tmp.write(file_content)
+    tmp.flush
+    session[:co_import_tmp_path]   = tmp.path
+    session[:co_import_file_name]  = file.original_filename
+    session[:co_import_file_b64]   = Base64.strict_encode64(file_content)
+    ObjectSpace.undefine_finalizer(tmp)
+
+    @rows          = CustomerOrderImportService.new(tmp.path).preview
+    @create_count  = @rows.count { |r| r.action == :create }
+    @update_count  = @rows.count { |r| r.action == :update }
+  end
+
+  def create
+    unless session[:co_import_tmp_path].present? && File.exist?(session[:co_import_tmp_path].to_s)
+      return redirect_to new_customer_order_import_path, alert: "Import session expired. Please re-upload the file."
+    end
+
+    file_path    = session[:co_import_tmp_path]
+    file_name    = session[:co_import_file_name] || File.basename(file_path)
+    file_content = session[:co_import_file_b64]
 
     log = SyncLog.create!(
       process_name: PROCESS_NAME,
       status:       'running',
-      file_name:    file.original_filename,
-      file_content: Base64.strict_encode64(file_content),
+      file_name:    file_name,
+      file_content: file_content,
       file_binary:  true,
       started_at:   Time.current
     )
 
-    # Write to a tempfile because the service needs a file path
-    require 'tempfile'
-    tmp = Tempfile.new(['customer_order_import', '.pdf'], binmode: true)
-    tmp.write(file_content)
-    tmp.flush
-
     begin
-      result = CustomerOrderImportService.call(tmp.path)
+      result = CustomerOrderImportService.call(file_path)
 
       log.update!(
         status:          'success',
@@ -52,8 +65,10 @@ class CustomerOrderImportsController < ApplicationController
       log.update!(status: 'failed', completed_at: Time.current, error_message: e.message)
       flash[:alert] = "Import failed: #{e.message}"
     ensure
-      tmp.close
-      tmp.unlink
+      File.delete(file_path) rescue nil
+      session.delete(:co_import_tmp_path)
+      session.delete(:co_import_file_name)
+      session.delete(:co_import_file_b64)
     end
 
     redirect_to new_customer_order_import_path
