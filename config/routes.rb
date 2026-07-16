@@ -127,6 +127,7 @@ Rails.application.routes.draw do
       post :preview
     end
   end
+  get 'purchase_order_imports/download/:log_id', to: 'purchase_order_imports#download', as: :download_purchase_order_import
 
   resources :production_order_batches, only: [] do
     member do

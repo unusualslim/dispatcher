@@ -1,4 +1,4 @@
-<div class="container mt-4" style="max-width: 600px;">
+<div class="container mt-4" style="max-width: 700px;">
   <h1 class="mb-1">Import PDI Purchase Orders</h1>
   <p class="text-muted mb-4">Upload a PDI Warehouse Transaction Report (XLS/XLSX) to import purchase orders.</p>
 
@@ -21,4 +21,6 @@
     <%= f.submit "Preview Import", class: "btn btn-primary" %>
     <%= link_to "Cancel", purchase_orders_path, class: "btn btn-outline-secondary ms-2" %>
   <% end %>
+
+  <%= render 'shared/import_history', logs: @logs, download_path: :download_purchase_order_import_path %>
 </div>
