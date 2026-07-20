@@ -138,13 +138,12 @@
       </table>
     </div>
     <% if @products.total_pages > 1 %>
-      <div class="d-flex justify-content-center mt-3">
+      <nav class="d-flex justify-content-center mt-3">
         <%= will_paginate @products,
-              renderer: WillPaginate::ActionView::LinkRenderer,
+              renderer: BootstrapPaginationRenderer,
               params: { query: params[:query], type: params[:type], category: params[:category],
-                        status: params[:status], sort: params[:sort] },
-              class: 'pagination pagination-sm' %>
-      </div>
+                        status: params[:status], sort: params[:sort] } %>
+      </nav>
     <% end %>
   <% end %>
 </turbo-frame>
