@@ -165,7 +165,7 @@ Rails.application.routes.draw do
 
   resources :announcements
 
-  resources :products do
+  resources :products, constraints: { id: /[^\/]+/ } do
     collection do
       get :search
     end

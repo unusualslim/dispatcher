@@ -65,6 +65,30 @@ class ProductsController < ApplicationController
                   when 'category_desc'  then @products.order(Arel.sql("COALESCE(category, '') DESC, name ASC"))
                   else @products.order(:name)
                   end
+
+      @products = @products.paginate(page: params[:page], per_page: 50)
+
+      # Preload on_order and committed aggregates in two bulk queries to avoid N+1
+      product_ids = @products.map(&:id)
+
+      on_order_map = PurchaseOrderLineItem
+        .joins(:purchase_order)
+        .where(product_id: product_ids)
+        .where(purchase_orders: { status: %w[draft pending_approval approved submitted] })
+        .group(:product_id)
+        .sum(:quantity)
+
+      committed_map = ProductionOrderComponent
+        .joins(:production_order)
+        .where(product_id: product_ids)
+        .where(production_orders: { status: %w[pending in_progress] })
+        .group(:product_id)
+        .sum(:quantity)
+
+      @products.each do |p|
+        p.instance_variable_set(:@on_order_qty,  on_order_map[p.id]  || 0)
+        p.instance_variable_set(:@committed_qty, committed_map[p.id] || 0)
+      end
     end
   
     def new

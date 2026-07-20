@@ -23,16 +23,20 @@ class Product < ApplicationRecord
   scope :finished_goods,      -> { where(is_raw_material: false) }
   scope :below_reorder_point, -> { raw_materials.where('current_stock <= reorder_point AND reorder_point IS NOT NULL') }
 
-  # Quantity inbound from active purchase orders (not yet received)
+  # Quantity inbound from active purchase orders (not yet received).
+  # Uses preloaded value if set by controller bulk query.
   def on_order_qty
+    return @on_order_qty if defined?(@on_order_qty)
     purchase_order_line_items
       .joins(:purchase_order)
       .where(purchase_orders: { status: %w[draft pending_approval approved submitted] })
       .sum(:quantity)
   end
 
-  # Quantity committed to open production orders (pending or in_progress)
+  # Quantity committed to open production orders (pending or in_progress).
+  # Uses preloaded value if set by controller bulk query.
   def committed_qty
+    return @committed_qty if defined?(@committed_qty)
     ProductionOrderComponent
       .joins(:production_order)
       .where(product_id: id)

@@ -61,7 +61,7 @@
   <% if @products.empty? %>
     <div class="text-center text-muted py-5">No products match your filters.</div>
   <% else %>
-    <div class="text-muted small mb-2"><%= @products.size %> product<%= 's' unless @products.size == 1 %> found</div>
+    <div class="text-muted small mb-2"><%= @products.total_entries %> product<%= 's' unless @products.total_entries == 1 %> found</div>
     <div class="table-responsive">
       <table class="table table-hover align-middle">
         <thead class="table-light">
@@ -137,6 +137,15 @@
         </tbody>
       </table>
     </div>
+    <% if @products.total_pages > 1 %>
+      <div class="d-flex justify-content-center mt-3">
+        <%= will_paginate @products,
+              renderer: WillPaginate::ActionView::LinkRenderer,
+              params: { query: params[:query], type: params[:type], category: params[:category],
+                        status: params[:status], sort: params[:sort] },
+              class: 'pagination pagination-sm' %>
+      </div>
+    <% end %>
   <% end %>
 </turbo-frame>
 
