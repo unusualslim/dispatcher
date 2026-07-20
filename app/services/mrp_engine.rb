@@ -39,7 +39,8 @@ class MrpEngine
       total_needed = data[:total_needed]
       available    = product ? product.available_stock : 0
       shortfall    = [total_needed - available, 0].max
-      vendor       = product ? PurchaseOrder.joins(:vendor).where(product: product)
+      vendor       = product ? PurchaseOrder.joins(:vendor, :line_items)
+                                 .where(purchase_order_line_items: { product_id: product.id })
                                  .order(created_at: :desc).first&.vendor : nil
       lead_time    = vendor&.lead_time_days
       order_by_date = lead_time ? Date.today + lead_time.days : nil

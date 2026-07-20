@@ -70,7 +70,10 @@
 
 <%# ── Raw material stock levels ──────────────────────────────────────────────── %>
 <div class="card shadow-sm mb-4">
-  <div class="card-header fw-semibold">Raw Material Stock Levels</div>
+  <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+    <span>Raw Material Stock Levels</span>
+    <%= link_to 'View All Products', products_path(status: 'low'), class: 'btn btn-outline-secondary btn-sm' %>
+  </div>
   <div class="card-body p-0">
     <% if @low_stock.empty? %>
       <div class="p-4 text-muted text-center">No raw materials configured yet. Edit products to set reorder points.</div>
@@ -79,11 +82,13 @@
         <thead class="table-light">
           <tr>
             <th>Product</th>
-            <th>Stock</th>
-            <th>Safety Stock</th>
-            <th>Reorder Point</th>
+            <th>On Hand</th>
+            <th>On Order</th>
+            <th>Committed</th>
             <th>Available</th>
+            <th>Reorder Point</th>
             <th>Status</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -92,9 +97,12 @@
             <tr>
               <td><%= link_to p.name, product_path(p), class: 'text-decoration-none' %></td>
               <td><%= number_with_precision(p.current_stock, precision: 1) %> <%= p.unit_of_measurement %></td>
-              <td><%= number_with_precision(p.safety_stock, precision: 1) %></td>
+              <td class="text-success"><%= number_with_precision(p.on_order_qty, precision: 1) %></td>
+              <td class="text-warning"><%= number_with_precision(p.committed_qty, precision: 1) %></td>
+              <td class="<%= p.available_stock < 0 ? 'text-danger fw-bold' : '' %>">
+                <%= number_with_precision(p.available_stock, precision: 1) %>
+              </td>
               <td><%= number_with_precision(p.reorder_point, precision: 1) %></td>
-              <td><%= number_with_precision(p.available_stock, precision: 1) %></td>
               <td>
                 <% if status == :critical %>
                   <span class="badge bg-danger">Critical</span>
@@ -103,6 +111,10 @@
                 <% else %>
                   <span class="badge bg-success">OK</span>
                 <% end %>
+              </td>
+              <td>
+                <%= link_to 'Create PO', new_purchase_order_path(product_ids: [p.id]),
+                      class: 'btn btn-outline-secondary btn-sm' %>
               </td>
             </tr>
           <% end %>

@@ -23,15 +23,38 @@ class Product < ApplicationRecord
   scope :finished_goods,      -> { where(is_raw_material: false) }
   scope :below_reorder_point, -> { raw_materials.where('current_stock <= reorder_point AND reorder_point IS NOT NULL') }
 
+  # Quantity inbound from active purchase orders (not yet received)
+  def on_order_qty
+    purchase_order_line_items
+      .joins(:purchase_order)
+      .where(purchase_orders: { status: %w[draft pending_approval approved submitted] })
+      .sum(:quantity)
+  end
+
+  # Quantity committed to open production orders (pending or in_progress)
+  def committed_qty
+    ProductionOrderComponent
+      .joins(:production_order)
+      .where(product_id: id)
+      .where(production_orders: { status: %w[pending in_progress] })
+      .sum(:quantity)
+  end
+
+  # Physical stock + inbound POs
+  def projected_stock
+    (current_stock || 0) + on_order_qty
+  end
+
+  # What's left after fulfilling all open production orders
   def available_stock
-    [(current_stock || 0) - (safety_stock || 0), 0].max
+    projected_stock - committed_qty
   end
 
   def stock_status
     return :unknown if reorder_point.nil?
-    if current_stock <= (safety_stock || 0)
+    if projected_stock < committed_qty
       :critical
-    elsif current_stock <= reorder_point
+    elsif (current_stock || 0) <= reorder_point
       :low
     else
       :ok

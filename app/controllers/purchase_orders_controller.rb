@@ -14,9 +14,28 @@ class PurchaseOrdersController < ApplicationController
 
   def new
     @purchase_order = PurchaseOrder.new
-    @purchase_order.line_items.build
     @vendors  = Vendor.order(:name)
     @products = Product.order(:name)
+
+    product_ids = Array(params[:product_ids]).select(&:present?)
+    product_ids = [params[:product_id]] if product_ids.empty? && params[:product_id].present?
+
+    if product_ids.any?
+      products = Product.where(id: product_ids).index_by(&:id)
+      product_ids.each do |pid|
+        p = products[pid]
+        next unless p
+        @purchase_order.line_items.build(
+          product_id:   p.id,
+          product_name: p.name,
+          unit_cost:    p.cost_per_unit,
+          package_code: p.pdi_package_code
+        )
+      end
+      @purchase_order.line_items.build if @purchase_order.line_items.empty?
+    else
+      @purchase_order.line_items.build
+    end
   end
 
   def create

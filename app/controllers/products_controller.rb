@@ -20,13 +20,41 @@ class ProductsController < ApplicationController
         @products = @products.where(category: params[:category])
       end
 
+      on_order_sql = <<~SQL
+        COALESCE((
+          SELECT SUM(poli.quantity)
+          FROM purchase_order_line_items poli
+          JOIN purchase_orders po ON po.id = poli.purchase_order_id
+          WHERE poli.product_id = products.id
+            AND po.status IN ('draft','pending_approval','approved','submitted')
+        ), 0)
+      SQL
+
+      committed_sql = <<~SQL
+        COALESCE((
+          SELECT SUM(poc.quantity)
+          FROM production_order_components poc
+          JOIN production_orders pro ON pro.id = poc.production_order_id
+          WHERE poc.product_id = products.id
+            AND pro.status IN ('pending','in_progress')
+        ), 0)
+      SQL
+
       case params[:status]
       when 'critical'
-        @products = @products.where("reorder_point IS NOT NULL AND current_stock <= COALESCE(safety_stock, 0)")
+        # projected (on hand + on order) can't cover committed demand
+        @products = @products.where(
+          "reorder_point IS NOT NULL AND (current_stock + #{on_order_sql}) < (#{committed_sql})"
+        )
       when 'low'
-        @products = @products.where("reorder_point IS NOT NULL AND current_stock > COALESCE(safety_stock, 0) AND current_stock <= reorder_point")
+        # can cover committed but on hand is at or below reorder point
+        @products = @products.where(
+          "reorder_point IS NOT NULL AND (current_stock + #{on_order_sql}) >= (#{committed_sql}) AND current_stock <= reorder_point"
+        )
       when 'ok'
-        @products = @products.where("reorder_point IS NOT NULL AND current_stock > reorder_point")
+        @products = @products.where(
+          "reorder_point IS NOT NULL AND (current_stock + #{on_order_sql}) >= (#{committed_sql}) AND current_stock > reorder_point"
+        )
       end
 
       @products = case params[:sort]
