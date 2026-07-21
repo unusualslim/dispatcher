@@ -1,0 +1,85 @@
+<div class="container-fluid px-4 mt-4">
+  <div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+      <h1 class="mb-0">Purchasing Report</h1>
+      <p class="text-muted mb-0">Demand-based replenishment recommendations</p>
+    </div>
+    <%= link_to mrp_path, class: 'btn btn-outline-secondary btn-sm' do %>
+      <i class="bi bi-arrow-left"></i> MRP Dashboard
+    <% end %>
+  </div>
+
+  <% if @rows_by_vendor.empty? %>
+    <div class="alert alert-success d-flex align-items-center" role="alert">
+      <i class="bi bi-check-circle-fill me-2"></i>
+      All stock levels are within acceptable ranges.
+    </div>
+  <% else %>
+    <% @rows_by_vendor.each do |vendor, rows| %>
+      <div class="card shadow-sm mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <%= vendor ? vendor.name : 'Unassigned Vendor' %>
+            <span class="badge bg-secondary ms-2"><%= rows.size %> <%= 'item'.pluralize(rows.size) %></span>
+          </h5>
+          <% if vendor %>
+            <%= link_to new_purchase_order_path(vendor_id: vendor.id, product_ids: rows.map { |r| r.product.id }), class: 'btn btn-sm btn-primary' do %>
+              <i class="bi bi-plus-lg"></i> Create PO
+            <% end %>
+          <% end %>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-sm table-hover mb-0 align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Item ID</th>
+                <th>Description</th>
+                <th>UOM</th>
+                <th class="text-end">On Hand</th>
+                <th class="text-end">On Order</th>
+                <th class="text-end">Committed</th>
+                <th class="text-end">Available</th>
+                <th class="text-end">Inv Min</th>
+                <th class="text-end">Inv Max</th>
+                <th class="text-end">Qty to Purchase</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% rows.each do |row| %>
+                <tr>
+                  <td>
+                    <%= link_to row.product.id, product_path(row.product),
+                          class: 'fw-semibold text-decoration-none text-nowrap' %>
+                  </td>
+                  <td>
+                    <%= row.product.name %>
+                    <% if row.product.vendors.size > 1 %>
+                      <div class="text-muted small">Backups: <%= row.product.vendors.drop(1).map(&:name).join(', ') %></div>
+                    <% end %>
+                  </td>
+                  <td class="text-muted"><%= row.product.unit_of_measurement %></td>
+                  <td class="text-end"><%= number_with_precision(row.on_hand,   precision: 2, strip_insignificant_zeros: true) %></td>
+                  <td class="text-end"><%= number_with_precision(row.on_order,  precision: 2, strip_insignificant_zeros: true) %></td>
+                  <td class="text-end"><%= number_with_precision(row.committed, precision: 2, strip_insignificant_zeros: true) %></td>
+                  <td class="text-end"><%= number_with_precision(row.available, precision: 2, strip_insignificant_zeros: true) %></td>
+                  <td class="text-end"><%= row.inv_min > 0 ? number_with_precision(row.inv_min, precision: 2, strip_insignificant_zeros: true) : '—' %></td>
+                  <td class="text-end"><%= row.inv_max ? number_with_precision(row.inv_max, precision: 2, strip_insignificant_zeros: true) : '—' %></td>
+                  <td class="text-end fw-bold">
+                    <% if row.qty_to_purchase > 0 %>
+                      <span class="badge bg-danger fs-6 px-2">
+                        <%= number_with_precision(row.qty_to_purchase, precision: 2, strip_insignificant_zeros: true) %>
+                      </span>
+                    <% else %>
+                      <span class="badge bg-success fs-6 px-2">0</span>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    <% end %>
+  <% end %>
+</div>

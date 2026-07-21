@@ -34,6 +34,8 @@ class ReorderService
   private
 
   def preferred_vendor_for(product)
+    return product.primary_vendor if product.primary_vendor.present?
+
     last_po = PurchaseOrder.joins(:line_items)
                            .where(purchase_order_line_items: { product_id: product.id })
                            .order(created_at: :desc)

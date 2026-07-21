@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_07_13_100000) do
+ActiveRecord::Schema[7.0].define(version: 2026_07_21_103210) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -284,6 +284,16 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_13_100000) do
     t.index ["product_id"], name: "index_product_components_on_product_id"
   end
 
+  create_table "product_vendors", force: :cascade do |t|
+    t.string "product_id", null: false
+    t.string "vendor_id", null: false
+    t.integer "priority", default: 1, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_id", "priority"], name: "index_product_vendors_on_product_id_and_priority"
+    t.index ["product_id", "vendor_id"], name: "index_product_vendors_on_product_id_and_vendor_id", unique: true
+  end
+
   create_table "production_order_batches", force: :cascade do |t|
     t.bigint "production_order_id", null: false
     t.string "batch_number", null: false
@@ -522,6 +532,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_13_100000) do
   add_foreign_key "phone_numbers", "customers"
   add_foreign_key "product_components", "products"
   add_foreign_key "product_components", "products", column: "component_product_id"
+  add_foreign_key "product_vendors", "products"
+  add_foreign_key "product_vendors", "vendors"
   add_foreign_key "production_order_batches", "production_orders"
   add_foreign_key "production_order_components", "production_orders"
   add_foreign_key "production_order_components", "products"

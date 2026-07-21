@@ -107,6 +107,9 @@
   </table>
 
   <div class="d-flex gap-2">
+    <% if %w[draft pending_approval].include?(@purchase_order.status) %>
+      <%= link_to 'Edit', edit_purchase_order_path(@purchase_order), class: 'btn btn-outline-secondary' %>
+    <% end %>
     <% if @purchase_order.status == 'draft' %>
       <%= button_to 'Approve', approve_purchase_order_path(@purchase_order),
             method: :patch, class: 'btn btn-success',

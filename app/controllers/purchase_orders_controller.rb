@@ -2,7 +2,7 @@ require 'csv'
 
 class PurchaseOrdersController < ApplicationController
   before_action :require_admin!
-  before_action :set_purchase_order, only: [:show, :approve, :submit, :receive, :post_to_inventory]
+  before_action :set_purchase_order, only: [:show, :edit, :update, :approve, :submit, :receive, :post_to_inventory]
 
   def index
     @status_filter = params[:status].presence
@@ -14,6 +14,7 @@ class PurchaseOrdersController < ApplicationController
 
   def new
     @purchase_order = PurchaseOrder.new
+    @purchase_order.vendor_id = params[:vendor_id] if params[:vendor_id].present?
     @vendors  = Vendor.order(:name)
     @products = Product.order(:name)
 
@@ -22,14 +23,32 @@ class PurchaseOrdersController < ApplicationController
 
     if product_ids.any?
       products = Product.where(id: product_ids).index_by(&:id)
+
+      on_order_map = PurchaseOrderLineItem
+        .joins(:purchase_order)
+        .where(product_id: product_ids)
+        .where(purchase_orders: { status: %w[draft pending_approval approved submitted] })
+        .group(:product_id).sum(:quantity)
+
+      committed_map = ProductionOrderComponent
+        .joins(:production_order)
+        .where(product_id: product_ids)
+        .where(production_orders: { status: %w[pending in_progress] })
+        .group(:product_id).sum(:quantity)
+
       product_ids.each do |pid|
         p = products[pid]
         next unless p
+        on_order  = on_order_map[pid]  || 0
+        committed = committed_map[pid] || 0
+        available = (p.current_stock || 0) + on_order - p.safety_stock.to_f
+        qty = [committed - available, p.reorder_point.to_f - available, 0].max.ceil
         @purchase_order.line_items.build(
           product_id:   p.id,
           product_name: p.name,
           unit_cost:    p.cost_per_unit,
-          package_code: p.pdi_package_code
+          package_code: p.pdi_package_code,
+          quantity:     qty > 0 ? qty : nil
         )
       end
       @purchase_order.line_items.build if @purchase_order.line_items.empty?
@@ -53,6 +72,27 @@ class PurchaseOrdersController < ApplicationController
   end
 
   def show
+  end
+
+  def edit
+    unless %w[draft pending_approval].include?(@purchase_order.status)
+      redirect_to @purchase_order, alert: 'Only draft or pending approval POs can be edited.'
+    end
+    @vendors  = Vendor.order(:name)
+    @products = Product.order(:name)
+  end
+
+  def update
+    unless %w[draft pending_approval].include?(@purchase_order.status)
+      redirect_to @purchase_order, alert: 'Only draft or pending approval POs can be edited.' and return
+    end
+    if @purchase_order.update(purchase_order_params)
+      redirect_to @purchase_order, notice: 'Purchase order updated.'
+    else
+      @vendors  = Vendor.order(:name)
+      @products = Product.order(:name)
+      render :edit, status: :unprocessable_entity
+    end
   end
 
   PDI_SITE_ID = 2

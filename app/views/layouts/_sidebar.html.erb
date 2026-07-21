@@ -102,6 +102,11 @@
               <i class="bi bi-graph-up-arrow"></i> MRP Dashboard
             <% end %>
           </li>
+          <li class="<%= 'active' if current == 'purchasing_report' %>">
+            <%= link_to purchasing_report_path do %>
+              <i class="bi bi-cart-check"></i> Purchasing
+            <% end %>
+          </li>
           <li class="<%= 'active' if current == 'products' %>">
             <%= link_to products_path do %>
               <i class="bi bi-box-seam"></i> Products

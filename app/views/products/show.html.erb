@@ -60,6 +60,35 @@
     </div>
   </div>
 
+  <%# Vendors %>
+  <div class="card shadow-sm mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span class="fw-semibold">Vendors</span>
+      <%= link_to 'Edit', edit_product_path(@product), class: 'btn btn-sm btn-outline-secondary' %>
+    </div>
+    <div class="card-body">
+      <% if @product_vendors.empty? %>
+        <p class="text-muted mb-0 fst-italic">No vendors assigned. <%= link_to 'Assign vendors →', edit_product_path(@product) %></p>
+      <% else %>
+        <div class="d-flex flex-column gap-2">
+          <% @product_vendors.each_with_index do |pv, i| %>
+            <div class="d-flex align-items-center gap-2">
+              <% if i == 0 %>
+                <span class="badge bg-primary">Primary</span>
+              <% else %>
+                <span class="badge bg-secondary">Backup <%= i %></span>
+              <% end %>
+              <%= link_to pv.vendor.name, vendor_path(pv.vendor), class: 'fw-semibold text-decoration-none' %>
+              <% if pv.vendor.lead_time_days.present? %>
+                <span class="text-muted small">· <%= pv.vendor.lead_time_days %> day lead time</span>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
   <%# Open Purchase Orders %>
   <% if @open_purchase_orders.any? %>
     <div class="card shadow-sm mb-3">

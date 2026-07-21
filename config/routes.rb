@@ -104,13 +104,14 @@ Rails.application.routes.draw do
 
 
   get 'mrp', to: 'mrp#index', as: :mrp
+  get 'purchasing_report', to: 'purchasing_report#index', as: :purchasing_report
   get 'docs',                  to: 'docs#index',         as: :docs
   get 'docs/dispatch-guide',   to: 'docs#dispatch_guide', as: :docs_dispatch
   get 'docs/manufacturing',    to: 'docs#manufacturing',  as: :docs_manufacturing
   get 'docs/mrp-guide',        to: 'docs#mrp_guide',     as: :docs_mrp_guide
   get 'docs/changelog',        to: 'docs#changelog',     as: :docs_changelog
 
-  resources :purchase_orders, only: [:index, :new, :create, :show] do
+  resources :purchase_orders, only: [:index, :new, :create, :show, :edit, :update] do
     member do
       patch :approve
       patch :submit

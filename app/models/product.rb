@@ -14,6 +14,9 @@ class Product < ApplicationRecord
   has_many :purchase_order_line_items, foreign_key: :product_id, primary_key: :id
   has_many :purchase_orders, through: :purchase_order_line_items
 
+  has_many :product_vendors, -> { order(:priority) }, dependent: :destroy
+  has_many :vendors, through: :product_vendors
+
   accepts_nested_attributes_for :product_components, allow_destroy: true, reject_if: :all_blank
 
   validates :name, presence: true
@@ -22,6 +25,20 @@ class Product < ApplicationRecord
   scope :raw_materials,       -> { where(is_raw_material: true) }
   scope :finished_goods,      -> { where(is_raw_material: false) }
   scope :below_reorder_point, -> { raw_materials.where('current_stock <= reorder_point AND reorder_point IS NOT NULL') }
+
+  def primary_vendor
+    product_vendors.first&.vendor
+  end
+
+  def set_vendors_in_order(vendor_ids)
+    vendor_ids = Array(vendor_ids).reject(&:blank?)
+    transaction do
+      product_vendors.destroy_all
+      vendor_ids.each_with_index do |vid, i|
+        product_vendors.create!(vendor_id: vid, priority: i + 1)
+      end
+    end
+  end
 
   # Quantity inbound from active purchase orders (not yet received).
   # Uses preloaded value if set by controller bulk query.

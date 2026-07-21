@@ -1,0 +1,111 @@
+<div class="container mt-4" style="max-width: 700px;">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Edit Purchase Order #<%= @purchase_order.id %></h1>
+    <%= link_to 'Cancel', purchase_order_path(@purchase_order), class: 'btn btn-outline-secondary btn-sm' %>
+  </div>
+
+  <%= form_with model: @purchase_order, local: true do |f| %>
+    <% if @purchase_order.errors.any? %>
+      <div class="alert alert-danger">
+        <ul class="mb-0">
+          <% @purchase_order.errors.full_messages.each do |msg| %>
+            <li><%= msg %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div class="card shadow-sm mb-3">
+      <div class="card-header fw-semibold">Order Details</div>
+      <div class="card-body row g-3">
+        <div class="col-12">
+          <%= f.label :vendor_id, "Vendor", class: 'form-label' %>
+          <%= f.collection_select :vendor_id, @vendors, :id, :name,
+                { include_blank: 'Select vendor...' }, class: 'form-select' %>
+        </div>
+        <div class="col-6">
+          <%= f.label :expected_delivery_date, class: 'form-label' %>
+          <%= f.date_field :expected_delivery_date, class: 'form-control' %>
+        </div>
+        <div class="col-6">
+          <%= f.label :trigger_type, class: 'form-label' %>
+          <%= f.select :trigger_type,
+                PurchaseOrder::TRIGGER_TYPES.map { |t| [t.humanize, t] },
+                {}, class: 'form-select' %>
+        </div>
+        <div class="col-12">
+          <%= f.label :notes, class: 'form-label' %>
+          <%= f.text_area :notes, class: 'form-control', rows: 2 %>
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow-sm mb-3">
+      <div class="card-header fw-semibold">Line Items</div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0" id="line-items-table">
+          <thead class="table-light">
+            <tr>
+              <th>Product</th>
+              <th style="width:80px">Package</th>
+              <th style="width:100px">Qty</th>
+              <th style="width:120px">Unit Cost</th>
+              <th style="width:40px"></th>
+            </tr>
+          </thead>
+          <tbody id="line-items-body">
+            <%= f.fields_for :line_items do |li| %>
+              <%= render 'line_item_fields', f: li %>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      <div class="card-footer">
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="add-line-item">+ Add Line Item</button>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <%= f.submit 'Save Changes', class: 'btn btn-success' %>
+      <%= link_to 'Cancel', purchase_order_path(@purchase_order), class: 'btn btn-secondary' %>
+    </div>
+  <% end %>
+</div>
+
+<%# Hidden template for JS cloning %>
+<template id="line-item-template">
+  <tr class="line-item-row">
+    <td>
+      <select name="purchase_order[line_items_attributes][NEW_INDEX][product_id]" class="form-select form-select-sm">
+        <option value="">Select product...</option>
+        <% @products.each do |p| %>
+          <option value="<%= p.id %>"><%= p.name %></option>
+        <% end %>
+      </select>
+    </td>
+    <td><input type="text" name="purchase_order[line_items_attributes][NEW_INDEX][package_code]" class="form-control form-control-sm" placeholder="EA"></td>
+    <td><input type="number" name="purchase_order[line_items_attributes][NEW_INDEX][quantity]" step="0.001" class="form-control form-control-sm" placeholder="0"></td>
+    <td><input type="number" name="purchase_order[line_items_attributes][NEW_INDEX][unit_cost]" step="0.0001" class="form-control form-control-sm" placeholder="0.00"></td>
+    <td><button type="button" class="btn btn-outline-danger btn-sm remove-line-item">✕</button></td>
+  </tr>
+</template>
+
+<script>
+  let lineItemIndex = <%= @purchase_order.line_items.size %>;
+
+  document.getElementById('add-line-item').addEventListener('click', function() {
+    const template = document.getElementById('line-item-template');
+    const clone = template.content.cloneNode(true);
+    clone.querySelectorAll('[name]').forEach(el => {
+      el.name = el.name.replace('NEW_INDEX', lineItemIndex);
+    });
+    document.getElementById('line-items-body').appendChild(clone);
+    lineItemIndex++;
+  });
+
+  document.getElementById('line-items-body').addEventListener('click', function(e) {
+    if (e.target.classList.contains('remove-line-item')) {
+      e.target.closest('tr').remove();
+    }
+  });
+</script>

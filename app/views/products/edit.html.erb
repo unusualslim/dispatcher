@@ -33,6 +33,20 @@
             <%= form.label :is_raw_material, "Raw Material (input to manufacturing)", class: 'form-check-label' %>
           </div>
         </div>
+        <div class="col-12">
+          <label class="form-label" for="product_vendor_ids">Vendors (in priority order)</label>
+          <input type="hidden" name="product[vendor_ids][]" value="">
+          <select name="product[vendor_ids][]" id="product_vendor_ids" multiple="multiple"
+                  class="form-select select2" data-placeholder="Select vendors in priority order...">
+            <% @vendors.each do |v| %>
+              <option value="<%= v.id %>"
+                <%= 'selected' if @product.vendors.map(&:id).include?(v.id) %>>
+                <%= v.name %>
+              </option>
+            <% end %>
+          </select>
+          <div class="form-text">First selected = primary vendor. Select multiple for fallback suppliers.</div>
+        </div>
       </div>
     </div>
 

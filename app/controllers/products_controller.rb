@@ -93,24 +93,30 @@ class ProductsController < ApplicationController
   
     def new
       @product = Product.new(unit_of_measurement: 'Each')
+      @vendors = Vendor.order(:name)
     end
-  
+
     def create
       @product = Product.new(product_params)
       if @product.save
+        @product.set_vendors_in_order(params[:product][:vendor_ids])
         redirect_to products_path, notice: 'Product was successfully added.'
       else
+        @vendors = Vendor.order(:name)
         render :new
       end
     end
-  
+
     def edit
+      @vendors = Vendor.order(:name)
     end
-  
+
     def update
       if @product.update(product_params)
+        @product.set_vendors_in_order(params[:product][:vendor_ids])
         redirect_to products_path, notice: 'Product was successfully updated.'
       else
+        @vendors = Vendor.order(:name)
         @product.product_components.build if @product.product_components.empty?
         load_show_data
         render :show, status: :unprocessable_entity
@@ -199,6 +205,7 @@ class ProductsController < ApplicationController
     end
 
     def load_show_data
+      @product_vendors = @product.product_vendors.includes(:vendor)
       @recent_transactions = @product.inventory_transactions
                                      .order(created_at: :desc)
                                      .includes(:created_by)
