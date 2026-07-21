@@ -9,7 +9,7 @@
     </div>
   <% end %>
 
-<%= form_with url: preview_bom_import_path, method: :post, local: true, multipart: true do |f| %>
+<%= form_with url: preview_bom_import_path, method: :post, local: true, multipart: true, data: { turbo: false } do |f| %>
     <div class="card shadow-sm">
       <div class="card-body">
         <div class="mb-3">
