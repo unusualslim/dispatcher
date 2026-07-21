@@ -25,7 +25,7 @@ class BomImportService
   end
 
   def preview
-    rows = CSV.read(@file_path, headers: false)
+    rows = CSV.read(@file_path, headers: false, encoding: 'bom|utf-8')
     by_product = rows.group_by { |r| r[COL_FINISHED_ID].to_s.strip }
 
     by_product.map do |finished_id, product_rows|
@@ -67,7 +67,7 @@ class BomImportService
   def run
     result = Result.new(created: 0, overwritten: 0, skipped_no_product: 0, skipped_already_has_bom: 0, errors: [])
 
-    rows = CSV.read(@file_path, headers: false)
+    rows = CSV.read(@file_path, headers: false, encoding: 'bom|utf-8')
 
     # Group by finished_product_id → pkg_code → [rows]
     by_product = rows.group_by { |r| r[COL_FINISHED_ID].to_s.strip }

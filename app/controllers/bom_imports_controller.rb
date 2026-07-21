@@ -15,6 +15,7 @@ class BomImportsController < ApplicationController
     return redirect_to new_bom_import_path, alert: "File must be a CSV file." unless file.original_filename.downcase.end_with?('.csv')
 
     tmp = Tempfile.new(['bom_import', '.csv'])
+    tmp.binmode
     tmp.write(file.read)
     tmp.flush
     session[:bom_import_tmp_path] = tmp.path
