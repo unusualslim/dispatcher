@@ -11,16 +11,17 @@ class BomImportService
   COL_COMPONENT_PKG = 5
   COL_QUANTITY      = 6
 
-  Result      = Struct.new(:created, :skipped_no_product, :skipped_already_has_bom, :errors, keyword_init: true)
+  Result      = Struct.new(:created, :overwritten, :skipped_no_product, :skipped_already_has_bom, :errors, keyword_init: true)
   PreviewRow  = Struct.new(:finished_id, :finished_name, :product, :action, :pkg_code, :components, keyword_init: true)
   ComponentPreview = Struct.new(:component_id, :component_name, :component_product, :quantity, :uom, keyword_init: true)
 
-  def self.call(file_path)
-    new(file_path).run
+  def self.call(file_path, overwrite: false)
+    new(file_path, overwrite: overwrite).run
   end
 
-  def initialize(file_path)
+  def initialize(file_path, overwrite: false)
     @file_path = file_path
+    @overwrite = overwrite
   end
 
   def preview
@@ -36,7 +37,7 @@ class BomImportService
                             action: :skip_no_product, pkg_code: nil, components: [])
       end
 
-      if product.product_components.any?
+      if product.product_components.any? && !@overwrite
         next PreviewRow.new(finished_id: finished_id, finished_name: finished_name, product: product,
                             action: :skip_has_bom, pkg_code: nil, components: [])
       end
@@ -57,13 +58,14 @@ class BomImportService
                              uom: component_pkg.presence || 'EA')
       end
 
+      action = product.product_components.any? ? :overwrite : :create
       PreviewRow.new(finished_id: finished_id, finished_name: finished_name, product: product,
-                     action: :create, pkg_code: chosen_pkg, components: components)
+                     action: action, pkg_code: chosen_pkg, components: components)
     end.compact
   end
 
   def run
-    result = Result.new(created: 0, skipped_no_product: 0, skipped_already_has_bom: 0, errors: [])
+    result = Result.new(created: 0, overwritten: 0, skipped_no_product: 0, skipped_already_has_bom: 0, errors: [])
 
     rows = CSV.read(@file_path, headers: false)
 
@@ -79,8 +81,13 @@ class BomImportService
       end
 
       if product.product_components.any?
-        result.skipped_already_has_bom += 1
-        next
+        if @overwrite
+          product.product_components.destroy_all
+          result.overwritten += 1
+        else
+          result.skipped_already_has_bom += 1
+          next
+        end
       end
 
       # Group by package code, then pick primary package

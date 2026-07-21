@@ -18,12 +18,15 @@ class BomImportsController < ApplicationController
     tmp.write(file.read)
     tmp.flush
     session[:bom_import_tmp_path] = tmp.path
+    session[:bom_import_overwrite] = params[:overwrite] == '1'
     ObjectSpace.undefine_finalizer(tmp)
 
-    @rows = BomImportService.new(tmp.path).preview
-    @create_count = @rows.count { |r| r.action == :create }
+    @overwrite = session[:bom_import_overwrite]
+    @rows = BomImportService.new(tmp.path, overwrite: @overwrite).preview
+    @create_count    = @rows.count { |r| r.action == :create }
+    @overwrite_count = @rows.count { |r| r.action == :overwrite }
     @skip_no_product = @rows.count { |r| r.action == :skip_no_product }
-    @skip_has_bom = @rows.count { |r| r.action == :skip_has_bom }
+    @skip_has_bom    = @rows.count { |r| r.action == :skip_has_bom }
   end
 
   def create
@@ -43,8 +46,10 @@ class BomImportsController < ApplicationController
       started_at:   Time.current
     )
 
+    overwrite = session[:bom_import_overwrite] || false
+
     begin
-      result = BomImportService.call(file_path)
+      result = BomImportService.call(file_path, overwrite: overwrite)
 
       log.update!(
         status:          'success',
@@ -54,9 +59,11 @@ class BomImportsController < ApplicationController
         warnings:        result.errors.any? ? result.errors.join("\n") : nil
       )
 
-      summary = "Import complete — #{result.created} components created. " \
-                "#{result.skipped_no_product} products not found, " \
-                "#{result.skipped_already_has_bom} already had a BOM (skipped)."
+      summary = "Import complete — #{result.created} components created"
+      summary += ", #{result.overwritten} BOMs overwritten" if result.overwritten > 0
+      summary += ". #{result.skipped_no_product} products not found" if result.skipped_no_product > 0
+      summary += ", #{result.skipped_already_has_bom} already had a BOM (skipped)" if result.skipped_already_has_bom > 0
+      summary += "."
       summary += " #{result.errors.count} warnings." if result.errors.any?
 
       flash[:notice] = summary
@@ -66,6 +73,7 @@ class BomImportsController < ApplicationController
     ensure
       File.delete(file_path) rescue nil
       session.delete(:bom_import_tmp_path)
+      session.delete(:bom_import_overwrite)
     end
 
     redirect_to new_bom_import_path

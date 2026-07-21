@@ -17,6 +17,13 @@
           <%= f.file_field :file, class: "form-control", accept: ".csv" %>
           <div class="form-text">Export from PDI SQL Server using the BOM join query.</div>
         </div>
+        <div class="mb-3 form-check">
+          <%= check_box_tag :overwrite, '1', false, class: 'form-check-input', id: 'overwrite' %>
+          <%= label_tag :overwrite, 'Overwrite existing BOMs', class: 'form-check-label' %>
+          <div class="form-text text-warning">
+            If checked, products that already have BOM components will have them <strong>deleted and replaced</strong> with data from this file.
+          </div>
+        </div>
         <%= f.submit "Preview Import", class: "btn btn-primary" %>
       </div>
     </div>
@@ -29,7 +36,7 @@
         <li>Reads each row: finished product ID, package code, component ID, component package, quantity</li>
         <li>When a product has multiple package BOMs, picks primary using priority: <strong>EA → 55GA → 5GA → GA → first available</strong></li>
         <li>Skips products not found in LoadNTrucks</li>
-        <li>Skips products that already have BOM components (safe to re-run)</li>
+        <li>Skips products that already have BOM components unless <em>Overwrite</em> is checked</li>
         <li>Skips components whose product ID doesn't exist in LoadNTrucks</li>
       </ul>
     </div>

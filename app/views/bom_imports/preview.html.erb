@@ -2,7 +2,12 @@
   <div>
     <h1 class="mb-1">Preview BOM Import</h1>
     <p class="text-muted mb-0">
-      <span class="text-success fw-semibold"><%= @create_count %> products will get a BOM created</span>
+      <% if @create_count > 0 %>
+        <span class="text-success fw-semibold"><%= @create_count %> products will get a BOM created</span>
+      <% end %>
+      <% if @overwrite_count > 0 %>
+        &nbsp;&middot;&nbsp;<span class="text-warning fw-semibold"><%= @overwrite_count %> existing BOMs will be overwritten</span>
+      <% end %>
       <% if @skip_has_bom > 0 %>
         &nbsp;&middot;&nbsp;<span class="text-muted"><%= @skip_has_bom %> already have a BOM (will skip)</span>
       <% end %>
@@ -31,7 +36,7 @@
             <% collapse_id = "bom-components-#{i}" %>
             <tr class="<%= row.action == :skip_no_product ? 'text-muted' : '' %>">
               <td>
-                <% if row.action == :create && row.components.any? %>
+                <% if [:create, :overwrite].include?(row.action) && row.components.any? %>
                   <a class="text-decoration-none" data-bs-toggle="collapse" href="#<%= collapse_id %>" style="cursor:pointer">
                     <% if row.product %>
                       <%= row.product.name %>
@@ -54,6 +59,8 @@
                   <% if row.components.any? { |c| c.component_product.nil? } %>
                     <span class="badge bg-warning text-dark ms-1">Some components not found</span>
                   <% end %>
+                <% when :overwrite %>
+                  <span class="badge bg-warning text-dark">Overwrite BOM</span>
                 <% when :skip_has_bom %>
                   <span class="badge bg-secondary">Already has BOM</span>
                 <% when :skip_no_product %>
@@ -61,7 +68,7 @@
                 <% end %>
               </td>
             </tr>
-            <% if row.action == :create && row.components.any? %>
+            <% if [:create, :overwrite].include?(row.action) && row.components.any? %>
               <tr class="collapse" id="<%= collapse_id %>">
                 <td colspan="4" class="p-0 border-0">
                   <table class="table table-sm mb-0 bg-light">
