@@ -3,6 +3,7 @@
     <div>
       <h1 class="mb-0"><%= @product.name %></h1>
       <div class="text-muted small">Product ID: <%= @product.id %></div>
+      <div class="text-muted small">Last updated: <%= @product.updated_at.strftime("%B %-d, %Y at %-I:%M %p") %></div>
     </div>
     <%= link_to "Back", products_path, class: "btn btn-outline-secondary btn-sm" %>
   </div>
