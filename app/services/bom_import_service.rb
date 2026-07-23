@@ -45,7 +45,7 @@ class BomImportService
 
       by_pkg = product_rows.group_by { |r| r[COL_FINISHED_PKG].to_s.strip }
       chosen_pkg = PKG_PRIORITY.find { |pkg| by_pkg.key?(pkg) } || by_pkg.keys.first
-      chosen_rows = by_pkg[chosen_pkg]
+      chosen_rows = by_pkg[chosen_pkg].uniq { |r| r[COL_COMPONENT_ID].to_s.strip }
 
       components = chosen_rows.map do |row|
         component_id  = row[COL_COMPONENT_ID].to_s.strip
@@ -96,6 +96,9 @@ class BomImportService
       by_pkg = product_rows.group_by { |r| r[COL_FINISHED_PKG].to_s.strip }
       chosen_pkg = PKG_PRIORITY.find { |pkg| by_pkg.key?(pkg) } || by_pkg.keys.first
       chosen_rows = by_pkg[chosen_pkg]
+
+      # Deduplicate components — PDI can have the same component in multiple rules
+      chosen_rows = chosen_rows.uniq { |r| r[COL_COMPONENT_ID].to_s.strip }
 
       chosen_rows.each do |row|
         component_id  = row[COL_COMPONENT_ID].to_s.strip
