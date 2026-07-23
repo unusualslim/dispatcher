@@ -4,6 +4,7 @@
     <div>
       <h1 class="h3 mb-1">What's New in LoadNTrucks</h1>
       <p class="text-muted mb-0">A summary of recent updates and improvements.</p>
+      <p class="text-muted small mb-0 mt-1">Last updated: July 23, 2026</p>
     </div>
     <button onclick="window.print()" class="btn btn-outline-secondary btn-sm d-print-none">
       <i class="bi bi-printer"></i> Print / Save PDF
@@ -13,6 +14,50 @@
   <%# ── July 2026 ── %>
   <div class="mb-5">
     <h5 class="text-muted fw-semibold border-bottom pb-2 mb-3">July 2026</h5>
+
+    <div class="mb-4">
+      <h6 class="fw-bold"><i class="bi bi-cart-check text-success me-2"></i>Purchasing Report</h6>
+      <p class="text-muted small mb-2">A new Purchasing Report page shows exactly what needs to be ordered and from which vendor. It groups items by supplier and shows how much stock is on hand, committed to production, and already on order — then calculates how much you need to buy.</p>
+      <ul class="text-muted small mb-0">
+        <li>Find it under <strong>Purchasing</strong> in the left sidebar</li>
+        <li>Each vendor section has a <strong>Create PO</strong> button that opens a new purchase order pre-filled with all that vendor's items and recommended quantities</li>
+        <li>Items appear on the report when they have a vendor assigned or are a raw material below their reorder point</li>
+      </ul>
+    </div>
+
+    <div class="mb-4">
+      <h6 class="fw-bold"><i class="bi bi-shop text-primary me-2"></i>Vendor Assignment on Products</h6>
+      <p class="text-muted small mb-2">Every product can now have a primary vendor and one or more backup vendors assigned, in priority order. The primary vendor is used first for purchasing suggestions and automatic reorder. If the primary vendor is not available, the system falls back to the backups.</p>
+      <ul class="text-muted small mb-0">
+        <li>Assign vendors on any product's edit page — pick as many as needed and they will be listed in order</li>
+        <li>The product page shows a Vendors card with Primary and Backup labels and lead times</li>
+      </ul>
+    </div>
+
+    <div class="mb-4">
+      <h6 class="fw-bold"><i class="bi bi-pencil-square text-secondary me-2"></i>Edit Purchase Orders</h6>
+      <p class="text-muted small mb-0">Purchase orders in Draft or Pending Approval status can now be edited after they are created. Change the vendor, delivery date, quantities, or add and remove line items. Once a PO is approved it locks to prevent accidental changes. Look for the <strong>Edit</strong> button on any open PO.</p>
+    </div>
+
+    <div class="mb-4">
+      <h6 class="fw-bold"><i class="bi bi-speedometer2 text-info me-2"></i>Products Page — Faster &amp; Paginated</h6>
+      <p class="text-muted small mb-0">The Products list now loads much faster and shows 50 items per page with page navigation at the bottom. Search and filters still work the same way — results update without losing your place.</p>
+    </div>
+
+    <div class="mb-4">
+      <h6 class="fw-bold"><i class="bi bi-file-earmark-arrow-up text-warning me-2"></i>BOM Import Improvements</h6>
+      <p class="text-muted small mb-2">Three improvements to the Bill of Materials import:</p>
+      <ul class="text-muted small mb-0">
+        <li>An <strong>Overwrite existing BOMs</strong> checkbox lets you replace a product's existing components with updated data from a new file — previously the import would skip products that already had a BOM</li>
+        <li>Ingredient quantities now store up to 4 decimal places instead of 3, so small amounts like 0.0019 are no longer rounded</li>
+        <li>The import now handles CSV files exported from Windows without errors</li>
+      </ul>
+    </div>
+
+    <div class="mb-4">
+      <h6 class="fw-bold"><i class="bi bi-calendar-check text-secondary me-2"></i>Last Updated Date on Products</h6>
+      <p class="text-muted small mb-0">Every product page now shows the date and time it was last updated, making it easy to see whether the information is current.</p>
+    </div>
 
     <div class="mb-4">
       <h6 class="fw-bold"><i class="bi bi-bag-arrow-up text-success me-2"></i>PDI Purchase Order Import</h6>

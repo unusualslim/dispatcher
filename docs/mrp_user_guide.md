@@ -55,6 +55,8 @@ All features in this guide are under **Inventory & MRP** in the left sidebar:
 | MRP Dashboard | 30-day planning view — shortfalls, stock levels, open POs |
 | Products | Product master — raw materials and finished goods |
 | Purchase Orders | Buy raw materials from vendors |
+| Purchasing Report | See what needs to be ordered, grouped by vendor, with recommended quantities |
+| Vendors | Manage your supplier list and contact information |
 | Adjust Inventory | Manual stock correction |
 | Inventory History | Full audit log of every stock movement |
 | Import from PDI | Bulk update stock levels from a PDI warehouse export |
@@ -81,6 +83,14 @@ Click **Products** in the sidebar. The list shows all products with their curren
 3. Optionally set: Cost Per Unit, Reorder Point, Safety Stock, Current Stock
 4. For finished goods, add components in the **Bill of Materials** section (see below)
 5. Click **Save**
+
+### Assigning Vendors to a Product
+
+On any product's edit page, there is a **Vendors** field. Search for and select a vendor to assign it to the product. The first vendor you select is the primary vendor — add more for backups. Vendors are listed in priority order: the system uses the primary vendor first for purchasing suggestions and automatic reorder, and falls back to backups if the primary is not available.
+
+You can change or remove vendors at any time by editing the product.
+
+On the product detail page, a **Vendors** card shows all assigned vendors with **Primary** and **Backup** labels and their lead times.
 
 ### Setting Up a Bill of Materials
 
@@ -215,6 +225,12 @@ When stock arrives:
 1. Open the PO and click **Mark as Received**
 2. The system adds the ordered quantity to the product's current stock and creates an inventory transaction record
 
+### Editing a Purchase Order
+
+Purchase orders in **Draft** or **Pending Approval** status can be edited after they are created. Open the PO and click the **Edit** button. You can change the vendor, the expected delivery date, quantities on existing line items, or add and remove line items entirely.
+
+Once a PO is approved, it cannot be edited. This prevents accidental changes after a PO has been reviewed and signed off.
+
 ### Automatic Draft POs
 
 The system creates Draft POs automatically in two situations:
@@ -225,6 +241,51 @@ The system creates Draft POs automatically in two situations:
 Auto-generated POs are always created as Drafts. Someone still needs to review and approve them before submitting to the vendor.
 
 When draft POs are created automatically, admin/manager users who have email notifications enabled will receive an email summary.
+
+---
+
+## 7a. Purchasing Report
+
+The Purchasing Report is a page that shows everything that needs to be ordered, grouped by vendor. It is the fastest way to turn purchasing needs into purchase orders.
+
+Find it under **Purchasing** in the left sidebar.
+
+### What Shows Up on the Report
+
+An item appears on the Purchasing Report if:
+- It has a vendor assigned and the quantity available is below its reorder point or there is outstanding production demand, or
+- It is a raw material with a vendor assigned and stock is getting low
+
+Items without a vendor assigned will not appear on the report, so make sure vendors are set up on your products.
+
+### How the Recommended Quantity Is Calculated
+
+The recommended quantity covers two things:
+1. **Production demand** — the amount committed to open production orders that has not yet been sourced
+2. **Reorder gap** — any amount needed to bring stock back up above the reorder minimum
+
+The system adds these together to give you a single "Qty to Purchase" number per item.
+
+### Columns Explained
+
+| Column | Meaning |
+|---|---|
+| On Hand | Current stock in the system |
+| On Order | Quantity already on open purchase orders (approved or submitted) |
+| Committed | Quantity reserved for open production orders |
+| Available | On Hand minus Committed — what is actually free to use |
+| Inv Min | Your reorder point — the level at which you should reorder |
+| Inv Max | Your target stock level after replenishment |
+| Qty to Purchase | Recommended amount to order |
+
+### Creating a PO from the Report
+
+Each vendor section has a **Create PO** button. Clicking it opens a new purchase order pre-filled with:
+- The vendor already selected
+- Every item in that vendor's section as a line item
+- The recommended quantity for each item
+
+You can adjust quantities before saving. Once you save, the PO is created as a Draft and follows the normal approval process.
 
 ---
 
@@ -292,7 +353,7 @@ The production order and BOM system is general-purpose, but it is designed for D
 
 - **Lot numbers** are auto-generated in FPS format (FPS-XXXX-YYYYMMDD-NN) suitable for traceability and label printing
 - **QC hold and reject statuses** on batches allow a batch to be flagged for review before it is released to inventory
-- **BOM quantities** support up to three decimal places, which is needed for additive amounts in blending
+- **BOM quantities** support up to four decimal places (e.g. 0.0019), which is needed for additive amounts in blending
 - **Unit of measure** is set per BOM line, so gallons, liters, and each (labels, totes) can all coexist in the same formula
 - The **Sign-Off** fields on a production order (Filled By, Approved By, Production Date) are designed for batch record documentation
 
@@ -323,3 +384,9 @@ Open the production order and find the batch. The component list on the producti
 
 **Q: Can I create a purchase order before there is a shortfall?**
 Yes. Use **Purchase Orders → New Purchase Order** and set the trigger type to "Manual." You do not need to wait for the MRP to flag a shortage.
+
+**Q: How do I assign a vendor to a product?**
+Open the product and click **Edit Settings**. In the **Vendors** field, search for and select your vendor. The first vendor you select is the primary — add more for backups. Save when done. Vendors show on the product page with **Primary** and **Backup** labels.
+
+**Q: What is the difference between the Purchasing Report and the MRP Dashboard?**
+The MRP Dashboard focuses on what raw materials are needed based on open production orders — it shows shortfalls against current demand for the next 30 days. The Purchasing Report is broader — it shows everything that needs to be ordered based on both production demand and reorder points, grouped by vendor, with a ready-to-use Create PO button for each supplier.
