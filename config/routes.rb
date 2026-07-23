@@ -177,7 +177,11 @@ Rails.application.routes.draw do
 
   resources :dispatch_messages, only: [:index, :show]
 
-  resources :vendors, only: [:index, :new, :create, :destroy, :show, :edit, :update]
+  resources :vendors, only: [:index, :new, :create, :destroy, :show, :edit, :update] do
+    collection do
+      post :import_preferred_vendors
+    end
+  end
 
   resources :automated_processes, only: [:index, :show], param: :id do
     member do
