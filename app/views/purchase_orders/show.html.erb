@@ -4,13 +4,6 @@
     <%= link_to 'All POs', purchase_orders_path, class: 'btn btn-outline-secondary btn-sm' %>
   </div>
 
-  <% if notice %>
-    <div class="alert alert-success"><%= notice %></div>
-  <% end %>
-  <% if alert %>
-    <div class="alert alert-danger"><%= alert %></div>
-  <% end %>
-
   <div class="card shadow-sm mb-3">
     <div class="card-body">
       <dl class="row mb-0">
@@ -29,7 +22,12 @@
         <dd class="col-8"><%= @purchase_order.vendor.name %></dd>
 
         <dt class="col-4">Total Cost</dt>
-        <dd class="col-8"><%= number_to_currency(@purchase_order.total_cost) %></dd>
+        <dd class="col-8">
+          <%= number_to_currency(@purchase_order.total_cost) %>
+          <% if @purchase_order.freight_amount.to_f > 0 || @purchase_order.other_charges.to_f > 0 %>
+            <span class="text-muted small ms-1">(subtotal <%= number_to_currency(@purchase_order.subtotal) %>)</span>
+          <% end %>
+        </dd>
 
         <dt class="col-4">Trigger</dt>
         <dd class="col-8"><%= @purchase_order.trigger_type&.humanize || '—' %></dd>
@@ -41,6 +39,22 @@
 
         <dt class="col-4">Expected Delivery</dt>
         <dd class="col-8"><%= @purchase_order.expected_delivery_date&.strftime('%B %d, %Y') || '—' %></dd>
+
+        <% if @purchase_order.freight_terms.present? || @purchase_order.freight_amount.present? %>
+          <dt class="col-4">Freight Terms</dt>
+          <dd class="col-8"><%= @purchase_order.freight_terms.presence || '—' %></dd>
+          <dt class="col-4">Freight Amount</dt>
+          <dd class="col-8"><%= @purchase_order.freight_amount.to_f > 0 ? number_to_currency(@purchase_order.freight_amount) : '—' %></dd>
+        <% end %>
+        <% if @purchase_order.other_charges.to_f > 0 %>
+          <dt class="col-4">Other Charges</dt>
+          <dd class="col-8">
+            <%= number_to_currency(@purchase_order.other_charges) %>
+            <% if @purchase_order.other_charges_description.present? %>
+              <span class="text-muted small">— <%= @purchase_order.other_charges_description %></span>
+            <% end %>
+          </dd>
+        <% end %>
 
         <% if @purchase_order.pdi_reference.present? %>
           <dt class="col-4">PDI Reference</dt>
@@ -99,6 +113,24 @@
       <% end %>
     </tbody>
     <tfoot>
+      <% if @purchase_order.freight_amount.to_f > 0 || @purchase_order.other_charges.to_f > 0 %>
+        <tr class="text-muted small">
+          <td colspan="4" class="text-end">Subtotal</td>
+          <td class="text-end"><%= number_to_currency(@purchase_order.subtotal) %></td>
+        </tr>
+        <% if @purchase_order.freight_amount.to_f > 0 %>
+          <tr class="text-muted small">
+            <td colspan="4" class="text-end">Freight (<%= @purchase_order.freight_terms.presence || 'see terms' %>)</td>
+            <td class="text-end"><%= number_to_currency(@purchase_order.freight_amount) %></td>
+          </tr>
+        <% end %>
+        <% if @purchase_order.other_charges.to_f > 0 %>
+          <tr class="text-muted small">
+            <td colspan="4" class="text-end"><%= @purchase_order.other_charges_description.presence || 'Other Charges' %></td>
+            <td class="text-end"><%= number_to_currency(@purchase_order.other_charges) %></td>
+          </tr>
+        <% end %>
+      <% end %>
       <tr class="fw-semibold">
         <td colspan="4" class="text-end">Total</td>
         <td class="text-end"><%= number_to_currency(@purchase_order.total_cost) %></td>

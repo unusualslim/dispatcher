@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_07_21_151749) do
+ActiveRecord::Schema[7.0].define(version: 2026_07_24_172005) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -400,6 +400,10 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_21_151749) do
     t.string "vendor_id"
     t.string "pdi_reference"
     t.datetime "posted_at"
+    t.string "freight_terms"
+    t.decimal "freight_amount", precision: 10, scale: 2
+    t.decimal "other_charges", precision: 10, scale: 2
+    t.string "other_charges_description"
     t.index ["pdi_reference"], name: "index_purchase_orders_on_pdi_reference", unique: true
     t.index ["status"], name: "index_purchase_orders_on_status"
     t.index ["trigger_type"], name: "index_purchase_orders_on_trigger_type"
@@ -492,6 +496,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_21_151749) do
     t.string "zip"
     t.string "payment_terms"
     t.string "payment_method"
+    t.string "freight_terms"
   end
 
   create_table "work_orders", force: :cascade do |t|

@@ -23,8 +23,12 @@ class PurchaseOrder < ApplicationRecord
   scope :draft,            -> { where(status: 'draft') }
   scope :active,           -> { where(status: %w[draft pending_approval approved submitted]) }
 
-  def total_cost
+  def subtotal
     line_items.sum { |li| li.total_cost || 0 }
+  end
+
+  def total_cost
+    subtotal + freight_amount.to_f + other_charges.to_f
   end
 
   def posted?

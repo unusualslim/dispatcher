@@ -14,7 +14,11 @@ class PurchaseOrdersController < ApplicationController
 
   def new
     @purchase_order = PurchaseOrder.new
-    @purchase_order.vendor_id = params[:vendor_id] if params[:vendor_id].present?
+    if params[:vendor_id].present?
+      @purchase_order.vendor_id = params[:vendor_id]
+      vendor = Vendor.find_by(id: params[:vendor_id])
+      @purchase_order.freight_terms = vendor&.freight_terms if vendor&.freight_terms.present?
+    end
     @vendors  = Vendor.order(:name)
     @products = Product.order(:name)
 
@@ -161,7 +165,8 @@ class PurchaseOrdersController < ApplicationController
 
   def purchase_order_params
     params.require(:purchase_order).permit(
-      :vendor_id, :trigger_type, :notes, :expected_delivery_date,
+      :vendor_id, :trigger_type, :notes, :expected_delivery_date, :freight_terms, :freight_amount,
+      :other_charges, :other_charges_description,
       line_items_attributes: [:id, :product_id, :quantity, :unit_cost, :package_code, :_destroy]
     )
   end
