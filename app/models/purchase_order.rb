@@ -28,7 +28,9 @@ class PurchaseOrder < ApplicationRecord
   end
 
   def total_cost
-    subtotal + freight_amount.to_f + other_charges.to_f
+    subtotal +
+      (respond_to?(:freight_amount) ? freight_amount.to_f : 0) +
+      (respond_to?(:other_charges)  ? other_charges.to_f  : 0)
   end
 
   def posted?
