@@ -33,9 +33,9 @@
         </div>
         <div class="col-6">
           <%= f.label :freight_terms, class: 'form-label' %>
-          <%= f.select :freight_terms,
-                [['— None —', ''], 'Prepaid', 'Collect', 'Prepaid & Add', 'FOB Destination', 'FOB Origin', 'Third Party'],
-                {}, class: 'form-select', id: 'po_freight_terms' %>
+          <select name="purchase_order[freight_terms]" id="po_freight_terms" class="form-select">
+            <option value="">— Select vendor first —</option>
+          </select>
         </div>
         <div class="col-6">
           <%= f.label :freight_amount, "Freight Amount ($)", class: 'form-label' %>
@@ -107,14 +107,30 @@
 </template>
 
 <script>
-  const vendorFreightTerms = <%= raw @vendors.each_with_object({}) { |v, h| h[v.id] = v.freight_terms.presence }.to_json %>;
+  const vendorFreightTerms = <%= raw @vendors.each_with_object({}) { |v, h| h[v.id] = v.freight_term_names }.to_json %>;
+  const freightTermLabels  = <%= raw VendorFreightTerm::TERMS.to_h.to_json %>;
+  const currentFreightTerm = <%= raw @purchase_order.freight_terms.to_s.to_json %>;
 
-  document.getElementById('po_vendor_id').addEventListener('change', function() {
-    const ft = vendorFreightTerms[this.value];
-    if (ft) {
-      document.getElementById('po_freight_terms').value = ft;
+  function rebuildFreightTerms(vendorId) {
+    const sel = document.getElementById('po_freight_terms');
+    const codes = vendorFreightTerms[vendorId] || [];
+    if (codes.length === 0) {
+      sel.innerHTML = '<option value="">— No terms assigned to vendor —</option>';
+      return;
     }
-  });
+    sel.innerHTML = '<option value="">— None —</option>';
+    codes.forEach(function(code) {
+      const opt = document.createElement('option');
+      opt.value = code;
+      opt.textContent = freightTermLabels[code] || code;
+      if (code === currentFreightTerm) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  }
+
+  const vendorSel = document.getElementById('po_vendor_id');
+  vendorSel.addEventListener('change', function() { rebuildFreightTerms(this.value); });
+  rebuildFreightTerms(vendorSel.value);
 
   let lineItemIndex = <%= @purchase_order.line_items.size %>;
 

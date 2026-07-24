@@ -1,0 +1,18 @@
+<div class="sidebar-section-label">
+  <a class="sidebar-collapse-toggle d-flex justify-content-between align-items-center"
+     data-bs-toggle="collapse"
+     data-bs-target="#<%= id %>"
+     href="#<%= id %>"
+     aria-expanded="<%= active ? 'true' : 'false' %>"
+     aria-controls="<%= id %>">
+    <span><i class="bi <%= icon %> me-1 opacity-75"></i><%= label %></span>
+    <i class="bi bi-chevron-down sidebar-collapse-chevron"></i>
+  </a>
+</div>
+<div class="collapse sidebar-collapse <%= 'show' if active %>"
+     id="<%= id %>"
+     data-bs-parent="#sidebarAccordion">
+  <ul class="sidebar-nav">
+    <%= yield %>
+  </ul>
+</div>

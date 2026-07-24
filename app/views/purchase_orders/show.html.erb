@@ -42,7 +42,11 @@
 
         <% if @purchase_order.freight_terms.present? || @purchase_order.freight_amount.present? %>
           <dt class="col-4">Freight Terms</dt>
-          <dd class="col-8"><%= @purchase_order.freight_terms.presence || '—' %></dd>
+          <dd class="col-8">
+            <% code = @purchase_order.freight_terms.presence %>
+            <% label = VendorFreightTerm::TERMS.to_h[code] %>
+            <%= label || code || '—' %>
+          </dd>
           <dt class="col-4">Freight Amount</dt>
           <dd class="col-8"><%= @purchase_order.freight_amount.to_f > 0 ? number_to_currency(@purchase_order.freight_amount) : '—' %></dd>
         <% end %>
@@ -120,7 +124,7 @@
         </tr>
         <% if @purchase_order.freight_amount.to_f > 0 %>
           <tr class="text-muted small">
-            <td colspan="4" class="text-end">Freight (<%= @purchase_order.freight_terms.presence || 'see terms' %>)</td>
+            <td colspan="4" class="text-end">Freight (<%= VendorFreightTerm::TERMS.to_h[@purchase_order.freight_terms] || @purchase_order.freight_terms || 'see terms' %>)</td>
             <td class="text-end"><%= number_to_currency(@purchase_order.freight_amount) %></td>
           </tr>
         <% end %>

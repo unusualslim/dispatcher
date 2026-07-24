@@ -183,6 +183,8 @@ Rails.application.routes.draw do
     end
   end
 
+  resource :vendor_freight_term_import, only: [:new, :create]
+
   resources :automated_processes, only: [:index, :show], param: :id do
     member do
       post  :trigger

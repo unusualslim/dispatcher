@@ -12,6 +12,16 @@ class PurchaseOrder < ApplicationRecord
   validates :status,       inclusion: { in: STATUSES }
   validates :trigger_type, inclusion: { in: TRIGGER_TYPES }, allow_nil: true
   validates :pdi_reference, uniqueness: true, allow_nil: true
+  validate :freight_term_allowed_for_vendor
+
+  def freight_term_allowed_for_vendor
+    return if freight_terms.blank? || vendor_id.blank?
+    allowed = vendor&.freight_term_names || []
+    return if allowed.empty?
+    unless allowed.include?(freight_terms)
+      errors.add(:freight_terms, "is not an allowed freight term for this vendor")
+    end
+  end
 
   after_update_commit :enqueue_pdi_export, if: :submitted?
 

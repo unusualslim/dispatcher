@@ -38,6 +38,32 @@
           <%= form.label :lead_time_days, "Lead Time (days)", class: 'form-label' %>
           <%= form.number_field :lead_time_days, class: 'form-control', min: 0 %>
         </div>
+        <div class="col-6">
+          <%= form.label :payment_terms, class: 'form-label' %>
+          <%= form.text_field :payment_terms, class: 'form-control', placeholder: 'e.g. Net 30' %>
+        </div>
+        <div class="col-6">
+          <%= form.label :payment_method, class: 'form-label' %>
+          <%= form.text_field :payment_method, class: 'form-control', placeholder: 'e.g. ACH' %>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Allowed Freight Terms</label>
+          <div class="border rounded p-2">
+            <% VendorFreightTerm::TERMS.each do |code, label| %>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox"
+                       name="vendor[freight_term_names][]"
+                       value="<%= code %>"
+                       id="ft_<%= code.parameterize %>"
+                       <%= 'checked' if form.object.freight_term_names.include?(code) %>>
+                <label class="form-check-label" for="ft_<%= code.parameterize %>"><%= label %></label>
+              </div>
+            <% end %>
+          </div>
+          <%# sentinel so an empty selection submits [] instead of nothing %>
+          <input type="hidden" name="vendor[freight_term_names][]" value="">
+          <div class="form-text">These terms will be available when creating a PO for this vendor.</div>
+        </div>
       </div>
     </div>
 

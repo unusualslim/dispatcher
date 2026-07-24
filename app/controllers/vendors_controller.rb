@@ -15,6 +15,7 @@ class VendorsController < ApplicationController
 
   def update
     if @vendor.update(vendor_params)
+      @vendor.sync_freight_terms!(params.dig(:vendor, :freight_term_names))
       redirect_to @vendor, notice: "Vendor updated."
     else
       render :edit, status: :unprocessable_entity
@@ -158,6 +159,7 @@ class VendorsController < ApplicationController
 
   def vendor_params
     params.require(:vendor).permit(:name, :contact_name, :email, :phone, :lead_time_days,
-                                   :address_1, :address_2, :city, :state, :zip, :payment_terms, :payment_method)
+                                   :address_1, :address_2, :city, :state, :zip, :payment_terms, :payment_method,
+                                   :freight_terms)
   end
 end

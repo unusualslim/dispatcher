@@ -34,16 +34,24 @@
         </div>
       </div>
     </div>
-    <% if @vendor.payment_terms.present? || @vendor.payment_method.present? %>
+    <% freight_names = @vendor.freight_term_names %>
+    <% if @vendor.payment_terms.present? || @vendor.payment_method.present? || freight_names.any? %>
     <div class="col-md-6">
       <div class="card shadow-sm">
-        <div class="card-header fw-semibold">Payment</div>
+        <div class="card-header fw-semibold">Payment & Freight</div>
         <div class="card-body">
           <% if @vendor.payment_terms.present? %>
-            <p class="mb-1"><strong>Terms:</strong> <%= @vendor.payment_terms %></p>
+            <p class="mb-1"><strong>Payment Terms:</strong> <%= @vendor.payment_terms %></p>
           <% end %>
           <% if @vendor.payment_method.present? %>
-            <p class="mb-1"><strong>Method:</strong> <%= @vendor.payment_method %></p>
+            <p class="mb-1"><strong>Payment Method:</strong> <%= @vendor.payment_method %></p>
+          <% end %>
+          <% if freight_names.any? %>
+            <p class="mb-1"><strong>Freight Terms:</strong>
+              <% freight_names.each do |term| %>
+                <span class="badge bg-secondary me-1"><%= term %></span>
+              <% end %>
+            </p>
           <% end %>
         </div>
       </div>
