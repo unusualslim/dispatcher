@@ -7,6 +7,7 @@ class PurchaseOrder < ApplicationRecord
   belongs_to :received_by, class_name: 'User', optional: true
 
   has_many :line_items, class_name: 'PurchaseOrderLineItem', dependent: :destroy
+  has_many :inventory_transactions, as: :transactable
   accepts_nested_attributes_for :line_items, allow_destroy: true, reject_if: :all_blank
 
   validates :status,       inclusion: { in: STATUSES }
