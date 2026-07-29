@@ -43,6 +43,26 @@
 
         <div id="sidebarAccordion">
 
+        <!-- FAVORITES -->
+        <% favorites = current_user.user_favorites %>
+        <% if favorites.any? %>
+          <% favorites_active = favorites.any? { |f| f.path == request.path } %>
+          <%= render 'layouts/sidebar_section',
+                label:  'Favorites',
+                icon:   'bi-star-fill',
+                id:     'favoritesCollapse',
+                active: favorites_active do %>
+            <% favorites.each do |fav| %>
+              <li class="favorites-sidebar-item d-flex align-items-center justify-content-between pe-2" data-id="<%= fav.id %>">
+                <%= link_to fav.path, class: "flex-grow-1 #{'active' if request.path == fav.path}" do %>
+                  <%= fav.label %>
+                <% end %>
+                <button class="favorites-sidebar-remove" data-id="<%= fav.id %>" title="Remove" onclick="removeFavorite(<%= fav.id %>)">×</button>
+              </li>
+            <% end %>
+          <% end %>
+        <% end %>
+
         <!-- DISPATCH -->
         <%= render 'layouts/sidebar_section',
               label:     'Dispatch',

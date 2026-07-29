@@ -50,6 +50,90 @@
       </main>
     </div>
 
+    <!-- Favorites context menu -->
+    <div id="favContextMenu" style="display:none; position:fixed; z-index:9999; background:#fff; border:1px solid #ccc; border-radius:6px; box-shadow:0 4px 12px rgba(0,0,0,0.15); padding:4px 0; min-width:180px;">
+      <div id="favContextAdd" style="padding:8px 16px; cursor:pointer; font-size:0.9rem;" onmouseenter="this.style.background='#f0f0f0'" onmouseleave="this.style.background=''">
+        <i class="bi bi-star me-2"></i>Add to Favorites
+      </div>
+      <div id="favContextRemove" style="padding:8px 16px; cursor:pointer; font-size:0.9rem; display:none;" onmouseenter="this.style.background='#f0f0f0'" onmouseleave="this.style.background=''">
+        <i class="bi bi-star-fill text-warning me-2"></i>Remove from Favorites
+      </div>
+    </div>
+
+    <% if user_signed_in? %>
+    <script>
+      var favoritedPaths = <%= raw current_user.user_favorites.pluck(:path).to_json %>;
+      var favIdsByPath   = <%= raw current_user.user_favorites.pluck(:path, :id).to_h.to_json %>;
+      var csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+      var contextTargetPath  = null;
+      var contextTargetLabel = null;
+      var menu = document.getElementById('favContextMenu');
+
+      document.getElementById('sidebarAccordion')?.addEventListener('contextmenu', function(e) {
+        var link = e.target.closest('a[href]');
+        if (!link) return;
+        e.preventDefault();
+
+        contextTargetPath  = link.getAttribute('href');
+        contextTargetLabel = link.innerText.trim();
+
+        var alreadyFav = favoritedPaths.includes(contextTargetPath);
+        document.getElementById('favContextAdd').style.display    = alreadyFav ? 'none' : '';
+        document.getElementById('favContextRemove').style.display = alreadyFav ? '' : 'none';
+
+        menu.style.left    = e.clientX + 'px';
+        menu.style.top     = e.clientY + 'px';
+        menu.style.display = 'block';
+      });
+
+      document.getElementById('favContextAdd')?.addEventListener('click', function() {
+        menu.style.display = 'none';
+        if (!contextTargetPath) return;
+        fetch('<%= user_favorites_path %>', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+          body: JSON.stringify({ label: contextTargetLabel, path: contextTargetPath })
+        }).then(function(r) { if (r.ok) location.reload(); });
+      });
+
+      document.getElementById('favContextRemove')?.addEventListener('click', function() {
+        menu.style.display = 'none';
+        var id = favIdsByPath[contextTargetPath];
+        if (!id) return;
+        removeFavorite(id, null);
+      });
+
+      document.addEventListener('click', function() { menu.style.display = 'none'; });
+      document.addEventListener('keydown', function(e) { if (e.key === 'Escape') menu.style.display = 'none'; });
+
+      function removeFavorite(id, btn) {
+        fetch('/user_favorites/' + id, {
+          method: 'DELETE',
+          headers: { 'X-CSRF-Token': csrfToken }
+        }).then(function(r) { if (r.ok) location.reload(); });
+      }
+      window.removeFavorite = removeFavorite;
+
+      // Drag-to-reorder favorites bar
+      var favList = document.getElementById('favoritesSidebarList');
+      if (favList && typeof Sortable !== 'undefined') {
+        Sortable.create(favList, {
+          animation: 150,
+          onEnd: function() {
+            var ids = Array.from(favList.querySelectorAll('.favorites-sidebar-item')).map(function(el) {
+              return el.dataset.id;
+            });
+            fetch('<%= reorder_user_favorites_path %>', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+              body: JSON.stringify({ ids: ids })
+            });
+          }
+        });
+      }
+    </script>
+    <% end %>
+
     <script>
       (function() {
         var toggle = document.getElementById('sidebarToggle');

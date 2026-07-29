@@ -24,6 +24,9 @@ Rails.application.routes.draw do
   }
   
   resources :users
+  resources :user_favorites, only: [:create, :destroy] do
+    collection { patch :reorder }
+  end
 
   resources :dispatches do
     member do

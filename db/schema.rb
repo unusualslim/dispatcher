@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_07_24_181408) do
+ActiveRecord::Schema[7.0].define(version: 2026_07_29_190941) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -463,6 +463,17 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_24_181408) do
     t.index ["dispatch_id"], name: "index_things_on_dispatch_id"
   end
 
+  create_table "user_favorites", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "label"
+    t.string "path"
+    t.integer "position"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "path"], name: "index_user_favorites_on_user_id_and_path", unique: true
+    t.index ["user_id"], name: "index_user_favorites_on_user_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
@@ -561,5 +572,6 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_24_181408) do
   add_foreign_key "quotes", "customers"
   add_foreign_key "quotes", "locations"
   add_foreign_key "things", "dispatches"
+  add_foreign_key "user_favorites", "users"
   add_foreign_key "work_orders", "vendors"
 end

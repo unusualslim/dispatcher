@@ -193,6 +193,36 @@ html, body {
   z-index: 199;
 }
 
+/* ─── Favorites sidebar section ──────────────────────────── */
+.favorites-sidebar-item {
+  cursor: grab;
+}
+
+.favorites-sidebar-item:active {
+  cursor: grabbing;
+}
+
+.favorites-sidebar-remove {
+  background: none;
+  border: none;
+  color: var(--sidebar-label);
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0 2px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+}
+
+.favorites-sidebar-item:hover .favorites-sidebar-remove {
+  opacity: 1;
+}
+
+.favorites-sidebar-remove:hover {
+  color: #e74c3c;
+}
+
 /* ─── Main wrapper ────────────────────────────────────────── */
 .main-wrapper {
   margin-left: var(--sidebar-width);
