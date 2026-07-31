@@ -2,6 +2,9 @@
    total_skip   = @vendor_groups.sum { |g| g.pos.count(&:already_imported) }
    missing_vend = @vendor_groups.select { |g| g.vendor.nil? } %>
 
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
 <div class="d-flex justify-content-between align-items-start mb-3">
   <div>
     <h1 class="mb-1">Preview PO Import</h1>
@@ -48,7 +51,7 @@
                       @existing_vendors,
                       'skip'
                     ),
-                    class: 'form-select form-select-sm',
+                    class: 'form-select form-select-sm vendor-action-select',
                     disabled: group.pos.all?(&:already_imported) %>
             </div>
           </div>
@@ -154,3 +157,12 @@
     <%= link_to "Cancel", new_purchase_order_imports_path, class: "btn btn-outline-secondary btn-lg" %>
   </div>
 <% end %>
+
+<script>
+  $(function() {
+    $('.vendor-action-select').select2({
+      placeholder: '— Skip these POs —',
+      width: '100%'
+    });
+  });
+</script>

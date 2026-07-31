@@ -6,9 +6,17 @@ class PurchaseOrdersController < ApplicationController
 
   def index
     @status_filter = params[:status].presence
+    @search        = params[:q].to_s.strip
     @status_counts = PurchaseOrder::STATUSES.index_with { |s| PurchaseOrder.where(status: s).count }
     scope = PurchaseOrder.includes(:vendor, :line_items).order(created_at: :desc)
     scope = scope.where(status: @status_filter) if @status_filter
+    if @search.present?
+      scope = scope.joins(:vendor).left_joins(:line_items)
+                   .where(
+                     'vendors.name ILIKE :q OR purchase_orders.pdi_reference ILIKE :q OR purchase_order_line_items.product_name ILIKE :q',
+                     q: "%#{@search}%"
+                   ).distinct
+    end
     @purchase_orders = scope
   end
 
