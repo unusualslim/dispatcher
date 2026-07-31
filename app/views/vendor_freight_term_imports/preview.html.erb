@@ -1,0 +1,99 @@
+<div class="container mt-4" style="max-width: 700px;">
+  <% new_rows      = @rows.select { |r| r[:vendor].present? && !r[:already_exists] }
+     skip_rows     = @rows.select { |r| r[:already_exists] }
+     unknown_rows  = @rows.select { |r| r[:vendor].nil? } %>
+
+  <div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+      <h1 class="mb-1">Preview Freight Term Import</h1>
+      <p class="text-muted mb-0">
+        <span class="text-success fw-semibold"><%= new_rows.count %> term(s) to add</span>
+        <% if skip_rows.any? %>
+          &nbsp;&middot;&nbsp;<span class="text-muted"><%= skip_rows.count %> already exist (will skip)</span>
+        <% end %>
+        <% if unknown_rows.any? %>
+          &nbsp;&middot;&nbsp;<span class="text-danger fw-semibold"><%= unknown_rows.count %> unknown vendor ID(s)</span>
+        <% end %>
+      </p>
+    </div>
+    <%= link_to "Cancel", new_vendor_freight_term_import_path, class: "btn btn-outline-secondary" %>
+  </div>
+
+  <% if unknown_rows.any? %>
+    <div class="alert alert-warning">
+      <strong>Unknown vendor IDs — these rows will be skipped:</strong>
+      <ul class="mb-0 mt-1">
+        <% unknown_rows.each do |r| %>
+          <li><code><%= r[:vendor_id] %></code> — term: <code><%= r[:freight_term] %></code></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%= form_with url: vendor_freight_term_import_path, method: :post, local: true, data: { turbo: false } do |f| %>
+    <input type="hidden" name="file_name" value="<%= @file_name %>">
+    <% new_rows.each_with_index do |r, i| %>
+      <input type="hidden" name="rows[<%= i %>][vendor_id]"    value="<%= r[:vendor_id] %>">
+      <input type="hidden" name="rows[<%= i %>][freight_term]" value="<%= r[:freight_term] %>">
+    <% end %>
+
+    <div class="card shadow-sm mb-3">
+      <div class="card-header fw-semibold">Terms to Import</div>
+      <% if new_rows.empty? %>
+        <div class="card-body text-muted">Nothing new to import.</div>
+      <% else %>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Vendor</th>
+                <th>PDI ID</th>
+                <th>Freight Term</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% new_rows.each do |r| %>
+                <tr>
+                  <td><%= r[:vendor].name %></td>
+                  <td><code class="text-muted"><%= r[:vendor_id] %></code></td>
+                  <td><span class="badge bg-success"><%= r[:freight_term] %></span></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+    </div>
+
+    <% if skip_rows.any? %>
+      <div class="card shadow-sm mb-3">
+        <div class="card-header fw-semibold text-muted">Already Exist (will skip)</div>
+        <div class="table-responsive">
+          <table class="table table-sm mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Vendor</th>
+                <th>PDI ID</th>
+                <th>Freight Term</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% skip_rows.each do |r| %>
+                <tr class="text-muted">
+                  <td><%= r[:vendor].name %></td>
+                  <td><code><%= r[:vendor_id] %></code></td>
+                  <td><span class="badge bg-secondary"><%= r[:freight_term] %></span></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    <% end %>
+
+    <div class="d-flex gap-2 mt-3">
+      <%= f.submit "Confirm Import", class: "btn btn-success btn-lg", disabled: new_rows.empty? %>
+      <%= link_to "Cancel", new_vendor_freight_term_import_path, class: "btn btn-outline-secondary btn-lg" %>
+    </div>
+  <% end %>
+</div>

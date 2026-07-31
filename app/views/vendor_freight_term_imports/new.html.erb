@@ -12,14 +12,16 @@
         Existing assignments are not duplicated — safe to re-run.
       </p>
 
-      <%= form_with url: vendor_freight_term_import_path, method: :post,
+      <%= form_with url: preview_vendor_freight_term_import_path, method: :post,
             multipart: true, local: true, data: { turbo: false } do |f| %>
         <div class="mb-3">
           <%= f.label :file, "CSV File", class: 'form-label' %>
           <%= f.file_field :file, class: 'form-control', accept: '.csv' %>
         </div>
-        <%= f.submit "Import", class: 'btn btn-primary' %>
+        <%= f.submit "Preview Import", class: 'btn btn-primary' %>
       <% end %>
     </div>
   </div>
+
+  <%= render 'shared/import_history', logs: @logs %>
 </div>
