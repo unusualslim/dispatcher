@@ -3,7 +3,7 @@ class VendorsController < ApplicationController
   before_action :set_vendor, only: [:show, :edit, :update, :destroy]
 
   def index
-    @vendors = Vendor.all
+    @vendors = Vendor.includes(:vendor_freight_terms).order(:name)
     @vendor = Vendor.new  # For the form
   end
 
@@ -27,7 +27,7 @@ class VendorsController < ApplicationController
     if @vendor.save
       redirect_to vendors_path, notice: "Vendor successfully added."
     else
-      @vendors = Vendor.all
+      @vendors = Vendor.includes(:vendor_freight_terms).order(:name)
       render :index, status: :unprocessable_entity
     end
   end

@@ -23,14 +23,18 @@
 
   <hr>
 
-  <h3>Vendor List</h3>
-  <table class="table table-bordered">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h3 class="mb-0">Vendor List</h3>
+    <input type="text" id="vendor-search" class="form-control form-control-sm w-auto" placeholder="Search vendors…" autocomplete="off" style="min-width: 220px;">
+  </div>
+  <table class="table table-bordered" id="vendors-table">
     <thead>
       <tr>
         <th>Name</th>
         <th>PDI ID</th>
         <th>Address</th>
         <th>Phone</th>
+        <th>Freight Terms</th>
         <th>Actions</th>
       </tr>
     </thead>
@@ -44,6 +48,16 @@
           </td>
           <td class="text-nowrap"><%= vendor.phone %></td>
           <td>
+            <% terms = vendor.vendor_freight_terms.map(&:freight_term).sort %>
+            <% if terms.any? %>
+              <% terms.each do |t| %>
+                <span class="badge bg-secondary me-1"><%= t %></span>
+              <% end %>
+            <% else %>
+              <span class="text-muted small">—</span>
+            <% end %>
+          </td>
+          <td>
             <div class="btn-group">
               <%= link_to "View", vendor_path(vendor), class: "btn btn-primary btn-sm" %>
               <%= link_to "Edit", edit_vendor_path(vendor), class: "btn btn-outline-secondary btn-sm" %>
@@ -55,3 +69,16 @@
     </tbody>
   </table>
 </div>
+
+<script>
+  document.addEventListener('turbo:load', function() {
+    var input = document.getElementById('vendor-search');
+    if (!input) return;
+    input.addEventListener('input', function() {
+      var q = this.value.toLowerCase();
+      document.querySelectorAll('#vendors-table tbody tr').forEach(function(row) {
+        row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+      });
+    });
+  });
+</script>

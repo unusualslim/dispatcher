@@ -134,10 +134,13 @@
     });
   }
 
-  $(function() {
-    $('#po_vendor_id').select2({ placeholder: 'Select vendor...', width: '100%' });
-    $('#po_vendor_id').on('change', function() { rebuildFreightTerms($(this).val()); });
-    rebuildFreightTerms($('#po_vendor_id').val());
+  document.addEventListener('turbo:load', function() {
+    var $v = $('#po_vendor_id');
+    if (!$v.length) return;
+    if ($v.hasClass('select2-hidden-accessible')) $v.select2('destroy');
+    $v.select2({ placeholder: 'Select vendor...', width: '100%' });
+    $v.on('change', function() { rebuildFreightTerms($(this).val()); });
+    rebuildFreightTerms($v.val());
   });
 
   let lineItemIndex = <%= @purchase_order.line_items.size %>;

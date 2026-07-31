@@ -27,7 +27,7 @@ class PurchaseOrdersController < ApplicationController
       vendor = Vendor.find_by(id: params[:vendor_id])
       @purchase_order.freight_terms = vendor&.freight_terms if vendor&.freight_terms.present?
     end
-    @vendors  = Vendor.order(:name)
+    @vendors  = Vendor.includes(:vendor_freight_terms).order(:name)
     @products = Product.order(:name)
 
     product_ids = Array(params[:product_ids]).select(&:present?)
@@ -90,7 +90,7 @@ class PurchaseOrdersController < ApplicationController
     unless %w[draft pending_approval].include?(@purchase_order.status)
       redirect_to @purchase_order, alert: 'Only draft or pending approval POs can be edited.'
     end
-    @vendors  = Vendor.order(:name)
+    @vendors  = Vendor.includes(:vendor_freight_terms).order(:name)
     @products = Product.order(:name)
   end
 
