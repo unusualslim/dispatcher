@@ -109,14 +109,17 @@
   </tr>
 </template>
 
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
 <script>
-  const vendorFreightTerms = <%= raw @vendors.each_with_object({}) { |v, h| h[v.id] = v.freight_term_names }.to_json %>;
+  const vendorFreightTerms = <%= raw @vendors.each_with_object({}) { |v, h| h[v.id.to_s] = v.freight_term_names }.to_json %>;
   const freightTermLabels  = <%= raw VendorFreightTerm::TERMS.to_h.to_json %>;
   const currentFreightTerm = <%= raw @purchase_order.freight_terms.to_s.to_json %>;
 
   function rebuildFreightTerms(vendorId) {
     const sel = document.getElementById('po_freight_terms');
-    const codes = vendorFreightTerms[vendorId] || [];
+    const codes = vendorFreightTerms[String(vendorId)] || [];
     if (codes.length === 0) {
       sel.innerHTML = '<option value="">— No terms assigned to vendor —</option>';
       return;
@@ -131,9 +134,11 @@
     });
   }
 
-  const vendorSel = document.getElementById('po_vendor_id');
-  vendorSel.addEventListener('change', function() { rebuildFreightTerms(this.value); });
-  rebuildFreightTerms(vendorSel.value);
+  $(function() {
+    $('#po_vendor_id').select2({ placeholder: 'Select vendor...', width: '100%' });
+    $('#po_vendor_id').on('change', function() { rebuildFreightTerms($(this).val()); });
+    rebuildFreightTerms($('#po_vendor_id').val());
+  });
 
   let lineItemIndex = <%= @purchase_order.line_items.size %>;
 
