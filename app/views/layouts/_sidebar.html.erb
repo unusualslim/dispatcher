@@ -3,7 +3,7 @@
 <%# ── Active-section detection ──────────────────────────────────────────── %>
 <% dispatch_active      = %w[customer_orders quotes dispatches calendar dispatch_messages].include?(current) ||
                           (current == 'locations' && action_name == 'map') %>
-<% manufacturing_active = %w[production_orders warehouse work_orders].include?(current) %>
+<% manufacturing_active = %w[production_orders warehouse work_orders jobs].include?(current) %>
 <% inventory_active    = %w[mrp purchasing_report products purchase_orders
                              inventory_adjustments inventory_transactions].include?(current) %>
 <% imports_active      = %w[customer_order_imports inventory_imports warehouse_transaction_imports
@@ -130,6 +130,11 @@
           <li class="<%= 'active' if current == 'production_orders' && action_name == 'index' %>">
             <%= link_to production_orders_path do %>
               <i class="bi bi-table"></i> All Orders
+            <% end %>
+          </li>
+          <li class="<%= 'active' if current == 'jobs' %>">
+            <%= link_to line_path do %>
+              <i class="bi bi-stopwatch"></i> Line Production
             <% end %>
           </li>
           <li class="<%= 'active' if current == 'warehouse' %>">

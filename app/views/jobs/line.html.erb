@@ -1,0 +1,196 @@
+<% content_for :title, "Line Production" %>
+
+<div class="container-fluid py-3 px-3" id="line-screen">
+
+  <% if @active_job %>
+    <%# ── ACTIVE JOB BANNER ── %>
+    <div class="card border-success mb-3" id="active-job-card">
+      <div class="card-body text-center">
+        <h4 class="mb-1 text-success fw-bold">
+          Job In Progress
+          <span class="badge bg-success ms-2" id="live-timer"
+                data-started-at="<%= @active_job.started_at.iso8601 %>">
+            00:00:00
+          </span>
+        </h4>
+        <div class="mb-2 text-muted">
+          <strong>PO:</strong> <%= @active_job.production_order.number %> &nbsp;|&nbsp;
+          <strong>Type:</strong> <%= @active_job.job_type %> &nbsp;|&nbsp;
+          <strong>Started:</strong> <%= @active_job.started_at.strftime("%I:%M %p") %>
+        </div>
+        <div class="mb-3">
+          <% @active_job.job_workers.includes(:user).each do |jw| %>
+            <span class="badge bg-primary me-1 px-2 py-1 fs-6"><%= jw.user.full_name %></span>
+          <% end %>
+        </div>
+        <%= button_to clock_out_job_path(@active_job), method: :patch,
+              class: "btn btn-danger btn-lg px-5",
+              data: { confirm: "Clock out the entire crew?" } do %>
+          Clock Out
+        <% end %>
+      </div>
+    </div>
+  <% else %>
+    <%# ── CLOCK IN FORM ── %>
+    <%= form_with url: jobs_path, method: :post, id: "clock-in-form" do |f| %>
+
+      <%# Worker grid %>
+      <div class="card mb-3">
+        <div class="card-header fw-semibold">
+          Select Workers Present Today
+          <span class="text-muted fw-normal ms-1">(tap to select)</span>
+        </div>
+        <div class="card-body">
+          <% if @line_workers.any? %>
+            <div class="d-flex flex-wrap gap-2" id="worker-grid">
+              <% @line_workers.each do |worker| %>
+                <div class="worker-tile border rounded p-3 text-center"
+                     data-user-id="<%= worker.id %>"
+                     style="min-width: 120px; cursor: pointer; user-select: none;">
+                  <div class="fw-semibold"><%= worker.first_name %></div>
+                  <div class="text-muted small"><%= worker.last_name %></div>
+                  <input type="checkbox" name="worker_ids[]" value="<%= worker.id %>"
+                         class="worker-checkbox d-none">
+                </div>
+              <% end %>
+            </div>
+          <% else %>
+            <p class="text-muted mb-0">No line workers found. Assign the <strong>line_worker</strong> role to employees in User Settings.</p>
+          <% end %>
+        </div>
+      </div>
+
+      <%# Production Order + Job Type dropdowns %>
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Production Order</label>
+          <%= f.select :production_order_id,
+                options_for_select(@production_orders.map { |po| ["#{po.number} — #{po.item} (#{po.status})", po.id] }),
+                { prompt: "Select a production order…" },
+                { class: "form-select form-select-lg", required: true, id: "po-select" } %>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Job Type</label>
+          <%= f.select :job_type,
+                options_for_select(@job_types),
+                { prompt: "Select job type…" },
+                { class: "form-select form-select-lg", required: true, id: "job-type-select" } %>
+        </div>
+      </div>
+
+      <%# Clock in button %>
+      <div class="d-flex align-items-center gap-3">
+        <button type="submit" class="btn btn-success btn-lg px-5" id="clock-in-btn" disabled>
+          Clock In
+        </button>
+        <span class="text-muted" id="current-time" style="font-size: 1.1rem;"></span>
+      </div>
+
+    <% end %>
+  <% end %>
+
+  <%# ── RECENT JOBS ── %>
+  <% recent_jobs = Job.completed.order(ended_at: :desc).limit(10).includes(:production_order, job_workers: :user) %>
+  <% if recent_jobs.any? %>
+    <div class="card mt-4">
+      <div class="card-header fw-semibold">Recent Jobs</div>
+      <div class="table-responsive">
+        <table class="table table-sm table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Production Order</th>
+              <th>Type</th>
+              <th>Started</th>
+              <th>Duration</th>
+              <th>Workers</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% recent_jobs.each do |job| %>
+              <tr>
+                <td><%= job.production_order.number %></td>
+                <td><%= job.job_type %></td>
+                <td><%= job.started_at.strftime("%m/%d %I:%M %p") %></td>
+                <td><%= job.duration_formatted %></td>
+                <td><%= job.job_workers.map { |jw| jw.user.full_name }.join(", ") %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% end %>
+
+</div>
+
+<style>
+  .worker-tile {
+    background: #f8f9fa;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .worker-tile.selected {
+    background: #0d6efd;
+    color: #fff;
+    border-color: #0d6efd !important;
+  }
+  .worker-tile.selected .text-muted {
+    color: rgba(255,255,255,0.75) !important;
+  }
+</style>
+
+<script>
+document.addEventListener("turbo:load", initLineScreen);
+document.addEventListener("DOMContentLoaded", initLineScreen);
+
+function initLineScreen() {
+  // Worker tile toggle
+  document.querySelectorAll(".worker-tile").forEach(tile => {
+    tile.addEventListener("click", () => {
+      tile.classList.toggle("selected");
+      tile.querySelector(".worker-checkbox").checked = tile.classList.contains("selected");
+      updateClockInBtn();
+    });
+  });
+
+  // Clock-in button enablement
+  const form = document.getElementById("clock-in-form");
+  if (form) {
+    form.addEventListener("change", updateClockInBtn);
+    updateClockInBtn();
+  }
+
+  // Live clock
+  const timeEl = document.getElementById("current-time");
+  if (timeEl) {
+    const tick = () => {
+      timeEl.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    };
+    tick();
+    setInterval(tick, 1000);
+  }
+
+  // Elapsed timer for active job
+  const timerEl = document.getElementById("live-timer");
+  if (timerEl) {
+    const startedAt = new Date(timerEl.dataset.startedAt);
+    const tickTimer = () => {
+      const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+      const h = String(Math.floor(elapsed / 3600)).padStart(2, "0");
+      const m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, "0");
+      const s = String(elapsed % 60).padStart(2, "0");
+      timerEl.textContent = `${h}:${m}:${s}`;
+    };
+    tickTimer();
+    setInterval(tickTimer, 1000);
+  }
+}
+
+function updateClockInBtn() {
+  const btn = document.getElementById("clock-in-btn");
+  if (!btn) return;
+  const anyWorker = document.querySelector(".worker-checkbox:checked");
+  const poSelect = document.getElementById("po-select");
+  const jobTypeSelect = document.getElementById("job-type-select");
+  btn.disabled = !(anyWorker && poSelect?.value && jobTypeSelect?.value);
+}
+</script>

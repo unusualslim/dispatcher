@@ -10,6 +10,7 @@ class ProductionOrder < ApplicationRecord
   accepts_nested_attributes_for :production_order_components, allow_destroy: true
 
   has_many :production_order_batches, dependent: :destroy
+  has_many :jobs, dependent: :destroy
   accepts_nested_attributes_for :production_order_batches,
                               allow_destroy: true,
                               reject_if: :all_blank

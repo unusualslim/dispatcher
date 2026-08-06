@@ -106,6 +106,13 @@ Rails.application.routes.draw do
   end
 
 
+  get  'line', to: 'jobs#line', as: :line
+  resources :jobs, only: [:create] do
+    member do
+      patch :clock_out
+    end
+  end
+
   get 'mrp', to: 'mrp#index', as: :mrp
   get 'purchasing_report', to: 'purchasing_report#index', as: :purchasing_report
   get 'docs',                  to: 'docs#index',         as: :docs

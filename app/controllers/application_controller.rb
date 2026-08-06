@@ -2,7 +2,7 @@ class ApplicationController < ActionController::Base
     before_action :configure_permitted_parameters, if: :devise_controller?
     before_action :authenticate_user!
 
-    helper_method :admin?, :driver?
+    helper_method :admin?, :driver?, :line_worker?
 
     def admin?
       user_signed_in? && current_user.role == 'admin'
@@ -10,6 +10,10 @@ class ApplicationController < ActionController::Base
 
     def driver?
       user_signed_in? && current_user.role == 'worker'
+    end
+
+    def line_worker?
+      user_signed_in? && current_user.role == 'line_worker'
     end
 
     def require_admin!

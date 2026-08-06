@@ -43,7 +43,7 @@
             <div class="mb-3">
               <%= form.label :role, class: "form-label" %>
               <%= form.select :role,
-                    [['Worker (Driver)', 'worker'], ['Admin', 'admin']],
+                    [['Worker (Driver)', 'worker'], ['Line Worker', 'line_worker'], ['Admin', 'admin']],
                     { prompt: 'Select role...' },
                     class: "form-select", required: true %>
             </div>

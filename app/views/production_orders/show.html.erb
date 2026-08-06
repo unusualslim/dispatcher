@@ -313,4 +313,43 @@
 
     </div>
   </div>
+
+<%# ── JOB TIME HISTORY ── %>
+<% if @production_order.jobs.any? %>
+  <div class="row mt-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header fw-semibold">Labor Time Log</div>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Type</th>
+                <th>Started</th>
+                <th>Ended</th>
+                <th>Duration</th>
+                <th>Workers</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @production_order.jobs.order(started_at: :desc).each do |job| %>
+                <tr>
+                  <td><%= job.job_type %></td>
+                  <td><%= job.started_at.strftime("%m/%d/%Y %I:%M %p") %></td>
+                  <td><%= job.ended_at ? job.ended_at.strftime("%m/%d/%Y %I:%M %p") : content_tag(:span, "In Progress", class: "badge bg-success") %></td>
+                  <td><%= job.duration_formatted %></td>
+                  <td>
+                    <% job.job_workers.includes(:user).each do |jw| %>
+                      <span class="badge bg-secondary me-1"><%= jw.user.full_name %></span>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>
 </div>

@@ -9,9 +9,12 @@ class User < ApplicationRecord
   
     has_many :dispatches, foreign_key: :driver_id, dependent: :nullify
     has_many :user_favorites, dependent: :destroy
+    has_many :job_workers, dependent: :destroy
+    has_many :jobs, through: :job_workers
 
     # Scope to filter workers
     scope :workers, -> { where(role: 'worker') }
+    scope :line_workers, -> { where(role: 'line_worker') }
   
     def full_name
       "#{first_name} #{last_name}"

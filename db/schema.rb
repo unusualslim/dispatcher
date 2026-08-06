@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_07_29_190941) do
+ActiveRecord::Schema[7.0].define(version: 2026_08_06_183701) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -207,6 +207,29 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_29_190941) do
     t.index ["created_by_id"], name: "index_inventory_transactions_on_created_by_id"
     t.index ["product_id"], name: "index_inventory_transactions_on_product_id"
     t.index ["transactable_type", "transactable_id"], name: "idx_inv_trans_on_transactable"
+  end
+
+  create_table "job_workers", force: :cascade do |t|
+    t.bigint "job_id", null: false
+    t.bigint "user_id", null: false
+    t.datetime "clocked_in_at", null: false
+    t.datetime "clocked_out_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["job_id"], name: "index_job_workers_on_job_id"
+    t.index ["user_id"], name: "index_job_workers_on_user_id"
+  end
+
+  create_table "jobs", force: :cascade do |t|
+    t.bigint "production_order_id", null: false
+    t.bigint "created_by_id", null: false
+    t.string "job_type", null: false
+    t.datetime "started_at", null: false
+    t.datetime "ended_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_jobs_on_created_by_id"
+    t.index ["production_order_id"], name: "index_jobs_on_production_order_id"
   end
 
   create_table "location_categories", force: :cascade do |t|
@@ -549,6 +572,10 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_29_190941) do
   add_foreign_key "dispatches", "things", column: "asset_id"
   add_foreign_key "dispatches", "vendors"
   add_foreign_key "inventory_transactions", "products"
+  add_foreign_key "job_workers", "jobs"
+  add_foreign_key "job_workers", "users"
+  add_foreign_key "jobs", "production_orders"
+  add_foreign_key "jobs", "users", column: "created_by_id"
   add_foreign_key "location_contacts", "locations"
   add_foreign_key "location_products", "locations", on_delete: :cascade
   add_foreign_key "location_products", "products"
