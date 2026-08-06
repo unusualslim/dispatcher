@@ -24,26 +24,44 @@
         class: "btn btn-primary btn-sm",
         data: { turbo: false } %>
 
-  <%# Status transitions %>
-  <% if @production_order.status != "pending" %>
-    <%= button_to "Move to Pending",
-          production_order_path(@production_order, production_order: { status: "pending" }),
-          method: :patch,
-          class: "btn btn-outline-secondary btn-sm" %>
-  <% end %>
-
-  <% if @production_order.status != "in_progress" %>
+  <%# Primary next-step status transition %>
+  <% if @production_order.status == "pending" %>
     <%= button_to "Start Production",
           production_order_path(@production_order, production_order: { status: "in_progress" }),
           method: :patch,
           class: "btn btn-warning btn-sm" %>
-  <% end %>
-
-  <% if @production_order.status != "completed" %>
+  <% elsif @production_order.status == "in_progress" %>
     <%= button_to "Mark Completed",
           production_order_path(@production_order, production_order: { status: "completed" }),
           method: :patch,
           class: "btn btn-success btn-sm" %>
+  <% end %>
+
+  <%# Secondary: move back %>
+  <% if @production_order.status != "pending" %>
+    <div class="dropstart">
+      <button class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+        <i class="bi bi-arrow-counterclockwise"></i>
+      </button>
+      <ul class="dropdown-menu">
+        <% if @production_order.status != "pending" %>
+          <li>
+            <%= button_to "Move to Pending",
+                  production_order_path(@production_order, production_order: { status: "pending" }),
+                  method: :patch,
+                  class: "dropdown-item" %>
+          </li>
+        <% end %>
+        <% if @production_order.status == "completed" %>
+          <li>
+            <%= button_to "Back to In Progress",
+                  production_order_path(@production_order, production_order: { status: "in_progress" }),
+                  method: :patch,
+                  class: "dropdown-item" %>
+          </li>
+        <% end %>
+      </ul>
+    </div>
   <% end %>
 
   <%# Delete %>

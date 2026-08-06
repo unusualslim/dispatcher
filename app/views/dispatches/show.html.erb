@@ -20,14 +20,19 @@
         <i class="bi bi-bell"></i> Send Notification
       </button>
     <% end %>
-    <%= form_with url: mark_as_sent_to_driver_dispatch_path(@dispatch), method: :patch, local: true do |f| %>
-      <%= f.submit "Sent to Driver", class: "btn btn-primary btn-sm" %>
-    <% end %>
-    <%= form_with url: mark_as_complete_dispatch_path(@dispatch), method: :patch, local: true do |f| %>
-      <%= f.submit "Complete", class: "btn btn-success btn-sm" %>
-    <% end %>
-    <%= form_with url: mark_as_billed_dispatch_path(@dispatch), method: :patch, local: true do |f| %>
-      <%= f.submit "Billed", class: "btn btn-warning btn-sm" %>
+    <%# Primary next-step status action %>
+    <% if @dispatch.dispatch_status == "New" %>
+      <%= form_with url: mark_as_sent_to_driver_dispatch_path(@dispatch), method: :patch, local: true do |f| %>
+        <%= f.submit "Sent to Driver", class: "btn btn-primary btn-sm" %>
+      <% end %>
+    <% elsif @dispatch.dispatch_status == "sent_to_driver" %>
+      <%= form_with url: mark_as_complete_dispatch_path(@dispatch), method: :patch, local: true do |f| %>
+        <%= f.submit "Mark Complete", class: "btn btn-success btn-sm" %>
+      <% end %>
+    <% elsif @dispatch.dispatch_status == "complete" %>
+      <%= form_with url: mark_as_billed_dispatch_path(@dispatch), method: :patch, local: true do |f| %>
+        <%= f.submit "Mark Billed", class: "btn btn-warning btn-sm" %>
+      <% end %>
     <% end %>
     <%= link_to "Edit", edit_dispatch_path(@dispatch), class: "btn btn-outline-secondary btn-sm" %>
     <%= link_to "All Dispatches", dispatches_path, class: "btn btn-outline-secondary btn-sm", data: { turbo: false } %>

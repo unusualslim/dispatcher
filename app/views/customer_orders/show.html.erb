@@ -21,9 +21,32 @@
     </div>
   </div>
   <div class="d-flex flex-wrap gap-2">
+    <%# Primary next-step status action %>
     <% if @customer_order.order_status == "New" %>
       <%= link_to "Create Dispatch", new_dispatch_path(customer_order_id: @customer_order.id),
             class: "btn btn-primary btn-sm" %>
+      <%= button_to "Mark Complete",
+            customer_order_path(@customer_order, customer_order: { order_status: "complete" }),
+            method: :patch,
+            class: "btn btn-success btn-sm" %>
+      <%= button_to "Put On Hold",
+            customer_order_path(@customer_order, customer_order: { order_status: "on_hold" }),
+            method: :patch,
+            class: "btn btn-warning btn-sm" %>
+    <% elsif @customer_order.order_status == "on_hold" %>
+      <%= button_to "Reopen",
+            customer_order_path(@customer_order, customer_order: { order_status: "New" }),
+            method: :patch,
+            class: "btn btn-primary btn-sm" %>
+      <%= button_to "Mark Complete",
+            customer_order_path(@customer_order, customer_order: { order_status: "complete" }),
+            method: :patch,
+            class: "btn btn-success btn-sm" %>
+    <% elsif @customer_order.order_status == "complete" %>
+      <%= button_to "Reopen",
+            customer_order_path(@customer_order, customer_order: { order_status: "New" }),
+            method: :patch,
+            class: "btn btn-outline-secondary btn-sm" %>
     <% end %>
     <%= link_to "Edit", edit_customer_order_path(@customer_order),
           class: "btn btn-outline-secondary btn-sm", data: { turbo: false } %>
