@@ -52,6 +52,10 @@
 
     <!-- Favorites context menu -->
     <div id="favContextMenu" style="display:none; position:fixed; z-index:9999; background:#fff; border:1px solid #ccc; border-radius:6px; box-shadow:0 4px 12px rgba(0,0,0,0.15); padding:4px 0; min-width:180px;">
+      <div id="favContextNewTab" style="padding:8px 16px; cursor:pointer; font-size:0.9rem;" onmouseenter="this.style.background='#f0f0f0'" onmouseleave="this.style.background=''">
+        <i class="bi bi-box-arrow-up-right me-2"></i>Open in New Tab
+      </div>
+      <div style="border-top:1px solid #eee; margin:4px 0;"></div>
       <div id="favContextAdd" style="padding:8px 16px; cursor:pointer; font-size:0.9rem;" onmouseenter="this.style.background='#f0f0f0'" onmouseleave="this.style.background=''">
         <i class="bi bi-star me-2"></i>Add to Favorites
       </div>
@@ -84,6 +88,12 @@
         menu.style.left    = e.clientX + 'px';
         menu.style.top     = e.clientY + 'px';
         menu.style.display = 'block';
+      });
+
+      document.getElementById('favContextNewTab')?.addEventListener('click', function() {
+        menu.style.display = 'none';
+        if (!contextTargetPath) return;
+        window.open(contextTargetPath, '_blank');
       });
 
       document.getElementById('favContextAdd')?.addEventListener('click', function() {
