@@ -1,4 +1,6 @@
-<%# ── Header ──────────────────────────────────────────────────────────────── %>
+<% content_for :title, "Production Dashboard" %>
+
+<%# ── Header ── %>
 <div class="d-flex justify-content-between align-items-center mb-4">
   <h1 class="mb-0">Production Dashboard</h1>
   <div class="d-flex gap-2">
@@ -8,211 +10,237 @@
   </div>
 </div>
 
-<%# ── Stat cards ──────────────────────────────────────────────────────────── %>
-<div class="row g-3 mb-4">
-  <div class="col-6 col-md-3">
-    <div class="card text-center shadow-sm h-100">
-      <div class="card-body py-3">
-        <div class="fs-2 fw-bold text-secondary"><%= @stats[:pending] %></div>
-        <div class="small text-muted">Pending</div>
-      </div>
-      <div class="card-footer p-1">
-        <%= link_to "View", production_orders_path(status: 'pending'), class: "small text-decoration-none" %>
-      </div>
-    </div>
-  </div>
-  <div class="col-6 col-md-3">
-    <div class="card text-center shadow-sm h-100 <%= 'border-warning' if @stats[:in_progress] > 0 %>">
-      <div class="card-body py-3">
-        <div class="fs-2 fw-bold text-warning"><%= @stats[:in_progress] %></div>
-        <div class="small text-muted">In Progress</div>
-      </div>
-      <div class="card-footer p-1">
-        <%= link_to "View", production_orders_path(status: 'in_progress'), class: "small text-decoration-none" %>
-      </div>
-    </div>
-  </div>
-  <div class="col-6 col-md-3">
-    <div class="card text-center shadow-sm h-100">
-      <div class="card-body py-3">
-        <div class="fs-2 fw-bold <%= @stats[:due_this_week] > 0 ? 'text-danger' : 'text-secondary' %>">
-          <%= @stats[:due_this_week] %>
-        </div>
-        <div class="small text-muted">Due This Week</div>
-      </div>
-      <div class="card-footer p-1">
-        <%= link_to "View", production_orders_path(due_to: (Date.today + 7).to_s), class: "small text-decoration-none" %>
-      </div>
-    </div>
-  </div>
-  <div class="col-6 col-md-3">
-    <div class="card text-center shadow-sm h-100">
-      <div class="card-body py-3">
-        <div class="fs-2 fw-bold text-success"><%= @stats[:completed_this_month] %></div>
-        <div class="small text-muted">Completed This Month</div>
-      </div>
-      <div class="card-footer p-1">
-        <%= link_to "View", production_orders_path(status: 'completed'), class: "small text-decoration-none" %>
-      </div>
-    </div>
-  </div>
-</div>
+<%# ── Tabs ── %>
+<ul class="nav nav-tabs mb-0" id="dashboardTabs" role="tablist">
+  <li class="nav-item" role="presentation">
+    <a class="nav-link <%= 'active' if @tab == 'production' %>"
+       href="<%= dashboard_production_orders_path(tab: 'production') %>">
+      Production
+      <span class="badge rounded-pill ms-1 <%= @production_lines.any? ? 'bg-warning text-dark' : 'bg-secondary' %>">
+        <%= @production_lines.size %>
+      </span>
+    </a>
+  </li>
+  <li class="nav-item" role="presentation">
+    <a class="nav-link <%= 'active' if @tab == 'buy' %>"
+       href="<%= dashboard_production_orders_path(tab: 'buy') %>">
+      Buy
+      <span class="badge rounded-pill ms-1 <%= @buy_lines.any? ? 'bg-danger' : 'bg-secondary' %>">
+        <%= @buy_lines.size %>
+      </span>
+    </a>
+  </li>
+  <li class="nav-item" role="presentation">
+    <a class="nav-link <%= 'active' if @tab == 'allocated' %>"
+       href="<%= dashboard_production_orders_path(tab: 'allocated') %>">
+      Allocated
+      <span class="badge rounded-pill ms-1 bg-success">
+        <%= @allocated_lines.size %>
+      </span>
+    </a>
+  </li>
+</ul>
 
-<%# ── Customer orders waiting on production ───────────────────────────────── %>
-<% if @orders_needing_production.any? %>
-  <div class="card shadow-sm mb-4 border-warning">
-    <div class="card-header fw-semibold text-warning-emphasis bg-warning-subtle">
-      <i class="bi bi-exclamation-triangle me-1"></i>
-      Customer Orders Waiting on Production (<%= @orders_needing_production.size %>)
-    </div>
-    <div class="table-responsive">
-      <table class="table table-sm align-middle mb-0">
+<div class="card shadow-sm border-top-0 rounded-0 rounded-bottom">
+  <div class="table-responsive">
+
+    <%# ── PRODUCTION TAB ── %>
+    <% if @tab == 'production' %>
+      <table class="table table-sm table-hover align-middle mb-0">
         <thead class="table-light">
           <tr>
-            <th>Customer Order</th>
+            <th>Order #</th>
             <th>Customer</th>
-            <th>Due</th>
             <th>Product</th>
-            <th>Need</th>
-            <th>In Stock</th>
-            <th>Shortfall</th>
+            <th>UOM</th>
+            <th class="text-end">Qty Needed</th>
+            <th class="text-end">In Stock</th>
+            <th class="text-end">Shortfall</th>
+            <th>Due</th>
+            <th>Salesperson</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
-          <% @orders_needing_production.each do |row| %>
-            <% row[:shortfalls].each_with_index do |sf, idx| %>
+          <% if @production_lines.any? %>
+            <% @production_lines.each do |cop| %>
+              <% order   = cop.customer_order %>
+              <% product = cop.product %>
+              <% in_stock  = product&.current_stock.to_f %>
+              <% needed    = cop.quantity.to_f %>
+              <% shortfall = [needed - in_stock, 0].max %>
+              <% overdue   = order.required_delivery_date && order.required_delivery_date < Date.today %>
               <tr>
-                <% if idx == 0 %>
-                  <td rowspan="<%= row[:shortfalls].size %>">
-                    <%= link_to customer_order_path(row[:order]), class: "fw-semibold text-decoration-none" do %>
-                      #<%= row[:order].id %>
-                      <% if row[:order].external_order_no.present? %>
-                        <div class="text-muted fw-normal small"><%= row[:order].external_order_no %></div>
-                      <% end %>
-                    <% end %>
-                  </td>
-                  <td rowspan="<%= row[:shortfalls].size %>" class="text-muted small">
-                    <%= row[:order].customer&.name %>
-                  </td>
-                  <td rowspan="<%= row[:shortfalls].size %>" class="text-nowrap small">
-                    <% if row[:order].required_delivery_date %>
-                      <% overdue = row[:order].required_delivery_date < Date.today %>
-                      <span class="<%= overdue ? 'text-danger fw-semibold' : '' %>">
-                        <%= row[:order].required_delivery_date.strftime("%b %-d") %>
-                      </span>
-                    <% else %>—<% end %>
-                  </td>
-                <% end %>
-                <td class="small fw-semibold"><%= sf[:product].name %></td>
-                <td class="small"><%= number_with_delimiter(sf[:needed]) %></td>
-                <td class="small"><%= number_with_delimiter(sf[:in_stock]) %></td>
-                <td class="small text-danger fw-semibold"><%= number_with_delimiter(sf[:shortfall]) %></td>
-                <td>
-                  <%= link_to "Make it",
+                <td class="text-nowrap">
+                  <%= link_to "##{order.id}", customer_order_path(order), class: "fw-semibold text-decoration-none" %>
+                  <% if order.external_order_no.present? %>
+                    <div class="text-muted small"><%= order.external_order_no %></div>
+                  <% end %>
+                </td>
+                <td class="small"><%= order.customer&.name || "—" %></td>
+                <td class="small fw-semibold"><%= product&.name || cop.product_name %></td>
+                <td class="small text-muted"><%= product&.unit_of_measurement %></td>
+                <td class="text-end small"><%= number_with_delimiter(needed) %></td>
+                <td class="text-end small"><%= number_with_delimiter(in_stock) %></td>
+                <td class="text-end small fw-semibold <%= shortfall > 0 ? 'text-danger' : 'text-success' %>">
+                  <%= shortfall > 0 ? number_with_delimiter(shortfall) : "—" %>
+                </td>
+                <td class="text-nowrap small">
+                  <% if order.required_delivery_date %>
+                    <span class="<%= overdue ? 'text-danger fw-semibold' : '' %>">
+                      <%= order.required_delivery_date.strftime("%b %-d") %>
+                    </span>
+                  <% else %>—<% end %>
+                </td>
+                <td class="small text-muted"><%= order.salesperson %></td>
+                <td class="text-nowrap">
+                  <%= link_to "Make It",
                         new_production_order_path(
-                          product_id:  sf[:product].id,
-                          item:        sf[:product].name,
-                          qty_to_make: sf[:shortfall],
-                          due_date:    row[:order].required_delivery_date
+                          product_id:  product&.id,
+                          item:        product&.name || cop.product_name,
+                          qty_to_make: shortfall > 0 ? shortfall.ceil : needed.ceil,
+                          due_date:    order.required_delivery_date
                         ),
                         class: "btn btn-sm btn-warning" %>
                 </td>
               </tr>
             <% end %>
+          <% else %>
+            <tr><td colspan="10" class="text-center text-muted py-4">No open production lines.</td></tr>
           <% end %>
         </tbody>
       </table>
-    </div>
-  </div>
-<% end %>
 
-<div class="row g-4">
-
-  <%# ── Open production orders ────────────────────────────────────────────── %>
-  <div class="col-lg-7">
-    <div class="card shadow-sm h-100">
-      <div class="card-header fw-semibold">Open Production Orders</div>
-      <% if @open_orders.any? %>
-        <div class="table-responsive">
-          <table class="table table-sm align-middle mb-0">
-            <thead class="table-light">
+    <%# ── BUY TAB ── %>
+    <% elsif @tab == 'buy' %>
+      <table class="table table-sm table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Order #</th>
+            <th>Customer</th>
+            <th>Product</th>
+            <th>UOM</th>
+            <th class="text-end">Qty Needed</th>
+            <th class="text-end">In Stock</th>
+            <th class="text-end">Shortfall</th>
+            <th>Due</th>
+            <th>Salesperson</th>
+            <th>Preferred Vendor</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if @buy_lines.any? %>
+            <% @buy_lines.each do |cop| %>
+              <% order    = cop.customer_order %>
+              <% product  = cop.product %>
+              <% in_stock  = product&.current_stock.to_f %>
+              <% needed    = cop.quantity.to_f %>
+              <% shortfall = [needed - in_stock, 0].max %>
+              <% overdue   = order.required_delivery_date && order.required_delivery_date < Date.today %>
+              <% vendor    = product&.vendors&.first %>
               <tr>
-                <th>Order #</th>
-                <th>Item</th>
-                <th>Qty</th>
-                <th>Due</th>
-                <th>Status</th>
+                <td class="text-nowrap">
+                  <%= link_to "##{order.id}", customer_order_path(order), class: "fw-semibold text-decoration-none" %>
+                  <% if order.external_order_no.present? %>
+                    <div class="text-muted small"><%= order.external_order_no %></div>
+                  <% end %>
+                </td>
+                <td class="small"><%= order.customer&.name || "—" %></td>
+                <td class="small fw-semibold"><%= product&.name || cop.product_name %></td>
+                <td class="small text-muted"><%= product&.unit_of_measurement %></td>
+                <td class="text-end small"><%= number_with_delimiter(needed) %></td>
+                <td class="text-end small"><%= number_with_delimiter(in_stock) %></td>
+                <td class="text-end small fw-semibold text-danger"><%= number_with_delimiter(shortfall) %></td>
+                <td class="text-nowrap small">
+                  <% if order.required_delivery_date %>
+                    <span class="<%= overdue ? 'text-danger fw-semibold' : '' %>">
+                      <%= order.required_delivery_date.strftime("%b %-d") %>
+                    </span>
+                  <% else %>—<% end %>
+                </td>
+                <td class="small text-muted"><%= order.salesperson %></td>
+                <td class="small"><%= vendor&.name || "—" %></td>
+                <td class="text-nowrap">
+                  <%= link_to "Create PO",
+                        new_purchase_order_path(
+                          vendor_id:    vendor&.id,
+                          product_id:   product&.id,
+                          product_name: product&.name || cop.product_name,
+                          quantity:     shortfall.ceil
+                        ),
+                        class: "btn btn-sm btn-outline-primary" %>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              <% @open_orders.each do |po| %>
-                <tr>
-                  <td>
-                    <%= link_to po.number, production_order_path(po), class: "fw-semibold text-decoration-none small" %>
-                  </td>
-                  <td class="small"><%= po.item %></td>
-                  <td class="small"><%= number_with_delimiter(po.qty_to_make) %></td>
-                  <td class="text-nowrap small">
-                    <% if po.due_date %>
-                      <% overdue = po.due_date < Date.today %>
-                      <span class="<%= overdue ? 'text-danger fw-semibold' : '' %>">
-                        <%= po.due_date.strftime("%b %-d") %>
-                      </span>
-                    <% else %>—<% end %>
-                  </td>
-                  <td>
-                    <% badge = po.status == 'in_progress' ? 'bg-warning text-dark' : 'bg-secondary' %>
-                    <span class="badge <%= badge %>"><%= po.status.humanize %></span>
-                  </td>
-                </tr>
-              <% end %>
-            </tbody>
-          </table>
-        </div>
-      <% else %>
-        <div class="card-body text-muted">No open production orders.</div>
-      <% end %>
-    </div>
-  </div>
+            <% end %>
+          <% else %>
+            <tr><td colspan="11" class="text-center text-muted py-4">No open buy lines.</td></tr>
+          <% end %>
+        </tbody>
+      </table>
 
-  <%# ── Finished goods stock ───────────────────────────────────────────────── %>
-  <div class="col-lg-5">
-    <div class="card shadow-sm h-100">
-      <div class="card-header fw-semibold">Finished Goods Stock</div>
-      <% if @finished_goods.any? %>
-        <div class="table-responsive">
-          <table class="table table-sm align-middle mb-0">
-            <thead class="table-light">
+    <%# ── ALLOCATED TAB ── %>
+    <% elsif @tab == 'allocated' %>
+      <table class="table table-sm table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Order #</th>
+            <th>Customer</th>
+            <th>Product</th>
+            <th>UOM</th>
+            <th class="text-end">Qty Ordered</th>
+            <th class="text-end">In Stock</th>
+            <th>Due</th>
+            <th>Salesperson</th>
+            <th>Dispatch</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if @allocated_lines.any? %>
+            <% @allocated_lines.each do |cop| %>
+              <% order   = cop.customer_order %>
+              <% product = cop.product %>
+              <% overdue = order.required_delivery_date && order.required_delivery_date < Date.today %>
+              <% dispatch = order.dispatches.first %>
               <tr>
-                <th>Product</th>
-                <th class="text-end">Stock</th>
-                <th></th>
+                <td class="text-nowrap">
+                  <%= link_to "##{order.id}", customer_order_path(order), class: "fw-semibold text-decoration-none" %>
+                  <% if order.external_order_no.present? %>
+                    <div class="text-muted small"><%= order.external_order_no %></div>
+                  <% end %>
+                </td>
+                <td class="small"><%= order.customer&.name || "—" %></td>
+                <td class="small fw-semibold"><%= product&.name || cop.product_name %></td>
+                <td class="small text-muted"><%= product&.unit_of_measurement %></td>
+                <td class="text-end small"><%= number_with_delimiter(cop.quantity) %></td>
+                <td class="text-end small"><%= number_with_delimiter(product.current_stock) %></td>
+                <td class="text-nowrap small">
+                  <% if order.required_delivery_date %>
+                    <span class="<%= overdue ? 'text-danger fw-semibold' : '' %>">
+                      <%= order.required_delivery_date.strftime("%b %-d") %>
+                    </span>
+                  <% else %>—<% end %>
+                </td>
+                <td class="small text-muted"><%= order.salesperson %></td>
+                <td>
+                  <% if dispatch %>
+                    <% d_color = { 'New' => 'secondary', 'sent_to_driver' => 'primary', 'complete' => 'success', 'billed' => 'warning' }.fetch(dispatch.dispatch_status.to_s, 'secondary') %>
+                  <% d_label = { 'New' => 'New', 'sent_to_driver' => 'Sent to Driver', 'complete' => 'Complete', 'billed' => 'Billed' }.fetch(dispatch.dispatch_status.to_s, dispatch.dispatch_status.to_s) %>
+                    <%= link_to d_label, dispatch_path(dispatch),
+                          class: "badge bg-#{d_color} text-decoration-none" %>
+                  <% else %>
+                    <%= link_to "No Dispatch", new_dispatch_path(customer_order_id: order.id),
+                          class: "badge bg-light text-dark border text-decoration-none" %>
+                  <% end %>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              <% @finished_goods.each do |p| %>
-                <tr>
-                  <td>
-                    <%= link_to p.name, product_path(p), class: "text-decoration-none small" %>
-                  </td>
-                  <td class="text-end small fw-semibold">
-                    <%= number_with_delimiter(p.current_stock) %>
-                    <span class="text-muted fw-normal"><%= p.unit_of_measurement %></span>
-                  </td>
-                  <td>
-                    <% stock_badge = p.current_stock.to_f <= 0 ? ['bg-danger', 'Empty'] : ['bg-success', 'OK'] %>
-                    <span class="badge <%= stock_badge[0] %>"><%= stock_badge[1] %></span>
-                  </td>
-                </tr>
-              <% end %>
-            </tbody>
-          </table>
-        </div>
-      <% else %>
-        <div class="card-body text-muted">No finished goods products configured.</div>
-      <% end %>
-    </div>
-  </div>
+            <% end %>
+          <% else %>
+            <tr><td colspan="9" class="text-center text-muted py-4">No allocated lines.</td></tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
 
+  </div>
 </div>

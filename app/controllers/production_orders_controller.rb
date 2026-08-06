@@ -26,25 +26,28 @@ class ProductionOrdersController < ApplicationController
 
   # GET /production_orders/dashboard
   def dashboard
-    today = Date.today
+    open_order_statuses = %w[New on_hold]
 
-    @stats = {
-      pending:              ProductionOrder.where(status: 'pending').count,
-      in_progress:          ProductionOrder.where(status: 'in_progress').count,
-      due_this_week:        ProductionOrder.where(status: %w[pending in_progress])
-                              .where(due_date: today..today + 7).count,
-      completed_this_month: ProductionOrder.where(status: 'completed')
-                              .where('created_at >= ?', today.beginning_of_month).count,
-    }
+    base = CustomerOrderProduct
+      .joins(:customer_order)
+      .where(customer_orders: { order_status: open_order_statuses })
+      .where.not(product_id: nil)
+      .includes(:product, customer_order: [:customer, :dispatches])
+      .order('customer_orders.required_delivery_date ASC NULLS LAST')
 
-    @open_orders = ProductionOrder
-      .where(status: %w[pending in_progress])
-      .order(due_date: :asc)
-      .includes(:product, :customer, :location)
+    all_lines = base.to_a
 
-    @orders_needing_production = production_demand_from_customer_orders
+    @production_lines = all_lines
+      .select { |cop| cop.item_type == 'production' }
 
-    @finished_goods = Product.finished_goods.order(:name)
+    @buy_lines = all_lines
+      .select { |cop| cop.item_type != 'production' }
+      .select { |cop| cop.product.nil? || cop.product.current_stock.to_f < cop.quantity.to_f }
+
+    @allocated_lines = all_lines
+      .select { |cop| cop.product && cop.product.current_stock.to_f >= cop.quantity.to_f }
+
+    @tab = params[:tab] || 'production'
   end
 
   # GET /production_orders/kanban
