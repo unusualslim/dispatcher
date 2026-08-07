@@ -41,6 +41,31 @@ class UsersController < ApplicationController
   
    
 
+  # POST /users/line_worker — quick-add a display-only line worker (no login needed)
+  def create_line_worker
+    first = params[:first_name].to_s.strip
+    last  = params[:last_name].to_s.strip
+
+    if first.blank? || last.blank?
+      return redirect_to users_path, alert: "First and last name are required."
+    end
+
+    placeholder_email = "#{first.downcase}.#{last.downcase}.#{SecureRandom.hex(4)}@nologin.internal"
+    user = User.new(
+      first_name: first,
+      last_name:  last,
+      email:      placeholder_email,
+      password:   SecureRandom.hex(16),
+      role:       'line_worker'
+    )
+
+    if user.save
+      redirect_to users_path, notice: "#{user.full_name} added as a line worker."
+    else
+      redirect_to users_path, alert: "Could not add worker: #{user.errors.full_messages.join(', ')}"
+    end
+  end
+
   # PATCH/PUT /users/1 or /users/1.json
   def update
     respond_to do |format|

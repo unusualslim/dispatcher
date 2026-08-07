@@ -23,7 +23,11 @@ Rails.application.routes.draw do
     passwords: 'users/passwords'
   }
   
-  resources :users
+  resources :users do
+    collection do
+      post :create_line_worker
+    end
+  end
   resources :user_favorites, only: [:create, :destroy] do
     collection { patch :reorder }
   end
