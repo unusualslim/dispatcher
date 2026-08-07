@@ -2,16 +2,25 @@
 
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="fw-semibold mb-0">Users</h4>
-    <%= link_to new_user_registration_path, class: "btn btn-primary btn-sm" do %>
-      <i class="bi bi-person-plus"></i> Add User
-    <% end %>
+    <div class="d-flex gap-2 align-items-center">
+      <%# Quick-add line worker (no login needed) %>
+      <%= form_with url: create_line_worker_users_path, method: :post, class: "d-flex gap-2 align-items-center" do |f| %>
+        <%= f.text_field :first_name, placeholder: "First name", class: "form-control form-control-sm", style: "width:120px", required: true %>
+        <%= f.text_field :last_name,  placeholder: "Last name",  class: "form-control form-control-sm", style: "width:120px", required: true %>
+        <%= f.submit "Add Line Worker", class: "btn btn-outline-secondary btn-sm text-nowrap" %>
+      <% end %>
+      <%= link_to new_user_registration_path, class: "btn btn-primary btn-sm text-nowrap" do %>
+        <i class="bi bi-person-plus"></i> Add User
+      <% end %>
+    </div>
   </div>
 
-  <%# ── Admins ──────────────────────────────────────────────────────────────────── %>
-  <% admins  = @users.select { |u| u.role == 'admin' } %>
-  <% drivers = @users.select { |u| u.role != 'admin' } %>
+  <%# ── User sections ──────────────────────────────────────────────────────────── %>
+  <% admins       = @users.select { |u| u.role == 'admin' } %>
+  <% drivers      = @users.select { |u| u.role == 'worker' } %>
+  <% line_workers = @users.select { |u| u.role == 'line_worker' } %>
 
-  <% [["Admins", admins], ["Drivers", drivers]].each do |section_title, group| %>
+  <% [["Admins", admins], ["Drivers", drivers], ["Line Workers", line_workers]].each do |section_title, group| %>
     <div class="mb-4">
       <h6 class="text-muted text-uppercase fw-semibold mb-2" style="font-size:.75rem; letter-spacing:.05em;">
         <%= section_title %> (<%= group.size %>)
@@ -38,7 +47,7 @@
                     <td>
                       <div class="fw-semibold"><%= user.full_name.presence || "—" %></div>
                     </td>
-                    <td><%= user.email %></td>
+                    <td><%= user.email.end_with?("@nologin.internal") ? content_tag(:span, "N/A", class: "text-muted") : user.email %></td>
                     <td><%= user.phone_number.presence || "—" %></td>
                     <td onclick="event.stopPropagation()">
                       <%= form_with model: user, url: user_path(user), method: :patch, data: { turbo: false } do |f| %>
