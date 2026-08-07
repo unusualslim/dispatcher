@@ -107,8 +107,8 @@
           </thead>
           <tbody>
             <% recent_jobs.each do |job| %>
-              <tr>
-                <td><%= job.production_order.number %></td>
+              <tr style="cursor:pointer;" onclick="window.location='<%= job_path(job) %>'">
+                <td><%= link_to job.production_order.number, job_path(job), class: "text-decoration-none fw-semibold" %></td>
                 <td><%= job.job_type %></td>
                 <td><%= job.started_at.strftime("%m/%d %I:%M %p") %></td>
                 <td><%= job.duration_formatted %></td>

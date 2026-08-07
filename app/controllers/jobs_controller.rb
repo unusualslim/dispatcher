@@ -1,6 +1,6 @@
 class JobsController < ApplicationController
   before_action :require_admin_or_line_lead!
-  before_action :set_job, only: [:clock_out]
+  before_action :set_job, only: [:show, :clock_out]
 
   def line
     @line_workers = User.line_workers.order(:first_name, :last_name)
@@ -35,6 +35,9 @@ class JobsController < ApplicationController
     redirect_to line_path, notice: "Clocked in — timer running."
   rescue ActiveRecord::RecordInvalid => e
     redirect_to line_path, alert: "Could not clock in: #{e.message}"
+  end
+
+  def show
   end
 
   def clock_out

@@ -1,0 +1,124 @@
+<% content_for :title, "Job ##{@job.id}" %>
+
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+      <h1 class="mb-1">Job #<%= @job.id %></h1>
+      <div class="text-muted">
+        <%= @job.job_type %> &mdash;
+        <%= link_to @job.production_order.number, production_order_path(@job.production_order), class: "text-decoration-none" %>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <%= link_to "Line Screen", line_path, class: "btn btn-outline-secondary btn-sm" %>
+      <% if @job.active? %>
+        <%= button_to "Clock Out", clock_out_job_path(@job), method: :patch,
+              class: "btn btn-danger btn-sm",
+              data: { confirm: "Clock out the entire crew?" } %>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-md-5">
+      <div class="card">
+        <div class="card-header fw-semibold">Details</div>
+        <div class="card-body">
+          <dl class="row mb-0">
+            <dt class="col-5 text-muted">Status</dt>
+            <dd class="col-7">
+              <% if @job.active? %>
+                <span class="badge bg-success">In Progress</span>
+              <% else %>
+                <span class="badge bg-secondary">Completed</span>
+              <% end %>
+            </dd>
+
+            <dt class="col-5 text-muted">Job Type</dt>
+            <dd class="col-7"><%= @job.job_type %></dd>
+
+            <dt class="col-5 text-muted">Production Order</dt>
+            <dd class="col-7">
+              <%= link_to @job.production_order.number, production_order_path(@job.production_order) %>
+            </dd>
+
+            <dt class="col-5 text-muted">Started</dt>
+            <dd class="col-7"><%= @job.started_at.strftime("%m/%d/%Y %I:%M %p") %></dd>
+
+            <dt class="col-5 text-muted">Ended</dt>
+            <dd class="col-7">
+              <% if @job.ended_at %>
+                <%= @job.ended_at.strftime("%m/%d/%Y %I:%M %p") %>
+              <% else %>
+                <span class="text-success">Still running</span>
+              <% end %>
+            </dd>
+
+            <dt class="col-5 text-muted">Duration</dt>
+            <dd class="col-7 fw-semibold">
+              <% if @job.active? %>
+                <span id="live-timer" data-started-at="<%= @job.started_at.iso8601 %>">—</span>
+              <% else %>
+                <%= @job.duration_formatted %>
+              <% end %>
+            </dd>
+
+            <dt class="col-5 text-muted">Created By</dt>
+            <dd class="col-7"><%= @job.created_by.full_name %></dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-7">
+      <div class="card">
+        <div class="card-header fw-semibold">Workers (<%= @job.job_workers.size %>)</div>
+        <table class="table table-sm mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Name</th>
+              <th>Clocked In</th>
+              <th>Clocked Out</th>
+              <th>Duration</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @job.job_workers.includes(:user).each do |jw| %>
+              <tr>
+                <td><%= jw.user.full_name %></td>
+                <td><%= jw.clocked_in_at.strftime("%I:%M %p") %></td>
+                <td>
+                  <% if jw.clocked_out_at %>
+                    <%= jw.clocked_out_at.strftime("%I:%M %p") %>
+                  <% else %>
+                    <span class="text-success small">Active</span>
+                  <% end %>
+                </td>
+                <td><%= jw.duration_formatted %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% if @job.active? %>
+  <script>
+    document.addEventListener("turbo:load", startTimer);
+    document.addEventListener("DOMContentLoaded", startTimer);
+    function startTimer() {
+      var el = document.getElementById("live-timer");
+      if (!el) return;
+      var start = new Date(el.dataset.startedAt);
+      setInterval(function() {
+        var s = Math.floor((Date.now() - start) / 1000);
+        var h = String(Math.floor(s / 3600)).padStart(2, "0");
+        var m = String(Math.floor((s % 3600) / 60)).padStart(2, "0");
+        var sec = String(s % 60).padStart(2, "0");
+        el.textContent = h + ":" + m + ":" + sec;
+      }, 1000);
+    }
+  </script>
+<% end %>
