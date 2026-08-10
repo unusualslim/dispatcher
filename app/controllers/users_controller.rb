@@ -19,6 +19,11 @@ class UsersController < ApplicationController
     dispatches = dispatches.where("dispatch_date >= ?", @start_date) if @start_date
     dispatches = dispatches.where("dispatch_date <= ?", @end_date)   if @end_date
     @dispatches = dispatches.includes(customer_orders: [:location, :customer_order_products])
+
+    job_workers = @user.job_workers.includes(job: :production_order).order(clocked_in_at: :desc)
+    job_workers = job_workers.where("clocked_in_at >= ?", @start_date.to_time.beginning_of_day) if @start_date
+    job_workers = job_workers.where("clocked_in_at <= ?", @end_date.to_time.end_of_day) if @end_date
+    @job_workers = job_workers
   end
 
   # GET /users/new
