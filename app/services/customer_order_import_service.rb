@@ -10,7 +10,8 @@ class CustomerOrderImportService
   # CustomerOrder.order_statuses → { "open_order" => "Open Order", ... }
   # Inverted + downcased → { "open order" => "open_order", ... }
   CANONICAL_STATUS = CustomerOrder.order_statuses.invert
-                                  .transform_keys(&:downcase).freeze
+                                  .transform_keys(&:downcase)
+                                  .merge("open" => "open_order").freeze
 
   def self.call(file_path)
     new(file_path).run

@@ -20,7 +20,6 @@ class CustomerOrderImportsController < ApplicationController
     tmp.flush
     session[:co_import_tmp_path]   = tmp.path
     session[:co_import_file_name]  = file.original_filename
-    session[:co_import_file_b64]   = Base64.strict_encode64(file_content)
     ObjectSpace.undefine_finalizer(tmp)
 
     @rows          = CustomerOrderImportService.new(tmp.path).preview
@@ -35,7 +34,7 @@ class CustomerOrderImportsController < ApplicationController
 
     file_path    = session[:co_import_tmp_path]
     file_name    = session[:co_import_file_name] || File.basename(file_path)
-    file_content = session[:co_import_file_b64]
+    file_content = Base64.strict_encode64(File.binread(file_path))
 
     log = SyncLog.create!(
       process_name: PROCESS_NAME,
@@ -68,7 +67,6 @@ class CustomerOrderImportsController < ApplicationController
       File.delete(file_path) rescue nil
       session.delete(:co_import_tmp_path)
       session.delete(:co_import_file_name)
-      session.delete(:co_import_file_b64)
     end
 
     redirect_to new_customer_order_import_path

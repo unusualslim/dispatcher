@@ -35,6 +35,7 @@ class CustomerOrder < ApplicationRecord
     accepted_by_site:      "Accepted by Site",
     rejected_by_site:      "Rejected by Site",
     expired:               "Expired",
+    expired_quote:         "Expired Quote",
     cancelled_as_order:    "Cancelled as Order",
     cancelled_as_quote:    "Cancelled as Quote",
   }
