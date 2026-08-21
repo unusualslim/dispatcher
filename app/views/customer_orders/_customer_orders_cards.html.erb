@@ -15,16 +15,16 @@
             <% end %>
             
             <!-- Order Status Badge -->
-            <% status_class = case customer_order.order_status.to_s.downcase %>
-              <% when "new" then "bg-primary" %>
-              <% when "complete" then "bg-success" %>
-              <% when "on hold" then "bg-warning text-dark" %>
-              <% when "deleted" then "bg-danger" %>
-              <% else "bg-secondary" %>
-            <% end %>
+            <% status_class = case customer_order.order_status
+              when *CustomerOrder::ACTIVE_STATUSES then "bg-primary"
+              when "Billed", "Delivered", "Accepted by Site" then "bg-success"
+              when "Expired", "Rejected by Site" then "bg-warning text-dark"
+              when "Cancelled as Order", "Cancelled as Quote" then "bg-danger"
+              else "bg-secondary"
+            end %>
 
             <span class="badge <%= status_class %>">
-              <%= customer_order.order_status.to_s.humanize.presence || "Unknown" %>
+              <%= customer_order.order_status.presence || "Unknown" %>
             </span>
 
             <p><%= Location.find(customer_order.location_id).full_address %></p>

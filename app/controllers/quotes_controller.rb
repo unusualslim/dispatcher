@@ -54,7 +54,7 @@ class QuotesController < ApplicationController
     order = CustomerOrder.create!(
       customer:               @quote.customer,
       location:               @quote.location,
-      order_status:           :New,
+      order_status:           :open_order,
       order_date:             Date.today,
       required_delivery_date: @quote.expiry_date,
       notes:                  "Created from Quote #{@quote.quote_number}"

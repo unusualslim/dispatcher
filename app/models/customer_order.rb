@@ -19,10 +19,34 @@ class CustomerOrder < ApplicationRecord
   end
 
   attribute :freight_only, :boolean, default: false
-  enum order_status: { New: "New", complete: "Complete", deleted: "Deleted", on_hold: "On Hold" }
+
+  enum order_status: {
+    open_order:            "Open Order",
+    quote:                 "Quote",
+    pending:               "Pending",
+    released_for_dispatch: "Released for Dispatch",
+    dispatched:            "Dispatched",
+    released_for_picking:  "Released for Picking",
+    picking_in_progress:   "Picking in Progress",
+    shipped:               "Shipped",
+    released_for_billing:  "Released for Billing",
+    billed:                "Billed",
+    delivered:             "Delivered",
+    accepted_by_site:      "Accepted by Site",
+    rejected_by_site:      "Rejected by Site",
+    expired:               "Expired",
+    cancelled_as_order:    "Cancelled as Order",
+    cancelled_as_quote:    "Cancelled as Quote",
+  }
+
+  # Statuses that represent active/open work (equivalent to the old "New")
+  ACTIVE_STATUSES = [
+    "Open Order", "Quote", "Pending", "Released for Dispatch", "Dispatched",
+    "Released for Picking", "Picking in Progress", "Shipped", "Released for Billing"
+  ].freeze
 
   PRODUCTS = [ "DEF", "Regular", "Plus", "Super", "Eth-Regular", "Eth-Plus", "Eth-Super", "Reg-E10", "Plus-E10", "Super-E10", "ULS", "Dyed ULS" ]
-  scope :unassigned_open_orders, -> { where(order_status: 'open').where(dispatch_id: nil) }
+  scope :unassigned_open_orders, -> { where(order_status: ACTIVE_STATUSES).where.not(id: joins(:dispatch_customer_orders).select(:id)) }
 
   def assign_user_and_create_dispatch
     Dispatch.create(customer_order: self, assigned_user: User.first) # Adjust assignment logic as needed

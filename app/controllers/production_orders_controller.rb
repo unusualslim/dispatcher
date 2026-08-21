@@ -26,7 +26,7 @@ class ProductionOrdersController < ApplicationController
 
   # GET /production_orders/dashboard
   def dashboard
-    open_order_statuses = %w[New on_hold]
+    open_order_statuses = ["Open Order", "Quote", "Pending", "Released for Dispatch"]
 
     base = CustomerOrderProduct
       .joins(:customer_order)

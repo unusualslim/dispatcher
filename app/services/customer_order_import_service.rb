@@ -5,12 +5,12 @@ class CustomerOrderImportService
   Result     = Struct.new(:created, :updated, :skipped, :errors, keyword_init: true)
   PreviewRow = Struct.new(:external_order_no, :customer_name, :order_date, :odor_status, :line_items_count, :action, keyword_init: true)
 
-  # Maps ODOR order status to CustomerOrder order_status enum key
-  STATUS_MAP = {
-    'Billed'              => :complete,
-    'Cancelled As Order'  => :deleted,
-    'Cancelled As Quote'  => :deleted,
-  }.freeze
+  # Normalize PDI status strings so capitalization variants ("Cancelled As Quote"
+  # vs "Cancelled as Quote") all resolve to the correct enum key.
+  # CustomerOrder.order_statuses → { "open_order" => "Open Order", ... }
+  # Inverted + downcased → { "open order" => "open_order", ... }
+  CANONICAL_STATUS = CustomerOrder.order_statuses.invert
+                                  .transform_keys(&:downcase).freeze
 
   def self.call(file_path)
     new(file_path).run
@@ -175,7 +175,7 @@ class CustomerOrderImportService
 
     customer  = find_or_create_customer(order_data[:customer_name])
     location  = find_or_create_location(order_data[:location_name])
-    status    = STATUS_MAP.fetch(order_data[:odor_status], :New)
+    status    = CANONICAL_STATUS[order_data[:odor_status].to_s.downcase] || "open_order"
 
     attrs = {
       external_order_no:       external_order_no,

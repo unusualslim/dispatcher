@@ -34,10 +34,10 @@ class DispatchesController < ApplicationController
     # Stat card counts
     @stat_active         = Dispatch.where(status: ["New", "Sent to Driver"]).count
     @stat_in_transit     = Dispatch.where(status: "Sent to Driver").count
-    @stat_unassigned     = CustomerOrder.where(order_status: "New")
+    @stat_unassigned     = CustomerOrder.where(order_status: CustomerOrder::ACTIVE_STATUSES)
                                         .left_joins(:dispatch_customer_orders)
                                         .where(dispatch_customer_orders: { id: nil }).count
-    @stat_on_hold        = CustomerOrder.where(order_status: "On Hold").count
+    @stat_on_hold        = CustomerOrder.where(order_status: ["Expired", "Rejected by Site"]).count
 
     # Today's dispatches
     @today_dispatches = Dispatch
@@ -56,7 +56,7 @@ class DispatchesController < ApplicationController
 
     # Unassigned orders (oldest delivery date first)
     @unassigned_orders = CustomerOrder
-      .where(order_status: "New")
+      .where(order_status: CustomerOrder::ACTIVE_STATUSES)
       .left_joins(:dispatch_customer_orders)
       .where(dispatch_customer_orders: { id: nil })
       .includes(:location, customer_order_products: :product)
@@ -65,7 +65,7 @@ class DispatchesController < ApplicationController
 
     # On hold orders
     @on_hold_orders = CustomerOrder
-      .where(order_status: "On Hold")
+      .where(order_status: ["Expired", "Rejected by Site"])
       .includes(:location)
       .order(Arel.sql("required_delivery_date ASC NULLS LAST"))
       .limit(10)
@@ -134,8 +134,7 @@ class DispatchesController < ApplicationController
     # Load data needed for form options
     @locations = Location.all
     @recent_customer_orders = CustomerOrder
-      .where(order_status: ['New', 'On Hold'])
-      .where.not(order_status: ['complete'])
+      .where(order_status: CustomerOrder::ACTIVE_STATUSES)
       .order(created_at: :desc)
     @origin_locations = Location.where(location_category_id: 1)
     @available_things = Thing.all
@@ -147,8 +146,8 @@ class DispatchesController < ApplicationController
     @dispatch = Dispatch.find(params[:id])
     @locations = Location.all
     @recent_customer_orders = CustomerOrder
-    .where.not(order_status: ['complete'])
-    .order(created_at: :desc)
+      .where(order_status: CustomerOrder::ACTIVE_STATUSES)
+      .order(created_at: :desc)
     @origin_locations = Location.where(location_category_id: 1)
     @available_things = Thing.all
     @selected_thing_ids = [] # Pre-select none
@@ -158,7 +157,7 @@ class DispatchesController < ApplicationController
   def create
     @origin_locations = Location.where(location_category_id: 1)
     @recent_customer_orders = CustomerOrder
-      .where.not(order_status: ['complete'])
+      .where(order_status: CustomerOrder::ACTIVE_STATUSES)
       .order(created_at: :desc)
     @dispatch = Dispatch.new(dispatch_params)
 
@@ -356,7 +355,7 @@ class DispatchesController < ApplicationController
     fps_carriers = ['Five Points Logistics, LLC', 'Five Points Service, Inc.']
     @unassigned_orders = CustomerOrder.left_joins(:dispatch_customer_orders)
                                       .where(dispatch_customer_orders: { id: nil })
-                                      .where(order_status: :New)
+                                      .where(order_status: CustomerOrder::ACTIVE_STATUSES)
                                       .where(
                                         "external_order_no IS NULL OR carrier IN (?)",
                                         fps_carriers

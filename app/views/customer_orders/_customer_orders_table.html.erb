@@ -18,9 +18,15 @@
         <td><%= link_to customer_order.id, customer_order_path(customer_order) %></td>
         <td><%= customer_order.external_order_no %></td>
         <td>
-          <% status_classes = { "new" => "bg-primary", "complete" => "bg-success", "deleted" => "bg-danger", "on_hold" => "bg-warning text-dark" } %>
-          <span class="badge <%= status_classes[customer_order.order_status] || 'bg-secondary' %>">
-            <%= customer_order.order_status.humanize %>
+          <% tbl_status_class = case customer_order.order_status
+            when *CustomerOrder::ACTIVE_STATUSES then "bg-primary"
+            when "Billed", "Delivered", "Accepted by Site" then "bg-success"
+            when "Expired", "Rejected by Site" then "bg-warning text-dark"
+            when "Cancelled as Order", "Cancelled as Quote" then "bg-danger"
+            else "bg-secondary"
+          end %>
+          <span class="badge <%= tbl_status_class %>">
+            <%= customer_order.order_status %>
           </span>
         </td>
         <td>

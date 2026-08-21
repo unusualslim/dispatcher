@@ -5,17 +5,17 @@ class CustomerOrdersController < ApplicationController
     today = Date.today
 
     @stats = {
-      new:                 CustomerOrder.where(order_status: 'New').count,
-      due_this_week:       CustomerOrder.where(order_status: 'New')
+      new:                 CustomerOrder.where(order_status: CustomerOrder::ACTIVE_STATUSES).count,
+      due_this_week:       CustomerOrder.where(order_status: CustomerOrder::ACTIVE_STATUSES)
                              .where(required_delivery_date: today..today + 7).count,
-      overdue:             CustomerOrder.where(order_status: 'New')
+      overdue:             CustomerOrder.where(order_status: CustomerOrder::ACTIVE_STATUSES)
                              .where('required_delivery_date < ?', today).count,
-      complete_this_month: CustomerOrder.where(order_status: 'Complete')
+      complete_this_month: CustomerOrder.where(order_status: 'Billed')
                              .where('created_at >= ?', today.beginning_of_month).count,
     }
 
     @upcoming = CustomerOrder
-      .where(order_status: 'New')
+      .where(order_status: CustomerOrder::ACTIVE_STATUSES)
       .where('required_delivery_date >= ?', today)
       .order(required_delivery_date: :asc)
       .includes(:customer, :location)
@@ -87,7 +87,7 @@ def index
       @customer_orders = @customer_orders
                            .left_joins(:dispatch_customer_orders)
                            .where(dispatch_customer_orders: { id: nil })
-                           .where(order_status: "New")
+                           .where(order_status: CustomerOrder::ACTIVE_STATUSES)
     else
       @customer_orders = @customer_orders.where(order_status: params[:order_status])
     end
@@ -196,7 +196,7 @@ end
         next unless shortfall > 0
 
         order = cop.customer_order
-        next if order.order_status == 'Deleted'
+        next if ["Cancelled as Order", "Cancelled as Quote"].include?(order.order_status)
 
         result[order.id] ||= { order: order, shortfalls: [] }
         result[order.id][:shortfalls] << {

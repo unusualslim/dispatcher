@@ -27,12 +27,10 @@
         <div class="col-md-3">
           <%= f.label :order_status, 'Status' %>
           <%= f.select :order_status,
-                options_for_select([
-                  ['New', 'New'],
-                  ['Complete', 'Complete'],
-                  ['On Hold', 'On Hold'],
-                  ['Deleted', 'Deleted'],
-                ], params[:order_status]),
+                options_for_select(
+                  CustomerOrder.order_statuses.map { |k, v| [v, v] },
+                  params[:order_status]
+                ),
                 { include_blank: 'All Statuses' },
                 class: 'form-control' %>
         </div>

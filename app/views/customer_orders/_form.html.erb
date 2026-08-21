@@ -60,7 +60,7 @@
             <div>
               <%= form.label :order_status, "Status", class: "form-label fw-semibold mb-1" %>
               <%= form.select :order_status,
-                    CustomerOrder.order_statuses.keys.map { |s| [s.humanize, s] },
+                    CustomerOrder.order_statuses.map { |k, v| [v, k] },
                     {},
                     class: "form-select" %>
             </div>
