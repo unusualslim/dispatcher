@@ -36,7 +36,9 @@ class CustomerOrderImportsController < ApplicationController
     # Encode in 45 KB chunks (multiple of 3 → no mid-stream padding)
     file_content = File.open(file_path, 'rb') do |f|
       buf = +""
-      buf << [chunk].pack("m0") while (chunk = f.read(45_000))
+      while (chunk = f.read(45_000))
+        buf << [chunk].pack("m0")
+      end
       buf
     end
 
