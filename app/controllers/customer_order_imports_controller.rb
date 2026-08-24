@@ -13,10 +13,8 @@ class CustomerOrderImportsController < ApplicationController
     return redirect_to new_customer_order_import_path, alert: "Please select a file." unless file
     return redirect_to new_customer_order_import_path, alert: "File must be a PDF file." unless file.original_filename.downcase.end_with?('.pdf')
 
-    file_content = file.read
-
     tmp = Tempfile.new(['customer_order_import', '.pdf'], binmode: true)
-    tmp.write(file_content)
+    IO.copy_stream(file.tempfile, tmp)
     tmp.flush
     session[:co_import_tmp_path]   = tmp.path
     session[:co_import_file_name]  = file.original_filename
@@ -32,9 +30,15 @@ class CustomerOrderImportsController < ApplicationController
       return redirect_to new_customer_order_import_path, alert: "Import session expired. Please re-upload the file."
     end
 
-    file_path    = session[:co_import_tmp_path]
-    file_name    = session[:co_import_file_name] || File.basename(file_path)
-    file_content = Base64.strict_encode64(File.binread(file_path))
+    file_path = session[:co_import_tmp_path]
+    file_name = session[:co_import_file_name] || File.basename(file_path)
+
+    # Encode in 45 KB chunks (multiple of 3 → no mid-stream padding)
+    file_content = File.open(file_path, 'rb') do |f|
+      buf = +""
+      buf << [chunk].pack("m0") while (chunk = f.read(45_000))
+      buf
+    end
 
     log = SyncLog.create!(
       process_name: PROCESS_NAME,
@@ -44,6 +48,9 @@ class CustomerOrderImportsController < ApplicationController
       file_binary:  true,
       started_at:   Time.current
     )
+
+    file_content = nil
+    GC.start
 
     begin
       result = CustomerOrderImportService.call(file_path)

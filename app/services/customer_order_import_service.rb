@@ -39,10 +39,20 @@ class CustomerOrderImportService
   def run
     result = Result.new(created: 0, updated: 0, skipped: 0, errors: [])
 
-    parse_orders.each do |order_data|
+    full_text = extract_text
+    blocks = full_text.split(/\n(?=[ \t]{2,}Order No:\s+OD-)/)
+    full_text = nil
+    GC.start
+    blocks.shift
+
+    blocks.each_with_index do |block, idx|
+      order_data = parse_order_block(block)
+      blocks[idx] = nil  # release block string so GC can reclaim it
+      next unless order_data
       import_order(order_data, result)
+      GC.start if (idx % 100).zero? && idx.positive?
     rescue => e
-      result.errors << "#{order_data[:external_order_no]}: #{e.message}"
+      result.errors << "#{order_data&.dig(:external_order_no)}: #{e.message}"
     end
 
     result
@@ -57,6 +67,7 @@ class CustomerOrderImportService
     # Using \n in the pattern (rather than a lookahead alone) prevents the
     # lookahead from matching at every leading-space position on the same line.
     blocks = full_text.split(/\n(?=[ \t]{2,}Order No:\s+OD-)/)
+    full_text = nil  # release full text before parsing all blocks
     blocks.shift # discard text before the first order (page 1 report settings)
 
     blocks.filter_map { |block| parse_order_block(block) }
@@ -75,7 +86,9 @@ class CustomerOrderImportService
   end
 
   def pdf_reader_text
-    PDF::Reader.new(@file_path).pages.map(&:text).join("\n")
+    buf = +""
+    PDF::Reader.new(@file_path).pages.each { |page| buf << page.text << "\n" }
+    buf
   end
 
   def parse_order_block(block)
