@@ -113,133 +113,173 @@
 
     <%# ── BUY TAB ── %>
     <% elsif @tab == 'buy' %>
-      <table class="table table-sm table-hover align-middle mb-0">
-        <thead class="table-light">
-          <tr>
-            <th>Order #</th>
-            <th>Customer</th>
-            <th>Product</th>
-            <th>UOM</th>
-            <th class="text-end">Qty Needed</th>
-            <th class="text-end">In Stock</th>
-            <th class="text-end">Shortfall</th>
-            <th>Due</th>
-            <th>Salesperson</th>
-            <th>Preferred Vendor</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <% if @buy_lines.any? %>
-            <% @buy_lines.each do |cop| %>
-              <% order    = cop.customer_order %>
-              <% product  = cop.product %>
-              <% in_stock  = product&.current_stock.to_f %>
-              <% needed    = cop.quantity.to_f %>
-              <% shortfall = [needed - in_stock, 0].max %>
-              <% overdue   = order.required_delivery_date && order.required_delivery_date < Date.today %>
-              <% vendor    = product&.vendors&.first %>
-              <tr>
-                <td class="text-nowrap">
-                  <%= link_to "##{order.id}", customer_order_path(order), class: "fw-semibold text-decoration-none" %>
-                  <% if order.external_order_no.present? %>
-                    <div class="text-muted small"><%= order.external_order_no %></div>
-                  <% end %>
-                </td>
-                <td class="small"><%= order.customer&.name || "—" %></td>
-                <td class="small fw-semibold"><%= product&.name || cop.product_name %></td>
-                <td class="small text-muted"><%= product&.unit_of_measurement %></td>
-                <td class="text-end small"><%= number_with_delimiter(needed) %></td>
-                <td class="text-end small"><%= number_with_delimiter(in_stock) %></td>
-                <td class="text-end small fw-semibold text-danger"><%= number_with_delimiter(shortfall) %></td>
-                <td class="text-nowrap small">
-                  <% if order.required_delivery_date %>
-                    <span class="<%= overdue ? 'text-danger fw-semibold' : '' %>">
-                      <%= order.required_delivery_date.strftime("%b %-d") %>
-                    </span>
-                  <% else %>—<% end %>
-                </td>
-                <td class="small text-muted"><%= order.salesperson %></td>
-                <td class="small"><%= vendor&.name || "—" %></td>
-                <td class="text-nowrap">
-                  <%= link_to "Create PO",
-                        new_purchase_order_path(
-                          vendor_id:    vendor&.id,
-                          product_id:   product&.id,
-                          product_name: product&.name || cop.product_name,
-                          quantity:     shortfall.ceil
-                        ),
-                        class: "btn btn-sm btn-outline-primary" %>
-                </td>
-              </tr>
+      <%= form_with url: bulk_close_customer_orders_path, method: :post, data: { turbo: false } do |f| %>
+        <%= f.hidden_field :tab, value: 'buy' %>
+        <div class="d-flex align-items-center gap-2 px-3 py-2 border-bottom bg-light">
+          <input type="checkbox" id="buy_select_all" class="form-check-input mt-0">
+          <label for="buy_select_all" class="form-check-label small text-muted mb-0">Select all</label>
+          <button type="submit" class="btn btn-sm btn-outline-danger ms-2"
+                  onclick="return confirm('Mark selected orders as Delivered?')">
+            Close Selected
+          </button>
+        </div>
+        <table class="table table-sm table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th></th>
+              <th>Order #</th>
+              <th>Customer</th>
+              <th>Product</th>
+              <th>UOM</th>
+              <th class="text-end">Qty Needed</th>
+              <th class="text-end">In Stock</th>
+              <th class="text-end">Shortfall</th>
+              <th>Due</th>
+              <th>Salesperson</th>
+              <th>Preferred Vendor</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if @buy_lines.any? %>
+              <% @buy_lines.each do |cop| %>
+                <% order    = cop.customer_order %>
+                <% product  = cop.product %>
+                <% in_stock  = product&.current_stock.to_f %>
+                <% needed    = cop.quantity.to_f %>
+                <% shortfall = [needed - in_stock, 0].max %>
+                <% overdue   = order.required_delivery_date && order.required_delivery_date < Date.today %>
+                <% vendor    = product&.vendors&.first %>
+                <tr>
+                  <td><input type="checkbox" name="order_ids[]" value="<%= order.id %>" class="form-check-input buy-row-check mt-0"></td>
+                  <td class="text-nowrap">
+                    <%= link_to "##{order.id}", customer_order_path(order), class: "fw-semibold text-decoration-none" %>
+                    <% if order.external_order_no.present? %>
+                      <div class="text-muted small"><%= order.external_order_no %></div>
+                    <% end %>
+                  </td>
+                  <td class="small"><%= order.customer&.name || "—" %></td>
+                  <td class="small fw-semibold"><%= product&.name || cop.product_name %></td>
+                  <td class="small text-muted"><%= product&.unit_of_measurement %></td>
+                  <td class="text-end small"><%= number_with_delimiter(needed) %></td>
+                  <td class="text-end small"><%= number_with_delimiter(in_stock) %></td>
+                  <td class="text-end small fw-semibold text-danger"><%= number_with_delimiter(shortfall) %></td>
+                  <td class="text-nowrap small">
+                    <% if order.required_delivery_date %>
+                      <span class="<%= overdue ? 'text-danger fw-semibold' : '' %>">
+                        <%= order.required_delivery_date.strftime("%b %-d") %>
+                      </span>
+                    <% else %>—<% end %>
+                  </td>
+                  <td class="small text-muted"><%= order.salesperson %></td>
+                  <td class="small"><%= vendor&.name || "—" %></td>
+                  <td class="text-nowrap">
+                    <% note = "Customer Order ##{order.id}" %>
+                    <% note += " (#{order.external_order_no})" if order.external_order_no.present? %>
+                    <% note += " — #{order.customer&.name}" if order.customer&.name.present? %>
+                    <%= link_to "Create PO",
+                          new_purchase_order_path(
+                            vendor_id:              vendor&.id,
+                            product_id:             product&.id,
+                            quantity:               shortfall.ceil,
+                            expected_delivery_date: order.required_delivery_date,
+                            notes:                  note
+                          ),
+                          class: "btn btn-sm btn-outline-primary" %>
+                  </td>
+                </tr>
+              <% end %>
+            <% else %>
+              <tr><td colspan="12" class="text-center text-muted py-4">No open buy lines.</td></tr>
             <% end %>
-          <% else %>
-            <tr><td colspan="11" class="text-center text-muted py-4">No open buy lines.</td></tr>
-          <% end %>
-        </tbody>
-      </table>
+          </tbody>
+        </table>
+      <% end %>
+      <script>
+        document.getElementById('buy_select_all').addEventListener('change', function() {
+          document.querySelectorAll('.buy-row-check').forEach(cb => cb.checked = this.checked);
+        });
+      </script>
 
     <%# ── ALLOCATED TAB ── %>
     <% elsif @tab == 'allocated' %>
-      <table class="table table-sm table-hover align-middle mb-0">
-        <thead class="table-light">
-          <tr>
-            <th>Order #</th>
-            <th>Customer</th>
-            <th>Product</th>
-            <th>UOM</th>
-            <th class="text-end">Qty Ordered</th>
-            <th class="text-end">In Stock</th>
-            <th>Due</th>
-            <th>Salesperson</th>
-            <th>Dispatch</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% if @allocated_lines.any? %>
-            <% @allocated_lines.each do |cop| %>
-              <% order   = cop.customer_order %>
-              <% product = cop.product %>
-              <% overdue = order.required_delivery_date && order.required_delivery_date < Date.today %>
-              <% dispatch = order.dispatches.first %>
-              <tr>
-                <td class="text-nowrap">
-                  <%= link_to "##{order.id}", customer_order_path(order), class: "fw-semibold text-decoration-none" %>
-                  <% if order.external_order_no.present? %>
-                    <div class="text-muted small"><%= order.external_order_no %></div>
-                  <% end %>
-                </td>
-                <td class="small"><%= order.customer&.name || "—" %></td>
-                <td class="small fw-semibold"><%= product&.name || cop.product_name %></td>
-                <td class="small text-muted"><%= product&.unit_of_measurement %></td>
-                <td class="text-end small"><%= number_with_delimiter(cop.quantity) %></td>
-                <td class="text-end small"><%= number_with_delimiter(product.current_stock) %></td>
-                <td class="text-nowrap small">
-                  <% if order.required_delivery_date %>
-                    <span class="<%= overdue ? 'text-danger fw-semibold' : '' %>">
-                      <%= order.required_delivery_date.strftime("%b %-d") %>
-                    </span>
-                  <% else %>—<% end %>
-                </td>
-                <td class="small text-muted"><%= order.salesperson %></td>
-                <td>
-                  <% if dispatch %>
-                    <% d_color = { 'New' => 'secondary', 'sent_to_driver' => 'primary', 'complete' => 'success', 'billed' => 'warning' }.fetch(dispatch.dispatch_status.to_s, 'secondary') %>
-                  <% d_label = { 'New' => 'New', 'sent_to_driver' => 'Sent to Driver', 'complete' => 'Complete', 'billed' => 'Billed' }.fetch(dispatch.dispatch_status.to_s, dispatch.dispatch_status.to_s) %>
-                    <%= link_to d_label, dispatch_path(dispatch),
-                          class: "badge bg-#{d_color} text-decoration-none" %>
-                  <% else %>
-                    <%= link_to "No Dispatch", new_dispatch_path(customer_order_id: order.id),
-                          class: "badge bg-light text-dark border text-decoration-none" %>
-                  <% end %>
-                </td>
-              </tr>
+      <%= form_with url: bulk_close_customer_orders_path, method: :post, data: { turbo: false } do |f| %>
+        <%= f.hidden_field :tab, value: 'allocated' %>
+        <div class="d-flex align-items-center gap-2 px-3 py-2 border-bottom bg-light">
+          <input type="checkbox" id="alloc_select_all" class="form-check-input mt-0">
+          <label for="alloc_select_all" class="form-check-label small text-muted mb-0">Select all</label>
+          <button type="submit" class="btn btn-sm btn-outline-danger ms-2"
+                  onclick="return confirm('Mark selected orders as Delivered?')">
+            Close Selected
+          </button>
+        </div>
+        <table class="table table-sm table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th></th>
+              <th>Order #</th>
+              <th>Customer</th>
+              <th>Product</th>
+              <th>UOM</th>
+              <th class="text-end">Qty Ordered</th>
+              <th class="text-end">In Stock</th>
+              <th>Due</th>
+              <th>Salesperson</th>
+              <th>Dispatch</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if @allocated_lines.any? %>
+              <% @allocated_lines.each do |cop| %>
+                <% order   = cop.customer_order %>
+                <% product = cop.product %>
+                <% overdue = order.required_delivery_date && order.required_delivery_date < Date.today %>
+                <% dispatch = order.dispatches.first %>
+                <tr>
+                  <td><input type="checkbox" name="order_ids[]" value="<%= order.id %>" class="form-check-input alloc-row-check mt-0"></td>
+                  <td class="text-nowrap">
+                    <%= link_to "##{order.id}", customer_order_path(order), class: "fw-semibold text-decoration-none" %>
+                    <% if order.external_order_no.present? %>
+                      <div class="text-muted small"><%= order.external_order_no %></div>
+                    <% end %>
+                  </td>
+                  <td class="small"><%= order.customer&.name || "—" %></td>
+                  <td class="small fw-semibold"><%= product&.name || cop.product_name %></td>
+                  <td class="small text-muted"><%= product&.unit_of_measurement %></td>
+                  <td class="text-end small"><%= number_with_delimiter(cop.quantity) %></td>
+                  <td class="text-end small"><%= number_with_delimiter(product.current_stock) %></td>
+                  <td class="text-nowrap small">
+                    <% if order.required_delivery_date %>
+                      <span class="<%= overdue ? 'text-danger fw-semibold' : '' %>">
+                        <%= order.required_delivery_date.strftime("%b %-d") %>
+                      </span>
+                    <% else %>—<% end %>
+                  </td>
+                  <td class="small text-muted"><%= order.salesperson %></td>
+                  <td>
+                    <% if dispatch %>
+                      <% d_color = { 'New' => 'secondary', 'sent_to_driver' => 'primary', 'complete' => 'success', 'billed' => 'warning' }.fetch(dispatch.dispatch_status.to_s, 'secondary') %>
+                      <% d_label = { 'New' => 'New', 'sent_to_driver' => 'Sent to Driver', 'complete' => 'Complete', 'billed' => 'Billed' }.fetch(dispatch.dispatch_status.to_s, dispatch.dispatch_status.to_s) %>
+                      <%= link_to d_label, dispatch_path(dispatch),
+                            class: "badge bg-#{d_color} text-decoration-none" %>
+                    <% else %>
+                      <%= link_to "No Dispatch", new_dispatch_path(customer_order_id: order.id),
+                            class: "badge bg-light text-dark border text-decoration-none" %>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            <% else %>
+              <tr><td colspan="10" class="text-center text-muted py-4">No allocated lines.</td></tr>
             <% end %>
-          <% else %>
-            <tr><td colspan="9" class="text-center text-muted py-4">No allocated lines.</td></tr>
-          <% end %>
-        </tbody>
-      </table>
+          </tbody>
+        </table>
+      <% end %>
+      <script>
+        document.getElementById('alloc_select_all').addEventListener('change', function() {
+          document.querySelectorAll('.alloc-row-check').forEach(cb => cb.checked = this.checked);
+        });
+      </script>
     <% end %>
 
   </div>

@@ -79,7 +79,8 @@ Rails.application.routes.draw do
     post 'create_dispatch', on: :member
     resources :customer_order_products, only: [:create, :update, :destroy]
     collection do
-      get :dashboard
+      get  :dashboard
+      post :bulk_close
     end
   end
 

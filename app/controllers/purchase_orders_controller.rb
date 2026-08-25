@@ -27,6 +27,8 @@ class PurchaseOrdersController < ApplicationController
       vendor = Vendor.find_by(id: params[:vendor_id])
       @purchase_order.freight_terms = vendor&.freight_terms if vendor&.freight_terms.present?
     end
+    @purchase_order.expected_delivery_date = params[:expected_delivery_date].presence
+    @purchase_order.notes = params[:notes].presence
     @vendors  = Vendor.includes(:vendor_freight_terms).order(:name)
     @products = Product.order(:name)
 
@@ -48,19 +50,22 @@ class PurchaseOrdersController < ApplicationController
         .where(production_orders: { status: %w[pending in_progress] })
         .group(:product_id).sum(:quantity)
 
+      dashboard_qty = params[:quantity].presence&.to_f
+
       product_ids.each do |pid|
         p = products[pid]
         next unless p
         on_order  = on_order_map[pid]  || 0
         committed = committed_map[pid] || 0
         available = (p.current_stock || 0) + on_order - p.safety_stock.to_f
-        qty = [committed - available, p.reorder_point.to_f - available, 0].max.ceil
+        calculated_qty = [committed - available, p.reorder_point.to_f - available, 0].max.ceil
+        qty = dashboard_qty || (calculated_qty > 0 ? calculated_qty : nil)
         @purchase_order.line_items.build(
           product_id:   p.id,
           product_name: p.name,
           unit_cost:    p.cost_per_unit,
           package_code: p.pdi_package_code,
-          quantity:     qty > 0 ? qty : nil
+          quantity:     qty
         )
       end
       @purchase_order.line_items.build if @purchase_order.line_items.empty?

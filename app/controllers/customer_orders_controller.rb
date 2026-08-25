@@ -173,6 +173,15 @@ end
       end
     end
 
+    def bulk_close
+      ids = Array(params[:order_ids]).map(&:to_i).select(&:positive?)
+      return redirect_to dashboard_production_orders_path, alert: "No orders selected." if ids.empty?
+
+      count = CustomerOrder.where(id: ids).update_all(order_status: "Delivered")
+      redirect_to dashboard_production_orders_path(tab: params[:tab].presence || 'buy'),
+                  notice: "#{count} order(s) marked as Delivered."
+    end
+
     def destroy
       @customer_order = CustomerOrder.find(params[:id])
       @customer_order.destroy
