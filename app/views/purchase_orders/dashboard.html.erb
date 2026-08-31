@@ -1,0 +1,223 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="mb-0">Purchasing Dashboard</h1>
+  <div class="d-flex gap-2">
+    <%= link_to 'All POs', purchase_orders_path, class: 'btn btn-outline-secondary btn-sm' %>
+    <%= link_to 'New PO', new_purchase_order_path, class: 'btn btn-primary btn-sm' %>
+  </div>
+</div>
+
+<%# Status summary cards %>
+<% badge_colors = { 'draft' => 'secondary', 'pending_approval' => 'warning', 'approved' => 'primary',
+                    'submitted' => 'info', 'received' => 'success', 'cancelled' => 'danger' } %>
+<div class="row g-3 mb-4">
+  <% PurchaseOrder::STATUSES.reject { |s| s == 'cancelled' }.each do |status| %>
+    <div class="col-6 col-md-4 col-lg-2">
+      <%= link_to purchase_orders_path(status: status), class: 'text-decoration-none' do %>
+        <div class="card text-center h-100 border-<%= badge_colors[status] || 'secondary' %>">
+          <div class="card-body py-3">
+            <div class="fs-2 fw-bold text-<%= badge_colors[status] || 'secondary' %>"><%= @status_counts[status] %></div>
+            <div class="small text-muted"><%= status.humanize %></div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>
+
+<div class="row g-4">
+
+  <%# Needs Action %>
+  <div class="col-12">
+    <div class="card shadow-sm">
+      <div class="card-header d-flex justify-content-between align-items-center bg-danger text-white">
+        <strong>Needs Action</strong>
+        <span class="badge bg-white text-danger"><%= @needs_action.size %></span>
+      </div>
+      <% if @needs_action.empty? %>
+        <div class="card-body text-muted text-center py-4">Nothing needs attention right now.</div>
+      <% else %>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>PO #</th>
+                <th>Vendor</th>
+                <th>Products</th>
+                <th class="text-end">Total</th>
+                <th>Status</th>
+                <th>Action Needed</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @needs_action.each do |po| %>
+                <tr>
+                  <td><%= link_to "##{po.id}", purchase_order_path(po), class: 'fw-semibold text-decoration-none' %></td>
+                  <td><%= po.vendor&.name || '—' %></td>
+                  <td class="small text-muted">
+                    <% names = po.line_items.map(&:display_name) %>
+                    <%= names.first(2).join(', ') %><%= " +#{names.size - 2} more" if names.size > 2 %>
+                  </td>
+                  <td class="text-end text-nowrap"><%= number_to_currency(po.total_cost) %></td>
+                  <td><span class="badge bg-<%= badge_colors[po.status] || 'secondary' %>"><%= po.status.humanize %></span></td>
+                  <td class="small">
+                    <% if po.status == 'draft' %>
+                      <span class="text-danger fw-semibold">Approve this PO</span>
+                    <% elsif po.status == 'received' && !po.posted? %>
+                      <span class="text-warning fw-semibold">Post to inventory</span>
+                    <% end %>
+                  </td>
+                  <td class="text-end">
+                    <% if po.status == 'draft' %>
+                      <%= button_to 'Approve', approve_purchase_order_path(po), method: :patch, class: 'btn btn-sm btn-success',
+                            data: { confirm: 'Approve this purchase order?' } %>
+                    <% elsif po.status == 'received' && !po.posted? %>
+                      <%= button_to 'Post', post_to_inventory_purchase_order_path(po), method: :patch, class: 'btn btn-sm btn-warning text-dark',
+                            data: { confirm: 'Post this PO to inventory?' } %>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# Overdue %>
+  <div class="col-12 col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header d-flex justify-content-between align-items-center bg-warning text-dark">
+        <strong>Overdue — Not Yet Received</strong>
+        <span class="badge bg-dark"><%= @overdue.size %></span>
+      </div>
+      <% if @overdue.empty? %>
+        <div class="card-body text-muted text-center py-4">No overdue orders.</div>
+      <% else %>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>PO #</th>
+                <th>Vendor</th>
+                <th>Expected</th>
+                <th>Days Late</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @overdue.each do |po| %>
+                <tr>
+                  <td><%= link_to "##{po.id}", purchase_order_path(po), class: 'fw-semibold text-decoration-none' %></td>
+                  <td><%= po.vendor&.name || '—' %></td>
+                  <td class="text-nowrap small"><%= po.expected_delivery_date.strftime('%b %-d') %></td>
+                  <td><span class="badge bg-danger"><%= (Date.today - po.expected_delivery_date).to_i %> days</span></td>
+                  <td class="text-end">
+                    <%= button_to 'Receive', receive_purchase_order_path(po), method: :patch, class: 'btn btn-sm btn-primary',
+                          data: { confirm: 'Confirm physical receipt of this order?' } %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# In Transit %>
+  <div class="col-12 col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header d-flex justify-content-between align-items-center bg-info text-white">
+        <strong>In Transit — Submitted</strong>
+        <span class="badge bg-white text-info"><%= @in_transit.size %></span>
+      </div>
+      <% if @in_transit.empty? %>
+        <div class="card-body text-muted text-center py-4">No orders in transit.</div>
+      <% else %>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>PO #</th>
+                <th>Vendor</th>
+                <th>Expected</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @in_transit.each do |po| %>
+                <tr>
+                  <td><%= link_to "##{po.id}", purchase_order_path(po), class: 'fw-semibold text-decoration-none' %></td>
+                  <td><%= po.vendor&.name || '—' %></td>
+                  <td class="text-nowrap small">
+                    <% if po.expected_delivery_date %>
+                      <%= po.expected_delivery_date.strftime('%b %-d') %>
+                      <span class="text-muted">(in <%= (po.expected_delivery_date - Date.today).to_i %> days)</span>
+                    <% else %>
+                      <span class="text-muted">No date set</span>
+                    <% end %>
+                  </td>
+                  <td class="text-end">
+                    <%= button_to 'Receive', receive_purchase_order_path(po), method: :patch, class: 'btn btn-sm btn-primary',
+                          data: { confirm: 'Confirm physical receipt of this order?' } %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# Recently Received %>
+  <div class="col-12">
+    <div class="card shadow-sm">
+      <div class="card-header bg-success text-white">
+        <strong>Recently Received (Last 30 Days)</strong>
+      </div>
+      <% if @recently_received.empty? %>
+        <div class="card-body text-muted text-center py-4">No orders received in the last 30 days.</div>
+      <% else %>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>PO #</th>
+                <th>Vendor</th>
+                <th>Products</th>
+                <th class="text-end">Total</th>
+                <th>Received</th>
+                <th>Inventory</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @recently_received.each do |po| %>
+                <tr>
+                  <td><%= link_to "##{po.id}", purchase_order_path(po), class: 'fw-semibold text-decoration-none' %></td>
+                  <td><%= po.vendor&.name || '—' %></td>
+                  <td class="small text-muted">
+                    <% names = po.line_items.map(&:display_name) %>
+                    <%= names.first(2).join(', ') %><%= " +#{names.size - 2} more" if names.size > 2 %>
+                  </td>
+                  <td class="text-end text-nowrap"><%= number_to_currency(po.total_cost) %></td>
+                  <td class="text-nowrap small"><%= po.received_at&.strftime('%b %-d') || '—' %></td>
+                  <td>
+                    <% if po.posted? %>
+                      <span class="badge bg-success">Posted</span>
+                    <% else %>
+                      <span class="badge bg-warning text-dark">Unposted</span>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+</div>

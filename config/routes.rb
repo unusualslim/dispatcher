@@ -135,6 +135,7 @@ Rails.application.routes.draw do
     end
     collection do
       get :export_pdi
+      get :dashboard
     end
   end
 

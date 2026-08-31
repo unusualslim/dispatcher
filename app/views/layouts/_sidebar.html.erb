@@ -171,6 +171,11 @@
             <% end %>
           </li>
           <li class="<%= 'active' if current == 'purchase_orders' %>">
+            <%= link_to dashboard_purchase_orders_path do %>
+              <i class="bi bi-speedometer2"></i> PO Dashboard
+            <% end %>
+          </li>
+          <li class="<%= 'active' if current == 'purchase_orders' %>">
             <%= link_to purchase_orders_path do %>
               <i class="bi bi-bag-check"></i> Purchase Orders
             <% end %>

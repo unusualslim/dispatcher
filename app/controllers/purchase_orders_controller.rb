@@ -4,6 +4,33 @@ class PurchaseOrdersController < ApplicationController
   before_action :require_admin!
   before_action :set_purchase_order, only: [:show, :edit, :update, :approve, :submit, :receive, :post_to_inventory]
 
+  def dashboard
+    today = Date.today
+
+    @status_counts = PurchaseOrder::STATUSES.index_with { |s| PurchaseOrder.where(status: s).count }
+
+    @needs_action = PurchaseOrder.includes(:vendor, :line_items)
+                                 .where(status: %w[draft received])
+                                 .order(created_at: :asc)
+    @needs_action = @needs_action.select { |po| po.status == 'draft' || (po.status == 'received' && !po.posted?) }
+
+    @overdue = PurchaseOrder.includes(:vendor, :line_items)
+                            .where(status: 'submitted')
+                            .where('expected_delivery_date < ?', today)
+                            .order(:expected_delivery_date)
+
+    @in_transit = PurchaseOrder.includes(:vendor, :line_items)
+                               .where(status: 'submitted')
+                               .where('expected_delivery_date IS NULL OR expected_delivery_date >= ?', today)
+                               .order(:expected_delivery_date)
+
+    @recently_received = PurchaseOrder.includes(:vendor, :line_items)
+                                      .where(status: %w[received])
+                                      .where('received_at >= ?', 30.days.ago)
+                                      .order(received_at: :desc)
+                                      .limit(10)
+  end
+
   def index
     @status_filter = params[:status].presence
     @search        = params[:q].to_s.strip
