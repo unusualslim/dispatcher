@@ -26,12 +26,11 @@ class ProductionOrdersController < ApplicationController
 
   # GET /production_orders/dashboard
   def dashboard
-    open_order_statuses = ["Open Order", "Quote", "Pending", "Released for Dispatch"]
-
     base = CustomerOrderProduct
       .joins(:customer_order)
-      .where(customer_orders: { order_status: open_order_statuses })
+      .where(customer_orders: { order_status: CustomerOrder::ACTIVE_STATUSES })
       .where.not(product_id: nil)
+      .where("customer_order_products.product_name NOT ILIKE '%bulk%'")
       .includes(:product, customer_order: [:customer, :dispatches])
       .order('customer_orders.required_delivery_date ASC NULLS LAST')
 
@@ -48,6 +47,28 @@ class ProductionOrdersController < ApplicationController
       .select { |cop| cop.product && cop.product.current_stock.to_f >= cop.quantity.to_f }
 
     @tab = params[:tab] || 'production'
+
+    @in_progress = ProductionOrder
+      .includes(:product)
+      .where(status: 'in_progress')
+      .order(due_date: :asc)
+
+    @qc_holds = ProductionOrderBatch
+      .includes(production_order: :product)
+      .where(qc_status: %w[hold rejected])
+      .order(updated_at: :desc)
+
+    @recently_completed = ProductionOrder
+      .includes(:product)
+      .where(status: 'completed')
+      .where('date_completed >= ?', 30.days.ago)
+      .order(date_completed: :desc)
+      .limit(10)
+
+    @low_stock_materials = Product
+      .raw_materials
+      .below_reorder_point
+      .order(:name)
   end
 
   # GET /production_orders/kanban
