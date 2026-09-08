@@ -225,10 +225,12 @@ class CustomerOrderImportService
     order.customer_order_products.destroy_all
 
     line_items.each do |item|
-      product = Product.find_by(id: item[:product_code])
+      product   = Product.find_by(id: item[:product_code])
+      item_type = (product && !product.is_raw_material?) ? 'production' : 'buy'
       order.customer_order_products.create!(
         product_name: "#{item[:product_code]} / #{item[:package]}",
         product_id:   product&.id,
+        item_type:    item_type,
         warehouse:    item[:warehouse],
         quantity:     item[:ordered_qty],
         price:        item[:unit_price],

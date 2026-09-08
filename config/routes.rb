@@ -107,6 +107,7 @@ Rails.application.routes.draw do
     collection do
       get :kanban
       get :dashboard
+      get :bom_cost_report
     end
   end
 

@@ -71,6 +71,93 @@ class ProductionOrdersController < ApplicationController
       .order(:name)
   end
 
+  # GET /production_orders/bom_cost_report
+  # Exports a flat CSV — one row per BOM component per production order —
+  # designed for Excel pivot analysis of material cost accuracy and gross profit.
+  def bom_cost_report
+    require 'csv'
+
+    orders = ProductionOrder
+      .includes(
+        :product,
+        production_order_components: :product,
+        production_order_batches: [],
+        jobs: :job_workers
+      )
+      .order(:date_started, :number)
+
+    orders = orders.where("date_started >= ?", params[:from]) if params[:from].present?
+    orders = orders.where("date_started <= ?", params[:to])   if params[:to].present?
+    orders = orders.where(status: params[:status])            if params[:status].present? && params[:status] != "all"
+
+    headers = [
+      "PO Number", "PO Status", "Product ID", "Product Name",
+      "Qty Planned", "Qty Produced (Batches)", "Date Started", "Date Completed",
+      "Component #", "Component Product ID", "Component Name", "Component UOM",
+      "Std Qty Per Unit", "Std Total Qty", "Std Unit Cost ($)",
+      "Std Total Material Cost ($)", "Actual Qty Used",
+      "Actual Total Material Cost ($)", "Usage Variance (Qty)", "Cost Variance ($)",
+      "Completed Labor Jobs", "Total Labor Hours", "Total Worker-Hours"
+    ]
+
+    csv = CSV.generate(headers: true) do |out|
+      out << headers
+
+      orders.each do |po|
+        qty_produced    = po.production_order_batches.sum(&:quantity).to_d
+        completed_jobs  = po.jobs.select { |j| j.ended_at.present? }
+        labor_hrs       = (completed_jobs.sum(&:duration_seconds) / 3600.0).round(2)
+        worker_hrs      = (po.jobs.flat_map(&:job_workers).sum(&:duration_seconds) / 3600.0).round(2)
+
+        components = po.production_order_components
+        row_base = [
+          po.number, po.status,
+          po.product&.id, po.product&.name,
+          po.qty_to_make, qty_produced,
+          po.date_started, po.date_completed
+        ]
+
+        if components.empty?
+          out << row_base + [nil] * 12 + [completed_jobs.count, labor_hrs, worker_hrs]
+          next
+        end
+
+        components.each_with_index do |poc, i|
+          cp            = poc.product
+          std_unit_cost = cp&.cost_per_unit.to_d
+          std_total_qty = poc.quantity.to_d
+          std_cost      = std_total_qty * std_unit_cost
+          std_qty_per_unit = po.qty_to_make.to_d.nonzero? ? (std_total_qty / po.qty_to_make.to_d).round(4) : nil
+
+          actual_qty  = poc.quantity_actual
+          actual_cost = actual_qty.nil? ? nil : (actual_qty.to_d * std_unit_cost)
+          qty_var     = actual_qty.nil? ? nil : (actual_qty.to_d - std_total_qty).round(4)
+          cost_var    = actual_qty.nil? ? nil : (actual_cost - std_cost).round(4)
+
+          out << row_base + [
+            poc.position || (i + 1),
+            poc.product_id,
+            poc.description || cp&.name,
+            poc.uom,
+            std_qty_per_unit,
+            std_total_qty.nonzero? ? std_total_qty : nil,
+            std_unit_cost.nonzero? ? std_unit_cost : nil,
+            std_cost.nonzero? ? std_cost.round(4) : nil,
+            actual_qty,
+            actual_cost&.round(4),
+            qty_var,
+            cost_var,
+            completed_jobs.count, labor_hrs, worker_hrs
+          ]
+        end
+      end
+    end
+
+    send_data csv,
+              type:        'text/csv; charset=utf-8',
+              disposition: "attachment; filename=\"BOM_Cost_Report_#{Date.today}.csv\""
+  end
+
   # GET /production_orders/kanban
     def kanban
     @search_term     = params[:search]

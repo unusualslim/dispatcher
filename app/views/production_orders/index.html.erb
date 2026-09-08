@@ -3,6 +3,7 @@
     <h1 class="mb-0">Production Orders</h1>
     <div class="d-flex gap-2">
       <%= link_to "Kanban View", kanban_production_orders_path, class: "btn btn-outline-secondary" %>
+      <%= link_to "BOM Cost Export", bom_cost_report_production_orders_path, class: "btn btn-outline-success", data: { turbo: false } %>
       <%= link_to "New Production Order", new_production_order_path, class: "btn btn-primary", data: { turbo: false }  %>
     </div>
   </div>
