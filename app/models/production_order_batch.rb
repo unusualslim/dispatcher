@@ -32,6 +32,7 @@ class ProductionOrderBatch < ApplicationRecord
       order_qty    = production_order.qty_to_make.to_d
       batch_qty    = quantity.to_d
       batch_ratio  = order_qty > 0 ? batch_qty / order_qty : BigDecimal('1')
+      location     = production_order.location
 
       # Deduct all components consumed (regardless of is_raw_material flag)
       production_order.production_order_components.includes(:product).each do |comp|
@@ -46,9 +47,14 @@ class ProductionOrderBatch < ApplicationRecord
           transactable:     self,
           reference_number: production_order.number,
           notes:            "Consumed in batch #{lot_number}",
-          created_by_id:    completed_by_user.id
+          created_by_id:    completed_by_user.id,
+          location_id:      location&.id
         )
-        comp.product.decrement!(:current_stock, actual_qty)
+        if location.present?
+          LocationProduct.adjust!(location, comp.product, -actual_qty)
+        else
+          comp.product.decrement!(:current_stock, actual_qty)
+        end
       end
 
       # Add finished goods to inventory
@@ -62,9 +68,14 @@ class ProductionOrderBatch < ApplicationRecord
           transactable:     self,
           reference_number: production_order.number,
           notes:            "Produced in batch #{lot_number}",
-          created_by_id:    completed_by_user.id
+          created_by_id:    completed_by_user.id,
+          location_id:      location&.id
         )
-        finished_product.increment!(:current_stock, qty_produced)
+        if location.present?
+          LocationProduct.adjust!(location, finished_product, qty_produced)
+        else
+          finished_product.increment!(:current_stock, qty_produced)
+        end
       end
 
       update!(completed_at: Time.current)

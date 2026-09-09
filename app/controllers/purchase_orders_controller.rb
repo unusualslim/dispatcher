@@ -36,6 +36,7 @@ class PurchaseOrdersController < ApplicationController
     @search        = params[:q].to_s.strip
     @status_counts = PurchaseOrder::STATUSES.index_with { |s| PurchaseOrder.where(status: s).count }
     scope = PurchaseOrder.includes(:vendor, :line_items).order(created_at: :desc)
+    scope = scope.where(location_id: current_warehouse.id) if current_warehouse
     scope = scope.where(status: @status_filter) if @status_filter
     if @search.present?
       scope = scope.joins(:vendor).left_joins(:line_items)
@@ -48,7 +49,8 @@ class PurchaseOrdersController < ApplicationController
   end
 
   def new
-    @purchase_order = PurchaseOrder.new
+    @purchase_order = PurchaseOrder.new(location_id: current_warehouse&.id)
+    @warehouses = Location.where(location_category_id: 1).order(:company_name)
     if params[:vendor_id].present?
       @purchase_order.vendor_id = params[:vendor_id]
       vendor = Vendor.find_by(id: params[:vendor_id])
@@ -122,8 +124,9 @@ class PurchaseOrdersController < ApplicationController
     unless %w[draft pending_approval].include?(@purchase_order.status)
       redirect_to @purchase_order, alert: 'Only draft or pending approval POs can be edited.'
     end
-    @vendors  = Vendor.includes(:vendor_freight_terms).order(:name)
-    @products = Product.order(:name)
+    @vendors    = Vendor.includes(:vendor_freight_terms).order(:name)
+    @products   = Product.order(:name)
+    @warehouses = Location.where(location_category_id: 1).order(:company_name)
   end
 
   def update
@@ -205,7 +208,7 @@ class PurchaseOrdersController < ApplicationController
 
   def purchase_order_params
     params.require(:purchase_order).permit(
-      :vendor_id, :trigger_type, :notes, :expected_delivery_date, :freight_terms, :freight_amount,
+      :vendor_id, :location_id, :trigger_type, :notes, :expected_delivery_date, :freight_terms, :freight_amount,
       :other_charges, :other_charges_description,
       line_items_attributes: [:id, :product_id, :quantity, :unit_cost, :package_code, :_destroy]
     )

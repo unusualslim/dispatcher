@@ -3,6 +3,7 @@ class PurchaseOrder < ApplicationRecord
   TRIGGER_TYPES = %w[auto_reorder mrp_shortage manual pdi_import].freeze
 
   belongs_to :vendor
+  belongs_to :location, optional: true
   belongs_to :approved_by, class_name: 'User', optional: true
   belongs_to :received_by, class_name: 'User', optional: true
 
@@ -72,9 +73,14 @@ class PurchaseOrder < ApplicationRecord
           transactable:     self,
           reference_number: pdi_reference || id.to_s,
           notes:            "PO received from #{vendor.name}",
-          created_by_id:    user.id
+          created_by_id:    user.id,
+          location_id:      location_id
         )
-        line.product.increment!(:current_stock, line.quantity)
+        if location.present?
+          LocationProduct.adjust!(location, line.product, line.quantity)
+        else
+          line.product.increment!(:current_stock, line.quantity)
+        end
       end
       update!(posted_at: Time.current)
     end

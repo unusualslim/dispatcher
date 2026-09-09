@@ -2,7 +2,7 @@ class ApplicationController < ActionController::Base
     before_action :configure_permitted_parameters, if: :devise_controller?
     before_action :authenticate_user!
 
-    helper_method :admin?, :driver?, :line_worker?
+    helper_method :admin?, :driver?, :line_worker?, :current_warehouse, :warehouse_stock_for
 
     def admin?
       user_signed_in? && current_user.role == 'admin'
@@ -14,6 +14,18 @@ class ApplicationController < ActionController::Base
 
     def line_worker?
       user_signed_in? && current_user.role == 'line_worker'
+    end
+
+    def current_warehouse
+      return nil unless session[:warehouse_id].present?
+      @current_warehouse ||= Location.find_by(id: session[:warehouse_id])
+    end
+
+    # Returns stock for a product scoped to the active warehouse,
+    # or global current_stock when no warehouse is selected.
+    def warehouse_stock_for(product)
+      return product.current_stock unless current_warehouse
+      product.stock_at(current_warehouse)
     end
 
     def require_admin!

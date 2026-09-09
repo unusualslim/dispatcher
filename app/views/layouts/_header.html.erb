@@ -6,6 +6,32 @@
 
   <div class="flex-grow-1"></div>
 
+  <!-- Warehouse selector -->
+  <% if user_signed_in? && !driver? %>
+    <% warehouses = Location.where(location_category_id: 1).order(:company_name) %>
+    <div class="dropdown me-2">
+      <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+        <i class="bi bi-building me-1"></i>
+        <%= current_warehouse&.company_name || "All Warehouses" %>
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end">
+        <li>
+          <%= link_to set_warehouse_path(id: ''), class: "dropdown-item #{'fw-bold' if current_warehouse.nil?}" do %>
+            <i class="bi bi-globe2 me-1"></i> All Warehouses
+          <% end %>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+        <% warehouses.each do |w| %>
+          <li>
+            <%= link_to set_warehouse_path(id: w.id), class: "dropdown-item #{'fw-bold' if current_warehouse&.id == w.id}" do %>
+              <i class="bi bi-building me-1"></i> <%= w.company_name %>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
   <!-- Quick actions -->
   <div class="d-flex align-items-center gap-2">
     <% if user_signed_in? %>

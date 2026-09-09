@@ -13,13 +13,23 @@
       <div class="card-body row g-3">
 
         <div class="col-12">
+          <label class="form-label fw-semibold">Warehouse</label>
+          <select name="location_id" class="form-select" required>
+            <option value="">Select warehouse...</option>
+            <% @warehouses.each do |w| %>
+              <option value="<%= w.id %>" <%= 'selected' if @selected_location&.id == w.id %>><%= w.company_name %></option>
+            <% end %>
+          </select>
+        </div>
+
+        <div class="col-12">
           <label class="form-label fw-semibold">Product</label>
           <select name="product_id" class="form-select" required>
             <option value="">Select product...</option>
             <% @products.each do |p| %>
               <option value="<%= p.id %>"
                 <%= 'selected' if @selected_product&.id == p.id %>>
-                <%= p.name %> (<%= number_with_precision(p.current_stock, precision: 1) %> <%= p.unit_of_measurement %> on hand)
+                <%= p.name %> (<%= number_with_precision(warehouse_stock_for(p), precision: 1) %> <%= p.unit_of_measurement %> on hand)
               </option>
             <% end %>
           </select>

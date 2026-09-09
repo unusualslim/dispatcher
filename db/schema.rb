@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_08_13_000001) do
+ActiveRecord::Schema[7.0].define(version: 2026_09_09_205404) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -204,6 +204,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_08_13_000001) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "product_id", null: false
+    t.bigint "location_id"
     t.index ["created_by_id"], name: "index_inventory_transactions_on_created_by_id"
     t.index ["product_id"], name: "index_inventory_transactions_on_product_id"
     t.index ["transactable_type", "transactable_id"], name: "idx_inv_trans_on_transactable"
@@ -256,6 +257,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_08_13_000001) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "product_id", null: false
+    t.decimal "quantity", precision: 14, scale: 3, default: "0.0", null: false
     t.index ["location_id"], name: "index_location_products_on_location_id"
     t.index ["product_id"], name: "index_location_products_on_product_id"
   end
@@ -427,6 +429,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_08_13_000001) do
     t.decimal "freight_amount", precision: 10, scale: 2
     t.decimal "other_charges", precision: 10, scale: 2
     t.string "other_charges_description"
+    t.bigint "location_id"
     t.index ["pdi_reference"], name: "index_purchase_orders_on_pdi_reference", unique: true
     t.index ["status"], name: "index_purchase_orders_on_status"
     t.index ["trigger_type"], name: "index_purchase_orders_on_trigger_type"

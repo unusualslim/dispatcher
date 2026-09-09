@@ -2,6 +2,7 @@ class InventoryTransactionsController < ApplicationController
   before_action :require_admin!
   def index
     @transactions = InventoryTransaction.includes(:product, :created_by)
+    @transactions = @transactions.where(location_id: current_warehouse.id) if current_warehouse
 
     if params[:product_id].present?
       @product = Product.find_by(id: params[:product_id])

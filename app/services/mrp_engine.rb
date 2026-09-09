@@ -5,8 +5,9 @@ class MrpEngine
     keyword_init: true
   )
 
-  def initialize(horizon_days: 30)
+  def initialize(horizon_days: 30, location_id: nil)
     @horizon_days = horizon_days
+    @location_id  = location_id
   end
 
   def run
@@ -65,9 +66,11 @@ class MrpEngine
   private
 
   def open_production_order_components
-    ProductionOrderComponent
+    scope = ProductionOrderComponent
       .joins(:production_order)
       .where(production_orders: { status: %w[pending in_progress] })
       .includes(:product)
+    scope = scope.where(production_orders: { location_id: @location_id }) if @location_id
+    scope
   end
 end

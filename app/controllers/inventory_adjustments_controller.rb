@@ -12,16 +12,19 @@ class InventoryAdjustmentsController < ApplicationController
   ].freeze
 
   def new
-    @products = Product.order(:name)
+    @products     = Product.order(:name)
     @reason_codes = REASON_CODES
-    @selected_product = Product.find_by(id: params[:product_id])
+    @warehouses   = Location.where(location_category_id: 1).order(:company_name)
+    @selected_product  = Product.find_by(id: params[:product_id])
+    @selected_location = current_warehouse
   end
 
   def create
-    product = Product.find(params[:product_id])
+    product   = Product.find(params[:product_id])
     direction = params[:direction]
     quantity  = params[:quantity].to_d
     reason    = params[:reason_code]
+    location  = Location.find_by(id: params[:location_id])
     notes     = [reason, params[:notes].presence].compact.join(' — ')
 
     if quantity <= 0
@@ -37,18 +40,24 @@ class InventoryAdjustmentsController < ApplicationController
         direction:        direction,
         reference_number: "ADJ-#{Time.current.strftime('%Y%m%d%H%M%S')}",
         notes:            notes,
-        created_by_id:    current_user.id
+        created_by_id:    current_user.id,
+        location_id:      location&.id
       )
 
-      if direction == 'in'
-        product.increment!(:current_stock, quantity)
+      delta = direction == 'in' ? quantity : -quantity
+      if location.present?
+        LocationProduct.adjust!(location, product, delta)
       else
-        product.decrement!(:current_stock, quantity)
+        if direction == 'in'
+          product.increment!(:current_stock, quantity)
+        else
+          product.decrement!(:current_stock, quantity)
+        end
       end
     end
 
     redirect_to inventory_transactions_path(product_id: product.id),
-                notice: "#{direction == 'in' ? 'Added' : 'Removed'} #{quantity} #{product.unit_of_measurement} #{direction == 'in' ? 'to' : 'from'} #{product.name}."
+                notice: "#{direction == 'in' ? 'Added' : 'Removed'} #{quantity} #{product.unit_of_measurement} #{direction == 'in' ? 'to' : 'from'} #{product.name}#{location ? " at #{location.company_name}" : ''}."
   rescue => e
     redirect_to new_inventory_adjustment_path(product_id: params[:product_id]),
                 alert: "Adjustment failed: #{e.message}"

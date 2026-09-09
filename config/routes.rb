@@ -9,6 +9,7 @@ Rails.application.routes.draw do
   #get 'assets/index'
   #get 'assets/show'
   get 'warehouse/kanban', to: 'warehouse#kanban', as: :warehouse_kanban
+  get 'set_warehouse', to: 'warehouses#set', as: :set_warehouse
   get 'calendar', to: 'calendar#index'
   get 'calendar/events', to: 'calendar#events'
   get 'vendors/index'

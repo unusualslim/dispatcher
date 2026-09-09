@@ -26,6 +26,13 @@ class Product < ApplicationRecord
   scope :finished_goods,      -> { where(is_raw_material: false) }
   scope :below_reorder_point, -> { raw_materials.where('current_stock <= reorder_point AND reorder_point IS NOT NULL') }
 
+  # Stock at a specific warehouse location.
+  # Returns 0 if no location_product row exists for this location yet.
+  def stock_at(location)
+    return current_stock if location.nil?
+    location_products.find_by(location_id: location.is_a?(Location) ? location.id : location)&.quantity.to_d
+  end
+
   def primary_vendor
     product_vendors.first&.vendor
   end

@@ -22,6 +22,7 @@ class ProductionOrdersController < ApplicationController
       .by_location(@location)
       .due_between(@due_from, @due_to)
       .ordered_default
+    @production_orders = @production_orders.where(location_id: current_warehouse.id) if current_warehouse
   end
 
   # GET /production_orders/dashboard
