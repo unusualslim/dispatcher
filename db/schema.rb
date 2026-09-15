@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_09_09_205404) do
+ActiveRecord::Schema[7.0].define(version: 2026_09_15_154622) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -280,6 +280,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_09_205404) do
     t.float "longitude"
     t.string "marker_color"
     t.boolean "disabled"
+    t.boolean "show_in_warehouse_dropdown", default: false, null: false
     t.index ["location_category_id"], name: "index_locations_on_location_category_id"
   end
 

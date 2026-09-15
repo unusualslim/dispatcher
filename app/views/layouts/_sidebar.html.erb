@@ -190,6 +190,13 @@
               <i class="bi bi-clock-history"></i> Inventory History
             <% end %>
           </li>
+          <% if admin? %>
+            <li class="<%= 'active' if request.path == edit_warehouse_locations_path %>">
+              <%= link_to edit_warehouse_locations_path do %>
+                <i class="bi bi-building-gear"></i> Warehouse Locations
+              <% end %>
+            </li>
+          <% end %>
         <% end %>
 
         <!-- IMPORTS -->

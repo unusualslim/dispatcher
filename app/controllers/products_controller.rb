@@ -20,7 +20,7 @@ class ProductsController < ApplicationController
         @products = @products.where(category: params[:category])
       end
 
-      on_order_sql = <<~SQL
+      on_order_sql = <<~SQL.squish
         COALESCE((
           SELECT SUM(poli.quantity)
           FROM purchase_order_line_items poli
@@ -30,7 +30,7 @@ class ProductsController < ApplicationController
         ), 0)
       SQL
 
-      committed_sql = <<~SQL
+      committed_sql = <<~SQL.squish
         COALESCE((
           SELECT SUM(poc.quantity)
           FROM production_order_components poc
@@ -40,32 +40,41 @@ class ProductsController < ApplicationController
         ), 0)
       SQL
 
+      # When a warehouse is selected, use location-specific stock; otherwise global current_stock
+      stock_sql = if current_warehouse
+        "COALESCE((SELECT quantity FROM location_products WHERE location_id = #{current_warehouse.id.to_i} AND product_id = products.id), 0)"
+      else
+        "products.current_stock"
+      end
+
       case params[:status]
       when 'critical'
         # projected (on hand + on order) can't cover committed demand
         @products = @products.where(
-          "reorder_point IS NOT NULL AND (current_stock + #{on_order_sql}) < (#{committed_sql})"
+          "reorder_point IS NOT NULL AND ((#{stock_sql}) + #{on_order_sql}) < (#{committed_sql})"
         )
       when 'low'
         # can cover committed but on hand is at or below reorder point
         @products = @products.where(
-          "reorder_point IS NOT NULL AND (current_stock + #{on_order_sql}) >= (#{committed_sql}) AND current_stock <= reorder_point"
+          "reorder_point IS NOT NULL AND ((#{stock_sql}) + #{on_order_sql}) >= (#{committed_sql}) AND (#{stock_sql}) <= reorder_point"
         )
       when 'ok'
         @products = @products.where(
-          "reorder_point IS NOT NULL AND (current_stock + #{on_order_sql}) >= (#{committed_sql}) AND current_stock > reorder_point"
+          "reorder_point IS NOT NULL AND ((#{stock_sql}) + #{on_order_sql}) >= (#{committed_sql}) AND (#{stock_sql}) > reorder_point"
         )
       end
 
       @products = case params[:sort]
-                  when 'stock_asc'      then @products.order(current_stock: :asc)
-                  when 'stock_desc'     then @products.order(current_stock: :desc)
+                  when 'stock_asc'      then @products.order(Arel.sql("(#{stock_sql}) ASC"))
+                  when 'stock_desc'     then @products.order(Arel.sql("(#{stock_sql}) DESC"))
                   when 'cost'           then @products.order(cost_per_unit: :desc)
                   when 'category_asc'   then @products.order(Arel.sql("COALESCE(category, '') ASC, name ASC"))
                   when 'category_desc'  then @products.order(Arel.sql("COALESCE(category, '') DESC, name ASC"))
                   else @products.order(:name)
                   end
 
+      # Attach warehouse_on_hand as a computed column so the view can use it without N+1
+      @products = @products.select("products.*, (#{stock_sql}) AS warehouse_on_hand")
       @products = @products.paginate(page: params[:page], per_page: 50)
 
       # Preload on_order and committed aggregates in two bulk queries to avoid N+1

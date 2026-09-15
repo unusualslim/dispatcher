@@ -74,7 +74,7 @@
             <th><%= link_to "Category", sort_url.call(params[:sort] == 'category_asc' ? 'category_desc' : 'category_asc'), class: 'text-decoration-none text-dark' %></th>
             <th>Type</th>
             <th>Unit</th>
-            <th><%= link_to "On Hand", sort_url.call(params[:sort] == 'stock_asc' ? 'stock_desc' : 'stock_asc'), class: 'text-decoration-none text-dark' %></th>
+            <th><%= link_to current_warehouse ? "On Hand (#{current_warehouse.company_name})" : "On Hand", sort_url.call(params[:sort] == 'stock_asc' ? 'stock_desc' : 'stock_asc'), class: 'text-decoration-none text-dark' %></th>
             <th>On Order</th>
             <th>Committed</th>
             <th>Available</th>
@@ -101,21 +101,31 @@
                 <% end %>
               </td>
               <td class="text-muted"><%= product.unit_of_measurement %></td>
-              <td><%= number_with_precision(product.current_stock, precision: 1) %></td>
+              <% wh_stock    = product.warehouse_on_hand.to_d %>
+              <% wh_avail   = wh_stock + product.on_order_qty - product.committed_qty %>
+              <% wh_status  = if product.reorder_point.nil?
+                                 :unknown
+                               elsif (wh_stock + product.on_order_qty) < product.committed_qty
+                                 :critical
+                               elsif wh_stock <= product.reorder_point
+                                 :low
+                               else
+                                 :ok
+                               end %>
+              <td><%= number_with_precision(wh_stock, precision: 1) %></td>
               <td class="text-success"><%= number_with_precision(product.on_order_qty, precision: 1) %></td>
               <td class="text-warning"><%= number_with_precision(product.committed_qty, precision: 1) %></td>
-              <td class="<%= product.available_stock < 0 ? 'text-danger fw-bold' : '' %>">
-                <%= number_with_precision(product.available_stock, precision: 1) %>
+              <td class="<%= wh_avail < 0 ? 'text-danger fw-bold' : '' %>">
+                <%= number_with_precision(wh_avail, precision: 1) %>
               </td>
               <td><%= product.reorder_point ? number_with_precision(product.reorder_point, precision: 1) : '—' %></td>
               <td><%= product.cost_per_unit ? number_to_currency(product.cost_per_unit) : '—' %></td>
               <td>
-                <% status = product.stock_status %>
-                <% if status == :critical %>
+                <% if wh_status == :critical %>
                   <span class="badge bg-danger">Critical</span>
-                <% elsif status == :low %>
+                <% elsif wh_status == :low %>
                   <span class="badge bg-warning text-dark">Low</span>
-                <% elsif status == :ok %>
+                <% elsif wh_status == :ok %>
                   <span class="badge bg-success">OK</span>
                 <% else %>
                   <span class="badge bg-light text-muted">—</span>
