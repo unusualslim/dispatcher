@@ -27,7 +27,10 @@ class PdiProductSyncJob < ApplicationJob
       tempfile.rewind
     end
 
-    result = InventoryImportService.new(tempfile).import
+    site_location_map = Location.where.not(pdi_site_code: [nil, ''])
+                                .index_by(&:pdi_site_code)
+
+    result = InventoryImportService.new(tempfile).import(site_location_map: site_location_map)
 
     ftp_connect { |ftp| ftp_delete(ftp, filename) }
 

@@ -12,19 +12,31 @@
       <div class="card-body">
         <%= form_with url: warehouse_locations_path, method: :patch, local: true do |f| %>
           <% @locations.each do |loc| %>
-            <div class="form-check mb-2">
-              <input type="checkbox"
-                     name="location_ids[]"
-                     value="<%= loc.id %>"
-                     id="loc_<%= loc.id %>"
-                     class="form-check-input"
-                     <%= 'checked' if loc.show_in_warehouse_dropdown %>>
-              <label class="form-check-label" for="loc_<%= loc.id %>">
-                <%= loc.company_name %>
-                <% if loc.city.present? %>
-                  <span class="text-muted small">— <%= loc.city %>, <%= loc.state %></span>
-                <% end %>
-              </label>
+            <div class="d-flex align-items-center gap-3 mb-2">
+              <div class="form-check mb-0">
+                <input type="checkbox"
+                       name="location_ids[]"
+                       value="<%= loc.id %>"
+                       id="loc_<%= loc.id %>"
+                       class="form-check-input"
+                       <%= 'checked' if loc.show_in_warehouse_dropdown %>>
+                <label class="form-check-label" for="loc_<%= loc.id %>">
+                  <%= loc.company_name %>
+                  <% if loc.city.present? %>
+                    <span class="text-muted small">— <%= loc.city %>, <%= loc.state %></span>
+                  <% end %>
+                </label>
+              </div>
+              <div class="d-flex align-items-center gap-1 ms-auto">
+                <label class="form-label small text-muted mb-0 text-nowrap" for="pdi_site_<%= loc.id %>">PDI site:</label>
+                <input type="text"
+                       name="pdi_site_codes[<%= loc.id %>]"
+                       id="pdi_site_<%= loc.id %>"
+                       value="<%= loc.pdi_site_code %>"
+                       placeholder="e.g. 110"
+                       class="form-control form-control-sm"
+                       style="width: 90px;">
+              </div>
             </div>
           <% end %>
 
