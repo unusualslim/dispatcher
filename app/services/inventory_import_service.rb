@@ -85,48 +85,67 @@ class InventoryImportService
     rows   = preview
     counts = { updated: 0, created: 0, skipped: 0 }
 
+    # A product can appear multiple times within the same site (across reporting groups).
+    # Aggregate quantities by part_number+site_code before upserting so we sum, not overwrite.
+    site_qty_totals = Hash.new(0)  # [part_number, site_code] => total_qty
+
+    # First pass: update/create product records and accumulate site quantities
+    seen_parts = Set.new
+
     rows.each do |row|
       if selected_part_numbers && !selected_part_numbers.include?(row.part_number)
-        counts[:skipped] += 1
+        counts[:skipped] += 1 unless seen_parts.include?(row.part_number)
+        seen_parts << row.part_number
         next
       end
 
-      location = site_location_map[row.site_code]
+      site_qty_totals[[row.part_number, row.site_code]] += row.quantity
 
-      attrs = {
-        category:      row.category,
-        cost_per_unit: row.cost_per_unit
-      }.compact
+      # Only update product attrs once per part number
+      unless seen_parts.include?(row.part_number)
+        seen_parts << row.part_number
 
-      product = case row.action
-      when :update
-        row.product.update!(attrs)
-        counts[:updated] += 1
-        row.product
-      when :create
-        existing = Product.find_by(id: row.part_number)
-        if existing
-          existing.update!(attrs)
+        attrs = { category: row.category, cost_per_unit: row.cost_per_unit }.compact
+
+        case row.action
+        when :update
+          row.product.update!(attrs)
           counts[:updated] += 1
-          existing
-        else
-          p = Product.create!(attrs.merge(
-            id:              row.part_number,
-            name:            row.description,
-            is_raw_material: raw_material_category?(row.category)
-          ))
-          counts[:created] += 1
-          p
+        when :create
+          existing = Product.find_by(id: row.part_number)
+          if existing
+            existing.update!(attrs)
+            counts[:updated] += 1
+          else
+            Product.create!(attrs.merge(
+              id:              row.part_number,
+              name:            row.description,
+              is_raw_material: raw_material_category?(row.category)
+            ))
+            counts[:created] += 1
+          end
         end
       end
+    end
 
-      # Upsert warehouse-specific stock and sync the global total
-      if location && product
-        lp = LocationProduct.find_or_initialize_by(location_id: location.id, product_id: product.id)
-        lp.quantity = row.quantity
-        lp.save!
-        product.update_column(:current_stock, LocationProduct.where(product_id: product.id).sum(:quantity))
-      end
+    # Second pass: upsert location_products using summed quantities, then sync current_stock
+    products_to_sync = Set.new
+    site_qty_totals.each do |(part_number, site_code), total_qty|
+      location = site_location_map[site_code]
+      next unless location
+
+      product = Product.find_by(id: part_number)
+      next unless product
+
+      lp = LocationProduct.find_or_initialize_by(location_id: location.id, product_id: product.id)
+      lp.quantity = total_qty
+      lp.save!
+      products_to_sync << product.id
+    end
+
+    products_to_sync.each do |product_id|
+      product = Product.find(product_id)
+      product.update_column(:current_stock, LocationProduct.where(product_id: product_id).sum(:quantity))
     end
 
     counts

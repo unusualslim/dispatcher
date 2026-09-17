@@ -47,6 +47,10 @@ class ProductsController < ApplicationController
         "products.current_stock"
       end
 
+      if params[:in_stock] == '1'
+        @products = @products.where("(#{stock_sql}) > 0")
+      end
+
       case params[:status]
       when 'critical'
         # projected (on hand + on order) can't cover committed demand

@@ -42,7 +42,12 @@
           <option value="ok"       <%= 'selected' if params[:status] == 'ok' %>>OK</option>
         </select>
 
-        <% if params[:query].present? || params[:type].present? || params[:category].present? || params[:status].present? || params[:sort].present? %>
+        <div class="form-check form-check-inline mb-0">
+          <%= f.check_box :in_stock, { checked: params[:in_stock] == '1', class: 'form-check-input', onchange: 'this.form.requestSubmit()' }, '1', '0' %>
+          <label class="form-check-label small" for="product_in_stock">In stock only</label>
+        </div>
+
+        <% if params[:query].present? || params[:type].present? || params[:category].present? || params[:status].present? || params[:sort].present? || params[:in_stock].present? %>
           <%= link_to 'Clear', products_path, class: 'btn btn-outline-danger btn-sm' %>
         <% end %>
 
@@ -54,7 +59,7 @@
 
 <%# helper for sortable column headers %>
 <% sort_url = ->(col) {
-  products_path(query: params[:query], type: params[:type], category: params[:category], status: params[:status], sort: col)
+  products_path(query: params[:query], type: params[:type], category: params[:category], status: params[:status], in_stock: params[:in_stock], sort: col)
 } %>
 
 <turbo-frame id="products-results">
