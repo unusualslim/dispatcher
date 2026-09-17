@@ -8,7 +8,7 @@
         <div class="mb-3">
           <label class="form-label fw-semibold">PDI Inventory Export (.xls or .xlsx)</label>
           <%= f.file_field :file, accept: '.xls,.xlsx', class: 'form-control', required: true %>
-          <div class="form-text">Use the "Warehouse Inventory Report" export from PDI.</div>
+          <div class="form-text">Use the "Warehouse Inventory Report by site" export from PDI. Site-to-warehouse mapping will be set on the next screen.</div>
         </div>
         <%= f.submit "Preview Import", class: "btn btn-primary" %>
       </div>
