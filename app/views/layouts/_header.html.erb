@@ -16,14 +16,14 @@
       </button>
       <ul class="dropdown-menu dropdown-menu-end">
         <li>
-          <%= link_to set_warehouse_path(id: '', return_to: request.fullpath), class: "dropdown-item #{'fw-bold' if current_warehouse.nil?}" do %>
+          <%= link_to set_warehouse_path(id: ''), class: "dropdown-item #{'fw-bold' if current_warehouse.nil?}", data: { warehouse_link: true } do %>
             <i class="bi bi-globe2 me-1"></i> All Warehouses
           <% end %>
         </li>
         <li><hr class="dropdown-divider"></li>
         <% warehouses.each do |w| %>
           <li>
-            <%= link_to set_warehouse_path(id: w.id, return_to: request.fullpath), class: "dropdown-item #{'fw-bold' if current_warehouse&.id == w.id}" do %>
+            <%= link_to set_warehouse_path(id: w.id), class: "dropdown-item #{'fw-bold' if current_warehouse&.id == w.id}", data: { warehouse_link: true } do %>
               <i class="bi bi-building me-1"></i> <%= w.company_name %>
             <% end %>
           </li>
@@ -52,3 +52,14 @@
     <% end %>
   </div>
 </header>
+
+<script>
+  document.addEventListener('click', function(e) {
+    var link = e.target.closest('[data-warehouse-link]');
+    if (!link) return;
+    e.preventDefault();
+    var url = new URL(link.href);
+    url.searchParams.set('return_to', window.location.pathname + window.location.search);
+    window.location.href = url.toString();
+  });
+</script>
