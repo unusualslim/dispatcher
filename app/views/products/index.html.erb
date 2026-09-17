@@ -62,7 +62,7 @@
   products_path(query: params[:query], type: params[:type], category: params[:category], status: params[:status], in_stock: params[:in_stock], sort: col)
 } %>
 
-<turbo-frame id="products-results">
+<turbo-frame id="products-results" data-turbo-action="advance">
   <% if @products.empty? %>
     <div class="text-center text-muted py-5">No products match your filters.</div>
   <% else %>
