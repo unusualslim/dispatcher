@@ -1,9 +1,9 @@
 class AutomatedProcessConfig < ApplicationRecord
   validates :slug, presence: true, uniqueness: true
 
-  def self.for_slug(slug)
+  def self.for_slug(slug, default_schedule: '0 * * * *')
     find_or_create_by!(slug: slug) do |c|
-      c.schedule = '0 * * * *'
+      c.schedule = default_schedule
     end
   end
 

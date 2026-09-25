@@ -4,6 +4,7 @@ class AutomatedProcessesController < ApplicationController
   before_action :require_admin!
 
   PROCESSES = [
+    { slug: 'pdi-order-sync',   name: 'PDI Order Sync',   job: 'PdiOrderSyncJob',   description: 'Syncs customer orders from PDI FTP (Loadntrucks-Order-Export.pdf)', default_schedule: '*/15 * * * *' },
     { slug: 'pdi-vendor-sync',  name: 'PDI Vendor Sync',  job: 'PdiVendorSyncJob',  description: 'Syncs vendor list from PDI FTP (AP Vendor List.csv)' },
     { slug: 'pdi-product-sync', name: 'PDI Product Sync', job: 'PdiProductSyncJob', description: 'Syncs product inventory from PDI FTP (LoadNTrucks-CurrentInventory.xls)' },
     { slug: 'pdi-po-sync',      name: 'PDI Purchase Order Sync', job: 'PdiPurchaseOrderSyncJob', description: 'Imports purchase orders from PDI FTP (Warehouse Transaction Report.xls)' },
@@ -12,7 +13,7 @@ class AutomatedProcessesController < ApplicationController
   def index
     @processes = PROCESSES.map do |p|
       logs   = SyncLog.for_process(p[:name])
-      config = AutomatedProcessConfig.for_slug(p[:slug])
+      config = AutomatedProcessConfig.for_slug(p[:slug], default_schedule: p[:default_schedule] || '0 * * * *')
       p.merge(
         config:        config,
         last_run:      logs.first,
