@@ -25,14 +25,14 @@
 
         <!-- Order Status -->
         <div class="col-md-3">
-          <%= f.label :order_status, 'Status' %>
-          <%= f.select :order_status,
+          <%= f.label :order_statuses, 'Status' %>
+          <%= f.select :order_statuses,
                 options_for_select(
                   CustomerOrder.order_statuses.map { |k, v| [v, v] },
-                  params[:order_status]
+                  params[:order_statuses]
                 ),
-                { include_blank: 'All Statuses' },
-                class: 'form-control' %>
+                { include_blank: false },
+                class: 'form-control status-select', multiple: true %>
         </div>
       </div>
 
@@ -142,6 +142,7 @@
   $(document).ready(function() {
     $('.customer-select').select2({ placeholder: 'Filter by customer', allowClear: true });
     $('.location-select').select2({ placeholder: 'Search for a location', allowClear: true });
+    $('.status-select').select2({ placeholder: 'All Statuses', allowClear: true });
 
     // Live search — debounce 500ms, use requestSubmit() so Turbo intercepts it
     let searchTimer;
