@@ -5,7 +5,7 @@ class PdiOrderSyncJob < ApplicationJob
   queue_as :default
 
   PROCESS_NAME = 'PDI Order Sync'
-  FTP_DIR      = ENV.fetch('PDI_FTP_ORDER_DIR', '/EnterpriseData/Reports')
+  FTP_DIR      = ENV.fetch('PDI_FTP_ORDER_DIR', '/Imports')
   FILENAME     = 'orders.xls'
 
   def perform
