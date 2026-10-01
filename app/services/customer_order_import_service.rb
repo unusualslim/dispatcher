@@ -1,14 +1,11 @@
-require 'pdf-reader'
-require 'open3'
+require 'roo'
+require 'roo-xls'
 
 class CustomerOrderImportService
   Result     = Struct.new(:created, :updated, :skipped, :errors, keyword_init: true)
   PreviewRow = Struct.new(:external_order_no, :customer_name, :order_date, :odor_status, :line_items_count, :action, keyword_init: true)
 
-  # Normalize PDI status strings so capitalization variants ("Cancelled As Quote"
-  # vs "Cancelled as Quote") all resolve to the correct enum key.
-  # CustomerOrder.order_statuses → { "open_order" => "Open Order", ... }
-  # Inverted + downcased → { "open order" => "open_order", ... }
+  # Normalize PDI status strings so capitalization variants all resolve to the correct enum key.
   CANONICAL_STATUS = CustomerOrder.order_statuses.invert
                                   .transform_keys(&:downcase)
                                   .merge("open" => "open_order").freeze
@@ -39,20 +36,10 @@ class CustomerOrderImportService
   def run
     result = Result.new(created: 0, updated: 0, skipped: 0, errors: [])
 
-    full_text = extract_text
-    blocks = full_text.split(/\n(?=[ \t]{2,}Order No:\s+OD-)/)
-    full_text = nil
-    GC.start
-    blocks.shift
-
-    blocks.each_with_index do |block, idx|
-      order_data = parse_order_block(block)
-      blocks[idx] = nil  # release block string so GC can reclaim it
-      next unless order_data
+    parse_orders.each do |order_data|
       import_order(order_data, result)
-      GC.start if (idx % 100).zero? && idx.positive?
     rescue => e
-      result.errors << "#{order_data&.dig(:external_order_no)}: #{e.message}"
+      result.errors << "#{order_data[:external_order_no]}: #{e.message}"
     end
 
     result
@@ -60,125 +47,70 @@ class CustomerOrderImportService
 
   private
 
+  # Parses the PDI "Order Detail" XLS export. Each order spans multiple labeled
+  # rows ("Order No:", "Customer:", etc.) followed by numeric product line rows.
+  # "Load Information" blocks repeat the same products at the load level — we
+  # skip those to avoid duplicates.
   def parse_orders
-    full_text = extract_text
+    sheet = Roo::Excel.new(@file_path)
+    sheet.default_sheet = sheet.sheets.first
 
-    # Split on newlines immediately before each indented "Order No:" line.
-    # Using \n in the pattern (rather than a lookahead alone) prevents the
-    # lookahead from matching at every leading-space position on the same line.
-    blocks = full_text.split(/\n(?=[ \t]{2,}Order No:\s+OD-)/)
-    full_text = nil  # release full text before parsing all blocks
-    blocks.shift # discard text before the first order (page 1 report settings)
+    orders = []
+    current_order = nil
+    in_load_section = false
 
-    blocks.filter_map { |block| parse_order_block(block) }
-  end
+    (sheet.first_row..sheet.last_row).each do |i|
+      row = sheet.row(i)
+      next if row.compact.empty?
 
-  # Use pdftotext (poppler) when available — it handles character ordering and
-  # font encoding far better than pdf-reader, which occasionally drops or
-  # misorders the first character of a word.  Falls back to pdf-reader if
-  # pdftotext is not installed.
-  def extract_text
-    stdout, status = Open3.capture2('pdftotext', '-layout', @file_path, '-')
-    return stdout if status.success?
-    pdf_reader_text
-  rescue Errno::ENOENT
-    pdf_reader_text
-  end
+      label = row[0].to_s.strip
 
-  def pdf_reader_text
-    buf = +""
-    PDF::Reader.new(@file_path).pages.each { |page| buf << page.text << "\n" }
-    buf
-  end
+      case label
+      when "Order No:"
+        orders << current_order if current_order
+        current_order = {
+          external_order_no: row[2].to_s.strip,
+          business_date:     to_date(row[8]),
+          odor_status:       row[14].to_s.strip,
+          carrier:           row[19].to_s.strip.presence,
+          line_items:        [],
+        }
+        in_load_section = false
 
-  def parse_order_block(block)
-    order = {}
+      when "Customer:"
+        next unless current_order
+        current_order[:customer_name] = row[2].to_s.strip.sub(/\A\d+\s*-\s*/, '')
+        current_order[:order_date]    = to_date(row[8])
+        current_order[:invoice_no]    = row[14].to_s.strip.presence
 
-    if m = block.match(/Order No:\s+(OD-\S+)/)
-      order[:external_order_no] = m[1]
-    else
-      return nil
+      when "Location / Site:"
+        next unless current_order
+        current_order[:location_name] = row[2].to_s.strip.presence
+        current_order[:delivery_date] = to_date(row[8])
+
+      when "Salesperson:"
+        next unless current_order
+        current_order[:salesperson]  = row[2].to_s.strip.presence
+        current_order[:invoice_date] = to_date(row[8])
+
+      when "Load Information"
+        # Load-level block repeats order products; skip to avoid duplicates
+        in_load_section = true
+
+      else
+        next unless current_order
+        next if in_load_section
+        next unless row[0].is_a?(Numeric) && row[1].is_a?(String)
+        current_order[:line_items] << {
+          product_code: row[1].to_s.strip,
+          ordered_qty:  row[5].to_f.round,
+          unit_price:   row[14].to_d,
+        }
+      end
     end
 
-    if m = block.match(/Business Date:\s+(\d{2}\/\d{2}\/\d{4})/)
-      order[:business_date] = parse_date(m[1])
-    end
-
-    # Status ends at 3+ spaces or "Carrier:" or end of line
-    if m = block.match(/Status:\s+(\S.*?)(?=\s{3,}|Carrier:|\n)/)
-      order[:odor_status] = m[1].strip
-    end
-
-    # Customer: "NNNN - Customer Name   Order Date/Time:"
-    if m = block.match(/Customer:\s+\d+\s+-\s+(.+?)(?=\s{3,}|Order Date)/)
-      order[:customer_name] = m[1].strip
-    end
-
-    if m = block.match(/Order Date\/Time:\s+(\d{2}\/\d{2}\/\d{4})/)
-      order[:order_date] = parse_date(m[1])
-    end
-
-    # Location/Site may have no space after the colon; restrict to the current
-    # line ([ \t]* not \s*) so a blank location doesn't capture the next line.
-    if m = block.match(/Location \/ Site:[ \t]*(\S[^\n]*?)(?=[ \t]{3,}|Delivery Date|\n|$)/)
-      order[:location_name] = m[1].strip
-    end
-
-    if m = block.match(/Delivery Date\/Time:\s+(\d{2}\/\d{2}\/\d{4})/)
-      order[:delivery_date] = parse_date(m[1])
-    end
-
-    if m = block.match(/Invoice No\s+(INV-\S+)/)
-      order[:invoice_no] = m[1].strip
-    end
-
-    # Carrier immediately follows "Carrier:" with no space (e.g. "Carrier:FPS PRICING")
-    if m = block.match(/Carrier:\s*(\S.*?)(?=\s{3,}|\n)/)
-      order[:carrier] = m[1].strip
-    end
-
-    if m = block.match(/Invoice Date:\s+(\d{2}\/\d{2}\/\d{4})/)
-      order[:invoice_date] = parse_date(m[1])
-    end
-
-    if m = block.match(/Salesperson:\s+(\S.*?)(?=\s{3,}|Invoice Date|\n)/)
-      order[:salesperson] = m[1].strip
-    end
-
-    # Parse product lines
-    order[:line_items] = []
-    block.each_line do |line|
-      item = parse_product_line(line)
-      order[:line_items] << item if item
-    end
-
-    order
-  end
-
-  # Product lines look like:
-  #   PRODUCTCODE / PACKAGE   N - WAREHOUSE   QTY QTY QTY PRICE DISC EXTENDED TAXES TOTAL
-  # Credit memo quantities have a trailing dash: 1.00-
-  def parse_product_line(line)
-    stripped = line.strip
-    return nil if stripped.empty?
-    return nil if stripped =~ /Order Totals/
-    # Product code is ALL-UPPERCASE letters and/or digits, no lowercase
-    return nil unless stripped =~ /\A[A-Z0-9]+\s+\/\s+\S/
-
-    # Split on 2+ spaces to separate the whitespace-padded columns
-    parts = stripped.split(/\s{2,}/)
-    return nil unless parts.length >= 9
-
-    product_and_package = parts[0].split(' / ', 2)
-    return nil unless product_and_package.length == 2
-
-    {
-      product_code: product_and_package[0],
-      package:      product_and_package[1],
-      warehouse:    parts[1],
-      ordered_qty:  parse_qty(parts[2]),
-      unit_price:   parse_decimal(parts[5]),
-    }
+    orders << current_order if current_order
+    orders.compact.select { |o| o[:external_order_no].present? }
   end
 
   def import_order(order_data, result)
@@ -187,22 +119,22 @@ class CustomerOrderImportService
 
     existing = CustomerOrder.find_by(external_order_no: external_order_no)
 
-    customer  = find_or_create_customer(order_data[:customer_name])
-    location  = find_or_create_location(order_data[:location_name])
-    status    = CANONICAL_STATUS[order_data[:odor_status].to_s.downcase] || "open_order"
+    customer = find_or_create_customer(order_data[:customer_name])
+    location = find_or_create_location(order_data[:location_name])
+    status   = CANONICAL_STATUS[order_data[:odor_status].to_s.downcase] || "open_order"
 
     attrs = {
-      external_order_no:       external_order_no,
-      order_date:              order_data[:order_date],
-      required_delivery_date:  order_data[:delivery_date],
-      invoice_no:              order_data[:invoice_no],
-      invoice_date:            order_data[:invoice_date],
-      odor_status:             order_data[:odor_status],
-      order_status:            status,
-      carrier:                 order_data[:carrier],
-      salesperson:             order_data[:salesperson],
-      customer:                customer,
-      location:                location,
+      external_order_no:      external_order_no,
+      order_date:             order_data[:order_date],
+      required_delivery_date: order_data[:delivery_date],
+      invoice_no:             order_data[:invoice_no],
+      invoice_date:           order_data[:invoice_date],
+      odor_status:            order_data[:odor_status],
+      order_status:           status,
+      carrier:                order_data[:carrier],
+      salesperson:            order_data[:salesperson],
+      customer:               customer,
+      location:               location,
     }
 
     if existing
@@ -221,17 +153,15 @@ class CustomerOrderImportService
   def sync_line_items(order, line_items)
     return if line_items.blank?
 
-    # Replace all line items on each import so data stays in sync
     order.customer_order_products.destroy_all
 
     line_items.each do |item|
       product   = Product.find_by(id: item[:product_code])
       item_type = (product && !product.is_raw_material?) ? 'production' : 'buy'
       order.customer_order_products.create!(
-        product_name: "#{item[:product_code]} / #{item[:package]}",
+        product_name: item[:product_code],
         product_id:   product&.id,
         item_type:    item_type,
-        warehouse:    item[:warehouse],
         quantity:     item[:ordered_qty],
         price:        item[:unit_price],
       )
@@ -240,7 +170,6 @@ class CustomerOrderImportService
 
   def find_or_create_customer(name)
     return nil if name.blank?
-
     Customer.find_or_create_by(name: name) do |c|
       c.preferred_contact_method = 'no preference'
     end
@@ -248,33 +177,15 @@ class CustomerOrderImportService
 
   def find_or_create_location(name)
     return Location.first! if name.blank?
-
-    # Location category 2 = customer delivery site (destination)
     Location.find_or_create_by(company_name: name) do |l|
       l.location_category_id = 2
     end
   end
 
-  def parse_date(str)
-    Date.strptime(str, '%m/%d/%Y')
+  def to_date(val)
+    return nil if val.nil?
+    val.respond_to?(:to_date) ? val.to_date : Date.parse(val.to_s)
   rescue
     nil
-  end
-
-  # Parse quantity: "924.00" → 924, "1.00-" → -1
-  def parse_qty(str)
-    str = str.to_s.strip
-    negative = str.end_with?('-')
-    value = str.delete('-,').to_f
-    result = negative ? -value : value
-    result.round
-  end
-
-  # Parse decimal: "18.4600" → 18.46, "65.00-" → -65.00
-  def parse_decimal(str)
-    str = str.to_s.strip
-    negative = str.end_with?('-')
-    value = str.delete('-,').to_d
-    negative ? -value : value
   end
 end

@@ -6,12 +6,7 @@ class PdiOrderSyncJob < ApplicationJob
 
   PROCESS_NAME = 'PDI Order Sync'
   FTP_DIR      = ENV.fetch('PDI_FTP_ORDER_DIR', '/EnterpriseData/Reports')
-
-  FILE_PATTERNS = [
-    /loadntrucks.*order.*export/i,
-    /order.*export/i,
-    /loadntrucks/i,
-  ].freeze
+  FILENAME     = 'orders.xls'
 
   def perform
     log = SyncLog.create!(process_name: PROCESS_NAME, status: 'running', started_at: Time.current)
@@ -21,14 +16,10 @@ class PdiOrderSyncJob < ApplicationJob
 
     ftp_connect do |ftp|
       ftp.chdir(FTP_DIR)
-      matches = ftp.nlst
-                   .select { |f| f.downcase.end_with?('.pdf') }
-                   .select { |f| FILE_PATTERNS.any? { |pat| File.basename(f).match?(pat) } }
-                   .sort
+      files = ftp.nlst.map { |f| File.basename(f) }
+      raise PdiFtpConcern::NoFileFound, "#{FILENAME} not found in #{FTP_DIR}" unless files.include?(FILENAME)
 
-      raise PdiFtpConcern::NoFileFound, "No matching PDF found in #{FTP_DIR}" if matches.empty?
-
-      filename = matches.last  # most recent by sorted filename (timestamp suffix)
+      filename = FILENAME
       tempfile = ftp_download_tempfile(ftp, filename)
       ftp_delete(ftp, filename)
     end

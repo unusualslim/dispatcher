@@ -11,9 +11,9 @@ class CustomerOrderImportsController < ApplicationController
   def preview
     file = params[:file]
     return redirect_to new_customer_order_import_path, alert: "Please select a file." unless file
-    return redirect_to new_customer_order_import_path, alert: "File must be a PDF file." unless file.original_filename.downcase.end_with?('.pdf')
+    return redirect_to new_customer_order_import_path, alert: "File must be an XLS file." unless file.original_filename.downcase.end_with?('.xls')
 
-    tmp = Tempfile.new(['customer_order_import', '.pdf'], binmode: true)
+    tmp = Tempfile.new(['customer_order_import', '.xls'], binmode: true)
     IO.copy_stream(file.tempfile, tmp)
     tmp.flush
     session[:co_import_tmp_path]   = tmp.path
@@ -86,7 +86,7 @@ class CustomerOrderImportsController < ApplicationController
     return redirect_to new_customer_order_import_path, alert: "File not available." if log.file_content.blank?
 
     send_data Base64.strict_decode64(log.file_content),
-              type:        'application/pdf',
+              type:        'application/vnd.ms-excel',
               disposition: "attachment; filename=\"#{log.file_name}\""
   end
 end
