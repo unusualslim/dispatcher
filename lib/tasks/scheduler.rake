@@ -5,9 +5,11 @@ namespace :scheduler do
       config = AutomatedProcessConfig.for_slug(process[:slug])
       next unless config.due?
 
-      process[:job].constantize.perform_now
       config.mark_triggered!
-      Rails.logger.info "[Scheduler] Triggered #{process[:name]}"
+      Rails.logger.info "[Scheduler] Triggering #{process[:name]}"
+      process[:job].constantize.perform_now
+    rescue => e
+      Rails.logger.error "[Scheduler] #{process[:name]} failed: #{e.message}"
     end
   end
 end
