@@ -17,13 +17,13 @@ namespace :pdi do
       ftp.passive = true
       puts "Root: #{ftp.pwd}"
       puts ftp.list.join("\n")
-      puts "\n--- trying EnterpriseData ---"
+      puts "\n--- trying Imports ---"
       begin
-        ftp.chdir('EnterpriseData')
+        ftp.chdir('Imports')
         puts "pwd: #{ftp.pwd}"
         puts ftp.list.join("\n")
       rescue => e
-        puts "EnterpriseData failed: #{e.message}"
+        puts "Imports failed: #{e.message}"
       end
     end
   end
