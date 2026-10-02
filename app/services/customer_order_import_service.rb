@@ -138,10 +138,15 @@ class CustomerOrderImportService
     }
 
     if existing
-      existing.update!(attrs)
-      sync_line_items(existing, order_data[:line_items])
-      existing.sync_approximate_amount
-      result.updated += 1
+      existing.assign_attributes(attrs)
+      if existing.changed?
+        existing.save!
+        sync_line_items(existing, order_data[:line_items])
+        existing.sync_approximate_amount
+        result.updated += 1
+      else
+        result.skipped += 1
+      end
     else
       order = CustomerOrder.create!(attrs)
       sync_line_items(order, order_data[:line_items])
