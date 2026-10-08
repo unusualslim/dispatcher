@@ -1,11 +1,14 @@
 <% current = controller_name %>
 
 <%# ── Active-section detection ──────────────────────────────────────────── %>
-<% dispatch_active      = %w[customer_orders quotes dispatches calendar dispatch_messages].include?(current) ||
-                          (current == 'locations' && action_name == 'map') %>
-<% manufacturing_active = %w[production_orders warehouse work_orders jobs].include?(current) %>
-<% inventory_active    = %w[mrp purchasing_report products purchase_orders
-                             inventory_adjustments inventory_transactions].include?(current) %>
+<% dispatch_active      = (%w[quotes dispatches calendar dispatch_messages].include?(current) ||
+                          (current == 'locations' && action_name == 'map') ||
+                          (current == 'customer_orders' && action_name != 'dashboard')) %>
+<% manufacturing_active = (%w[warehouse work_orders jobs].include?(current) ||
+                          (current == 'production_orders' && action_name != 'dashboard')) %>
+<% inventory_active    = %w[purchasing_report products
+                             inventory_adjustments inventory_transactions].include?(current) ||
+                         (current == 'purchase_orders' && action_name != 'dashboard') %>
 <% imports_active      = %w[customer_order_imports inventory_imports warehouse_transaction_imports
                              bom_imports min_max_imports vendor_freight_term_imports].include?(current) ||
                          (current == 'customer_order_products' && request.path == product_code_links_path) %>
@@ -41,17 +44,38 @@
 
       <% else %>
 
-        <div id="sidebarAccordion">
+        <!-- DASHBOARDS (always visible) -->
+        <div class="sidebar-section-label" style="color: #b0c4d8; font-size: 0.82rem; font-weight: 600; padding: 7px 10px 2px;">Dashboards</div>
+        <ul class="sidebar-nav mb-1">
+          <li class="<%= 'active' if current == 'customer_orders' && action_name == 'dashboard' %>">
+            <%= link_to dashboard_customer_orders_path do %>
+              <i class="bi bi-cart3"></i> Order Dashboard
+            <% end %>
+          </li>
+          <li class="<%= 'active' if current == 'production_orders' && action_name == 'dashboard' %>">
+            <%= link_to dashboard_production_orders_path do %>
+              <i class="bi bi-gear"></i> Production Dashboard
+            <% end %>
+          </li>
+          <li class="<%= 'active' if current == 'mrp' %>">
+            <%= link_to mrp_path do %>
+              <i class="bi bi-graph-up-arrow"></i> MRP Dashboard
+            <% end %>
+          </li>
+          <li class="<%= 'active' if current == 'purchase_orders' && action_name == 'dashboard' %>">
+            <%= link_to dashboard_purchase_orders_path do %>
+              <i class="bi bi-bag-check"></i> PO Dashboard
+            <% end %>
+          </li>
+        </ul>
 
-        <!-- FAVORITES -->
+        <!-- FAVORITES (always expanded, outside accordion) -->
         <% favorites = current_user.user_favorites %>
         <% if favorites.any? %>
-          <% favorites_active = favorites.any? { |f| f.path == request.path } %>
-          <%= render 'layouts/sidebar_section',
-                label:  'Favorites',
-                icon:   'bi-star-fill',
-                id:     'favoritesCollapse',
-                active: favorites_active do %>
+          <div class="sidebar-section-label" style="color: #b0c4d8; font-size: 0.82rem; font-weight: 600; padding: 7px 10px 2px;">
+            <i class="bi bi-star-fill me-1 opacity-75"></i>Favorites
+          </div>
+          <ul class="sidebar-nav mb-1" id="favoritesSidebarList">
             <% favorites.each do |fav| %>
               <li class="favorites-sidebar-item d-flex align-items-center justify-content-between pe-2" data-id="<%= fav.id %>">
                 <%= link_to fav.path, class: "flex-grow-1 #{'active' if request.path == fav.path}" do %>
@@ -60,8 +84,10 @@
                 <button class="favorites-sidebar-remove" data-id="<%= fav.id %>" title="Remove" onclick="removeFavorite(<%= fav.id %>)">×</button>
               </li>
             <% end %>
-          <% end %>
+          </ul>
         <% end %>
+
+        <div id="sidebarAccordion">
 
         <!-- DISPATCH -->
         <%= render 'layouts/sidebar_section',
@@ -69,11 +95,6 @@
               icon:      'bi-truck',
               id:        'dispatchCollapse',
               active:    dispatch_active do %>
-          <li class="<%= 'active' if current == 'customer_orders' && action_name == 'dashboard' %>">
-            <%= link_to dashboard_customer_orders_path do %>
-              <i class="bi bi-speedometer2"></i> Order Dashboard
-            <% end %>
-          </li>
           <li class="<%= 'active' if current == 'customer_orders' && action_name != 'dashboard' %>">
             <%= link_to customer_orders_path do %>
               <i class="bi bi-cart3"></i> All Orders
@@ -117,11 +138,6 @@
               icon:   'bi-gear',
               id:     'manufacturingCollapse',
               active: manufacturing_active do %>
-          <li class="<%= 'active' if current == 'production_orders' && action_name == 'dashboard' %>">
-            <%= link_to dashboard_production_orders_path do %>
-              <i class="bi bi-speedometer2"></i> Production Dashboard
-            <% end %>
-          </li>
           <li class="<%= 'active' if current == 'production_orders' && action_name == 'kanban' %>">
             <%= link_to kanban_production_orders_path do %>
               <i class="bi bi-layout-three-columns"></i> Kanban
@@ -155,11 +171,6 @@
               icon:   'bi-box-seam',
               id:     'inventoryCollapse',
               active: inventory_active do %>
-          <li class="<%= 'active' if current == 'mrp' %>">
-            <%= link_to mrp_path do %>
-              <i class="bi bi-graph-up-arrow"></i> MRP Dashboard
-            <% end %>
-          </li>
           <li class="<%= 'active' if current == 'purchasing_report' %>">
             <%= link_to purchasing_report_path do %>
               <i class="bi bi-cart-check"></i> Purchasing
@@ -168,11 +179,6 @@
           <li class="<%= 'active' if current == 'products' %>">
             <%= link_to products_path do %>
               <i class="bi bi-box-seam"></i> Products
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'purchase_orders' %>">
-            <%= link_to dashboard_purchase_orders_path do %>
-              <i class="bi bi-speedometer2"></i> PO Dashboard
             <% end %>
           </li>
           <li class="<%= 'active' if current == 'purchase_orders' %>">
