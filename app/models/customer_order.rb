@@ -44,7 +44,7 @@ class CustomerOrder < ApplicationRecord
   # Statuses that represent active/open work (equivalent to the old "New")
   ACTIVE_STATUSES = [
     "Open Order", "Quote", "Pending", "Released for Dispatch", "Dispatched",
-    "Released for Picking", "Picking in Progress", "Shipped", "Released for Billing"
+    "Released for Picking", "Picking in Progress", "Released for Billing"
   ].freeze
 
   PRODUCTS = [ "DEF", "Regular", "Plus", "Super", "Eth-Regular", "Eth-Plus", "Eth-Super", "Reg-E10", "Plus-E10", "Super-E10", "ULS", "Dyed ULS" ]
