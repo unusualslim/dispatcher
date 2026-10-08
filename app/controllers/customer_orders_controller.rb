@@ -12,6 +12,7 @@ class CustomerOrdersController < ApplicationController
                              .where('required_delivery_date < ?', today).count,
       complete_this_month: CustomerOrder.where(order_status: 'Billed')
                              .where('created_at >= ?', today.beginning_of_month).count,
+      needs_billing:       CustomerOrder.where(order_status: ['Shipped', 'Released for Billing', 'Delivered']).count,
     }
 
     @upcoming = CustomerOrder
@@ -81,10 +82,28 @@ def index
     @customer_orders = @customer_orders.where(freight_only: true)
   end
 
-  # filter by order_status (supports multiple selections)
-  statuses = Array(params[:order_statuses]).reject(&:blank?)
-  if statuses.any?
-    @customer_orders = @customer_orders.where(order_status: statuses)
+  # filter by order_status (supports multiple selections or a named preset)
+  today = Date.today
+  case params[:status_preset]
+  when 'active'
+    @customer_orders = @customer_orders.where(order_status: CustomerOrder::ACTIVE_STATUSES)
+  when 'due_this_week'
+    @customer_orders = @customer_orders
+      .where(order_status: CustomerOrder::ACTIVE_STATUSES)
+      .where(required_delivery_date: today..today + 7)
+  when 'overdue'
+    @customer_orders = @customer_orders
+      .where(order_status: CustomerOrder::ACTIVE_STATUSES)
+      .where('required_delivery_date < ?', today)
+  when 'billed_this_month'
+    @customer_orders = @customer_orders
+      .where(order_status: 'Billed')
+      .where('created_at >= ?', today.beginning_of_month)
+  when 'needs_billing'
+    @customer_orders = @customer_orders.where(order_status: ['Shipped', 'Released for Billing', 'Delivered'])
+  else
+    statuses = Array(params[:order_statuses]).reject(&:blank?)
+    @customer_orders = @customer_orders.where(order_status: statuses) if statuses.any?
   end
 
   # Apply sorting

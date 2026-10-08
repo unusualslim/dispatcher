@@ -10,18 +10,18 @@
 
 <%# ── Stat cards ──────────────────────────────────────────────────────────── %>
 <div class="row g-3 mb-4">
-  <div class="col-6 col-md-3">
+  <div class="col-6 col-md-2">
     <div class="card text-center shadow-sm h-100">
       <div class="card-body py-3">
         <div class="fs-2 fw-bold text-primary"><%= @stats[:new] %></div>
         <div class="small text-muted">Open Orders</div>
       </div>
       <div class="card-footer p-1">
-        <%= link_to "View", customer_orders_path(order_status: 'New'), class: "small text-decoration-none" %>
+        <%= link_to "View", customer_orders_path(status_preset: 'active'), class: "small text-decoration-none" %>
       </div>
     </div>
   </div>
-  <div class="col-6 col-md-3">
+  <div class="col-6 col-md-2">
     <div class="card text-center shadow-sm h-100 <%= 'border-warning' if @stats[:due_this_week] > 0 %>">
       <div class="card-body py-3">
         <div class="fs-2 fw-bold <%= @stats[:due_this_week] > 0 ? 'text-warning' : 'text-secondary' %>">
@@ -30,11 +30,11 @@
         <div class="small text-muted">Due This Week</div>
       </div>
       <div class="card-footer p-1">
-        <%= link_to "View", customer_orders_path(order_status: 'New', sort_by: 'required_delivery_date'), class: "small text-decoration-none" %>
+        <%= link_to "View", customer_orders_path(status_preset: 'due_this_week', sort_by: 'required_delivery_date'), class: "small text-decoration-none" %>
       </div>
     </div>
   </div>
-  <div class="col-6 col-md-3">
+  <div class="col-6 col-md-2">
     <div class="card text-center shadow-sm h-100 <%= 'border-danger' if @stats[:overdue] > 0 %>">
       <div class="card-body py-3">
         <div class="fs-2 fw-bold <%= @stats[:overdue] > 0 ? 'text-danger' : 'text-secondary' %>">
@@ -43,18 +43,31 @@
         <div class="small text-muted">Overdue</div>
       </div>
       <div class="card-footer p-1">
-        <%= link_to "View", customer_orders_path(order_status: 'New', sort_by: 'oldest'), class: "small text-decoration-none" %>
+        <%= link_to "View", customer_orders_path(status_preset: 'overdue'), class: "small text-decoration-none" %>
       </div>
     </div>
   </div>
-  <div class="col-6 col-md-3">
+  <div class="col-6 col-md-2">
     <div class="card text-center shadow-sm h-100">
       <div class="card-body py-3">
         <div class="fs-2 fw-bold text-success"><%= @stats[:complete_this_month] %></div>
         <div class="small text-muted">Completed This Month</div>
       </div>
       <div class="card-footer p-1">
-        <%= link_to "View", customer_orders_path(order_status: 'Complete'), class: "small text-decoration-none" %>
+        <%= link_to "View", customer_orders_path(status_preset: 'billed_this_month'), class: "small text-decoration-none" %>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-2">
+    <div class="card text-center shadow-sm h-100 <%= 'border-warning' if @stats[:needs_billing] > 0 %>">
+      <div class="card-body py-3">
+        <div class="fs-2 fw-bold <%= @stats[:needs_billing] > 0 ? 'text-warning' : 'text-secondary' %>">
+          <%= @stats[:needs_billing] %>
+        </div>
+        <div class="small text-muted">Needs Billing</div>
+      </div>
+      <div class="card-footer p-1">
+        <%= link_to "View", customer_orders_path(status_preset: 'needs_billing'), class: "small text-decoration-none" %>
       </div>
     </div>
   </div>
