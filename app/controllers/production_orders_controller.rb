@@ -31,7 +31,7 @@ class ProductionOrdersController < ApplicationController
       .joins(:customer_order)
       .where(customer_orders: { order_status: CustomerOrder::ACTIVE_STATUSES })
       .where.not(product_id: nil)
-      .where("customer_order_products.product_name NOT ILIKE '%bulk%'")
+      .where("customer_order_products.product_name IS NULL OR customer_order_products.product_name NOT ILIKE '%bulk%'")
       .includes(:product, customer_order: [:customer, :dispatches])
       .order('customer_orders.required_delivery_date ASC NULLS LAST')
 
