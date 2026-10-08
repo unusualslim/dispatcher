@@ -98,9 +98,15 @@ class ProductsController < ApplicationController
         .group(:product_id)
         .sum(:quantity)
 
+      bom_map = ProductComponent
+        .where(product_id: product_ids)
+        .includes(:component_product)
+        .group_by(&:product_id)
+
       @products.each do |p|
         p.instance_variable_set(:@on_order_qty,  on_order_map[p.id]  || 0)
         p.instance_variable_set(:@committed_qty, committed_map[p.id] || 0)
+        p.instance_variable_set(:@bom_lines,     bom_map[p.id]       || [])
       end
     end
   

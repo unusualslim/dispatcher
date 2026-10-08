@@ -207,6 +207,11 @@ class ProductionOrdersController < ApplicationController
     @production_order = ProductionOrder.new(production_order_params)
 
     if @production_order.save
+      # Auto-populate BOM components if none were manually entered
+      if @production_order.production_order_components.where.not(description: [nil, '']).empty?
+        @production_order.build_components_from_bom!
+        @production_order.save
+      end
       redirect_to kanban_production_orders_path, notice: "Production order created."
     else
       render :new, status: :unprocessable_entity

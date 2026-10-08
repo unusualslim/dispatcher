@@ -91,12 +91,20 @@
         </thead>
         <tbody>
           <% @products.each do |product| %>
-            <tr>
+            <% bom_lines = product.instance_variable_get(:@bom_lines) %>
+            <tr class="product-main-row" data-product-id="<%= product.id %>" style="cursor:pointer;">
               <td>
                 <input type="checkbox" class="form-check-input product-select" value="<%= product.id %>">
               </td>
               <td><code class="small"><%= product.id %></code></td>
-              <td><%= link_to product.name, product_path(product), class: "text-decoration-none fw-semibold", data: { turbo_frame: "_top" } %></td>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <button class="btn btn-link p-0 product-expand-btn" data-product-id="<%= product.id %>" style="color:#6c757d;line-height:1;" title="Expand">
+                    <i class="bi bi-chevron-right" style="font-size:.75rem;transition:transform .2s;"></i>
+                  </button>
+                  <%= link_to product.name, product_path(product), class: "text-decoration-none fw-semibold", data: { turbo_frame: "_top" } %>
+                </div>
+              </td>
               <td><span class="badge bg-secondary"><%= product.category.presence || '—' %></span></td>
               <td>
                 <% if product.is_raw_material? %>
@@ -145,6 +153,45 @@
                         data: { confirm: 'Are you sure?' },
                         class: 'btn btn-danger btn-sm',
                         form: { style: 'display: inline;' } %>
+                </div>
+              </td>
+            </tr>
+            <tr class="product-detail-row d-none" id="detail-<%= product.id %>">
+              <td colspan="14" class="p-0">
+                <div class="border-top border-bottom bg-light px-4 py-3" style="font-size:.85rem;">
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <div class="fw-semibold mb-2"><i class="bi bi-diagram-3 me-1"></i>Bill of Materials</div>
+                      <% if bom_lines.any? %>
+                        <table class="table table-sm mb-0" style="font-size:.82rem;">
+                          <thead class="table-light">
+                            <tr><th>Component</th><th>Qty / Unit</th><th>UOM</th></tr>
+                          </thead>
+                          <tbody>
+                            <% bom_lines.each do |line| %>
+                              <tr>
+                                <td><%= line.component_product&.name || line.component_product_id %></td>
+                                <td><%= number_with_precision(line.quantity_per_unit, precision: 4, strip_insignificant_zeros: true) %></td>
+                                <td class="text-muted"><%= line.uom.presence || '—' %></td>
+                              </tr>
+                            <% end %>
+                          </tbody>
+                        </table>
+                      <% else %>
+                        <span class="text-muted fst-italic">No BOM defined</span>
+                      <% end %>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="fw-semibold mb-2"><i class="bi bi-info-circle me-1"></i>Details</div>
+                      <div class="text-muted">Safety Stock: <strong><%= product.safety_stock.present? ? number_with_precision(product.safety_stock, precision: 1) : '—' %></strong></div>
+                      <div class="text-muted">Max Stock: <strong><%= product.max_stock.present? ? number_with_precision(product.max_stock, precision: 1) : '—' %></strong></div>
+                      <div class="text-muted">PDI Code: <strong><%= product.pdi_package_code.presence || '—' %></strong></div>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-start gap-2 pt-4">
+                      <%= link_to 'View', product_path(product), class: 'btn btn-outline-primary btn-sm', data: { turbo_frame: '_top' } %>
+                      <%= link_to 'Edit', edit_product_path(product), class: 'btn btn-warning btn-sm', data: { turbo_frame: '_top' } %>
+                    </div>
+                  </div>
                 </div>
               </td>
             </tr>
@@ -212,14 +259,40 @@
     // Initial bind
     bindCheckboxes();
 
-    // Re-bind after turbo-frame updates (search/filter)
-    document.addEventListener('turbo:frame-render', function(e) {
-      if (e.target.id === 'products-results') { bindCheckboxes(); updateButton(); }
-    });
-
     document.getElementById('create-po-selected')?.addEventListener('click', function() {
       const params = Array.from(selectedIds).map(id => `product_ids[]=${id}`).join('&');
       window.location.href = '<%= new_purchase_order_path %>?' + params;
+    });
+
+    // Expandable product rows
+    function bindExpandRows() {
+      document.querySelectorAll('.product-expand-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          const id = this.dataset.productId;
+          const detailRow = document.getElementById('detail-' + id);
+          const icon = this.querySelector('i');
+          if (!detailRow) return;
+          const isOpen = !detailRow.classList.contains('d-none');
+          detailRow.classList.toggle('d-none', isOpen);
+          icon.style.transform = isOpen ? '' : 'rotate(90deg)';
+        });
+      });
+
+      // Also toggle on row click (excluding links, buttons, checkboxes)
+      document.querySelectorAll('.product-main-row').forEach(row => {
+        row.addEventListener('click', function(e) {
+          if (e.target.closest('a, button, input')) return;
+          const id = this.dataset.productId;
+          const btn = this.querySelector('.product-expand-btn');
+          btn?.click();
+        });
+      });
+    }
+
+    bindExpandRows();
+    document.addEventListener('turbo:frame-render', function(e) {
+      if (e.target.id === 'products-results') { bindCheckboxes(); updateButton(); bindExpandRows(); }
     });
   })();
 </script>
