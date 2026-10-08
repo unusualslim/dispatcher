@@ -38,6 +38,7 @@ class CustomerOrder < ApplicationRecord
     expired_quote:         "Expired Quote",
     cancelled_as_order:    "Cancelled as Order",
     cancelled_as_quote:    "Cancelled as Quote",
+    quarantine:            "Quarantine",
   }
 
   # Statuses that represent active/open work (equivalent to the old "New")
