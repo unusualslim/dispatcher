@@ -1,0 +1,7 @@
+<div class="container mt-4" style="max-width: 760px;">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">Edit: <%= @rule.name %></h2>
+    <%= link_to 'Back', pricing_rules_path, class: 'btn btn-outline-secondary btn-sm' %>
+  </div>
+  <%= render 'form', rule: @rule %>
+</div>

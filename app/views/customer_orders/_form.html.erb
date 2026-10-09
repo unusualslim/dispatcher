@@ -224,6 +224,10 @@
         placeholder: '— Select a customer —',
         allowClear: true,
         width: '100%'
+      }).on('change', function() {
+        document.querySelectorAll('#product-rows tr.product-row').forEach(function(row) {
+          autofillPrice(row);
+        });
       });
 
       // ── Select2: Location AJAX ───────────────────────────────────────────
@@ -388,7 +392,10 @@
       var selects   = tbody.querySelectorAll('.co-product-select');
       var lastSelect = selects[selects.length - 1];
       $(lastSelect).select2({ placeholder: '— Select product —', width: '100%' })
-                   .on('change', function() { updateRowWeight(this.closest('tr')); });
+                   .on('change', function() {
+                     updateRowWeight(this.closest('tr'));
+                     autofillPrice(this.closest('tr'));
+                   });
     }
 
     updateNoProductsMsg();
@@ -398,9 +405,40 @@
     $('.co-product-select').each(function() {
       if (!$(this).hasClass('select2-hidden-accessible')) {
         $(this).select2({ placeholder: '— Select product —', width: '100%' })
-               .on('change', function() { updateRowWeight(this.closest('tr')); });
+               .on('change', function() {
+                 updateRowWeight(this.closest('tr'));
+                 autofillPrice(this.closest('tr'));
+               });
       }
     });
+  }
+
+  function autofillPrice(row) {
+    var productId  = row.querySelector('.co-product-select').value;
+    var customerId = document.querySelector('.co-customer-select') &&
+                     document.querySelector('.co-customer-select').value;
+    if (!productId || !customerId) return;
+
+    fetch('/pricing_rules/lookup?customer_id=' + encodeURIComponent(customerId) +
+          '&product_id=' + encodeURIComponent(productId), {
+      headers: { 'Accept': 'application/json' }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.price == null) return;
+      var priceInput = row.querySelector('input[name*="[price]"]');
+      if (priceInput && priceInput.value === '') {
+        priceInput.value = data.price.toFixed(4);
+        var hint = row.querySelector('.pricing-rule-hint');
+        if (!hint) {
+          hint = document.createElement('div');
+          hint.className = 'pricing-rule-hint text-muted small mt-1';
+          priceInput.closest('td').appendChild(hint);
+        }
+        hint.textContent = 'From: ' + data.rule_name;
+      }
+    })
+    .catch(function() {});
   }
 
   function updateNoProductsMsg() {

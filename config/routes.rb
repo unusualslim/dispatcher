@@ -156,6 +156,11 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :pricing_rules do
+    collection do
+      get :lookup
+    end
+  end
   resources :inventory_adjustments, only: [:new, :create]
   resources :inventory_transactions, only: [:index]
   resource :pdi_inventory_import, only: [:new, :create]

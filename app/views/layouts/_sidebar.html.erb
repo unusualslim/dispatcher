@@ -6,7 +6,7 @@
                           (current == 'customer_orders' && action_name != 'dashboard')) %>
 <% manufacturing_active = (%w[warehouse work_orders jobs].include?(current) ||
                           (current == 'production_orders' && action_name != 'dashboard')) %>
-<% inventory_active    = %w[purchasing_report products
+<% inventory_active    = %w[purchasing_report products pricing_rules
                              inventory_adjustments inventory_transactions].include?(current) ||
                          (current == 'purchase_orders' && action_name != 'dashboard') %>
 <% imports_active      = %w[customer_order_imports inventory_imports pdi_inventory_imports warehouse_transaction_imports
@@ -179,6 +179,11 @@
           <li class="<%= 'active' if current == 'products' %>">
             <%= link_to products_path do %>
               <i class="bi bi-box-seam"></i> Products
+            <% end %>
+          </li>
+          <li class="<%= 'active' if current == 'pricing_rules' %>">
+            <%= link_to pricing_rules_path do %>
+              <i class="bi bi-tag"></i> Pricing Rules
             <% end %>
           </li>
           <li class="<%= 'active' if current == 'purchase_orders' %>">

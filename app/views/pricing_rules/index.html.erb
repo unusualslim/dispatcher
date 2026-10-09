@@ -1,0 +1,65 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="mb-0">Pricing Rules</h1>
+  <%= link_to 'New Rule', new_pricing_rule_path, class: 'btn btn-primary btn-sm' %>
+</div>
+
+<% if notice.present? %>
+  <div class="alert alert-success"><%= notice %></div>
+<% end %>
+
+<% if @rules.empty? %>
+  <div class="text-center text-muted py-5">No pricing rules yet. <%= link_to 'Create one', new_pricing_rule_path %>.</div>
+<% else %>
+  <div class="card shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Name</th>
+            <th>Customer</th>
+            <th>Products</th>
+            <th>Basis</th>
+            <th>Method</th>
+            <th>Value</th>
+            <th>Effective</th>
+            <th>Expires</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @rules.each do |rule| %>
+            <tr>
+              <td class="fw-semibold"><%= rule.name %></td>
+              <td><%= rule.customer&.name || '<span class="text-muted fst-italic">All customers</span>'.html_safe %></td>
+              <td>
+                <% rule.products.each do |p| %>
+                  <span class="badge bg-secondary me-1"><%= p.name %></span>
+                <% end %>
+              </td>
+              <td class="small text-muted"><%= rule.pricing_basis_label %></td>
+              <td class="small text-muted"><%= rule.pricing_method_label %></td>
+              <td>
+                <% if rule.pricing_method == 'flat' %>
+                  <%= number_to_currency(rule.value) %>
+                <% else %>
+                  <%= number_with_precision(rule.value, precision: 2, strip_insignificant_zeros: true) %>%
+                <% end %>
+              </td>
+              <td class="small"><%= rule.effective_date&.strftime('%b %-d, %Y') || '—' %></td>
+              <td class="small"><%= rule.expiration_date&.strftime('%b %-d, %Y') || '—' %></td>
+              <td>
+                <div class="d-flex gap-1">
+                  <%= link_to 'Edit', edit_pricing_rule_path(rule), class: 'btn btn-warning btn-sm' %>
+                  <%= button_to 'Delete', pricing_rule_path(rule), method: :delete,
+                        data: { confirm: "Delete \"#{rule.name}\"?" },
+                        class: 'btn btn-danger btn-sm',
+                        form: { style: 'display:inline' } %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% end %>
