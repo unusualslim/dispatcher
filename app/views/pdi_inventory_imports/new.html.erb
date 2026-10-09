@@ -1,0 +1,35 @@
+<div class="container mt-4" style="max-width: 560px;">
+  <h2>PDI FI Inventory Import</h2>
+  <p class="text-muted">Upload the FI Inventory Report CSV exported from PDI to sync current stock levels.</p>
+
+  <% if notice.present? %>
+    <div class="alert alert-success"><%= notice %></div>
+  <% end %>
+  <% if alert.present? %>
+    <div class="alert alert-danger"><%= alert %></div>
+  <% end %>
+
+  <%= form_with url: pdi_inventory_import_path, multipart: true, local: true do |f| %>
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        <div class="mb-3">
+          <%= f.label :file, "FI Inventory Report (.csv)", class: 'form-label fw-semibold' %>
+          <%= f.file_field :file, class: 'form-control', accept: '.csv' %>
+          <div class="form-text">
+            In PDI: Reports → FI Inventory Report → export as CSV.
+            Products must have a <strong>PDI Tank ID</strong> set to match.
+          </div>
+        </div>
+        <%= f.submit "Import & Update Stock", class: 'btn btn-primary' %>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="card shadow-sm mt-3">
+    <div class="card-header fw-semibold">Setup</div>
+    <div class="card-body small text-muted">
+      <p class="mb-1">For each product you want synced, open the product and set its <strong>PDI Tank ID</strong> to match the tank number in the PDI report (e.g. <code>901</code> for DEF).</p>
+      <%= link_to "Manage Products →", products_path, class: 'btn btn-sm btn-outline-secondary' %>
+    </div>
+  </div>
+</div>

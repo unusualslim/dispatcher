@@ -9,7 +9,7 @@
 <% inventory_active    = %w[purchasing_report products
                              inventory_adjustments inventory_transactions].include?(current) ||
                          (current == 'purchase_orders' && action_name != 'dashboard') %>
-<% imports_active      = %w[customer_order_imports inventory_imports warehouse_transaction_imports
+<% imports_active      = %w[customer_order_imports inventory_imports pdi_inventory_imports warehouse_transaction_imports
                              bom_imports min_max_imports vendor_freight_term_imports].include?(current) ||
                          (current == 'customer_order_products' && request.path == product_code_links_path) %>
 <% masterdata_active   = %w[customers vendors users things].include?(current) ||
@@ -221,8 +221,8 @@
               <i class="bi bi-link-45deg"></i> Link ODOR Products
             <% end %>
           </li>
-          <li class="<%= 'active' if current == 'inventory_imports' %>">
-            <%= link_to new_inventory_import_path do %>
+          <li class="<%= 'active' if current == 'pdi_inventory_imports' %>">
+            <%= link_to new_pdi_inventory_import_path do %>
               <i class="bi bi-upload"></i> PDI Inventory
             <% end %>
           </li>

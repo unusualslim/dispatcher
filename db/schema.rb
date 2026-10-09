@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_09_17_201326) do
+ActiveRecord::Schema[7.0].define(version: 2026_10_09_145429) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -397,6 +397,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_17_201326) do
     t.string "pdi_package_code"
     t.string "category"
     t.decimal "max_stock"
+    t.string "pdi_tank_id"
   end
 
   create_table "purchase_order_line_items", force: :cascade do |t|

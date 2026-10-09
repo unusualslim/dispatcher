@@ -186,6 +186,7 @@
                       <div class="text-muted">Safety Stock: <strong><%= product.safety_stock.present? ? number_with_precision(product.safety_stock, precision: 1) : '—' %></strong></div>
                       <div class="text-muted">Max Stock: <strong><%= product.max_stock.present? ? number_with_precision(product.max_stock, precision: 1) : '—' %></strong></div>
                       <div class="text-muted">PDI Code: <strong><%= product.pdi_package_code.presence || '—' %></strong></div>
+                      <div class="text-muted">PDI Tank ID: <strong><%= product.pdi_tank_id.presence || '—' %></strong></div>
                     </div>
                     <div class="col-md-3 d-flex align-items-start gap-2 pt-4">
                       <%= link_to 'View', product_path(product), class: 'btn btn-outline-primary btn-sm', data: { turbo_frame: '_top' } %>
@@ -264,35 +265,32 @@
       window.location.href = '<%= new_purchase_order_path %>?' + params;
     });
 
-    // Expandable product rows
-    function bindExpandRows() {
-      document.querySelectorAll('.product-expand-btn').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          const id = this.dataset.productId;
-          const detailRow = document.getElementById('detail-' + id);
-          const icon = this.querySelector('i');
-          if (!detailRow) return;
-          const isOpen = !detailRow.classList.contains('d-none');
-          detailRow.classList.toggle('d-none', isOpen);
-          icon.style.transform = isOpen ? '' : 'rotate(90deg)';
-        });
-      });
-
-      // Also toggle on row click (excluding links, buttons, checkboxes)
-      document.querySelectorAll('.product-main-row').forEach(row => {
-        row.addEventListener('click', function(e) {
-          if (e.target.closest('a, button, input')) return;
-          const id = this.dataset.productId;
-          const btn = this.querySelector('.product-expand-btn');
-          btn?.click();
-        });
-      });
+    // Expandable product rows — delegated so it survives Turbo frame re-renders
+    function toggleProduct(id) {
+      const detailRow = document.getElementById('detail-' + id);
+      if (!detailRow) return;
+      const btn = document.querySelector('.product-expand-btn[data-product-id="' + id + '"]');
+      const icon = btn?.querySelector('i');
+      const isOpen = !detailRow.classList.contains('d-none');
+      detailRow.classList.toggle('d-none', isOpen);
+      if (icon) icon.style.transform = isOpen ? '' : 'rotate(90deg)';
     }
 
-    bindExpandRows();
+    document.addEventListener('click', function(e) {
+      const expandBtn = e.target.closest('.product-expand-btn');
+      if (expandBtn) {
+        e.stopPropagation();
+        toggleProduct(expandBtn.dataset.productId);
+        return;
+      }
+      const mainRow = e.target.closest('.product-main-row');
+      if (mainRow && !e.target.closest('a, button, input')) {
+        toggleProduct(mainRow.dataset.productId);
+      }
+    });
+
     document.addEventListener('turbo:frame-render', function(e) {
-      if (e.target.id === 'products-results') { bindCheckboxes(); updateButton(); bindExpandRows(); }
+      if (e.target.id === 'products-results') { bindCheckboxes(); updateButton(); }
     });
   })();
 </script>

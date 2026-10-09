@@ -250,6 +250,7 @@ class ProductsController < ApplicationController
         :max_stock,
         :cost_per_unit,
         :pdi_package_code,
+        :pdi_tank_id,
         :category,
         product_components_attributes: [
           :id,

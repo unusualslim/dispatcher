@@ -76,6 +76,22 @@
       </div>
     </div>
 
+    <div class="card shadow-sm mb-3">
+      <div class="card-header fw-semibold">PDI Integration</div>
+      <div class="card-body row g-3">
+        <div class="col-6">
+          <%= form.label :pdi_package_code, "PDI Package Code", class: 'form-label' %>
+          <%= form.text_field :pdi_package_code, class: 'form-control', placeholder: 'e.g. GA, EA, CS' %>
+          <div class="form-text">Used in PO export (GA = gallons, EA = each).</div>
+        </div>
+        <div class="col-6">
+          <%= form.label :pdi_tank_id, "PDI Tank ID", class: 'form-label' %>
+          <%= form.text_field :pdi_tank_id, class: 'form-control', placeholder: 'e.g. 901' %>
+          <div class="form-text">Tank number for FI Inventory Report sync.</div>
+        </div>
+      </div>
+    </div>
+
     <div class="d-flex gap-2">
       <%= form.submit 'Update Product', class: 'btn btn-success' %>
       <%= link_to 'Cancel', products_path, class: 'btn btn-secondary' %>
