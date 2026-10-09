@@ -205,8 +205,10 @@ end
 
     def production_shortfalls
       cops = CustomerOrderProduct
+        .joins(:customer_order)
         .where(item_type: 'production')
         .where.not(product_id: nil)
+        .where(customer_orders: { order_status: CustomerOrder::ACTIVE_STATUSES })
         .includes(:product, customer_order: [:customer, :location])
 
       result = {}
