@@ -19,8 +19,8 @@ class PricingRule < ApplicationRecord
   # Calculate the sell price for a given product under this rule.
   def calculated_price(product)
     basis = case pricing_basis
-            when 'standard_cost'      then product.cost_per_unit.to_d
-            when 'inventory_cost'     then product.cost_per_unit.to_d
+            when 'standard_cost'       then product.standard_cost.to_d
+            when 'inventory_cost'      then product.cost_per_unit.to_d
             when 'standard_calculated' then bom_cost(product)
             end
 

@@ -32,6 +32,7 @@
         <select name="pricing_rule[product_ids][]" multiple class="form-select select2-products" style="height:auto;">
           <% @products.each do |p| %>
             <option value="<%= p.id %>"
+              data-standard-cost="<%= p.standard_cost %>"
               <%= 'selected' if rule.products.map(&:id).include?(p.id) %>>
               <%= p.name %>
             </option>
@@ -82,37 +83,23 @@
   <div class="card shadow-sm mb-3" id="pricing-preview-card">
     <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
       Live Preview
-      <span class="text-muted small fw-normal">See what this rule would produce at different cost points</span>
+      <span class="text-muted small fw-normal">Based on standard costs for selected products</span>
     </div>
     <div class="card-body">
-      <div class="row g-3 align-items-start">
-        <div class="col-md-4">
-          <label class="form-label" for="preview-sample-cost">Sample Basis Cost</label>
-          <div class="input-group">
-            <span class="input-group-text">$</span>
-            <input type="number" id="preview-sample-cost" class="form-control" value="2.00" step="0.01" min="0" placeholder="2.00">
-            <span class="input-group-text">/ unit</span>
-          </div>
-          <div class="form-text" id="preview-basis-note">Enter an estimated cost to preview sell prices.</div>
-        </div>
-        <div class="col-md-8">
-          <label class="form-label">&nbsp;</label>
-          <div id="preview-result" class="p-3 rounded border" style="background:#f8f9fa; min-height:60px;">
-            <span class="text-muted small">Select a pricing basis, method, and value above to see the preview.</span>
-          </div>
-        </div>
+      <div id="preview-notice" class="text-muted small">
+        Select products and fill in the pricing fields above to see the preview.
       </div>
-
-      <div class="mt-3" id="preview-table-wrap" style="display:none;">
-        <div class="text-muted small fw-semibold mb-1">Example outcomes at different cost points:</div>
+      <div id="preview-table-wrap" style="display:none;">
         <table class="table table-sm table-bordered mb-0" style="font-size:0.85rem;">
           <thead class="table-light">
             <tr>
-              <th>Basis Cost</th>
+              <th>Product</th>
+              <th>Standard Cost</th>
+              <th>Formula</th>
               <th>Sell Price</th>
               <th>Profit / unit</th>
-              <th>Effective Margin</th>
-              <th>Effective Markup</th>
+              <th>Margin</th>
+              <th>Markup</th>
             </tr>
           </thead>
           <tbody id="preview-table-body"></tbody>
@@ -148,20 +135,13 @@
   var methodSelect  = document.getElementById('pricing-method-select');
   var basisSelect   = document.getElementById('pricing_rule_pricing_basis');
   var valueInput    = document.getElementById('pricing_rule_value');
-  var sampleInput   = document.getElementById('preview-sample-cost');
   var prefix        = document.getElementById('value-prefix');
   var suffix        = document.getElementById('value-suffix');
   var valueLabel    = document.getElementById('value-label');
-  var resultEl      = document.getElementById('preview-result');
-  var basisNoteEl   = document.getElementById('preview-basis-note');
+  var notice        = document.getElementById('preview-notice');
   var tableWrap     = document.getElementById('preview-table-wrap');
   var tableBody     = document.getElementById('preview-table-body');
-
-  var BASIS_LABELS = {
-    standard_cost:       'Standard Cost',
-    inventory_cost:      'Inventory Cost',
-    standard_calculated: 'BOM Cost (estimated)'
-  };
+  var productSelect = document.querySelector('.select2-products');
 
   function fmt(n, decimals) {
     return n.toFixed(decimals !== undefined ? decimals : 4);
@@ -187,97 +167,103 @@
     }
   }
 
+  function selectedProducts() {
+    var selected = [];
+    Array.from(productSelect.options).forEach(function(opt) {
+      if (opt.selected) {
+        selected.push({ name: opt.text, standardCost: opt.dataset.standardCost });
+      }
+    });
+    return selected;
+  }
+
   function updatePreview() {
-    var basis      = basisSelect.value;
-    var method     = methodSelect.value;
-    var value      = parseFloat(valueInput.value);
-    var sampleCost = parseFloat(sampleInput.value);
+    var basis    = basisSelect.value;
+    var method   = methodSelect.value;
+    var value    = parseFloat(valueInput.value);
+    var products = selectedProducts();
 
-    if (basis === 'standard_calculated') {
-      basisNoteEl.textContent = 'BOM cost is calculated from the product\'s bill of materials. Enter an estimated BOM cost to preview.';
-    } else {
-      basisNoteEl.textContent = 'This will use the product\'s ' + (BASIS_LABELS[basis] || basis) + ' field as the basis.';
-    }
+    var ready = basis && method && !isNaN(value) && products.length > 0;
 
-    if (!basis || !method || isNaN(value) || isNaN(sampleCost) || sampleCost <= 0) {
-      resultEl.innerHTML = '<span class="text-muted small">Fill in all pricing fields and a sample cost to see the preview.</span>';
+    if (!ready) {
+      notice.style.display = '';
+      notice.textContent   = 'Select products and fill in the pricing fields above to see the preview.';
       tableWrap.style.display = 'none';
       return;
     }
 
     if (method === 'margin' && value >= 100) {
-      resultEl.innerHTML = '<span class="text-danger small"><strong>Invalid:</strong> Margin cannot be 100% or more.</span>';
+      notice.style.display = '';
+      notice.innerHTML     = '<span class="text-danger">Invalid: margin cannot be 100% or more.</span>';
       tableWrap.style.display = 'none';
       return;
     }
 
-    var sell = calcSell(sampleCost, method, value);
-    if (sell === null || sell <= 0) {
-      resultEl.innerHTML = '<span class="text-danger small">Cannot calculate a valid sell price with these inputs.</span>';
-      tableWrap.style.display = 'none';
-      return;
-    }
-
-    var profit     = sell - sampleCost;
-    var effMargin  = (profit / sell) * 100;
-    var effMarkup  = (profit / sampleCost) * 100;
-
-    var formula;
-    if (method === 'markup')      formula = '$' + fmt(sampleCost, 2) + ' &times; (1 + ' + fmt(value, 2) + '%)';
-    else if (method === 'margin') formula = '$' + fmt(sampleCost, 2) + ' &divide; (1 &minus; ' + fmt(value, 2) + '%)';
-    else                          formula = 'Flat rate (basis cost ignored)';
-
-    var profitColor = profit >= 0 ? 'text-success' : 'text-danger';
-    resultEl.innerHTML =
-      '<div class="d-flex flex-wrap align-items-center gap-4">' +
-        '<div>' +
-          '<div class="text-muted small mb-1">' + formula + '</div>' +
-          '<div class="fs-3 fw-bold text-success">$' + fmt(sell, 4) + '</div>' +
-          '<div class="text-muted small">sell price / unit</div>' +
-        '</div>' +
-        '<div class="vr d-none d-md-block"></div>' +
-        '<div class="small">' +
-          '<div class="' + profitColor + '"><strong>Profit:</strong> $' + fmt(profit, 4) + ' / unit</div>' +
-          '<div><strong>Effective margin:</strong> ' + fmt(effMargin, 2) + '%</div>' +
-          '<div><strong>Effective markup:</strong> ' + fmt(effMarkup, 2) + '%</div>' +
-        '</div>' +
-      '</div>';
-
-    // Build comparison table at multiples of the sample cost
-    var multipliers = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
     var rows = '';
-    multipliers.forEach(function(m) {
-      var c = sampleCost * m;
-      var s = calcSell(c, method, value);
-      if (s === null) return;
-      var p  = s - c;
-      var mg = (p / s) * 100;
-      var mk = (p / c) * 100;
-      var highlight = m === 1.0 ? ' class="table-primary fw-semibold"' : '';
+    products.forEach(function(p) {
+      var cost = parseFloat(p.standardCost);
+      var costCell, formula, sellCell, profitCell, marginCell, markupCell;
+
+      if (isNaN(cost) || cost <= 0) {
+        if (method === 'flat') {
+          // flat price doesn't need a basis cost
+          cost = 0;
+        } else {
+          costCell   = '<td class="text-muted fst-italic">no standard cost set</td>';
+          rows += '<tr><td>' + p.name + '</td>' + costCell + '<td colspan="5" class="text-muted fst-italic">—</td></tr>';
+          return;
+        }
+      }
+
+      var sell = calcSell(cost, method, value);
+      if (sell === null) {
+        rows += '<tr><td>' + p.name + '</td><td>$' + fmt(cost, 4) + '</td><td colspan="5" class="text-danger">Cannot calculate</td></tr>';
+        return;
+      }
+
+      if (method === 'markup')      formula = '$' + fmt(cost, 4) + ' &times; (1 + ' + fmt(value, 2) + '%)';
+      else if (method === 'margin') formula = '$' + fmt(cost, 4) + ' &divide; (1 &minus; ' + fmt(value, 2) + '%)';
+      else                          formula = 'Flat: $' + fmt(value, 4);
+
+      var profit = sell - cost;
+      var margin = cost > 0 ? (profit / sell) * 100 : null;
+      var markup = cost > 0 ? (profit / cost) * 100  : null;
+
       rows +=
-        '<tr' + highlight + '>' +
-          '<td>$' + fmt(c, 2) + '</td>' +
-          '<td>$' + fmt(s, 4) + '</td>' +
-          '<td' + (p < 0 ? ' class="text-danger"' : '') + '>$' + fmt(p, 4) + '</td>' +
-          '<td>' + fmt(mg, 2) + '%</td>' +
-          '<td>' + fmt(mk, 2) + '%</td>' +
+        '<tr>' +
+          '<td>' + p.name + '</td>' +
+          '<td>' + (cost > 0 ? '$' + fmt(cost, 4) : '<span class="text-muted">—</span>') + '</td>' +
+          '<td class="text-muted">' + formula + '</td>' +
+          '<td class="fw-semibold text-success">$' + fmt(sell, 4) + '</td>' +
+          '<td' + (profit < 0 ? ' class="text-danger"' : '') + '>$' + fmt(profit, 4) + '</td>' +
+          '<td>' + (margin !== null ? fmt(margin, 2) + '%' : '—') + '</td>' +
+          '<td>' + (markup !== null ? fmt(markup, 2) + '%' : '—') + '</td>' +
         '</tr>';
     });
-    tableBody.innerHTML = rows;
-    tableWrap.style.display = rows ? '' : 'none';
+
+    if (rows) {
+      notice.style.display = 'none';
+      tableBody.innerHTML  = rows;
+      tableWrap.style.display = '';
+    } else {
+      notice.style.display = '';
+      notice.textContent   = 'No products with standard costs selected.';
+      tableWrap.style.display = 'none';
+    }
   }
 
   methodSelect.addEventListener('change', function() { updateValueUI(); updatePreview(); });
   basisSelect.addEventListener('change', updatePreview);
   valueInput.addEventListener('input', updatePreview);
-  sampleInput.addEventListener('input', updatePreview);
+  productSelect.addEventListener('change', updatePreview);
 
   updateValueUI();
   updatePreview();
 
   if (window.$) {
     $('.select2-customers').select2({ placeholder: '— All customers —', allowClear: true, width: '100%' });
-    $('.select2-products').select2({ placeholder: 'Select products…', width: '100%' });
+    $('.select2-products').select2({ placeholder: 'Select products…', width: '100%' })
+      .on('change', updatePreview);
   }
 })();
 </script>

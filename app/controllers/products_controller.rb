@@ -249,6 +249,7 @@ class ProductsController < ApplicationController
         :safety_stock,
         :max_stock,
         :cost_per_unit,
+        :standard_cost,
         :pdi_package_code,
         :pdi_tank_id,
         :category,
