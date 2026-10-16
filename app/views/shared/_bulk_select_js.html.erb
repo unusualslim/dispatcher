@@ -1,0 +1,39 @@
+<script>
+(function() {
+  function init() {
+    var selectAll  = document.getElementById('bulk-select-all');
+    var exportBtn  = document.getElementById('export-selected-btn');
+    var countEl    = document.getElementById('csv-selected-count');
+    if (!selectAll) return;
+
+    function getRows() { return Array.from(document.querySelectorAll('.bulk-row-select')); }
+
+    function updateToolbar() {
+      var checked = getRows().filter(function(cb) { return cb.checked; });
+      if (exportBtn) {
+        exportBtn.classList.toggle('d-none', checked.length === 0);
+        if (countEl) countEl.textContent = checked.length;
+      }
+      selectAll.indeterminate = checked.length > 0 && checked.length < getRows().length;
+      selectAll.checked = getRows().length > 0 && checked.length === getRows().length;
+    }
+
+    selectAll.addEventListener('change', function() {
+      getRows().forEach(function(cb) { cb.checked = selectAll.checked; });
+      updateToolbar();
+    });
+
+    getRows().forEach(function(cb) { cb.addEventListener('change', updateToolbar); });
+
+    if (exportBtn) {
+      exportBtn.addEventListener('click', function() {
+        var ids = getRows().filter(function(cb) { return cb.checked; }).map(function(cb) { return cb.value; });
+        var qs  = ids.map(function(id) { return 'ids[]=' + encodeURIComponent(id); }).join('&');
+        window.location.href = exportBtn.dataset.exportUrl + '?' + qs;
+      });
+    }
+  }
+
+  document.addEventListener('turbo:load', init);
+})();
+</script>

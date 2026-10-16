@@ -1,0 +1,47 @@
+<div class="container mt-4" style="max-width: 640px;">
+  <h1>Import <%= @resource_name %></h1>
+
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <p class="text-muted mb-3">
+        Upload a CSV file that was previously exported from this page. The first column (ID) is used
+        for matching — all other columns will update the matched record. Leave a cell blank to leave
+        that field unchanged.
+      </p>
+
+      <% editable = @columns.reject { |c| c[:readonly] } %>
+      <% readonly = @columns.select { |c| c[:readonly] } %>
+
+      <div class="mb-3">
+        <div class="small text-muted mb-1 fw-semibold">Will be updated on import:</div>
+        <div class="d-flex flex-wrap gap-1">
+          <% editable.each do |col| %>
+            <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle"><%= col[:header] %></span>
+          <% end %>
+        </div>
+      </div>
+
+      <% if readonly.any? %>
+        <div class="mb-3">
+          <div class="small text-muted mb-1 fw-semibold">Read-only (present in file, not updated):</div>
+          <div class="d-flex flex-wrap gap-1">
+            <% readonly.each do |col| %>
+              <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle"><%= col[:header] %></span>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <%= form_with url: @import_url, method: :post, multipart: true, data: { turbo: false } do |f| %>
+        <div class="mb-3">
+          <%= f.label :file, "CSV File", class: "form-label fw-semibold" %>
+          <%= f.file_field :file, name: "csv_upload[file]", accept: ".csv", class: "form-control" %>
+        </div>
+        <div class="d-flex gap-2">
+          <%= f.submit "Upload & Preview", class: "btn btn-primary" %>
+          <%= link_to "Cancel", @back_url, class: "btn btn-secondary" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

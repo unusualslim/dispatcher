@@ -1,9 +1,15 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h1 class="mb-0">Products</h1>
-  <div class="d-flex gap-2 align-items-center">
+  <div class="d-flex gap-2 align-items-center flex-wrap">
     <button type="button" class="btn btn-success btn-sm d-none" id="create-po-selected">
       Create PO for Selected (<span id="selected-count">0</span>)
     </button>
+    <button type="button" class="btn btn-outline-secondary btn-sm d-none" id="export-selected-btn"
+            data-export-url="<%= export_csv_products_path %>">
+      Export Selected (<span id="csv-selected-count">0</span>)
+    </button>
+    <%= link_to "Export All", export_csv_products_path, class: "btn btn-outline-secondary btn-sm" %>
+    <%= link_to "Import CSV", import_csv_products_path, class: "btn btn-outline-primary btn-sm" %>
     <%= link_to 'MRP Dashboard', mrp_path, class: 'btn btn-outline-primary btn-sm' %>
     <%= link_to 'New Product', new_product_path, class: 'btn btn-primary btn-sm' %>
   </div>
@@ -85,6 +91,7 @@
             <th>Available</th>
             <th>Reorder Point</th>
             <th><%= link_to "Cost/Unit", sort_url.call('cost'), class: 'text-decoration-none text-dark' %></th>
+            <th>Std Cost</th>
             <th>Status</th>
             <th>Actions</th>
           </tr>
@@ -133,6 +140,7 @@
               </td>
               <td><%= product.reorder_point ? number_with_precision(product.reorder_point, precision: 1) : '—' %></td>
               <td><%= product.cost_per_unit ? number_to_currency(product.cost_per_unit) : '—' %></td>
+              <td><%= product.standard_cost ? number_to_currency(product.standard_cost) : '—' %></td>
               <td>
                 <% if wh_status == :critical %>
                   <span class="badge bg-danger">Critical</span>
@@ -229,9 +237,16 @@
     function updateButton() {
       const btn      = document.getElementById('create-po-selected');
       const countEl  = document.getElementById('selected-count');
-      if (!btn) return;
-      countEl.textContent = selectedIds.size;
-      btn.classList.toggle('d-none', selectedIds.size === 0);
+      if (btn) {
+        countEl.textContent = selectedIds.size;
+        btn.classList.toggle('d-none', selectedIds.size === 0);
+      }
+      const exportBtn  = document.getElementById('export-selected-btn');
+      const csvCountEl = document.getElementById('csv-selected-count');
+      if (exportBtn) {
+        exportBtn.classList.toggle('d-none', selectedIds.size === 0);
+        if (csvCountEl) csvCountEl.textContent = selectedIds.size;
+      }
     }
 
     function bindCheckboxes() {
@@ -263,6 +278,11 @@
     document.getElementById('create-po-selected')?.addEventListener('click', function() {
       const params = Array.from(selectedIds).map(id => `product_ids[]=${id}`).join('&');
       window.location.href = '<%= new_purchase_order_path %>?' + params;
+    });
+
+    document.getElementById('export-selected-btn')?.addEventListener('click', function() {
+      const params = Array.from(selectedIds).map(id => `ids[]=${encodeURIComponent(id)}`).join('&');
+      window.location.href = this.dataset.exportUrl + '?' + params;
     });
 
     // Expandable product rows — delegated so it survives Turbo frame re-renders

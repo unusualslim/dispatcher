@@ -1,6 +1,7 @@
 require 'net/http'
 
 class LocationsController < ApplicationController
+  include CsvRoundTrip
   before_action :require_admin!
     before_action :set_products, only: [:new, :edit, :create, :update]
     before_action :set_location, only: [:show, :edit, :update, :destroy]
@@ -228,5 +229,23 @@ class LocationsController < ApplicationController
     end
     def set_location
       @location = Location.includes(:products).find(params[:id])
+    end
+
+    def csv_resource
+      Location
+    end
+
+    def csv_columns
+      [
+        { attr: :id,           header: 'ID',           readonly: true  },
+        { attr: :company_name, header: 'Name',         readonly: false },
+        { attr: :address,      header: 'Address',      readonly: false },
+        { attr: :city,         header: 'City',         readonly: false },
+        { attr: :state,        header: 'State',        readonly: false },
+        { attr: :zip,          header: 'Zip',          readonly: false },
+        { attr: :phone_number, header: 'Phone',        readonly: false },
+        { attr: :latitude,     header: 'Latitude',     readonly: false },
+        { attr: :longitude,    header: 'Longitude',    readonly: false },
+      ]
     end
 end

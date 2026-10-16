@@ -56,16 +56,24 @@ Rails.application.routes.draw do
     collection do
       get :search
       get :select2
+      get  :export_csv
+      get  :import_csv
+      post :process_import
+      post :confirm_import
     end
     member do
       patch :toggle_status
     end
   end
-  
+
   resources :customers do
     collection do
       get :search
       get :select2
+      get  :export_csv
+      get  :import_csv
+      post :process_import
+      post :confirm_import
     end
   end
   
@@ -194,6 +202,10 @@ Rails.application.routes.draw do
   resources :products, format: false do
     collection do
       get :search
+      get  :export_csv
+      get  :import_csv
+      post :process_import
+      post :confirm_import
     end
     member do
       get :bom
@@ -206,6 +218,10 @@ Rails.application.routes.draw do
   resources :vendors, only: [:index, :new, :create, :destroy, :show, :edit, :update] do
     collection do
       post :import_preferred_vendors
+      get  :export_csv
+      get  :import_csv
+      post :process_import
+      post :confirm_import
     end
   end
 

@@ -11,9 +11,17 @@
   </div>
 
   <p style="color: green"><%= notice %></p>
-  <div class="d-flex align-items-center mb-3">
-    <h1 class="mb-0 mr-3">Locations</h1>
-    <%= link_to "New Location", new_location_path, class: "btn btn-primary ms-3" %>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">Locations</h1>
+    <div class="d-flex gap-2 align-items-center flex-wrap">
+      <button type="button" class="btn btn-outline-secondary btn-sm d-none" id="export-selected-btn"
+              data-export-url="<%= export_csv_locations_path %>">
+        Export Selected (<span id="csv-selected-count">0</span>)
+      </button>
+      <%= link_to "Export All", export_csv_locations_path, class: "btn btn-outline-secondary btn-sm" %>
+      <%= link_to "Import CSV", import_csv_locations_path, class: "btn btn-outline-primary btn-sm" %>
+      <%= link_to "New Location", new_location_path, class: "btn btn-primary btn-sm" %>
+    </div>
   </div>
 
   <!-- Origin Locations Section -->
@@ -22,9 +30,10 @@
       Origin Locations
     </div>
     <div class="card-body">
-      <table class="table table-hover table-bordered">
-        <thead class="thead-dark">
+      <table class="table table-hover table-bordered align-middle">
+        <thead class="table-light">
           <tr>
+            <th style="width:32px;"><input type="checkbox" class="form-check-input location-select-all"></th>
             <th>Name</th>
             <th>Address</th>
             <th>City</th>
@@ -37,8 +46,9 @@
         </thead>
         <tbody>
           <% @locations.where(location_category_id: LocationCategory.find_by(name: 'Origin').id).each do |location| %>
-            <tr class="<%= 'table-danger' if location.disabled? %>" style="cursor: pointer;" onclick="location.href='/locations/<%= location.id %>';">
-              <td><%= location.company_name %></td>
+            <tr class="<%= 'table-danger' if location.disabled? %>">
+              <td onclick="event.stopPropagation();"><input type="checkbox" class="form-check-input bulk-row-select" value="<%= location.id %>"></td>
+              <td style="cursor:pointer;" onclick="window.location='/locations/<%= location.id %>';"><%= location.company_name %></td>
               <td><%= location.address %></td>
               <td><%= location.city %></td>
               <td><%= location.state %></td>
@@ -59,9 +69,10 @@
       Destination & Prospective Locations
     </div>
     <div class="card-body">
-      <table class="table table-hover table-bordered">
-        <thead class="thead-dark">
+      <table class="table table-hover table-bordered align-middle">
+        <thead class="table-light">
           <tr>
+            <th style="width:32px;"><input type="checkbox" class="form-check-input location-select-all"></th>
             <th>Name</th>
             <th>Address</th>
             <th>City</th>
@@ -74,8 +85,9 @@
         </thead>
         <tbody>
           <% @locations.where(location_category_id: LocationCategory.where(name: ['Destination', 'Prospective']).pluck(:id)).each do |location| %>
-            <tr class="<%= 'table-danger' if location.disabled? %>" style="cursor: pointer;" onclick="location.href='/locations/<%= location.id %>';">
-              <td><%= location.company_name %></td>
+            <tr class="<%= 'table-danger' if location.disabled? %>">
+              <td onclick="event.stopPropagation();"><input type="checkbox" class="form-check-input bulk-row-select" value="<%= location.id %>"></td>
+              <td style="cursor:pointer;" onclick="window.location='/locations/<%= location.id %>';"><%= location.company_name %></td>
               <td><%= location.address %></td>
               <td><%= location.city %></td>
               <td><%= location.state %></td>
@@ -90,3 +102,18 @@
     </div>
   </div>
 </div>
+
+<%= render 'shared/bulk_select_js' %>
+<script>
+// Wire each table's select-all header to the shared bulk toolbar
+document.addEventListener('turbo:load', function() {
+  document.querySelectorAll('.location-select-all').forEach(function(hdr) {
+    hdr.addEventListener('change', function() {
+      var table = hdr.closest('table');
+      table.querySelectorAll('.bulk-row-select').forEach(function(cb) { cb.checked = hdr.checked; });
+      var first = table.querySelector('.bulk-row-select');
+      if (first) first.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  });
+});
+</script>

@@ -1,4 +1,5 @@
 class VendorsController < ApplicationController
+  include CsvRoundTrip
   before_action :require_admin!
   before_action :set_vendor, only: [:show, :edit, :update, :destroy]
 
@@ -161,5 +162,26 @@ class VendorsController < ApplicationController
     params.require(:vendor).permit(:name, :contact_name, :email, :phone, :lead_time_days,
                                    :address_1, :address_2, :city, :state, :zip, :payment_terms, :payment_method,
                                    :freight_terms)
+  end
+
+  def csv_resource
+    Vendor
+  end
+
+  def csv_columns
+    [
+      { attr: :id,             header: 'ID',             readonly: true  },
+      { attr: :name,           header: 'Name',           readonly: false },
+      { attr: :contact_name,   header: 'Contact Name',   readonly: false },
+      { attr: :email,          header: 'Email',          readonly: false },
+      { attr: :phone,          header: 'Phone',          readonly: false },
+      { attr: :lead_time_days, header: 'Lead Time Days', readonly: false },
+      { attr: :address_1,      header: 'Address',        readonly: false },
+      { attr: :city,           header: 'City',           readonly: false },
+      { attr: :state,          header: 'State',          readonly: false },
+      { attr: :zip,            header: 'Zip',            readonly: false },
+      { attr: :payment_terms,  header: 'Payment Terms',  readonly: false },
+      { attr: :payment_method, header: 'Payment Method', readonly: false },
+    ]
   end
 end

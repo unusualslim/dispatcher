@@ -1,4 +1,5 @@
 class ProductsController < ApplicationController
+  include CsvRoundTrip
   before_action :require_admin!
     before_action :set_product, only: %i[show edit update destroy components]
   
@@ -262,5 +263,33 @@ class ProductsController < ApplicationController
           :_destroy
         ]
       )
+    end
+
+    def csv_resource
+      Product
+    end
+
+    def csv_after_update(record, attrs)
+      return unless attrs.key?(:standard_cost)
+      record.standard_cost_histories.create!(
+        amount:         attrs[:standard_cost],
+        effective_date: Date.today,
+        created_by:     current_user
+      )
+    end
+
+    def csv_columns
+      [
+        { attr: :id,                  header: 'ID',               readonly: true  },
+        { attr: :name,                header: 'Name',             readonly: true  },
+        { attr: :unit_of_measurement, header: 'Unit',             readonly: false },
+        { attr: :cost_per_unit,       header: 'Cost/Unit',        readonly: false },
+        { attr: :standard_cost,       header: 'Standard Cost',    readonly: false },
+        { attr: :reorder_point,       header: 'Reorder Point',    readonly: false },
+        { attr: :safety_stock,        header: 'Safety Stock',     readonly: false },
+        { attr: :max_stock,           header: 'Max Stock',        readonly: false },
+        { attr: :pdi_package_code,    header: 'PDI Package Code', readonly: false },
+        { attr: :pdi_tank_id,         header: 'PDI Tank ID',      readonly: false },
+      ]
     end
   end

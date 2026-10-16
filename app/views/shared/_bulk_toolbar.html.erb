@@ -1,0 +1,9 @@
+<%# Locals: export_url (string), import_url (string) %>
+<div class="d-flex gap-2 align-items-center">
+  <button type="button" class="btn btn-outline-secondary btn-sm d-none" id="export-selected-btn"
+          data-export-url="<%= export_url %>">
+    Export Selected (<span id="csv-selected-count">0</span>)
+  </button>
+  <%= link_to "Export All", export_url, class: "btn btn-outline-secondary btn-sm" %>
+  <%= link_to "Import CSV", import_url, class: "btn btn-outline-primary btn-sm" %>
+</div>

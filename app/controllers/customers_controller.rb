@@ -1,4 +1,5 @@
 class CustomersController < ApplicationController
+  include CsvRoundTrip
   before_action :require_admin!
     before_action :set_customer, only: [:edit, :update, :destroy]
   
@@ -91,5 +92,19 @@ class CustomersController < ApplicationController
   
     def customer_params
       params.require(:customer).permit(:name, :email, :phone, :preferred_contact_method, location_ids: [], phone_numbers_attributes: [:id, :number, :_destroy])
+    end
+
+    def csv_resource
+      Customer
+    end
+
+    def csv_columns
+      [
+        { attr: :id,                       header: 'ID',                       readonly: true  },
+        { attr: :name,                     header: 'Name',                     readonly: false },
+        { attr: :email,                    header: 'Email',                    readonly: false },
+        { attr: :phone,                    header: 'Phone',                    readonly: false },
+        { attr: :preferred_contact_method, header: 'Preferred Contact Method', readonly: false },
+      ]
     end
 end  

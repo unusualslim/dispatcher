@@ -1,7 +1,13 @@
 <div class="container mt-4">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="mb-0">Vendors</h1>
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+      <button type="button" class="btn btn-outline-secondary btn-sm d-none" id="export-selected-btn"
+              data-export-url="<%= export_csv_vendors_path %>">
+        Export Selected (<span id="csv-selected-count">0</span>)
+      </button>
+      <%= link_to "Export All", export_csv_vendors_path, class: "btn btn-outline-secondary btn-sm" %>
+      <%= link_to "Import CSV", import_csv_vendors_path, class: "btn btn-outline-primary btn-sm" %>
       <%= link_to "Import Freight Terms", new_vendor_freight_term_import_path, class: "btn btn-outline-primary btn-sm" %>
       <%= button_to "Import Preferred Vendors (one-time)", import_preferred_vendors_vendors_path,
             method: :post,
@@ -27,9 +33,10 @@
     <h3 class="mb-0">Vendor List</h3>
     <input type="text" id="vendor-search" class="form-control form-control-sm w-auto" placeholder="Search vendors…" autocomplete="off" style="min-width: 220px;">
   </div>
-  <table class="table table-bordered" id="vendors-table">
+  <table class="table table-bordered align-middle" id="vendors-table">
     <thead>
       <tr>
+        <th style="width:32px;"><input type="checkbox" class="form-check-input" id="bulk-select-all"></th>
         <th>Name</th>
         <th>PDI ID</th>
         <th>Address</th>
@@ -41,6 +48,7 @@
     <tbody>
       <% @vendors.each do |vendor| %>
         <tr>
+          <td><input type="checkbox" class="form-check-input bulk-row-select" value="<%= vendor.id %>"></td>
           <td><%= vendor.name %></td>
           <td><code><%= vendor.id %></code></td>
           <td class="text-nowrap">
@@ -82,3 +90,4 @@
     });
   });
 </script>
+<%= render 'shared/bulk_select_js' %>
