@@ -133,7 +133,7 @@ class ProductsController < ApplicationController
     def update
       if @product.update(product_params)
         @product.set_vendors_in_order(params[:product][:vendor_ids])
-        redirect_to products_path, notice: 'Product was successfully updated.'
+        redirect_to product_path(@product), notice: 'Product was successfully updated.'
       else
         @vendors = Vendor.order(:name)
         @product.product_components.build if @product.product_components.empty?
@@ -233,6 +233,7 @@ class ProductsController < ApplicationController
                                       .where(status: PurchaseOrder::STATUSES - %w[received cancelled])
                                       .includes(:vendor, :line_items)
                                       .order(created_at: :desc)
+      @standard_cost_histories = @product.standard_cost_histories.includes(:created_by)
     end
   
     def product_params

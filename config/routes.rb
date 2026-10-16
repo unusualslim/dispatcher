@@ -198,6 +198,7 @@ Rails.application.routes.draw do
     member do
       get :bom
     end
+    resources :standard_cost_histories, only: [:create]
   end
 
   resources :dispatch_messages, only: [:index, :show]

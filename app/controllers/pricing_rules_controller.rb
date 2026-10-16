@@ -29,7 +29,7 @@ class PricingRulesController < ApplicationController
   def update
     if @rule.update(rule_params)
       sync_products
-      redirect_to pricing_rules_path, notice: "Pricing rule \"#{@rule.name}\" updated."
+      redirect_to edit_pricing_rule_path(@rule), notice: "Pricing rule \"#{@rule.name}\" updated."
     else
       load_form_data
       render :edit, status: :unprocessable_entity

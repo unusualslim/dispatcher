@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_10_13_154826) do
+ActiveRecord::Schema[7.0].define(version: 2026_10_16_200718) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -484,6 +484,15 @@ ActiveRecord::Schema[7.0].define(version: 2026_10_13_154826) do
     t.index ["customer_order_id"], name: "index_quotes_on_customer_order_id"
     t.index ["location_id"], name: "index_quotes_on_location_id"
     t.index ["quote_number"], name: "index_quotes_on_quote_number", unique: true
+  end
+
+  create_table "standard_cost_histories", force: :cascade do |t|
+    t.string "product_id"
+    t.decimal "amount", precision: 12, scale: 4
+    t.date "effective_date"
+    t.integer "created_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "sync_logs", force: :cascade do |t|

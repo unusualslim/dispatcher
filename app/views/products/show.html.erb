@@ -61,6 +61,77 @@
     </div>
   </div>
 
+  <%# Standard Cost %>
+  <div class="card shadow-sm mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span class="fw-semibold">Standard Cost</span>
+      <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#standardCostModal">
+        Update Standard Cost
+      </button>
+    </div>
+    <div class="card-body">
+      <div class="mb-3">
+        <span class="text-muted small">Current:</span>
+        <span class="fs-5 fw-bold ms-2">
+          <% if @product.standard_cost.present? %>
+            $<%= number_with_precision(@product.standard_cost, precision: 4) %>
+          <% else %>
+            <span class="text-muted fst-italic">Not set</span>
+          <% end %>
+        </span>
+      </div>
+      <% if @standard_cost_histories.any? %>
+        <table class="table table-sm mb-0">
+          <thead class="table-light">
+            <tr><th>Amount</th><th>Effective Date</th><th>Set By</th><th>Recorded</th></tr>
+          </thead>
+          <tbody>
+            <% @standard_cost_histories.each do |h| %>
+              <tr>
+                <td class="fw-semibold">$<%= number_with_precision(h.amount, precision: 4) %></td>
+                <td><%= h.effective_date.strftime("%B %-d, %Y") %></td>
+                <td class="text-muted small"><%= h.created_by&.full_name || '—' %></td>
+                <td class="text-muted small"><%= h.created_at.strftime("%b %-d, %Y") %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p class="text-muted fst-italic mb-0 small">No history yet.</p>
+      <% end %>
+    </div>
+  </div>
+
+  <%# Standard Cost Modal %>
+  <div class="modal fade" id="standardCostModal" tabindex="-1" aria-labelledby="standardCostModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="standardCostModalLabel">Update Standard Cost</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <%= form_with url: product_standard_cost_histories_path(@product), method: :post, local: true do |f| %>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">New Standard Cost ($)</label>
+              <input type="number" name="standard_cost_history[amount]" step="0.0001" min="0"
+                     class="form-control" placeholder="0.0000" required>
+            </div>
+            <div class="mb-2">
+              <label class="form-label fw-semibold">Effective Date</label>
+              <input type="date" name="standard_cost_history[effective_date]"
+                     class="form-control" value="<%= Date.today %>" required>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <%= f.submit "Save", class: "btn btn-primary" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
   <%# Vendors %>
   <div class="card shadow-sm mb-3">
     <div class="card-header d-flex justify-content-between align-items-center">
