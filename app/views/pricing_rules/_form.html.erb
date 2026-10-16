@@ -31,8 +31,11 @@
         <label class="form-label">Products <span class="text-danger">*</span></label>
         <select name="pricing_rule[product_ids][]" multiple class="form-select select2-products" style="height:auto;">
           <% @products.each do |p| %>
+            <% bom_cost = p.product_components.sum { |pc| (pc.component_product&.cost_per_unit || 0) * pc.quantity_per_unit } %>
             <option value="<%= p.id %>"
               data-standard-cost="<%= p.standard_cost %>"
+              data-cost-per-unit="<%= p.cost_per_unit %>"
+              data-bom-cost="<%= bom_cost > 0 ? bom_cost : '' %>"
               <%= 'selected' if rule.products.map(&:id).include?(p.id) %>>
               <%= p.name %>
             </option>
@@ -171,10 +174,29 @@
     var selected = [];
     Array.from(productSelect.options).forEach(function(opt) {
       if (opt.selected) {
-        selected.push({ name: opt.text, standardCost: opt.dataset.standardCost });
+        selected.push({
+          name:         opt.text,
+          standardCost: opt.dataset.standardCost,
+          costPerUnit:  opt.dataset.costPerUnit,
+          bomCost:      opt.dataset.bomCost
+        });
       }
     });
     return selected;
+  }
+
+  function basisLabel(basis) {
+    if (basis === 'standard_cost')      return 'Standard Cost';
+    if (basis === 'inventory_cost')     return 'Inventory Cost';
+    if (basis === 'standard_calculated') return 'BOM Cost';
+    return 'Cost';
+  }
+
+  function costForBasis(p, basis) {
+    if (basis === 'standard_cost')       return parseFloat(p.standardCost);
+    if (basis === 'inventory_cost')      return parseFloat(p.costPerUnit);
+    if (basis === 'standard_calculated') return parseFloat(p.bomCost);
+    return NaN;
   }
 
   function updatePreview() {
@@ -199,17 +221,22 @@
       return;
     }
 
+    // Update the "Standard Cost" header to reflect actual basis
+    var costHeader = tableWrap.querySelector('thead th:nth-child(2)');
+    if (costHeader) costHeader.textContent = basisLabel(basis);
+
     var rows = '';
     products.forEach(function(p) {
-      var cost = parseFloat(p.standardCost);
+      var cost = costForBasis(p, basis);
       var costCell, formula, sellCell, profitCell, marginCell, markupCell;
 
       if (isNaN(cost) || cost <= 0) {
         if (method === 'flat') {
-          // flat price doesn't need a basis cost
           cost = 0;
         } else {
-          costCell   = '<td class="text-muted fst-italic">no standard cost set</td>';
+          var missingLabel = basis === 'standard_calculated' ? 'no BOM cost' :
+                             basis === 'inventory_cost'      ? 'no inventory cost' : 'no standard cost';
+          costCell = '<td class="text-muted fst-italic">' + missingLabel + '</td>';
           rows += '<tr><td>' + p.name + '</td>' + costCell + '<td colspan="5" class="text-muted fst-italic">—</td></tr>';
           return;
         }

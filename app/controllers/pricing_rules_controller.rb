@@ -69,7 +69,7 @@ class PricingRulesController < ApplicationController
 
   def load_form_data
     @customers = Customer.order(:name)
-    @products  = Product.order(:name)
+    @products  = Product.includes(product_components: :component_product).order(:name)
   end
 
   def rule_params
