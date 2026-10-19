@@ -7,7 +7,8 @@
 <% manufacturing_active = (%w[warehouse work_orders jobs].include?(current) ||
                           (current == 'production_orders' && action_name != 'dashboard')) %>
 <% inventory_active    = %w[purchasing_report products pricing_rules
-                             inventory_adjustments inventory_transactions].include?(current) ||
+                             inventory_adjustments inventory_transactions
+                             inventory_intelligence].include?(current) ||
                          (current == 'purchase_orders' && action_name != 'dashboard') %>
 <% imports_active      = %w[customer_order_imports inventory_imports pdi_inventory_imports warehouse_transaction_imports
                              bom_imports min_max_imports vendor_freight_term_imports].include?(current) ||
@@ -171,6 +172,11 @@
               icon:   'bi-box-seam',
               id:     'inventoryCollapse',
               active: inventory_active do %>
+          <li class="<%= 'active' if current == 'inventory_intelligence' %>">
+            <%= link_to inventory_intelligence_path do %>
+              <i class="bi bi-lightbulb"></i> Intelligence
+            <% end %>
+          </li>
           <li class="<%= 'active' if current == 'purchasing_report' %>">
             <%= link_to purchasing_report_path do %>
               <i class="bi bi-cart-check"></i> Purchasing

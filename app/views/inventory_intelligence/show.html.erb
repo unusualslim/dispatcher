@@ -1,0 +1,329 @@
+<div class="container-fluid px-4 mt-4">
+  <div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+      <h1 class="mb-0">Inventory Intelligence</h1>
+      <p class="text-muted mb-0">Stock health, demand gaps, and supply pipeline at a glance</p>
+    </div>
+    <%= link_to mrp_path, class: 'btn btn-outline-secondary btn-sm' do %>
+      <i class="bi bi-arrow-left"></i> MRP Dashboard
+    <% end %>
+  </div>
+
+  <!-- Send Report Controls -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-envelope"></i> Email Reports</h5></div>
+    <div class="card-body">
+      <div class="row g-3 align-items-end">
+        <div class="col-auto">
+          <label class="form-label text-muted mb-1">Send to just me (<%= current_user.email %>)</label>
+          <div class="d-flex gap-2">
+            <%= button_to "Send Daily Report", send_test_inventory_intelligence_path(report_type: :daily), method: :post, class: 'btn btn-primary' %>
+            <%= button_to "Send Weekly Report", send_test_inventory_intelligence_path(report_type: :weekly), method: :post, class: 'btn btn-outline-primary' %>
+          </div>
+        </div>
+        <div class="col-auto">
+          <label class="form-label text-muted mb-1">Send to all opted-in admins/managers</label>
+          <div class="d-flex gap-2">
+            <%= button_to "Send Daily to All", send_all_inventory_intelligence_path(report_type: :daily), method: :post, class: 'btn btn-outline-secondary', data: { confirm: 'Send daily report to all opted-in recipients?' } %>
+            <%= button_to "Send Weekly to All", send_all_inventory_intelligence_path(report_type: :weekly), method: :post, class: 'btn btn-outline-secondary', data: { confirm: 'Send weekly report to all opted-in recipients?' } %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stock Overview -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="card shadow-sm text-center">
+        <div class="card-body">
+          <div class="display-6"><%= @report.stock_summary.total_products %></div>
+          <div class="text-muted">Total Products</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card shadow-sm text-center border-danger">
+        <div class="card-body">
+          <div class="display-6 text-danger"><%= @report.stock_summary.critical_count %></div>
+          <div class="text-muted">Critical</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card shadow-sm text-center border-warning">
+        <div class="card-body">
+          <div class="display-6 text-warning"><%= @report.stock_summary.low_count %></div>
+          <div class="text-muted">Low Stock</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card shadow-sm text-center border-success">
+        <div class="card-body">
+          <div class="display-6 text-success"><%= @report.stock_summary.ok_count %></div>
+          <div class="text-muted">OK</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-body text-center">
+          <div class="h4"><%= number_to_currency(@report.stock_summary.total_stock_value) %></div>
+          <div class="text-muted">Total Stock Value</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-body text-center">
+          <div class="h4"><%= number_to_currency(@report.stock_summary.total_on_order_value) %></div>
+          <div class="text-muted">On Order Value</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Items -->
+  <% if @report.recommendations.any? %>
+    <div class="card shadow-sm mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Action Items</h5>
+        <span class="badge bg-secondary"><%= @report.recommendations.size %></span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th style="width: 90px;">Priority</th>
+              <th style="width: 120px;">Category</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @report.recommendations.each do |rec| %>
+              <tr>
+                <td>
+                  <% case rec.priority %>
+                  <% when :critical %>
+                    <span class="badge bg-danger">CRITICAL</span>
+                  <% when :high %>
+                    <span class="badge bg-warning text-dark">HIGH</span>
+                  <% when :info %>
+                    <span class="badge bg-info">INFO</span>
+                  <% end %>
+                </td>
+                <td class="text-muted"><%= rec.category.to_s.titleize %></td>
+                <td><%= rec.message %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Critical Items -->
+  <% if @report.critical_items.any? %>
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-danger text-white">
+        <h5 class="mb-0"><i class="bi bi-exclamation-octagon"></i> Critical Items</h5>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Product</th>
+              <th class="text-end">On Hand</th>
+              <th class="text-end">On Order</th>
+              <th class="text-end">Committed</th>
+              <th class="text-end">Available</th>
+              <th class="text-end">Reorder Pt</th>
+              <th class="text-end">Days of Supply</th>
+              <th class="text-end">Lead Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @report.critical_items.each do |item| %>
+              <tr class="table-danger">
+                <td><strong><%= link_to item.product.name, product_path(item.product) %></strong></td>
+                <td class="text-end"><%= number_with_precision(item.current_stock, precision: 1) %></td>
+                <td class="text-end"><%= number_with_precision(item.on_order, precision: 1) %></td>
+                <td class="text-end"><%= number_with_precision(item.committed, precision: 1) %></td>
+                <td class="text-end text-danger fw-bold"><%= number_with_precision(item.available, precision: 1) %></td>
+                <td class="text-end"><%= number_with_precision(item.reorder_point, precision: 1) %></td>
+                <td class="text-end text-danger"><%= item.days_of_supply ? "#{item.days_of_supply} days" : 'N/A' %></td>
+                <td class="text-end"><%= item.lead_time_days ? "#{item.lead_time_days} days" : '—' %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Low Stock Items -->
+  <% if @report.low_items.any? %>
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Low Stock Items</h5>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Product</th>
+              <th class="text-end">On Hand</th>
+              <th class="text-end">On Order</th>
+              <th class="text-end">Available</th>
+              <th class="text-end">Reorder Pt</th>
+              <th class="text-end">Days of Supply</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @report.low_items.each do |item| %>
+              <tr>
+                <td><%= link_to item.product.name, product_path(item.product) %></td>
+                <td class="text-end"><%= number_with_precision(item.current_stock, precision: 1) %></td>
+                <td class="text-end"><%= number_with_precision(item.on_order, precision: 1) %></td>
+                <td class="text-end"><%= number_with_precision(item.available, precision: 1) %></td>
+                <td class="text-end"><%= number_with_precision(item.reorder_point, precision: 1) %></td>
+                <td class="text-end"><%= item.days_of_supply ? "#{item.days_of_supply} days" : 'N/A' %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Demand Shortfalls -->
+  <% shortfalls = @report.demand_outlook.select { |d| d.shortfall > 0 } %>
+  <% if shortfalls.any? %>
+    <div class="card shadow-sm mb-4">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-graph-down-arrow"></i> Demand Shortfalls</h5>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Product</th>
+              <th class="text-center">Active Orders</th>
+              <th class="text-end">Qty Needed</th>
+              <th class="text-end">Available</th>
+              <th class="text-end">Shortfall</th>
+              <th>Earliest Delivery</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% shortfalls.each do |d| %>
+              <tr>
+                <td><%= link_to d.product.name, product_path(d.product) %></td>
+                <td class="text-center"><%= d.order_count %></td>
+                <td class="text-end"><%= number_with_precision(d.total_qty_needed, precision: 1) %></td>
+                <td class="text-end"><%= number_with_precision(d.available_stock, precision: 1) %></td>
+                <td class="text-end text-danger fw-bold"><%= number_with_precision(d.shortfall, precision: 1) %></td>
+                <td><%= d.earliest_delivery_date&.strftime('%b %d, %Y') || '—' %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Supply Pipeline -->
+  <% if @report.supply_pipeline.any? %>
+    <div class="card shadow-sm mb-4">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-truck"></i> Incoming Supply</h5>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>PO #</th>
+              <th>Vendor</th>
+              <th>Product</th>
+              <th class="text-end">Qty</th>
+              <th>Status</th>
+              <th>Expected</th>
+              <th>ETA</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @report.supply_pipeline.each do |s| %>
+              <tr>
+                <td><%= link_to s.purchase_order.id, purchase_order_path(s.purchase_order) %></td>
+                <td><%= s.vendor&.name %></td>
+                <td><%= s.product&.name %></td>
+                <td class="text-end"><%= number_with_precision(s.quantity, precision: 1) %></td>
+                <td><span class="badge bg-secondary"><%= s.status.titleize %></span></td>
+                <td><%= s.expected_delivery_date&.strftime('%b %d') || '—' %></td>
+                <td>
+                  <% if s.days_until_arrival && s.days_until_arrival < 0 %>
+                    <span class="text-danger fw-bold"><%= s.days_until_arrival.abs %> days overdue</span>
+                  <% elsif s.days_until_arrival %>
+                    <%= s.days_until_arrival %> days
+                  <% else %>
+                    —
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Consumption Trends -->
+  <% if @report.consumption_trends.any? %>
+    <div class="card shadow-sm mb-4">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-graph-up"></i> Consumption Trends</h5>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Product</th>
+              <th class="text-end">On Hand</th>
+              <th class="text-end">Avg Daily (30d)</th>
+              <th class="text-end">Avg Daily (7d)</th>
+              <th class="text-center">Trend</th>
+              <th class="text-end">Est. Days Remaining</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @report.consumption_trends.each do |t| %>
+              <tr>
+                <td><%= link_to t.product.name, product_path(t.product) %></td>
+                <td class="text-end"><%= number_with_precision(t.current_stock, precision: 1) %></td>
+                <td class="text-end"><%= number_with_precision(t.avg_daily_usage_30d, precision: 2) %></td>
+                <td class="text-end"><%= number_with_precision(t.avg_daily_usage_7d, precision: 2) %></td>
+                <td class="text-center">
+                  <% case t.trend_direction %>
+                  <% when :increasing %>
+                    <span class="text-danger"><i class="bi bi-arrow-up"></i> Increasing</span>
+                  <% when :decreasing %>
+                    <span class="text-success"><i class="bi bi-arrow-down"></i> Decreasing</span>
+                  <% when :stable %>
+                    <span class="text-muted"><i class="bi bi-arrow-right"></i> Stable</span>
+                  <% end %>
+                </td>
+                <td class="text-end <%= 'text-danger fw-bold' if t.estimated_days_remaining && t.estimated_days_remaining < 7 %> <%= 'text-warning' if t.estimated_days_remaining && t.estimated_days_remaining.between?(7, 14) %>">
+                  <%= t.estimated_days_remaining ? "#{t.estimated_days_remaining} days" : 'N/A' %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% end %>
+</div>

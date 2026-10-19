@@ -131,6 +131,10 @@ Rails.application.routes.draw do
 
   get 'mrp', to: 'mrp#index', as: :mrp
   get 'purchasing_report', to: 'purchasing_report#index', as: :purchasing_report
+  resource :inventory_intelligence, only: [:show], controller: 'inventory_intelligence', as: :inventory_intelligence do
+    post :send_test, on: :member
+    post :send_all,  on: :member
+  end
   get 'docs',                  to: 'docs#index',         as: :docs
   get 'docs/dispatch-guide',   to: 'docs#dispatch_guide', as: :docs_dispatch
   get 'docs/manufacturing',    to: 'docs#manufacturing',  as: :docs_manufacturing
