@@ -11,9 +11,9 @@ class InventoryIntelligenceController < ApplicationController
 
     case report_type
     when :daily
-      InventoryIntelligenceMailer.daily_report(current_user, report).deliver_later
+      InventoryIntelligenceMailer.daily_report(current_user, report).deliver_now
     when :weekly
-      InventoryIntelligenceMailer.weekly_report(current_user, report).deliver_later
+      InventoryIntelligenceMailer.weekly_report(current_user, report).deliver_now
     end
 
     redirect_to inventory_intelligence_path, notice: "#{report_type.to_s.titleize} report sent to #{current_user.email}."

@@ -11,9 +11,9 @@ class InventoryIntelligenceJob < ApplicationJob
     recipients.each do |user|
       case report_type
       when :daily
-        InventoryIntelligenceMailer.daily_report(user, report).deliver_later
+        InventoryIntelligenceMailer.daily_report(user, report).deliver_now
       when :weekly
-        InventoryIntelligenceMailer.weekly_report(user, report).deliver_later
+        InventoryIntelligenceMailer.weekly_report(user, report).deliver_now
       end
     end
 
