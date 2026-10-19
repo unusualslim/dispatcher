@@ -1,0 +1,46 @@
+Hi <%= @user.first_name %>,
+
+Weekly Inventory Intelligence Report — Week ending <%= @report.generated_at.strftime('%B %d, %Y') %>
+
+STOCK OVERVIEW
+  Total Products: <%= @report.stock_summary.total_products %>
+  Critical: <%= @report.stock_summary.critical_count %> | Low: <%= @report.stock_summary.low_count %> | OK: <%= @report.stock_summary.ok_count %>
+  Stock Value: <%= number_to_currency(@report.stock_summary.total_stock_value) %> | On Order: <%= number_to_currency(@report.stock_summary.total_on_order_value) %>
+
+<% if @report.recommendations.any? %>
+ACTION ITEMS
+<% @report.recommendations.each do |rec| %>
+  [<%= rec.priority.to_s.upcase %>] <%= rec.message %>
+<% end %>
+<% end %>
+
+<% if @report.critical_items.any? %>
+CRITICAL ITEMS
+<% @report.critical_items.each do |item| %>
+  <%= item.product.name %>: <%= item.current_stock %> on hand, <%= item.available %> available, <%= item.days_of_supply ? "#{item.days_of_supply} days supply" : 'N/A' %>
+<% end %>
+<% end %>
+
+<% if @report.consumption_trends.any? %>
+CONSUMPTION TRENDS
+<% @report.consumption_trends.first(20).each do |t| %>
+  <%= t.product.name %>: <%= t.avg_daily_usage_30d %>/day (30d avg), <%= t.trend_direction %>, ~<%= t.estimated_days_remaining || 'N/A' %> days remaining
+<% end %>
+<% end %>
+
+<% if @report.supply_pipeline.any? %>
+INCOMING SUPPLY
+<% @report.supply_pipeline.each do |s| %>
+  PO #<%= s.purchase_order.id %> — <%= s.vendor&.name %> — <%= s.product&.name %> x<%= s.quantity %> — <%= s.expected_delivery_date&.strftime('%b %d') || 'No ETA' %>
+<% end %>
+<% end %>
+
+<% shortfalls = @report.demand_outlook.select { |d| d.shortfall > 0 } %>
+<% if shortfalls.any? %>
+DEMAND SHORTFALLS
+<% shortfalls.each do |d| %>
+  <%= d.product.name %>: need <%= d.total_qty_needed %>, available <%= d.available_stock %>, short <%= d.shortfall %> (<%= d.order_count %> orders)
+<% end %>
+<% end %>
+
+This is an automated weekly report from LoadNTrucks.

@@ -1,0 +1,247 @@
+<p>Hi <%= @user.first_name %>,</p>
+
+<p>Here is your weekly inventory intelligence report for the week ending <strong><%= @report.generated_at.strftime('%B %d, %Y') %></strong>.</p>
+
+<!-- Stock Summary -->
+<h2 style="color: #333; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Stock Overview</h2>
+<table cellpadding="8" cellspacing="0" style="border-collapse: collapse; margin-bottom: 20px;">
+  <tr>
+    <td style="text-align: center; padding: 10px 20px;">
+      <div style="font-size: 28px; font-weight: bold;"><%= @report.stock_summary.total_products %></div>
+      <div style="color: #666;">Total Products</div>
+    </td>
+    <td style="text-align: center; padding: 10px 20px;">
+      <div style="font-size: 28px; font-weight: bold; color: #dc3545;"><%= @report.stock_summary.critical_count %></div>
+      <div style="color: #666;">Critical</div>
+    </td>
+    <td style="text-align: center; padding: 10px 20px;">
+      <div style="font-size: 28px; font-weight: bold; color: #ffc107;"><%= @report.stock_summary.low_count %></div>
+      <div style="color: #666;">Low</div>
+    </td>
+    <td style="text-align: center; padding: 10px 20px;">
+      <div style="font-size: 28px; font-weight: bold; color: #28a745;"><%= @report.stock_summary.ok_count %></div>
+      <div style="color: #666;">OK</div>
+    </td>
+  </tr>
+</table>
+
+<table cellpadding="6" cellspacing="0" style="border-collapse: collapse; margin-bottom: 20px;">
+  <tr>
+    <td style="color: #666;">Total Stock Value:</td>
+    <td><strong><%= number_to_currency(@report.stock_summary.total_stock_value) %></strong></td>
+    <td style="color: #666; padding-left: 20px;">On Order Value:</td>
+    <td><strong><%= number_to_currency(@report.stock_summary.total_on_order_value) %></strong></td>
+  </tr>
+</table>
+
+<!-- Recommendations -->
+<% if @report.recommendations.any? %>
+<h2 style="color: #333; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Action Items</h2>
+<table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; margin-bottom: 20px;">
+  <thead>
+    <tr style="background: #f5f5f5;">
+      <th style="width: 80px;">Priority</th>
+      <th style="width: 100px;">Category</th>
+      <th>Details</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @report.recommendations.each do |rec| %>
+      <tr>
+        <td style="text-align: center;">
+          <% case rec.priority %>
+          <% when :critical %>
+            <span style="background: #dc3545; color: white; padding: 2px 8px; border-radius: 3px; font-size: 12px;">CRITICAL</span>
+          <% when :high %>
+            <span style="background: #ffc107; color: #333; padding: 2px 8px; border-radius: 3px; font-size: 12px;">HIGH</span>
+          <% when :info %>
+            <span style="background: #17a2b8; color: white; padding: 2px 8px; border-radius: 3px; font-size: 12px;">INFO</span>
+          <% end %>
+        </td>
+        <td style="font-size: 13px; color: #666;"><%= rec.category.to_s.titleize %></td>
+        <td><%= rec.message %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<% end %>
+
+<!-- Critical Items -->
+<% if @report.critical_items.any? %>
+<h2 style="color: #dc3545; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Critical Items</h2>
+<table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 100%; margin-bottom: 20px;">
+  <thead>
+    <tr style="background: #f5f5f5;">
+      <th>Product</th>
+      <th>On Hand</th>
+      <th>On Order</th>
+      <th>Committed</th>
+      <th>Available</th>
+      <th>Reorder Pt</th>
+      <th>Days of Supply</th>
+      <th>Lead Time</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @report.critical_items.each do |item| %>
+      <tr style="background: #fff5f5;">
+        <td><strong><%= item.product.name %></strong></td>
+        <td style="text-align: right;"><%= number_with_precision(item.current_stock, precision: 1) %></td>
+        <td style="text-align: right;"><%= number_with_precision(item.on_order, precision: 1) %></td>
+        <td style="text-align: right;"><%= number_with_precision(item.committed, precision: 1) %></td>
+        <td style="text-align: right; color: #dc3545; font-weight: bold;"><%= number_with_precision(item.available, precision: 1) %></td>
+        <td style="text-align: right;"><%= number_with_precision(item.reorder_point, precision: 1) %></td>
+        <td style="text-align: right; color: #dc3545;"><%= item.days_of_supply ? "#{item.days_of_supply} days" : 'N/A' %></td>
+        <td style="text-align: right;"><%= item.lead_time_days ? "#{item.lead_time_days} days" : '—' %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<% end %>
+
+<!-- Consumption Trends (weekly only) -->
+<% if @report.consumption_trends.any? %>
+<h2 style="color: #333; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Consumption Trends</h2>
+<p style="color: #666;">Usage velocity and estimated days of supply remaining.</p>
+<table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 100%; margin-bottom: 20px;">
+  <thead>
+    <tr style="background: #f5f5f5;">
+      <th>Product</th>
+      <th>On Hand</th>
+      <th>Avg Daily (30d)</th>
+      <th>Avg Daily (7d)</th>
+      <th>Trend</th>
+      <th>Est. Days Remaining</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @report.consumption_trends.first(20).each do |t| %>
+      <tr>
+        <td><%= t.product.name %></td>
+        <td style="text-align: right;"><%= number_with_precision(t.current_stock, precision: 1) %></td>
+        <td style="text-align: right;"><%= number_with_precision(t.avg_daily_usage_30d, precision: 2) %></td>
+        <td style="text-align: right;"><%= number_with_precision(t.avg_daily_usage_7d, precision: 2) %></td>
+        <td style="text-align: center;">
+          <% case t.trend_direction %>
+          <% when :increasing %>
+            <span style="color: #dc3545;">&#9650; Increasing</span>
+          <% when :decreasing %>
+            <span style="color: #28a745;">&#9660; Decreasing</span>
+          <% when :stable %>
+            <span style="color: #666;">&#9654; Stable</span>
+          <% end %>
+        </td>
+        <td style="text-align: right;
+          <% if t.estimated_days_remaining && t.estimated_days_remaining < 7 %>
+            color: #dc3545; font-weight: bold;
+          <% elsif t.estimated_days_remaining && t.estimated_days_remaining < 14 %>
+            color: #ffc107;
+          <% end %>
+        "><%= t.estimated_days_remaining ? "#{t.estimated_days_remaining} days" : 'N/A' %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<% end %>
+
+<!-- Supply Pipeline -->
+<% if @report.supply_pipeline.any? %>
+<h2 style="color: #333; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Incoming Supply</h2>
+<table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 100%; margin-bottom: 20px;">
+  <thead>
+    <tr style="background: #f5f5f5;">
+      <th>PO #</th>
+      <th>Vendor</th>
+      <th>Product</th>
+      <th>Qty</th>
+      <th>Status</th>
+      <th>Expected</th>
+      <th>ETA</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @report.supply_pipeline.each do |s| %>
+      <tr>
+        <td><%= s.purchase_order.id %></td>
+        <td><%= s.vendor&.name %></td>
+        <td><%= s.product&.name %></td>
+        <td style="text-align: right;"><%= number_with_precision(s.quantity, precision: 1) %></td>
+        <td><%= s.status.titleize %></td>
+        <td><%= s.expected_delivery_date&.strftime('%b %d') || '—' %></td>
+        <td>
+          <% if s.days_until_arrival && s.days_until_arrival < 0 %>
+            <span style="color: #dc3545; font-weight: bold;"><%= s.days_until_arrival.abs %> days overdue</span>
+          <% elsif s.days_until_arrival %>
+            <%= s.days_until_arrival %> days
+          <% else %>
+            —
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<% end %>
+
+<!-- Demand Shortfalls -->
+<% shortfalls = @report.demand_outlook.select { |d| d.shortfall > 0 } %>
+<% if shortfalls.any? %>
+<h2 style="color: #333; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Demand Shortfalls</h2>
+<table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 100%; margin-bottom: 20px;">
+  <thead>
+    <tr style="background: #f5f5f5;">
+      <th>Product</th>
+      <th>Orders</th>
+      <th>Qty Needed</th>
+      <th>Available</th>
+      <th>Shortfall</th>
+      <th>Earliest Delivery</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% shortfalls.each do |d| %>
+      <tr>
+        <td><%= d.product.name %></td>
+        <td style="text-align: center;"><%= d.order_count %></td>
+        <td style="text-align: right;"><%= number_with_precision(d.total_qty_needed, precision: 1) %></td>
+        <td style="text-align: right;"><%= number_with_precision(d.available_stock, precision: 1) %></td>
+        <td style="text-align: right; color: #dc3545; font-weight: bold;"><%= number_with_precision(d.shortfall, precision: 1) %></td>
+        <td><%= d.earliest_delivery_date&.strftime('%b %d') || '—' %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<% end %>
+
+<!-- Low Stock Items -->
+<% if @report.low_items.any? %>
+<h2 style="color: #ffc107; border-bottom: 2px solid #ddd; padding-bottom: 6px;">Low Stock Items</h2>
+<table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 100%; margin-bottom: 20px;">
+  <thead>
+    <tr style="background: #f5f5f5;">
+      <th>Product</th>
+      <th>On Hand</th>
+      <th>On Order</th>
+      <th>Available</th>
+      <th>Reorder Pt</th>
+      <th>Days of Supply</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @report.low_items.each do |item| %>
+      <tr>
+        <td><%= item.product.name %></td>
+        <td style="text-align: right;"><%= number_with_precision(item.current_stock, precision: 1) %></td>
+        <td style="text-align: right;"><%= number_with_precision(item.on_order, precision: 1) %></td>
+        <td style="text-align: right;"><%= number_with_precision(item.available, precision: 1) %></td>
+        <td style="text-align: right;"><%= number_with_precision(item.reorder_point, precision: 1) %></td>
+        <td style="text-align: right;"><%= item.days_of_supply ? "#{item.days_of_supply} days" : 'N/A' %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<% end %>
+
+<p>View full details in <a href="<%= products_url %>">Products</a> | <a href="<%= purchase_orders_url %>">Purchase Orders</a> | <a href="<%= mrp_url %>">MRP Dashboard</a></p>
+
+<p style="color: #888; font-size: 12px;">This is an automated weekly report from LoadNTrucks. You are receiving this because you have email notifications enabled.</p>
