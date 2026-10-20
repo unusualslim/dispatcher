@@ -19,10 +19,13 @@ class WarehouseTransactionImportsController < ApplicationController
     tmp.flush
     session[:wt_import_tmp_path]   = tmp.path
     session[:wt_import_file_name]  = file.original_filename
+    session[:wt_import_posted]     = params[:posted] == '1'
     ObjectSpace.undefine_finalizer(tmp)
 
-    @rows              = WarehouseTransactionImportService.new(tmp.path).preview
+    @posted            = session[:wt_import_posted]
+    @rows              = WarehouseTransactionImportService.new(tmp.path, posted: @posted).preview
     @import_count      = @rows.count { |r| r.action == :import }
+    @retag_count       = @rows.count { |r| r.action == :retag }
     @skip_no_product   = @rows.count { |r| r.action == :skip_no_product }
     @skip_duplicate    = @rows.count { |r| r.action == :skip_duplicate }
   end
@@ -45,7 +48,8 @@ class WarehouseTransactionImportsController < ApplicationController
     )
 
     begin
-      result = WarehouseTransactionImportService.call(file_path)
+      posted = session[:wt_import_posted] != false
+      result = WarehouseTransactionImportService.call(file_path, posted: posted)
 
       log.update!(
         status:          'success',
@@ -55,9 +59,11 @@ class WarehouseTransactionImportsController < ApplicationController
         warnings:        result.errors.any? ? result.errors.join("\n") : nil
       )
 
-      summary = "Import complete — #{result.imported} imported, " \
-                "#{result.skipped_no_product} skipped (product not found), " \
-                "#{result.skipped_duplicate} duplicates skipped."
+      summary = "Import complete — #{result.imported} imported"
+      summary += ", #{result.retagged} re-tagged" if result.retagged > 0
+      summary += ", #{result.skipped_no_product} skipped (product not found)" if result.skipped_no_product > 0
+      summary += ", #{result.skipped_duplicate} duplicates skipped" if result.skipped_duplicate > 0
+      summary += "."
       summary += " #{result.errors.count} rows had errors." if result.errors.any?
 
       flash[:notice] = summary
@@ -68,6 +74,7 @@ class WarehouseTransactionImportsController < ApplicationController
       File.delete(file_path) rescue nil
       session.delete(:wt_import_tmp_path)
       session.delete(:wt_import_file_name)
+      session.delete(:wt_import_posted)
     end
 
     redirect_to new_warehouse_transaction_import_path

@@ -17,6 +17,11 @@
           <%= f.file_field :file, class: "form-control", accept: ".xls,.xlsx" %>
           <div class="form-text">Export from PDI: <em>Reports → Warehouse Transaction Report</em></div>
         </div>
+        <div class="mb-3 form-check">
+          <%= check_box_tag :posted, '1', true, class: 'form-check-input', id: 'posted' %>
+          <%= label_tag :posted, 'Posted transactions', class: 'form-check-label' %>
+          <div class="form-text">Uncheck if importing unposted transactions.</div>
+        </div>
         <%= f.submit "Preview Import", class: "btn btn-primary" %>
       </div>
     </div>

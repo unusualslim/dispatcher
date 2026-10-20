@@ -12,7 +12,7 @@
                          (current == 'purchase_orders' && action_name != 'dashboard') %>
 <% imports_active      = %w[customer_order_imports inventory_imports pdi_inventory_imports warehouse_transaction_imports
                              bom_imports min_max_imports vendor_freight_term_imports pdi_product_imports
-                             repack_batch_imports].include?(current) ||
+                             repack_batch_imports pdi_purchase_order_imports].include?(current) ||
                          (current == 'customer_order_products' && request.path == product_code_links_path) %>
 <% masterdata_active   = %w[customers vendors users things].include?(current) ||
                          (current == 'locations' && action_name != 'map') %>
@@ -251,6 +251,11 @@
           <li class="<%= 'active' if current == 'bom_imports' %>">
             <%= link_to new_bom_import_path do %>
               <i class="bi bi-diagram-3"></i> BOM
+            <% end %>
+          </li>
+          <li class="<%= 'active' if current == 'pdi_purchase_order_imports' %>">
+            <%= link_to new_pdi_purchase_order_import_path do %>
+              <i class="bi bi-bag-check"></i> PDI Purchase Orders
             <% end %>
           </li>
           <li class="<%= 'active' if current == 'repack_batch_imports' %>">

@@ -3,6 +3,9 @@
     <h1 class="mb-1">Preview Warehouse Transaction Import</h1>
     <p class="text-muted mb-0">
       <span class="text-success fw-semibold"><%= @import_count %> transactions ready to import</span>
+      <% if @retag_count > 0 %>
+        &nbsp;&middot;&nbsp;<span class="text-primary fw-semibold"><%= @retag_count %> to re-tag</span>
+      <% end %>
       <% if @skip_no_product > 0 %>
         &nbsp;&middot;&nbsp;<span class="text-danger fw-semibold"><%= @skip_no_product %> product(s) not found</span>
       <% end %>
@@ -47,6 +50,8 @@
                 <% case row.action %>
                 <% when :import %>
                   <span class="badge bg-success">Import</span>
+                <% when :retag %>
+                  <span class="badge bg-primary">Re-tag</span>
                 <% when :skip_duplicate %>
                   <span class="badge bg-secondary">Duplicate</span>
                 <% when :skip_no_product %>
