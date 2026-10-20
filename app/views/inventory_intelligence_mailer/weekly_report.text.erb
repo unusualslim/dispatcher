@@ -31,7 +31,7 @@ CONSUMPTION TRENDS
 <% if @report.supply_pipeline.any? %>
 INCOMING SUPPLY
 <% @report.supply_pipeline.each do |s| %>
-  PO #<%= s.purchase_order.id %> — <%= s.vendor&.name %> — <%= s.product&.name %> x<%= s.quantity %> — <%= s.expected_delivery_date&.strftime('%b %d') || 'No ETA' %>
+  PO #<%= s.purchase_order.display_number %> — <%= s.vendor&.name %> — <%= s.product&.name %> x<%= s.quantity %> — <%= s.expected_delivery_date&.strftime('%b %d') || 'No ETA' %>
 <% end %>
 <% end %>
 

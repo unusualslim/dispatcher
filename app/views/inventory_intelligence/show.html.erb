@@ -258,7 +258,7 @@
           <tbody>
             <% @report.supply_pipeline.each do |s| %>
               <tr>
-                <td><%= link_to s.purchase_order.id, purchase_order_path(s.purchase_order) %></td>
+                <td><%= link_to s.purchase_order.display_number, purchase_order_path(s.purchase_order) %></td>
                 <td><%= s.vendor&.name %></td>
                 <td><%= s.product&.name %></td>
                 <td class="text-end"><%= number_with_precision(s.quantity, precision: 1) %></td>

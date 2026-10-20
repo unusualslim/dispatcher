@@ -35,6 +35,10 @@ class PurchaseOrder < ApplicationRecord
   scope :draft,            -> { where(status: 'draft') }
   scope :active,           -> { where(status: %w[draft pending_approval approved submitted]) }
 
+  def display_number
+    pdi_reference.presence || "##{id}"
+  end
+
   def subtotal
     line_items.sum { |li| li.total_cost || 0 }
   end

@@ -146,7 +146,7 @@
   <tbody>
     <% @report.supply_pipeline.each do |s| %>
       <tr>
-        <td><%= s.purchase_order.id %></td>
+        <td><%= s.purchase_order.display_number %></td>
         <td><%= s.vendor&.name %></td>
         <td><%= s.product&.name %></td>
         <td style="text-align: right;"><%= number_with_precision(s.quantity, precision: 1) %></td>

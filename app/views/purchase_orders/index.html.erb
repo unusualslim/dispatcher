@@ -63,7 +63,7 @@
         <tbody>
           <% @purchase_orders.each do |po| %>
             <tr>
-              <td><%= link_to "##{po.id}", purchase_order_path(po), class: 'fw-semibold text-decoration-none', data: { turbo_frame: "_top" } %></td>
+              <td><%= link_to po.display_number, purchase_order_path(po), class: 'fw-semibold text-decoration-none', data: { turbo_frame: "_top" } %></td>
               <td><%= po.vendor&.name || '—' %></td>
               <td>
                 <% names = po.line_items.map(&:display_name) %>

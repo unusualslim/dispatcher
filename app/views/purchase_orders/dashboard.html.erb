@@ -52,7 +52,7 @@
             <tbody>
               <% @needs_action.each do |po| %>
                 <tr>
-                  <td><%= link_to "##{po.id}", purchase_order_path(po), class: 'fw-semibold text-decoration-none' %></td>
+                  <td><%= link_to po.display_number, purchase_order_path(po), class: 'fw-semibold text-decoration-none' %></td>
                   <td><%= po.vendor&.name || '—' %></td>
                   <td class="small text-muted">
                     <% names = po.line_items.map(&:display_name) %>
@@ -109,7 +109,7 @@
             <tbody>
               <% @overdue.each do |po| %>
                 <tr>
-                  <td><%= link_to "##{po.id}", purchase_order_path(po), class: 'fw-semibold text-decoration-none' %></td>
+                  <td><%= link_to po.display_number, purchase_order_path(po), class: 'fw-semibold text-decoration-none' %></td>
                   <td><%= po.vendor&.name || '—' %></td>
                   <td class="text-nowrap small"><%= po.expected_delivery_date.strftime('%b %-d') %></td>
                   <td><span class="badge bg-danger"><%= (Date.today - po.expected_delivery_date).to_i %> days</span></td>
@@ -149,7 +149,7 @@
             <tbody>
               <% @in_transit.each do |po| %>
                 <tr>
-                  <td><%= link_to "##{po.id}", purchase_order_path(po), class: 'fw-semibold text-decoration-none' %></td>
+                  <td><%= link_to po.display_number, purchase_order_path(po), class: 'fw-semibold text-decoration-none' %></td>
                   <td><%= po.vendor&.name || '—' %></td>
                   <td class="text-nowrap small">
                     <% if po.expected_delivery_date %>
@@ -196,7 +196,7 @@
             <tbody>
               <% @recently_received.each do |po| %>
                 <tr>
-                  <td><%= link_to "##{po.id}", purchase_order_path(po), class: 'fw-semibold text-decoration-none' %></td>
+                  <td><%= link_to po.display_number, purchase_order_path(po), class: 'fw-semibold text-decoration-none' %></td>
                   <td><%= po.vendor&.name || '—' %></td>
                   <td class="small text-muted">
                     <% names = po.line_items.map(&:display_name) %>
