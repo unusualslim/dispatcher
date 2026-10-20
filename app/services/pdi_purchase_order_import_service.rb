@@ -87,13 +87,15 @@ class PdiPurchaseOrderImportService
 
   def preview
     batches = parse_batches
-    existing_refs = PurchaseOrder.where(pdi_reference: batches.keys.map(&:to_s)).pluck(:pdi_reference).to_set
+    po_nos = batches.values.map { |rows| null_safe(rows.first[COL_PO_NO]) }.compact
+    existing_refs = PurchaseOrder.where(pdi_reference: po_nos).pluck(:pdi_reference).to_set
 
     batches.map do |po_key, rows|
       first = rows.first
+      po_no = null_safe(first[COL_PO_NO])
       vendor_name = null_safe(first[COL_VENDOR_NAME])
 
-      action = if existing_refs.include?(po_key.to_s)
+      action = if po_no && existing_refs.include?(po_no)
                  :skip_exists
                else
                  :create
@@ -101,7 +103,7 @@ class PdiPurchaseOrderImportService
 
       PreviewRow.new(
         po_key:        po_key,
-        po_no:         null_safe(first[COL_PO_NO]),
+        po_no:         po_no,
         vendor_name:   vendor_name,
         status:        null_safe(first[COL_STATUS]),
         order_date:    parse_date(first[COL_ORDER_DATE]),
@@ -117,17 +119,20 @@ class PdiPurchaseOrderImportService
   def run
     result = Result.new(created: 0, skipped_exists: 0, skipped_no_vendor: 0, errors: [])
     batches = parse_batches
-    existing_refs = PurchaseOrder.where(pdi_reference: batches.keys.map(&:to_s)).pluck(:pdi_reference).to_set
+    po_nos = batches.values.map { |rows| null_safe(rows.first[COL_PO_NO]) }.compact
+    existing_refs = PurchaseOrder.where(pdi_reference: po_nos).pluck(:pdi_reference).to_set
     vendors_by_pdi_id = Vendor.all.index_by { |v| v.id.to_s }
     locations_by_site = Location.all.index_by { |l| l.pdi_site_code.to_s }
 
     batches.each do |po_key, rows|
-      if existing_refs.include?(po_key.to_s)
+      first = rows.first
+      po_no = null_safe(first[COL_PO_NO])
+
+      if po_no && existing_refs.include?(po_no)
         result.skipped_exists += 1
         next
       end
 
-      first = rows.first
       pdi_vendor_id = null_safe(first[COL_VENDOR_ID])
       vendor_name   = null_safe(first[COL_VENDOR_NAME])
 
@@ -160,7 +165,7 @@ class PdiPurchaseOrderImportService
       po = PurchaseOrder.new(
         vendor:                 vendor,
         location:               location,
-        pdi_reference:          po_key.to_s,
+        pdi_reference:          po_no,
         status:                 our_status,
         trigger_type:           'pdi_import',
         expected_delivery_date: delivery_date,
