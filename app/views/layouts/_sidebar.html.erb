@@ -11,7 +11,7 @@
                              inventory_intelligence].include?(current) ||
                          (current == 'purchase_orders' && action_name != 'dashboard') %>
 <% imports_active      = %w[customer_order_imports inventory_imports pdi_inventory_imports warehouse_transaction_imports
-                             bom_imports min_max_imports vendor_freight_term_imports].include?(current) ||
+                             bom_imports min_max_imports vendor_freight_term_imports pdi_product_imports].include?(current) ||
                          (current == 'customer_order_products' && request.path == product_code_links_path) %>
 <% masterdata_active   = %w[customers vendors users things].include?(current) ||
                          (current == 'locations' && action_name != 'map') %>
@@ -240,6 +240,11 @@
           <li class="<%= 'active' if current == 'warehouse_transaction_imports' %>">
             <%= link_to new_warehouse_transaction_import_path do %>
               <i class="bi bi-clock-history"></i> Tx History
+            <% end %>
+          </li>
+          <li class="<%= 'active' if current == 'pdi_product_imports' %>">
+            <%= link_to new_pdi_product_import_path do %>
+              <i class="bi bi-box-seam"></i> PDI Products
             <% end %>
           </li>
           <li class="<%= 'active' if current == 'bom_imports' %>">

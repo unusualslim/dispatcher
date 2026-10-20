@@ -7,9 +7,10 @@ class BomImportService
   COL_FINISHED_ID   = 0
   COL_FINISHED_NAME = 1
   COL_FINISHED_PKG  = 2
-  COL_COMPONENT_ID  = 3
-  COL_COMPONENT_PKG = 5
-  COL_QUANTITY      = 6
+  COL_COMPONENT_ID  = 5
+  COL_COMPONENT_NAME = 6
+  COL_COMPONENT_PKG = 7
+  COL_QUANTITY      = 9
 
   Result      = Struct.new(:created, :overwritten, :skipped_no_product, :skipped_already_has_bom, :errors, keyword_init: true)
   PreviewRow  = Struct.new(:finished_id, :finished_name, :product, :action, :pkg_code, :components, keyword_init: true)
@@ -26,7 +27,7 @@ class BomImportService
 
   def preview
     rows = CSV.read(@file_path, headers: false, encoding: 'bom|utf-8')
-    rows = rows[1..] if rows.first&.first.to_s.strip == 'FinishedProductID'
+    rows = rows[1..] if %w[FinishedProductID Recipe_Prod_ID].include?(rows.first&.first.to_s.strip)
     by_product = rows.group_by { |r| r[COL_FINISHED_ID].to_s.strip }
 
     by_product.map do |finished_id, product_rows|
@@ -52,8 +53,9 @@ class BomImportService
         component_pkg = row[COL_COMPONENT_PKG].to_s.strip
         quantity      = row[COL_QUANTITY].to_f
         comp = Product.find_by(id: component_id)
+        component_name_from_file = row[COL_COMPONENT_NAME].to_s.strip
         ComponentPreview.new(component_id: component_id,
-                             component_name: comp&.name || '(not found in system)',
+                             component_name: comp&.name || component_name_from_file.presence || '(not found in system)',
                              component_product: comp,
                              quantity: quantity,
                              uom: component_pkg.presence || 'EA')
@@ -69,7 +71,7 @@ class BomImportService
     result = Result.new(created: 0, overwritten: 0, skipped_no_product: 0, skipped_already_has_bom: 0, errors: [])
 
     rows = CSV.read(@file_path, headers: false, encoding: 'bom|utf-8')
-    rows = rows[1..] if rows.first&.first.to_s.strip == 'FinishedProductID'
+    rows = rows[1..] if %w[FinishedProductID Recipe_Prod_ID].include?(rows.first&.first.to_s.strip)
 
     # Group by finished_product_id → pkg_code → [rows]
     by_product = rows.group_by { |r| r[COL_FINISHED_ID].to_s.strip }

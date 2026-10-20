@@ -179,6 +179,11 @@ Rails.application.routes.draw do
   resource :inventory_import, only: [:new, :create] do
     post :preview, on: :collection
   end
+  resource :pdi_product_import, only: [:new, :create] do
+    post :preview, on: :collection
+  end
+  get 'pdi_product_import/download/:log_id', to: 'pdi_product_imports#download', as: :download_pdi_product_import
+
   resource :bom_import, only: [:new, :create] do
     post :preview, on: :collection
   end

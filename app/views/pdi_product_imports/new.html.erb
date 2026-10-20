@@ -1,0 +1,38 @@
+<div class="container mt-4" style="max-width: 640px;">
+  <h1>Import Products from PDI</h1>
+  <p class="text-muted">Sync the master product list from a PDI SQL export. Adds new products and updates existing ones.</p>
+
+  <div class="alert alert-info">
+    <strong><%= @product_count %> products</strong> currently in the system.
+  </div>
+
+  <%= form_with url: preview_pdi_product_import_path, method: :post, multipart: true, data: { turbo: false } do |f| %>
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <div class="mb-3">
+          <%= f.label :file, "PDI Products Export (.csv)", class: "form-label fw-semibold" %>
+          <%= f.file_field :file, class: "form-control", accept: ".csv" %>
+          <div class="form-text">Export from PDI SQL Server using the Products query.</div>
+        </div>
+        <%= f.submit "Preview Import", class: "btn btn-primary" %>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="card shadow-sm mt-3">
+    <div class="card-header fw-semibold">What this does</div>
+    <div class="card-body small text-muted">
+      <ul class="mb-0">
+        <li>Reads each row: product ID, name, category, package code, weight</li>
+        <li>New products are created; existing products are updated if any fields changed</li>
+        <li>New products with COMPONENTS categories are flagged as raw materials</li>
+        <li>Does <strong>not</strong> modify stock levels, costs, reorder points, or safety stock</li>
+        <li>Safe to run multiple times — unchanged products are skipped</li>
+      </ul>
+    </div>
+  </div>
+
+  <%= link_to "← Back", products_path, class: "btn btn-outline-secondary mt-3" %>
+
+  <%= render 'shared/import_history', logs: @logs, download_path: :download_pdi_product_import_path %>
+</div>

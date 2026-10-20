@@ -1,0 +1,106 @@
+<div class="container-fluid px-4 mt-4">
+  <div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+      <h1 class="mb-1">Preview PDI Product Import</h1>
+      <p class="text-muted mb-0">
+        <% if @create_count > 0 %>
+          <span class="text-success fw-semibold"><%= @create_count %> new products to create</span>
+        <% end %>
+        <% if @update_count > 0 %>
+          &nbsp;&middot;&nbsp;<span class="text-primary fw-semibold"><%= @update_count %> products to update</span>
+        <% end %>
+        <% if @unchanged_count > 0 %>
+          &nbsp;&middot;&nbsp;<span class="text-muted"><%= @unchanged_count %> unchanged</span>
+        <% end %>
+      </p>
+    </div>
+    <%= link_to "Cancel", new_pdi_product_import_path, class: "btn btn-outline-secondary" %>
+  </div>
+
+  <%= form_with url: pdi_product_import_path, method: :post, data: { turbo: false } do |f| %>
+
+    <% # Show creates first %>
+    <% creates = @rows.select { |r| r.action == :create } %>
+    <% if creates.any? %>
+      <div class="card shadow-sm mb-3">
+        <div class="card-header bg-success text-white">
+          <h6 class="mb-0">New Products (<%= creates.size %>)</h6>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Package</th>
+                <th class="text-end">Weight</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% creates.each do |row| %>
+                <tr>
+                  <td class="font-monospace small"><%= row.product_id %></td>
+                  <td><%= row.name %></td>
+                  <td><%= row.category || '—' %></td>
+                  <td><%= row.pkg_code || '—' %></td>
+                  <td class="text-end"><%= row.weight ? number_with_precision(row.weight, precision: 4, strip_insignificant_zeros: true) : '—' %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    <% end %>
+
+    <% # Show updates %>
+    <% updates = @rows.select { |r| r.action == :update } %>
+    <% if updates.any? %>
+      <div class="card shadow-sm mb-3">
+        <div class="card-header bg-primary text-white">
+          <h6 class="mb-0">Products to Update (<%= updates.size %>)</h6>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Changes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% updates.each do |row| %>
+                <tr>
+                  <td class="font-monospace small"><%= row.product_id %></td>
+                  <td><%= row.existing_product&.name || row.name %></td>
+                  <td>
+                    <% row.changes.each do |field, new_val| %>
+                      <span class="badge bg-light text-dark border me-1">
+                        <%= field.to_s.titleize %>:
+                        <span class="text-muted"><%= row.existing_product&.send(field) || '(blank)' %></span>
+                        &rarr;
+                        <strong><%= new_val || '(blank)' %></strong>
+                      </span>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    <% end %>
+
+    <% if @unchanged_count > 0 %>
+      <div class="alert alert-secondary">
+        <i class="bi bi-check-circle"></i> <strong><%= @unchanged_count %> products</strong> already up to date — no changes needed.
+      </div>
+    <% end %>
+
+    <div class="d-flex gap-2 mt-3 mb-5">
+      <%= f.submit "Confirm Import", class: "btn btn-success btn-lg" %>
+      <%= link_to "Cancel", new_pdi_product_import_path, class: "btn btn-outline-secondary btn-lg" %>
+    </div>
+  <% end %>
+</div>
