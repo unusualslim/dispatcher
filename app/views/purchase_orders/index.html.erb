@@ -111,6 +111,9 @@
         </tbody>
       </table>
     </div>
+    <div class="card-footer">
+      <%= will_paginate @purchase_orders, renderer: BootstrapPaginationRenderer %>
+    </div>
   <% end %>
 </turbo-frame>
 

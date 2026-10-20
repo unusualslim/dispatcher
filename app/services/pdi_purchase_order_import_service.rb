@@ -166,7 +166,7 @@ class PdiPurchaseOrderImportService
         expected_delivery_date: delivery_date,
         submitted_at:           order_date ? order_date.to_time : nil,
         received_at:            %w[received].include?(our_status) ? received_at : nil,
-        posted_at:              pdi_status == 'Inventoried' ? posted_inv_dt : nil,
+        posted_at:              %w[Invoiced Inventoried].include?(pdi_status) ? (posted_inv_dt || received_at || business_date&.to_time) : nil,
         freight_amount:         freight_amount,
         other_charges:          other_charges,
         notes:                  notes

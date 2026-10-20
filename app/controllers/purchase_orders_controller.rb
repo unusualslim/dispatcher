@@ -45,7 +45,7 @@ class PurchaseOrdersController < ApplicationController
                      q: "%#{@search}%"
                    ).distinct
     end
-    @purchase_orders = scope
+    @purchase_orders = scope.paginate(page: params[:page], per_page: 50)
   end
 
   def new
