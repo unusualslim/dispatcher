@@ -1,0 +1,41 @@
+<div class="container mt-4" style="max-width: 640px;">
+  <h1>Import Repack Batches from PDI</h1>
+  <p class="text-muted">Import historical production (repack) batches as production orders. History only — no stock adjustments.</p>
+
+  <div class="alert alert-info">
+    <strong><%= @production_order_count %> production orders</strong> in the system
+    <% if @pdi_count > 0 %>
+      (<%= @pdi_count %> from previous PDI imports).
+    <% end %>
+  </div>
+
+  <%= form_with url: preview_repack_batch_import_path, method: :post, multipart: true, data: { turbo: false } do |f| %>
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <div class="mb-3">
+          <%= f.label :file, "Repack Batches Export (.csv)", class: "form-label fw-semibold" %>
+          <%= f.file_field :file, class: "form-control", accept: ".csv" %>
+          <div class="form-text">Export from PDI SQL Server using the Repack Batches query.</div>
+        </div>
+        <%= f.submit "Preview Import", class: "btn btn-primary" %>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="card shadow-sm mt-3">
+    <div class="card-header fw-semibold">What this does</div>
+    <div class="card-body small text-muted">
+      <ul class="mb-0">
+        <li>Creates one production order per repack batch with components</li>
+        <li>Posted batches are marked <strong>completed</strong>; unposted as <strong>pending</strong></li>
+        <li>Reversed batches are <strong>skipped</strong></li>
+        <li>Does <strong>not</strong> create inventory transactions or adjust stock levels</li>
+        <li>Safe to run multiple times — existing PDI batches are skipped by number</li>
+      </ul>
+    </div>
+  </div>
+
+  <%= link_to "← Back", production_orders_path, class: "btn btn-outline-secondary mt-3" %>
+
+  <%= render 'shared/import_history', logs: @logs, download_path: :download_repack_batch_import_path %>
+</div>

@@ -46,7 +46,7 @@ class ProductionOrder < ApplicationRecord
     where(due_date: from..to)
   }
 
-  scope :ordered_default, -> { order(due_date: :asc, id: :asc) }
+  scope :ordered_default, -> { order(due_date: :desc, id: :desc) }
 
     scope :by_status, ->(status) {
     s = status.to_s.strip.downcase
