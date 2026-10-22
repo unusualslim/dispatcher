@@ -90,7 +90,10 @@
               <tr>
                 <td class="fw-semibold">$<%= number_with_precision(h.amount, precision: 4) %></td>
                 <td><%= h.effective_date.strftime("%B %-d, %Y") %></td>
-                <td class="text-muted small"><%= h.created_by&.full_name || '—' %></td>
+                <td class="text-muted small">
+                  <%= h.created_by&.full_name || '—' %>
+                  <% if h.notes.present? %><div class="text-warning-emphasis"><%= h.notes %></div><% end %>
+                </td>
                 <td class="text-muted small"><%= h.created_at.strftime("%b %-d, %Y") %></td>
               </tr>
             <% end %>
