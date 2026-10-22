@@ -3,8 +3,10 @@
 ## What this app is
 Ruby on Rails 7.0.8 + PostgreSQL app for **Perry Brothers Oil** (Five Points Service),
 Americus/Albany GA area. Manages petroleum product dispatch, customer orders,
-driver/truck tracking, vendor management, location/terminal management, and
-production orders (DEF manufacturing). Live at **loadntrucks.com**, hosted on Render.
+driver/truck tracking, vendor management, location/terminal management, production
+orders (DEF manufacturing), MRP/inventory, purchasing, and pricing. Integrates with
+**PDI** (the ERP/accounting system) via FTP file exchange. Live at **loadntrucks.com**,
+hosted on Render.
 
 Primary contact: John (admin@perrybrothersoil.com)
 
@@ -14,65 +16,104 @@ Primary contact: John (admin@perrybrothersoil.com)
 - Ruby 3.1.2, Rails 7.0.8, PostgreSQL 15
 - Bootstrap 5, Leaflet.js (maps), Select2, FullCalendar
 - jsbundling-rails (esbuild) + cssbundling-rails (sass via yarn)
-- Devise authentication + reCAPTCHA
+- Devise authentication + **Cloudflare Turnstile** on registration (reCAPTCHA was removed)
 - Samsara Fleet API for live GPS truck tracking
+- Twilio for SMS (dispatch notifications / messages)
+- roo / roo-xls for spreadsheet imports, net-ftp for PDI, fugit for cron parsing
 - Render for production hosting (uses DATABASE_URL env var)
 - SendGrid for email (ActionMailer configured in production)
-- Active Job with default :async adapter (no Sidekiq)
+- Active Job with default :async adapter (no Sidekiq, no queue backend)
 
 ---
 
-## Local dev setup (Windows 10)
-- PostgreSQL 15 on port **5433** (trust auth), PG14 on 5432 — always use 5433
-- config/database.yml is gitignored — local settings: host: 127.0.0.1, port: 5433, username: postgres
-- `.env` is gitignored — contains RECAPTCHA keys and SAMSARA_API_KEY
-- Run server: `bundle exec rails server`
-- Assets: `yarn build && yarn build:css` if assets are missing
-- Windows quirks: Puma workers disabled (Gem.win_platform? guard in config/puma.rb),
-  Sprockets uses MemoryStore cache (config/environments/development.rb)
+## Local dev setup
+- `config/database.yml` and `.env` are gitignored and must be created locally
+- Run everything: `bin/dev` (Procfile.dev: rails server + `yarn build --watch` + `yarn watch:css`)
+- Or just the server: `bundle exec rails server` (run `yarn build && yarn build:css` first if assets are missing)
+- Gemfile pins Ruby **3.1.2** — make sure rbenv has it installed
+- Windows quirks (from earlier dev on Windows 10): Puma workers/threads limited via
+  `Gem.win_platform?` guard in config/puma.rb; Sprockets uses MemoryStore cache in
+  config/environments/development.rb. On Windows, PG15 was on port 5433.
 
 ---
 
 ## Key domain concepts
 
-**Locations** = terminals (origin, category_id: 1) or customer delivery sites (destination, category_id: 2)
+**Locations** = terminals (origin, category_id: 1) or customer delivery sites (destination, category_id: 2).
+Locations also act as warehouses/tanks for inventory (`show_in_warehouse_dropdown`, `pdi_site_code`).
 **Dispatches** = a driver assignment linking an origin terminal to customer orders. Status: "Sent to Driver" shows on map.
-**CustomerOrder** = order_status enum values: "New" (open), "complete" (done), "on_hold", "Deleted"
+**CustomerOrder** = `order_status` enum mirrors **PDI order statuses** (Open Order, Quote, Pending,
+Released for Dispatch, Dispatched, Released for Picking, Picking in Progress, Shipped,
+Released for Billing, Billed, Delivered, Accepted/Rejected by Site, Expired, Expired Quote,
+Cancelled as Order/Quote, Quarantine). "Open" work = `CustomerOrder::ACTIVE_STATUSES`.
+Orders mostly arrive via the PDI order sync.
+**Quotes** = separate Quote model with send/accept/reject.
 **ProductionOrder** = STATUSES: pending / in_progress / completed
-**User roles**: admin, worker (drivers show up in users list)
+**WorkOrders / Jobs** = shop work orders with comments; Jobs + JobWorkers are line-worker clock-in/out (`/line`)
+**User roles**: admin, worker (drivers), line_worker
 
 ---
 
-## MRP System (built April 2026)
+## PDI integration (FTP)
+PDI exchanges files with the app over FTP. All sync jobs include `PdiFtpConcern`,
+download the file, delete it from FTP, run an import service, and record a `SyncLog`.
 
-Full MRP module added directly to the app. Key files:
+| Job | Import service | File |
+|---|---|---|
+| `PdiOrderSyncJob` | `CustomerOrderImportService` | `orders.xls` |
+| `PdiVendorSyncJob` | `PdiVendorImportService` | AP Vendor List `.csv` |
+| `PdiProductSyncJob` | `InventoryImportService` (maps PDI site codes → locations) | current inventory `.xls` |
+| `PdiPurchaseOrderSyncJob` | `PdiWarehouseTransactionImportService` | Warehouse Transaction Report `.xls` |
+
+- Outbound: `PdiExportJob` uploads a CSV to FTP when a PurchaseOrder transitions to `submitted`.
+- **Scheduling**: `rake scheduler:tick` runs every minute as a Render cron job. It walks
+  `AutomatedProcessesController::PROCESSES`, checks each `AutomatedProcessConfig` cron
+  schedule, and runs due jobs with `perform_now`. Schedules are editable at `/automated_processes`.
+- Manual imports (each with a preview step, and downloadable source file via SyncLog):
+  customer orders, PDI products, PDI inventory, PDI purchase orders, purchase orders,
+  repack batches, warehouse transactions, inventory, BOMs, min/max, vendor freight terms.
+- Debug: `rake pdi:ftp_ls`, `rake pdi:sync_vendors`
+
+---
+
+## MRP / inventory / purchasing
 
 ### Models
-- `Product` — is_raw_material, current_stock, reorder_point, safety_stock, cost_per_unit, stock_status, available_stock
-- `PurchaseOrder` — lifecycle: draft → pending_approval → approved → submitted → received → cancelled
-- `InventoryTransaction` — polymorphic audit trail (direction: 'in'/'out')
+- `Product` — is_raw_material, item_type, current_stock, reorder_point, safety_stock, cost_per_unit,
+  standard_cost (history in `StandardCostHistory`), pdi_tank_id, stock_status, available_stock
+- `ProductComponent` — BOM lines
+- `LocationProduct` — per-location stock (`quantity`); `LocationProduct.adjust!(location, product, qty)`
+- `PurchaseOrder` — lifecycle: draft → pending_approval → approved → submitted → received → cancelled;
+  `pdi_reference` (shown via `display_number`), `posted_at`, optional `location_id`
+- `InventoryTransaction` — polymorphic audit trail (direction: 'in'/'out'), optional `location_id`
 - `ProductionOrderBatch` — QC workflow: qc_status (pending/passed/hold/rejected), lot_number, complete_and_deduct_inventory!(user)
 - `ProductionOrderComponent` — belongs_to :product (optional), quantity_actual
+- `PricingRule` / `PricingRuleProduct` — pricing rules that auto-populate prices on customer orders
 
 ### Services (app/services/)
-- `MrpEngine` — calculates raw material requirements from open customer orders + BOM
+- `MrpEngine` — raw material requirements from open customer orders + BOM
 - `BomPopulatorService` — auto-populates production order components from product BOM
 - `MaterialAvailabilityService` — checks if raw materials are available for a production order
 - `ReorderService` — creates draft POs for products below reorder_point
+- `PricingRuleService.lookup(customer, product)` — resolves the applicable pricing rule
+- `InventoryIntelligenceService` — daily/weekly inventory report emails (`InventoryIntelligenceJob`)
+- `*ImportService` — one per import type (see PDI section)
 
 ### Key workflows
-1. **Batch completion**: production order show page → QC panel → set status to 'passed' → "Complete Batch & Update Inventory" → calls batch.complete_and_deduct_inventory!(current_user) → deducts raw materials, adds finished goods
-2. **Auto-reorder**: ReorderCheckJob.perform_later → ReorderService.run → creates draft POs → emails admins with email_opt_in
-3. **PO receiving**: PurchaseOrder#mark_received!(user) → creates InventoryTransaction + increments current_stock
-4. **Manual adjustment**: /inventory_adjustments/new → creates InventoryTransaction + adjusts stock
+1. **Batch completion**: production order show page → QC panel → 'passed' → "Complete Batch & Update Inventory" → `batch.complete_and_deduct_inventory!(current_user)`
+2. **Auto-reorder**: `ReorderCheckJob` → `ReorderService.run` → draft POs → emails admins with email_opt_in
+3. **PO receiving** is two steps: `mark_received!(user)` only sets status; `post_to_inventory!(user)`
+   creates InventoryTransactions and adjusts stock (LocationProduct if the PO has a location,
+   otherwise `Product#current_stock`), then sets `posted_at`. Idempotent via `posted?`.
+4. **Manual adjustment**: /inventory_adjustments/new → InventoryTransaction + stock adjustment
 
-### Routes added
-- GET  /mrp                              → mrp#index (dashboard)
-- GET  /purchase_orders                  → purchase orders list
-- GET  /inventory_transactions           → audit trail
-- GET  /inventory_adjustments/new        → manual stock adjustment
-- PATCH /production_order_batches/:id/update_qc
-- PATCH /production_order_batches/:id/complete
+### Notable routes
+- /mrp, /purchasing_report, /inventory_intelligence, /inventory_transactions, /inventory_adjustments/new
+- /purchase_orders (+ approve / submit / receive / post_to_inventory, export_pdi, dashboard)
+- /production_orders (kanban, dashboard, bom_cost_report)
+- /customer_orders (dashboard, bulk_close), /dispatches/kanban, /warehouse/kanban
+- /pricing_rules, /automated_processes, /docs (in-app user guides + changelog)
+- Products, Customers, Vendors, Locations all support CSV export → import_csv → process_import → confirm_import
 
 ---
 
@@ -86,31 +127,40 @@ Full MRP module added directly to the app. Key files:
 
 ---
 
+## Environment variables
+- `DATABASE_URL`, `RAILS_MASTER_KEY`
+- `SAMSARA_API_KEY` — live truck tracking
+- `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` — registration captcha (also readable from credentials)
+- `PDI_FTP_HOST`, `PDI_FTP_USER`, `PDI_FTP_PASSWORD` (+ optional `PDI_FTP_ORDER_DIR`,
+  `PDI_FTP_VENDOR_DIR`, `PDI_FTP_PRODUCT_DIR`, `PDI_FTP_PO_DIR`, `PDI_FTP_PATH`)
+- `SENDGRID_USERNAME`, `SENDGRID_PASSWORD`
+- `TWILIO_SID`, `TWILIO_TOKEN`, `TWILIO_NUMBER`
+- `BATCH_QR_PASSWORD`, `BATCH_QR_SECRET` — batch label/QR gate (/gate, /labels, /l)
+- `EXECJS_RUNTIME=Node` on Render (prevents Bun conflict)
+
 ## Render production notes
-- DATABASE_URL env var used (no database.yml in repo)
-- SAMSARA_API_KEY env var required for live truck tracking
-- EXECJS_RUNTIME=Node env var required (prevents Bun conflict)
-- RECAPTCHA_SITE_KEY and RECAPTCHA_SECRET_KEY env vars required
 - db:migrate runs automatically on deploy
 - Seeds are guarded: `return if Rails.env.production?`
+- Cron job runs `rake scheduler:tick` every minute
 
 ---
 
-## What's working, what's next
+## Tests
+Minitest under `test/`. Coverage is concentrated on MRP services/models
+(MrpEngine, BomPopulator, MaterialAvailability, Reorder, ProductionOrderBatch);
+the PDI sync/import code is largely untested.
 
-### Done
-- Full dispatch/order/driver workflow
-- MRP: BOM, production orders, batch QC, inventory tracking, purchase orders, reorder automation
-- Live GPS map with Samsara integration
-- Inventory adjustment UI + transaction history
-- Reorder notification emails
+---
+
+## Roadmap / known issues
 
 ### High priority remaining
 - Cycle counts / physical inventory reconciliation
 - Partial PO receiving (currently all-or-nothing)
-- Multi-location inventory (stock is global per product, not per tank/terminal)
+- Finish multi-location inventory (LocationProduct exists; stock falls back to global `current_stock` when no location)
 - Production order completion UI improvements
 
 ### Known issues / notes
-- dispatch_customer_orders join table still exists in schema but is legacy
+- `dispatch_customer_orders` join table is legacy but still used by `CustomerOrder.unassigned_open_orders`
+- With the :async adapter, failed jobs are only visible in `SyncLog` and the Rails log
 - Zone.Identifier files from Windows show as deleted in git status — safe to ignore
