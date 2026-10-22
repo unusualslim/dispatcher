@@ -8,6 +8,10 @@ class QuoteMarginReview
   BASIS_LABELS = { 'standard_cost' => 'Standard cost', 'inventory_cost' => 'Inventory cost',
                    'standard_calculated' => 'BOM standard cost' }.freeze
 
+  # Margin points a line may fall below its floor before it's flagged Re-price
+  # (it shows as Watch until then).
+  REPRICE_ALLOWANCE_PCT = BigDecimal('1')
+
   Driver = Struct.new(:label, :date, :from, :to, :impact, keyword_init: true)
 
   Line = Struct.new(:quote_product, :basis, :since, :priced_time, :cost_then, :cost_now, :target_margin_pct,
@@ -39,14 +43,14 @@ class QuoteMarginReview
       target_margin_pct && margin_pct_then && margin_pct_then < target_margin_pct - BigDecimal('0.05')
     end
 
-    # :reprice — margin below the floor (or negative)
-    # :watch   — cost has risen but margin is still at/above the floor
+    # :reprice — margin more than REPRICE_ALLOWANCE_PCT points below the floor (or negative)
+    # :watch   — cost has risen but margin is still within the allowance
     # :ok      — cost flat or down
     # :unknown — no cost to compare against
     def status
       return :unknown if margin_pct_now.nil?
       return :reprice if margin_now.negative?
-      return :reprice if margin_floor_pct && margin_pct_now < margin_floor_pct - BigDecimal('0.005')
+      return :reprice if margin_floor_pct && margin_pct_now < margin_floor_pct - REPRICE_ALLOWANCE_PCT
       return :watch   if cost_change && cost_change > BigDecimal('0.00005')
       :ok
     end

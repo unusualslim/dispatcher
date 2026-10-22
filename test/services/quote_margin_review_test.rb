@@ -183,4 +183,19 @@ class QuoteMarginReviewTest < ActiveSupport::TestCase
     assert_equal [BigDecimal('0.20')], line.drivers.map(&:impact)
     assert_equal @quoted_on, line.drivers.first.date
   end
+
+  test "margin within 1 point of the floor is watch; more than 1 point below is re-price" do
+    @def.standard_cost_histories.create!(amount: 4.00, effective_date: @quoted_on - 30)
+    quote = locked_quote(rule('standard_cost', 'margin', 20))                # price 5.00, GM 20%
+    @def.standard_cost_histories.create!(amount: 4.04, effective_date: Date.today - 2)
+
+    line = review(quote)
+    assert_in_delta 19.2, line.margin_pct_now, 0.001                         # 0.8 points below
+    assert_equal :watch, line.status
+
+    @def.standard_cost_histories.create!(amount: 4.06, effective_date: Date.today - 1)
+    line = review(quote)
+    assert_in_delta 18.8, line.margin_pct_now, 0.001                         # 1.2 points below
+    assert_equal :reprice, line.status
+  end
 end

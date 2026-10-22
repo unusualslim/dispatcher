@@ -107,9 +107,10 @@
     </div>
   </div>
   <div class="small text-muted mt-2">
-    <strong>Re-price</strong>: today's margin is below the floor — the pricing rule's target margin, or the margin
-    actually quoted if the price was negotiated below target — or negative.
-    <strong>Watch</strong>: cost has risen but margin is still at or above the floor.
+    <strong>Re-price</strong>: today's margin is more than <%= QuoteMarginReview::REPRICE_ALLOWANCE_PCT.to_i %> point
+    below the floor — the pricing rule's target margin, or the margin actually quoted if the price was negotiated
+    below target — or negative.
+    <strong>Watch</strong>: cost has risen but margin is still within <%= QuoteMarginReview::REPRICE_ALLOWANCE_PCT.to_i %> point of the floor.
     Margin lost uses the quantity on the quote. Open a quote's <em>justification</em> for the cost changes behind it and to re-quote at today's prices.
   </div>
 <% end %>
