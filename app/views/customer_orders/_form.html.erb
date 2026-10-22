@@ -425,6 +425,13 @@
     })
     .then(function(r) { return r.json(); })
     .then(function(data) {
+      var oldAlert = row.querySelector('.pricing-rule-missing');
+      if (oldAlert) oldAlert.remove();
+
+      if (data.missing_components && data.missing_components.length) {
+        showMissingComponents(row, data);
+        return;
+      }
       if (data.price == null) return;
       var priceInput = row.querySelector('input[name*="[price]"]');
       if (priceInput && priceInput.value === '') {
@@ -439,6 +446,30 @@
       }
     })
     .catch(function() {});
+  }
+
+  // Pricing rule matched but the BOM cost is incomplete — list the components
+  // missing a standard cost, each linking to its product page.
+  function showMissingComponents(row, data) {
+    var priceInput = row.querySelector('input[name*="[price]"]');
+    if (!priceInput) return;
+
+    var alert = document.createElement('div');
+    alert.className = 'pricing-rule-missing alert alert-warning small py-1 px-2 mt-1 mb-0';
+    alert.appendChild(document.createTextNode(
+      'Can\'t price from "' + data.rule_name + '": BOM components missing a standard cost: '));
+
+    data.missing_components.forEach(function(c, i) {
+      if (i > 0) alert.appendChild(document.createTextNode(', '));
+      var link = document.createElement('a');
+      link.href = c.url;
+      link.target = '_blank';
+      link.className = 'alert-link';
+      link.textContent = c.name;
+      alert.appendChild(link);
+    });
+
+    priceInput.closest('td').appendChild(alert);
   }
 
   function updateNoProductsMsg() {

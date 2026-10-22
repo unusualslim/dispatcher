@@ -31,11 +31,11 @@
         <label class="form-label">Products <span class="text-danger">*</span></label>
         <select name="pricing_rule[product_ids][]" multiple class="form-select select2-products" style="height:auto;">
           <% @products.each do |p| %>
-            <% bom_cost = p.product_components.sum { |pc| (pc.component_product&.cost_per_unit || 0) * pc.quantity_per_unit } %>
             <option value="<%= p.id %>"
-              data-standard-cost="<%= p.standard_cost %>"
+              data-standard-cost="<%= p.current_standard_cost %>"
               data-cost-per-unit="<%= p.cost_per_unit %>"
-              data-bom-cost="<%= bom_cost > 0 ? bom_cost : '' %>"
+              data-bom-cost="<%= p.bom_standard_cost %>"
+              data-bom-missing="<%= p.bom_components_missing_standard_cost.map { |c| { name: c.name, url: product_path(c) } }.to_json %>"
               <%= 'selected' if rule.products.map(&:id).include?(p.id) %>>
               <%= p.name %>
             </option>
@@ -54,9 +54,9 @@
       <div class="col-md-6">
         <%= f.label :pricing_basis, "Pricing Basis", class: 'form-label' %>
         <%= f.select :pricing_basis,
-              [['Standard Cost (cost/unit on product)', 'standard_cost'],
-               ['Inventory Cost (cost/unit on product)', 'inventory_cost'],
-               ['Standard Calculated (BOM sum)', 'standard_calculated']],
+              [['Standard Cost (most recent effective)', 'standard_cost'],
+               ['Inventory Cost (weighted average)', 'inventory_cost'],
+               ['Standard Calculated (BOM sum of component standard costs)', 'standard_calculated']],
               { include_blank: '— Select —' },
               class: 'form-select' %>
       </div>
@@ -89,6 +89,7 @@
       <span class="text-muted small fw-normal">Based on standard costs for selected products</span>
     </div>
     <div class="card-body">
+      <div id="preview-missing-alert" class="alert alert-warning small" style="display:none;"></div>
       <div id="preview-notice" class="text-muted small">
         Select products and fill in the pricing fields above to see the preview.
       </div>
@@ -144,6 +145,7 @@
   var notice        = document.getElementById('preview-notice');
   var tableWrap     = document.getElementById('preview-table-wrap');
   var tableBody     = document.getElementById('preview-table-body');
+  var missingAlert  = document.getElementById('preview-missing-alert');
   var productSelect = document.querySelector('.select2-products');
 
   function fmt(n, decimals) {
@@ -178,7 +180,8 @@
           name:         opt.text,
           standardCost: opt.dataset.standardCost,
           costPerUnit:  opt.dataset.costPerUnit,
-          bomCost:      opt.dataset.bomCost
+          bomCost:      opt.dataset.bomCost,
+          bomMissing:   JSON.parse(opt.dataset.bomMissing || '[]')
         });
       }
     });
@@ -199,11 +202,51 @@
     return NaN;
   }
 
+  // For BOM-based rules, list each selected product whose BOM has components
+  // missing a standard cost, with links to those component products.
+  function updateMissingAlert(products, basis) {
+    missingAlert.innerHTML = '';
+    var affected = basis === 'standard_calculated'
+      ? products.filter(function(p) { return p.bomMissing.length > 0; })
+      : [];
+
+    if (affected.length === 0) {
+      missingAlert.style.display = 'none';
+      return;
+    }
+
+    var heading = document.createElement('div');
+    heading.className = 'fw-semibold mb-1';
+    heading.textContent = 'BOM cost can\'t be calculated: these components are missing a standard cost.';
+    missingAlert.appendChild(heading);
+
+    var list = document.createElement('ul');
+    list.className = 'mb-0';
+    affected.forEach(function(p) {
+      var item = document.createElement('li');
+      item.appendChild(document.createTextNode(p.name + ': '));
+      p.bomMissing.forEach(function(c, i) {
+        if (i > 0) item.appendChild(document.createTextNode(', '));
+        var link = document.createElement('a');
+        link.href = c.url;
+        link.target = '_blank';
+        link.className = 'alert-link';
+        link.textContent = c.name;
+        item.appendChild(link);
+      });
+      list.appendChild(item);
+    });
+    missingAlert.appendChild(list);
+    missingAlert.style.display = '';
+  }
+
   function updatePreview() {
     var basis    = basisSelect.value;
     var method   = methodSelect.value;
     var value    = parseFloat(valueInput.value);
     var products = selectedProducts();
+
+    updateMissingAlert(products, basis);
 
     var ready = basis && method && !isNaN(value) && products.length > 0;
 
@@ -234,8 +277,9 @@
         if (method === 'flat') {
           cost = 0;
         } else {
-          var missingLabel = basis === 'standard_calculated' ? 'no BOM cost' :
-                             basis === 'inventory_cost'      ? 'no inventory cost' : 'no standard cost';
+          var missingLabel = basis === 'inventory_cost' ? 'no inventory cost' :
+                             basis === 'standard_cost'  ? 'no standard cost'  :
+                             p.bomMissing.length        ? 'missing component costs (see above)' : 'no BOM';
           costCell = '<td class="text-muted fst-italic">' + missingLabel + '</td>';
           rows += '<tr><td>' + p.name + '</td>' + costCell + '<td colspan="5" class="text-muted fst-italic">—</td></tr>';
           return;

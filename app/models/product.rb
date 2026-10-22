@@ -38,6 +38,33 @@ class Product < ApplicationRecord
     product_vendors.first&.vendor
   end
 
+  # Most recent standard cost in effect on the given date (ignores future-dated entries).
+  # Falls back to the standard_cost column for products with no history rows.
+  def current_standard_cost(date = Date.today)
+    history = standard_cost_histories.find { |h| h.effective_date <= date }
+    history ? history.amount : standard_cost
+  end
+
+  # Sum of each BOM component's standard cost × quantity per unit.
+  # Returns nil if there is no BOM or any component is missing a standard cost,
+  # so a price is never quoted off a partial cost.
+  def bom_standard_cost(date = Date.today)
+    return nil if product_components.empty?
+    return nil if bom_components_missing_standard_cost(date).any?
+
+    product_components.sum do |pc|
+      pc.component_product.current_standard_cost(date).to_d * pc.quantity_per_unit.to_d
+    end
+  end
+
+  # BOM component products with no standard cost in effect on the given date.
+  def bom_components_missing_standard_cost(date = Date.today)
+    product_components.filter_map do |pc|
+      component = pc.component_product
+      component if component && component.current_standard_cost(date).nil?
+    end
+  end
+
   def set_vendors_in_order(vendor_ids)
     vendor_ids = Array(vendor_ids).reject(&:blank?)
     transaction do

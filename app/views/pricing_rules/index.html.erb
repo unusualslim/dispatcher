@@ -28,8 +28,15 @@
         </thead>
         <tbody>
           <% @rules.each do |rule| %>
-            <tr>
-              <td class="fw-semibold"><%= rule.name %></td>
+            <tr class="rule-main-row" data-rule-id="<%= rule.id %>" style="cursor:pointer;">
+              <td class="fw-semibold">
+                <div class="d-flex align-items-center gap-2">
+                  <button class="btn btn-link p-0 rule-expand-btn" data-rule-id="<%= rule.id %>" style="color:#6c757d;line-height:1;" title="Expand">
+                    <i class="bi bi-chevron-right" style="font-size:.75rem;transition:transform .2s;"></i>
+                  </button>
+                  <%= rule.name %>
+                </div>
+              </td>
               <td><%= rule.customer&.name || '<span class="text-muted fst-italic">All customers</span>'.html_safe %></td>
               <td>
                 <% rule.products.each do |p| %>
@@ -57,9 +64,103 @@
                 </div>
               </td>
             </tr>
+            <tr class="rule-detail-row d-none" id="rule-detail-<%= rule.id %>">
+              <td colspan="9" class="p-0">
+                <div class="border-top border-bottom bg-light px-4 py-3" style="font-size:.85rem;">
+                  <% if rule.products.empty? %>
+                    <span class="text-muted fst-italic">No products in this rule.</span>
+                  <% else %>
+                    <table class="table table-sm mb-0" style="font-size:.82rem;">
+                      <thead class="table-light">
+                        <tr>
+                          <th>Product</th>
+                          <th>Pricing Basis</th>
+                          <th>Calculated Cost</th>
+                          <th>Pricing Method</th>
+                          <th>Price</th>
+                          <th>Profit / unit</th>
+                          <th>Margin</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <% rule.products.each do |product| %>
+                          <% cost  = rule.basis_cost(product) %>
+                          <% price = rule.calculated_price(product) %>
+                          <% profit = price - cost if price && cost.present? && cost > 0 %>
+                          <% margin = (profit / price * 100) if profit && price > 0 %>
+                          <% missing = rule.pricing_basis == 'standard_calculated' ? product.bom_components_missing_standard_cost : [] %>
+                          <tr>
+                            <td><%= link_to product.name, product_path(product), class: 'text-decoration-none' %></td>
+                            <td class="text-muted"><%= rule.pricing_basis_label %></td>
+                            <td>
+                              <% if cost.present? && cost > 0 %>
+                                <%= number_to_currency(cost, precision: 4) %>
+                              <% elsif missing.any? %>
+                                <span class="text-warning-emphasis">
+                                  <i class="bi bi-exclamation-triangle me-1"></i>Missing standard cost:
+                                  <% missing.each_with_index do |component, i| %><%= ', ' if i > 0 %><%= link_to component.name, product_path(component) %><% end %>
+                                </span>
+                              <% elsif rule.pricing_basis == 'standard_calculated' %>
+                                <span class="text-muted fst-italic">No BOM</span>
+                              <% elsif rule.pricing_basis == 'inventory_cost' %>
+                                <span class="text-muted fst-italic">No inventory cost</span>
+                              <% else %>
+                                <span class="text-muted fst-italic">No standard cost</span>
+                              <% end %>
+                            </td>
+                            <td class="text-muted">
+                              <%= rule.pricing_method_label %>
+                              <% if rule.pricing_method == 'flat' %>
+                                (<%= number_to_currency(rule.value, precision: 4) %>)
+                              <% else %>
+                                (<%= number_with_precision(rule.value, precision: 2, strip_insignificant_zeros: true) %>%)
+                              <% end %>
+                            </td>
+                            <td class="fw-semibold">
+                              <% if price %>
+                                <span class="text-success"><%= number_to_currency(price, precision: 4) %></span>
+                              <% else %>
+                                <span class="text-muted">—</span>
+                              <% end %>
+                            </td>
+                            <td class="<%= 'text-danger' if profit&.negative? %>">
+                              <%= profit ? number_to_currency(profit, precision: 4) : '—' %>
+                            </td>
+                            <td class="<%= 'text-danger' if margin&.negative? %>">
+                              <%= margin ? "#{number_with_precision(margin, precision: 2)}%" : '—' %>
+                            </td>
+                          </tr>
+                        <% end %>
+                      </tbody>
+                    </table>
+                  <% end %>
+                </div>
+              </td>
+            </tr>
           <% end %>
         </tbody>
       </table>
     </div>
   </div>
+
+  <script>
+    (function() {
+      function toggleRule(id) {
+        var detailRow = document.getElementById('rule-detail-' + id);
+        if (!detailRow) return;
+        var icon = document.querySelector('.rule-expand-btn[data-rule-id="' + id + '"] i');
+        var isOpen = !detailRow.classList.contains('d-none');
+        detailRow.classList.toggle('d-none', isOpen);
+        if (icon) icon.style.transform = isOpen ? '' : 'rotate(90deg)';
+      }
+
+      document.querySelectorAll('.rule-main-row').forEach(function(row) {
+        row.addEventListener('click', function(e) {
+          if (e.target.closest('a, form') ||
+              (e.target.closest('button') && !e.target.closest('.rule-expand-btn'))) return;
+          toggleRule(row.dataset.ruleId);
+        });
+      });
+    })();
+  </script>
 <% end %>

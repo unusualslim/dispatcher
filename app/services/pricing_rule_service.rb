@@ -4,7 +4,9 @@
 # Priority: fewest products in the rule wins (most specific).
 # Among ties, most recent effective_date wins.
 class PricingRuleService
-  # Returns { price: BigDecimal, rule: PricingRule } or nil if no rule applies.
+  # Returns { price: BigDecimal, rule: PricingRule, missing_components: [] },
+  # { price: nil, rule:, missing_components: [Product, ...] } when a BOM rule applies
+  # but components lack a standard cost, or nil if no rule applies.
   def self.lookup(customer, product, date: Date.today)
     return nil unless product
 
@@ -30,10 +32,18 @@ class PricingRuleService
     best = pick_best(customer_rules) || pick_best(global_rules)
     return nil unless best
 
-    price = best.calculated_price(product)
-    return nil unless price
+    price = best.calculated_price(product, date: date)
 
-    { price: price, rule: best }
+    unless price
+      # A BOM-based rule matched but can't be priced — report which components
+      # are missing a standard cost so the user can fix them.
+      return nil unless best.pricing_basis == 'standard_calculated'
+      missing = product.bom_components_missing_standard_cost(date)
+      return nil if missing.empty?
+      return { price: nil, rule: best, missing_components: missing }
+    end
+
+    { price: price, rule: best, missing_components: [] }
   end
 
   private

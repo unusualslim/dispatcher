@@ -3,7 +3,10 @@ class PricingRulesController < ApplicationController
   before_action :set_rule, only: [:show, :edit, :update, :destroy]
 
   def index
-    @rules = PricingRule.includes(:customer, :products).order(:name)
+    @rules = PricingRule.includes(
+      :customer,
+      products: [:standard_cost_histories, { product_components: { component_product: :standard_cost_histories } }]
+    ).order(:name)
   end
 
   def new
@@ -51,10 +54,13 @@ class PricingRulesController < ApplicationController
 
     if result
       render json: {
-        price:     result[:price].to_f.round(4),
+        price:     result[:price]&.to_f&.round(4),
         rule_name: result[:rule].name,
         method:    result[:rule].pricing_method,
-        basis:     result[:rule].pricing_basis_label
+        basis:     result[:rule].pricing_basis_label,
+        missing_components: result[:missing_components].map { |c|
+          { id: c.id, name: c.name, url: product_path(c) }
+        }
       }
     else
       render json: { price: nil }
@@ -69,7 +75,9 @@ class PricingRulesController < ApplicationController
 
   def load_form_data
     @customers = Customer.order(:name)
-    @products  = Product.includes(product_components: :component_product).order(:name)
+    @products  = Product.includes(:standard_cost_histories,
+                                  product_components: { component_product: :standard_cost_histories })
+                        .order(:name)
   end
 
   def rule_params

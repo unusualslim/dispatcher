@@ -16,13 +16,18 @@ class PricingRule < ApplicationRecord
       (expiration_date.nil? || expiration_date >= date)
   end
 
+  # The cost this rule prices from for a given product, or nil if unavailable.
+  def basis_cost(product, date: Date.today)
+    case pricing_basis
+    when 'standard_cost'       then product.current_standard_cost(date)&.to_d
+    when 'inventory_cost'      then product.cost_per_unit&.to_d
+    when 'standard_calculated' then product.bom_standard_cost(date)
+    end
+  end
+
   # Calculate the sell price for a given product under this rule.
-  def calculated_price(product)
-    basis = case pricing_basis
-            when 'standard_cost'       then product.standard_cost.to_d
-            when 'inventory_cost'      then product.cost_per_unit.to_d
-            when 'standard_calculated' then bom_cost(product)
-            end
+  def calculated_price(product, date: Date.today)
+    basis = basis_cost(product, date: date)
 
     return nil if basis.nil? || basis == 0
 
@@ -40,13 +45,5 @@ class PricingRule < ApplicationRecord
   def pricing_basis_label
     { 'standard_cost' => 'Standard Cost', 'inventory_cost' => 'Inventory Cost',
       'standard_calculated' => 'Standard Calculated (BOM)' }[pricing_basis]
-  end
-
-  private
-
-  def bom_cost(product)
-    product.product_components.includes(:component_product).sum do |pc|
-      (pc.component_product&.cost_per_unit || 0).to_d * pc.quantity_per_unit.to_d
-    end
   end
 end
