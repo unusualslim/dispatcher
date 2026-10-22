@@ -12,10 +12,21 @@ class CustomerOrder < ApplicationRecord
   accepts_nested_attributes_for :customer_order_products, allow_destroy: true
 
   after_save :sync_approximate_amount
+  after_save :link_customer_location, if: -> { saved_change_to_customer_id? || saved_change_to_location_id? }
 
   def sync_approximate_amount
     total = customer_order_products.reload.sum(:quantity).to_f
     update_column(:approximate_product_amount, total) unless approximate_product_amount == total
+  end
+
+  # Remember that this customer receives deliveries here, so the order form
+  # lists the location first next time. Locations can be shared by customers.
+  def link_customer_location
+    return unless customer_id && location_id
+    CustomerLocation.insert_all(
+      [{ customer_id: customer_id, location_id: location_id, created_at: Time.current, updated_at: Time.current }],
+      unique_by: [:customer_id, :location_id]
+    )
   end
 
   attribute :freight_only, :boolean, default: false

@@ -230,27 +230,30 @@
         document.querySelectorAll('#product-rows tr.product-row').forEach(function(row) {
           autofillPrice(row);
         });
+        autofillCustomerLocation();
       });
 
       // ── Select2: Location AJAX ───────────────────────────────────────────
+      // Opening the picker lists the selected customer's locations; typing
+      // searches all destinations, with the customer's matches grouped first.
       $('#co_location_search').select2({
         placeholder: 'Search by company or city…',
         allowClear: true,
         width: '100%',
-        minimumInputLength: 1,
+        minimumInputLength: 0,
         ajax: {
           url: '/locations/search',
           dataType: 'json',
           delay: 250,
-          data: function(params) { return { query: params.term }; },
-          processResults: function(data) {
-            return {
-              results: data.map(function(loc) {
-                return { id: loc.id, text: loc.city_with_company };
-              })
-            };
-          },
-          cache: true
+          data: function(params) { return { query: params.term, customer_id: selectedCustomerId() }; },
+          processResults: function(data) { return { results: data.results }; }
+        },
+        language: {
+          noResults: function() {
+            return selectedCustomerId()
+              ? 'No locations for this customer — type to search all locations'
+              : 'Type to search all locations';
+          }
         }
       });
 
@@ -265,6 +268,27 @@
       // ── Select2: Product selects ─────────────────────────────────────────
       initProductSelects();
     }
+
+  function selectedCustomerId() {
+    var el = document.querySelector('.co-customer-select');
+    return el ? el.value : '';
+  }
+
+  // If no destination is chosen yet and the customer has exactly one location, use it.
+  function autofillCustomerLocation() {
+    var customerId = selectedCustomerId();
+    if (!customerId || document.getElementById('co_location_id').value) return;
+
+    fetch('/locations/search?customer_id=' + encodeURIComponent(customerId), { headers: { 'Accept': 'application/json' } })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.customer_location_ids.length !== 1 || document.getElementById('co_location_id').value) return;
+        var loc = data.results[0].children[0];
+        $('#co_location_search').append(new Option(loc.text, loc.id, true, true)).trigger('change');
+        document.getElementById('co_location_id').value = loc.id;
+      })
+      .catch(function() {});
+  }
 
     // ── New Destination modal ──────────────────────────────────────────────
     var newLocBtn = document.getElementById('new-location-btn');
@@ -298,7 +322,8 @@
             'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
           },
           body: JSON.stringify({
-            location: { company_name: name, city: city, state: state, location_category_id: 2 }
+            location: { company_name: name, city: city, state: state, location_category_id: 2 },
+            customer_id: selectedCustomerId()
           })
         })
         .then(function(r) {

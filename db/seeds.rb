@@ -42,8 +42,8 @@ Announcement.destroy_all
 User.destroy_all
 
 puts "Seeding location categories..."
-origin_cat      = LocationCategory.create!(name: 'Origin')
-destination_cat = LocationCategory.create!(name: 'Destination')
+origin_cat      = LocationCategory.create!(id: 1, name: 'Origin')       # app expects 1 = origin
+destination_cat = LocationCategory.create!(id: 2, name: 'Destination')  # and 2 = destination
 
 # ---------------------------------------------------------------------------
 # PRODUCTS
@@ -320,6 +320,16 @@ dest_locations.each do |dl|
   next if dl[:customer].nil?
   CustomerLocation.create!(customer: dl[:customer], location: dl[:location])
 end
+
+# Customers can have several locations, and a location can be shared by
+# customers (the order form lists the customer's own locations first).
+stuckeys_yard = Location.create!(company_name: "Stuckey's Fleet Yard", address: '1210 E Forsyth St', city: 'Americus',
+                                 state: 'GA', zip: '31709', location_category: destination_cat)
+shared_island = Location.create!(company_name: 'Sumter County Fuel Island', address: '400 Industrial Blvd', city: 'Americus',
+                                 state: 'GA', zip: '31719', location_category: destination_cat)
+CustomerLocation.create!(customer: customers[0], location: stuckeys_yard)
+CustomerLocation.create!(customer: customers[0], location: shared_island)  # Stuckey's
+CustomerLocation.create!(customer: customers[6], location: shared_island)  # BP – Americus
 
 # Add location contacts
 LocationContact.create!(location_id: dest_locations[0][:location].id, name: 'Bobby Haynes',   phone: '(229) 924-3300', email: 'bhaynes@stuckeys.com')

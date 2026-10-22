@@ -35,6 +35,10 @@ class LocationsController < ApplicationController
     
       respond_to do |format|
         if @location.save
+          # Created from the order form: link it to the order's customer.
+          if (customer = Customer.find_by(id: params[:customer_id]))
+            CustomerLocation.find_or_create_by!(customer: customer, location: @location)
+          end
           format.html { redirect_to location_url(@location), notice: "Location was successfully created." }
           format.json { render json: { id: @location.id, city_with_company: @location.city_with_company }, status: :created }
         else
@@ -67,12 +71,35 @@ class LocationsController < ApplicationController
         end
     end
 
+    # Destination search for the order form's select2 picker.
+    # With customer_id, that customer's locations are listed first (and are the
+    # only results before anything is typed); other matches follow. Locations
+    # can be shared by several customers, hence the CustomerLocation join.
     def search
-      query = params[:query]
-      locations = Location.where(location_category_id: 2)
-                          .where("city ILIKE :query OR company_name ILIKE :query", query: "%#{query}%") # Search by city or company_name
-      render json: locations.map { |location| { id: location.id, city_with_company: location.city_with_company } }
-    end    
+      query    = params[:query].to_s.strip
+      customer = Customer.find_by(id: params[:customer_id]) if params[:customer_id].present?
+
+      scope = Location.where(location_category_id: 2)
+      if query.present?
+        scope = scope.where("city ILIKE :q OR company_name ILIKE :q", q: "%#{Location.sanitize_sql_like(query)}%")
+      end
+
+      own = customer ? scope.where(id: customer.locations.select(:id)).order(:company_name, :city).to_a : []
+      others = query.present? ? scope.where.not(id: own.map(&:id)).order(:company_name, :city).limit(25).to_a : []
+
+      option = ->(l) { { id: l.id, text: l.city_with_company } }
+      results =
+        if own.any? && others.any?
+          [{ text: "Locations for #{customer.name}", children: own.map(&option) },
+           { text: "All locations", children: others.map(&option) }]
+        elsif own.any?
+          [{ text: "Locations for #{customer.name}", children: own.map(&option) }]
+        else
+          others.map(&option)
+        end
+
+      render json: { results: results, customer_location_ids: own.map(&:id) }
+    end
 
     def map
       @locations = Location.includes(:location_category, :customer_orders)
