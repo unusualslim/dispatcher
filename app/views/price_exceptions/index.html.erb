@@ -1,0 +1,91 @@
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <h1 class="mb-0">Price Exceptions</h1>
+    <div class="text-muted small">
+      Imported PDI order lines whose price differs from the customer's locked quote price or pricing rule,
+      on orders not yet billed. Correct these in PDI — this page never changes PDI's prices.
+    </div>
+  </div>
+  <%= button_to recheck_price_exceptions_path(filter: @filter), method: :post, class: 'btn btn-outline-secondary btn-sm',
+        form: { class: 'd-inline' }, data: { confirm: 'Re-check prices on all open imported orders?' } do %>
+    <i class="bi bi-arrow-clockwise"></i> Re-check open orders
+  <% end %>
+</div>
+
+<ul class="nav nav-tabs mb-3">
+  <% { 'lock' => 'Locked price mismatches', 'rule' => 'Differs from rule', 'all' => 'All' }.each do |key, label| %>
+    <% count = key == 'all' ? @counts.values.sum : @counts[{ 'lock' => 'lock_mismatch', 'rule' => 'rule_mismatch' }[key]].to_i %>
+    <li class="nav-item">
+      <%= link_to price_exceptions_path(filter: key), class: "nav-link #{'active' if @filter == key}" do %>
+        <%= label %>
+        <span class="badge <%= key == 'lock' && count.positive? ? 'bg-danger' : 'bg-secondary' %> ms-1"><%= count %></span>
+      <% end %>
+    </li>
+  <% end %>
+</ul>
+
+<% if @lines.empty? %>
+  <div class="text-center text-muted py-5">
+    No exceptions. <% if @last_checked %>Last checked <%= time_ago_in_words(@last_checked) %> ago.<% else %>Orders haven't been checked yet — use "Re-check open orders".<% end %>
+  </div>
+<% else %>
+  <div class="card shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Order</th>
+            <th>Customer</th>
+            <th>Product</th>
+            <th class="text-end">PDI Price</th>
+            <th class="text-end">Expected</th>
+            <th class="text-end">Difference</th>
+            <th class="text-end">Qty</th>
+            <th>Expected from</th>
+            <th>Status</th>
+            <th>Delivery</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @lines.each do |line| %>
+            <% order = line.customer_order %>
+            <tr>
+              <td>
+                <%= link_to "##{order.id}", customer_order_path(order), class: 'fw-semibold text-decoration-none' %>
+                <% if order.external_order_no.present? %><div class="small text-muted">PDI <%= order.external_order_no %></div><% end %>
+              </td>
+              <td><%= order.customer&.name %></td>
+              <td><%= line.product&.name || line.product_name %></td>
+              <td class="text-end"><%= line.price ? number_to_currency(line.price, precision: 4) : '—' %></td>
+              <td class="text-end fw-semibold"><%= number_to_currency(line.expected_price, precision: 4) %></td>
+              <% variance = line.price_variance %>
+              <td class="text-end <%= variance&.negative? ? 'text-danger' : 'text-success' %>">
+                <%= variance ? "#{'+' unless variance.negative?}#{number_to_currency(variance, precision: 4)}" : '—' %>
+                <% if variance && line.quantity %>
+                  <div class="small text-muted"><%= number_to_currency(variance * line.quantity) %> total</div>
+                <% end %>
+              </td>
+              <td class="text-end"><%= number_with_delimiter(line.quantity) %></td>
+              <td class="small">
+                <% if line.quote_product %>
+                  <span class="badge bg-danger">Locked</span>
+                  <%= link_to line.quote_product.quote.quote_number, quote_path(line.quote_product.quote) %>
+                <% elsif line.pricing_rule %>
+                  <span class="badge bg-warning text-dark">Rule</span>
+                  <%= link_to line.pricing_rule.name, edit_pricing_rule_path(line.pricing_rule) %>
+                <% end %>
+              </td>
+              <td class="small text-muted"><%= order.order_status_before_type_cast %></td>
+              <td class="small"><%= order.required_delivery_date&.strftime('%b %-d') %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="mt-3"><%= will_paginate @lines %></div>
+  <div class="small text-muted mt-2">
+    A negative difference means PDI is charging less than expected. Differences under
+    <%= number_to_currency(PriceCheckService::TOLERANCE, precision: 3) %> are treated as a match.
+  </div>
+<% end %>

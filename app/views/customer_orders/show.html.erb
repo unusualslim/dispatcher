@@ -257,8 +257,9 @@
                       <div class="input-group input-group-sm">
                         <span class="input-group-text">$</span>
                         <%= f.number_field :price, value: cop.price,
-                              class: "form-control", step: 0.01 %>
+                              class: "form-control", step: 0.0001 %>
                       </div>
+                      <%= render 'price_check', line: cop %>
                     </td>
                     <td class="text-nowrap small"><%= number_to_currency((cop.quantity || 0) * (cop.price || 0.0)) %></td>
                     <td>
@@ -355,7 +356,7 @@
             <%= f.label :price, "Price / unit", class: "form-label fw-semibold" %>
             <div class="input-group">
               <span class="input-group-text">$</span>
-              <%= f.number_field :price, class: "form-control", step: 0.01, min: 0, placeholder: "0.00" %>
+              <%= f.number_field :price, class: "form-control", step: 0.0001, min: 0, placeholder: "0.00" %>
             </div>
           </div>
         </div>

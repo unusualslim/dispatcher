@@ -237,7 +237,7 @@
                 <td><%= line.product&.name || line.product_name %></td>
                 <td class="text-end"><%= line.quantity %></td>
                 <td class="text-end"><%= number_to_currency(line.price, precision: 4) %></td>
-                <td class="small text-muted"><%= line.customer_order.order_status %></td>
+                <td class="small text-muted"><%= line.customer_order.order_status_before_type_cast %></td>
               </tr>
             <% end %>
           </tbody>

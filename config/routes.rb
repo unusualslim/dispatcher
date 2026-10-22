@@ -169,6 +169,10 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :price_exceptions, only: [:index] do
+    post :recheck, on: :collection
+  end
+
   resources :pricing_rules do
     collection do
       get :lookup

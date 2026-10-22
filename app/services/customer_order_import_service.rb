@@ -171,6 +171,9 @@ class CustomerOrderImportService
         price:        item[:unit_price],
       )
     end
+
+    # Flag lines whose PDI price differs from the customer's locked or rule price.
+    PriceCheckService.check_order!(order)
   end
 
   def find_or_create_customer(name)

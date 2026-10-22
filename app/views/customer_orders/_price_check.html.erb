@@ -1,0 +1,17 @@
+<%# Price check result for an imported order line (see PriceCheckService). Locals: line %>
+<% if line.price_check == 'match' %>
+  <div class="small text-success mt-1" title="Matches the <%= line.quote_product ? 'locked quote' : 'pricing rule' %> price">
+    <i class="bi bi-check-circle"></i> <%= line.quote_product ? "Locked #{line.quote_product.quote.quote_number}" : 'Matches rule' %>
+  </div>
+<% elsif line.price_mismatch? %>
+  <% locked = line.price_check == 'lock_mismatch' %>
+  <div class="small mt-1 <%= locked ? 'text-danger' : 'text-warning-emphasis' %>">
+    <i class="bi bi-exclamation-triangle"></i>
+    <%= locked ? 'Locked' : 'Rule' %> price <%= number_to_currency(line.expected_price, precision: 4) %>
+    <% if locked %>
+      (<%= link_to line.quote_product.quote.quote_number, quote_path(line.quote_product.quote), class: 'text-danger' %>)
+    <% elsif line.pricing_rule %>
+      (<%= line.pricing_rule.name %>)
+    <% end %>
+  </div>
+<% end %>

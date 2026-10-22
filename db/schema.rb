@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_10_23_170000) do
+ActiveRecord::Schema[7.0].define(version: 2026_10_23_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -102,7 +102,11 @@ ActiveRecord::Schema[7.0].define(version: 2026_10_23_170000) do
     t.string "item_type", default: "buy", null: false
     t.bigint "quote_product_id"
     t.bigint "pricing_rule_id"
+    t.decimal "expected_price", precision: 12, scale: 4
+    t.string "price_check"
+    t.datetime "price_checked_at"
     t.index ["customer_order_id"], name: "index_customer_order_products_on_customer_order_id"
+    t.index ["price_check"], name: "index_customer_order_products_on_price_check"
     t.index ["pricing_rule_id"], name: "index_customer_order_products_on_pricing_rule_id"
     t.index ["product_id"], name: "index_customer_order_products_on_product_id"
     t.index ["quote_product_id"], name: "index_customer_order_products_on_quote_product_id"
