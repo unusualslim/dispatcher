@@ -10,6 +10,11 @@ if Rails.env.production?
 end
 
 puts "Clearing existing data..."
+QuoteProduct.destroy_all
+Quote.destroy_all
+PricingRuleProduct.destroy_all
+PricingRule.destroy_all
+StandardCostHistory.destroy_all
 Comment.destroy_all
 WorkOrder.destroy_all
 DispatchMessage.destroy_all
@@ -60,10 +65,10 @@ products = {
 # ---------------------------------------------------------------------------
 puts "Seeding vendors..."
 vendors = [
-  Vendor.create!(name: 'Mansfield Oil Company'),
-  Vendor.create!(name: 'Pilot Flying J Supply'),
-  Vendor.create!(name: 'Hunt Refining Co.'),
-  Vendor.create!(name: 'Gulf Oil Partners'),
+  Vendor.create!(id: 'V001', name: 'Mansfield Oil Company'),
+  Vendor.create!(id: 'V002', name: 'Pilot Flying J Supply'),
+  Vendor.create!(id: 'V003', name: 'Hunt Refining Co.'),
+  Vendor.create!(id: 'V004', name: 'Gulf Oil Partners'),
 ]
 
 # ---------------------------------------------------------------------------
@@ -342,53 +347,53 @@ all_dest_locations = dest_locations.map { |dl| dl[:location] }
 # Recent completed orders (past 30 days)
 completed_orders = [
   CustomerOrder.create!(location: dest_locations[0][:location], customer: customers[0],
-    required_delivery_date: today - 18, order_status: 'Complete',
+    required_delivery_date: today - 18, order_status: 'Billed',
     approximate_product_amount: 8000, notes: 'Delivered full load regular + ULS', card_color: 'green'),
   CustomerOrder.create!(location: dest_locations[1][:location], customer: customers[1],
-    required_delivery_date: today - 14, order_status: 'Complete',
+    required_delivery_date: today - 14, order_status: 'Billed',
     approximate_product_amount: 9000, notes: 'Split load – 5000 regular / 4000 plus', card_color: 'green'),
   CustomerOrder.create!(location: dest_locations[4][:location], customer: customers[4],
-    required_delivery_date: today - 10, order_status: 'Complete',
+    required_delivery_date: today - 10, order_status: 'Billed',
     approximate_product_amount: 7500, card_color: 'green'),
   CustomerOrder.create!(location: dest_locations[7][:location], customer: customers[7],
-    required_delivery_date: today - 7, order_status: 'Complete',
+    required_delivery_date: today - 7, order_status: 'Billed',
     approximate_product_amount: 12000, notes: "Love's full tanker – all ULS", card_color: 'green'),
   CustomerOrder.create!(location: dest_locations[2][:location], customer: customers[2],
-    required_delivery_date: today - 5, order_status: 'Complete',
+    required_delivery_date: today - 5, order_status: 'Billed',
     approximate_product_amount: 6000, card_color: 'green'),
   CustomerOrder.create!(location: dest_locations[5][:location], customer: customers[5],
-    required_delivery_date: today - 3, order_status: 'Complete',
+    required_delivery_date: today - 3, order_status: 'Billed',
     approximate_product_amount: 5500, card_color: 'green'),
 ]
 
 # Active / new orders
 active_orders = [
   CustomerOrder.create!(location: dest_locations[0][:location], customer: customers[0],
-    required_delivery_date: today + 1, order_status: 'New',
+    required_delivery_date: today + 1, order_status: 'Open Order',
     approximate_product_amount: 8500, notes: 'Low on regular – priority delivery', card_color: 'yellow'),
   CustomerOrder.create!(location: dest_locations[1][:location], customer: customers[1],
-    required_delivery_date: today + 1, order_status: 'New',
+    required_delivery_date: today + 1, order_status: 'Open Order',
     approximate_product_amount: 9000, card_color: 'yellow'),
   CustomerOrder.create!(location: dest_locations[3][:location], customer: customers[3],
-    required_delivery_date: today + 2, order_status: 'New',
+    required_delivery_date: today + 2, order_status: 'Open Order',
     approximate_product_amount: 7000, notes: 'Flash Foods – confirm gate code with Sandra before arrival', card_color: 'blue'),
   CustomerOrder.create!(location: dest_locations[4][:location], customer: customers[4],
-    required_delivery_date: today + 2, order_status: 'New',
+    required_delivery_date: today + 2, order_status: 'Open Order',
     approximate_product_amount: 9000, card_color: 'blue'),
   CustomerOrder.create!(location: dest_locations[6][:location], customer: customers[6],
-    required_delivery_date: today + 3, order_status: 'New',
+    required_delivery_date: today + 3, order_status: 'Open Order',
     approximate_product_amount: 5000, card_color: 'blue'),
   CustomerOrder.create!(location: dest_locations[7][:location], customer: customers[7],
-    required_delivery_date: today + 3, order_status: 'New',
+    required_delivery_date: today + 3, order_status: 'Open Order',
     approximate_product_amount: 14000, notes: "Large load – needs Trailer 201", card_color: 'blue'),
   CustomerOrder.create!(location: dest_locations[8][:location], customer: nil,
-    required_delivery_date: today + 4, order_status: 'New',
+    required_delivery_date: today + 4, order_status: 'Open Order',
     approximate_product_amount: 6500, card_color: 'white'),
   CustomerOrder.create!(location: dest_locations[9][:location], customer: nil,
-    required_delivery_date: today + 5, order_status: 'New',
+    required_delivery_date: today + 5, order_status: 'Open Order',
     approximate_product_amount: 7500, card_color: 'white'),
   CustomerOrder.create!(location: dest_locations[2][:location], customer: customers[2],
-    required_delivery_date: today + 4, order_status: 'On Hold',
+    required_delivery_date: today + 4, order_status: 'Pending',
     approximate_product_amount: 4500, notes: 'Customer requested delay – tank maintenance', card_color: 'red'),
 ]
 
@@ -773,6 +778,165 @@ Announcement.create!(
   published_at: today
 )
 
+# ---------------------------------------------------------------------------
+# PRICING — costs, BOMs, pricing rules, and price-locking quotes
+# Covers every pricing case: all three cost bases, back-/future-dated standard
+# costs, a BOM with a component missing its standard cost, a customer-specific
+# rule, and quotes in each lock state (active, being replaced, scheduled,
+# expired, sent, draft, rejected, legacy).
+# ---------------------------------------------------------------------------
+puts "Seeding pricing..."
+
+def std_cost(product, amount, effective_date, user)
+  product.standard_cost_histories.create!(amount: amount, effective_date: effective_date, created_by: user)
+end
+
+# Inventory (weighted average) cost and standard cost on the fuels.
+# Standard cost is set a month back, so it differs from inventory cost.
+{
+  regular: [2.412, 2.380], plus: [2.598, 2.560], super_fuel: [2.771, 2.740],
+  uls: [2.905, 2.860], dyed_uls: [2.845, 2.800], reg_e10: [2.398, 2.370], eth_regular: [2.405, 2.375],
+}.each do |key, (inventory_cost, standard)|
+  products[key].update!(cost_per_unit: inventory_cost, is_raw_material: false)
+  std_cost(products[key], standard, today - 30, admin)
+  products[key].update_column(:standard_cost, standard)
+end
+
+# ULS: an older back-dated entry (ignored — superseded) and a future increase
+# (ignored until its date). Current standard cost stays 2.860.
+std_cost(products[:uls], 2.700, today - 90, admin)
+std_cost(products[:uls], 3.050, today + 14, admin)
+
+# DEF raw materials. The label has NO standard cost on purpose, so the
+# 2.5 gal jug's BOM cost can't be calculated (shows the missing-component alert).
+raw = {
+  urea:  Product.create!(id: 'UREA001', name: 'Urea (prilled)',      unit_of_measurement: 'lb',  is_raw_material: true, cost_per_unit: 0.335, current_stock: 42_000, reorder_point: 15_000),
+  water: Product.create!(id: 'DIW001',  name: 'Deionized Water',     unit_of_measurement: 'gal', is_raw_material: true, cost_per_unit: 0.021, current_stock: 9_000,  reorder_point: 2_000),
+  jug:   Product.create!(id: 'JUG25',   name: 'Jug, 2.5 gal',        unit_of_measurement: 'ea',  is_raw_material: true, cost_per_unit: 0.880, current_stock: 1_200,  reorder_point: 400),
+  label: Product.create!(id: 'LBL25',   name: 'Label, DEF 2.5 gal',  unit_of_measurement: 'ea',  is_raw_material: true, cost_per_unit: 0.060, current_stock: 3_000,  reorder_point: 500),
+  tote:  Product.create!(id: 'TOTE275', name: 'IBC Tote, 275 gal',   unit_of_measurement: 'ea',  is_raw_material: true, cost_per_unit: 182.00, current_stock: 24, reorder_point: 10),
+}
+std_cost(raw[:urea],  0.320, today - 45, admin)
+std_cost(raw[:water], 0.020, today - 45, admin)
+std_cost(raw[:jug],   0.850, today - 45, admin)
+std_cost(raw[:tote],  175.00, today - 45, admin)
+raw.each_value { |p| p.update_column(:standard_cost, p.current_standard_cost) }
+
+# DEF is 32.5% urea: ~2.95 lb urea + ~0.73 gal DI water per gallon.
+def_bulk = products[:def_fluid]
+def_bulk.update!(cost_per_unit: 1.18, is_raw_material: false)
+ProductComponent.create!(product: def_bulk, component_product: raw[:urea],  quantity_per_unit: 2.95, uom: 'lb')
+ProductComponent.create!(product: def_bulk, component_product: raw[:water], quantity_per_unit: 0.73, uom: 'gal')
+std_cost(def_bulk, 1.00, today - 45, admin)
+def_bulk.update_column(:standard_cost, 1.00)
+
+def_jug = Product.create!(id: 'DEF25', name: 'DEF 2.5 Gal Jug', unit_of_measurement: 'ea', weight: 22.7,
+                          is_raw_material: false, cost_per_unit: 4.10)
+ProductComponent.create!(product: def_jug, component_product: def_bulk,    quantity_per_unit: 2.5, uom: 'gal')
+ProductComponent.create!(product: def_jug, component_product: raw[:jug],   quantity_per_unit: 1,   uom: 'ea')
+ProductComponent.create!(product: def_jug, component_product: raw[:label], quantity_per_unit: 1,   uom: 'ea')
+
+def_tote = Product.create!(id: 'DEF275', name: 'DEF 275 Gal Tote', unit_of_measurement: 'ea', weight: 2497,
+                           is_raw_material: false, cost_per_unit: 498.00)
+ProductComponent.create!(product: def_tote, component_product: def_bulk,   quantity_per_unit: 275, uom: 'gal')
+ProductComponent.create!(product: def_tote, component_product: raw[:tote], quantity_per_unit: 1,   uom: 'ea')
+
+def pricing_rule(name, basis, method, value, products, customer: nil, effective_date: nil, expiration_date: nil)
+  rule = PricingRule.create!(name: name, pricing_basis: basis, pricing_method: method, value: value,
+                             customer: customer, effective_date: effective_date, expiration_date: expiration_date)
+  rule.products << products
+  rule
+end
+
+fuels = products.values_at(:regular, :plus, :super_fuel, :uls, :dyed_uls, :reg_e10, :eth_regular)
+rules = {
+  fuel:      pricing_rule('Fuel – Rack + 8%',            'inventory_cost',      'markup', 8,  fuels),
+  def_bulk:  pricing_rule('DEF Bulk – Std Cost + 25%',   'standard_cost',       'markup', 25, [def_bulk]),
+  def_pack:  pricing_rule('DEF Packaged – BOM @ 30% GM', 'standard_calculated', 'margin', 30, [def_jug, def_tote]),
+  loves_dsl: pricing_rule("Love's Diesel – 5% GM",       'inventory_cost',      'margin', 5,
+                          products.values_at(:uls, :dyed_uls), customer: customers[7]),
+  summer:    pricing_rule('Summer Promo (expired)',       'inventory_cost',      'markup', 4,  [products[:regular]],
+                          effective_date: today - 120, expiration_date: today - 30),
+}
+
+# Quotes are created through the models so each line gets its pricing snapshot.
+def seed_quote(customer:, lines:, status: 'draft', valid_from: Date.today, valid_until: Date.today.end_of_month,
+               locks_pricing: true, notes: nil, accept_as: nil, sent_at: nil)
+  quote = Quote.create!(
+    customer: customer, location: customer.locations.first, locks_pricing: locks_pricing,
+    valid_from: valid_from, expiry_date: valid_until, notes: notes, sent_at: sent_at,
+    quote_products_attributes: lines.map { |product, qty, rule, price|
+      price ||= rule&.calculated_price(product)
+      { product_id: product.id, quantity: qty, price: price, pricing_rule_id: rule&.id }
+    }
+  )
+  quote.update!(status: 'sent', sent_at: sent_at || Time.current - 2.days) if %w[sent accepted rejected].include?(status)
+  quote.accept!(accept_as) if status == 'accepted'
+  quote.update!(status: 'rejected') if status == 'rejected'
+  quote
+end
+
+stuckeys, qt, murphy, flash, parkers, sunoco, bp, loves = customers
+
+# Stuckey's: older lock on diesel + DEF, being replaced by a newer quote in 5 days.
+stuckeys_old = seed_quote(customer: stuckeys, status: 'accepted', accept_as: admin,
+  valid_from: today - 20, valid_until: today + 40, notes: 'Q3 fleet diesel agreement',
+  lines: [[products[:uls], 8000, rules[:fuel]], [def_bulk, 1200, rules[:def_bulk]], [def_tote, 4, rules[:def_pack]]])
+seed_quote(customer: stuckeys, status: 'accepted', accept_as: admin,
+  valid_from: today + 5, valid_until: (today + 5).end_of_quarter, notes: 'Q4 diesel — renegotiated',
+  lines: [[products[:uls], 9000, rules[:fuel], 3.0950]])  # hand-negotiated below rule price → overridden
+
+# Quick Trip: active lock through month end on gasoline (one line overridden by hand).
+qt_quote = seed_quote(customer: qt, status: 'accepted', accept_as: admin,
+  valid_from: today.beginning_of_month, valid_until: today.end_of_month,
+  lines: [[products[:regular], 6000, rules[:fuel]], [products[:plus], 2500, rules[:fuel], 2.7500],
+          [products[:super_fuel], 1500, rules[:fuel]]])
+
+# Love's: lock built from their customer-specific diesel rule, 90 days.
+seed_quote(customer: loves, status: 'accepted', accept_as: admin,
+  valid_from: today - 10, valid_until: today + 79, notes: '90-day diesel price hold',
+  lines: [[products[:uls], 14000, rules[:loves_dsl]], [products[:dyed_uls], 4000, rules[:loves_dsl]]])
+
+# Murphy: accepted, but the lock starts next month (scheduled).
+seed_quote(customer: murphy, status: 'accepted', accept_as: admin,
+  valid_from: today.next_month.beginning_of_month, valid_until: today.next_month.end_of_month,
+  lines: [[products[:regular], 7500, rules[:fuel]], [products[:reg_e10], 3000, rules[:fuel]]])
+
+# Flash Foods: lock that expired last quarter.
+seed_quote(customer: flash, status: 'accepted', accept_as: admin,
+  valid_from: today.prev_quarter.beginning_of_quarter, valid_until: today.prev_quarter.end_of_quarter,
+  lines: [[products[:regular], 5000, rules[:fuel], 2.4900]])
+
+# Parker's: sent, awaiting the customer (includes DEF jugs — BOM can't price, so manual price).
+seed_quote(customer: parkers, status: 'sent', valid_until: today + 29,
+  lines: [[def_bulk, 600, rules[:def_bulk]], [def_jug, 120, nil, 9.95]])
+
+# Sunoco: draft in progress. BP: rejected.
+seed_quote(customer: sunoco, status: 'draft', lines: [[products[:regular], 4000, rules[:fuel]], [products[:eth_regular], 2000, rules[:fuel]]])
+seed_quote(customer: bp, status: 'rejected', valid_from: today - 15, valid_until: today + 15,
+  lines: [[products[:uls], 3000, rules[:fuel], 2.9000]])
+
+# Legacy quote from before price locking (product name only, never locks).
+legacy = Quote.create!(customer: qt, status: 'accepted', expiry_date: today - 60, notes: 'Created before price locking',
+                       quote_products_attributes: [{ product_name: 'Regular', quantity: 5000, price: 3.10 }])
+legacy.update_columns(created_at: today - 90)
+
+# Orders priced from a lock and from a rule, so the audit trail has something to show.
+stuckeys_uls = stuckeys_old.quote_products.find_by(product_id: products[:uls].id)
+locked_order = CustomerOrder.create!(customer: stuckeys, location: stuckeys.locations.first || dest_locations.first,
+                                     order_status: 'Open Order', required_delivery_date: today + 2,
+                                     notes: "Created from Quote #{stuckeys_old.quote_number}")
+CustomerOrderProduct.create!(customer_order: locked_order, product: products[:uls], quantity: 7500,
+                             price: stuckeys_uls.price, quote_product: stuckeys_uls)
+
+qt_regular = qt_quote.quote_products.find_by(product_id: products[:regular].id)
+qt_order = CustomerOrder.create!(customer: qt, location: qt.locations.first || dest_locations.first,
+                                 order_status: 'Open Order', required_delivery_date: today + 3)
+CustomerOrderProduct.create!(customer_order: qt_order, product: products[:regular], quantity: 6000,
+                             price: qt_regular.price, quote_product: qt_regular)
+CustomerOrderProduct.create!(customer_order: qt_order, product: products[:uls], quantity: 2000,
+                             price: rules[:fuel].calculated_price(products[:uls]), pricing_rule: rules[:fuel])
+
 puts ""
 puts "✓ Seed complete!"
 puts "  #{User.count} users (#{User.where(role: 'worker').count} drivers)"
@@ -784,5 +948,6 @@ puts "  #{CustomerOrder.count} customer orders"
 puts "  #{Dispatch.count} dispatches"
 puts "  #{ProductionOrder.count} production orders"
 puts "  #{WorkOrder.count} work orders"
+puts "  #{PricingRule.count} pricing rules, #{Quote.count} quotes (#{Quote.accepted_locks.count} price locks)"
 puts ""
 puts "  Admin login: admin@perrybrothersoil.com / password123"

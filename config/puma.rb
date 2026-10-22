@@ -26,9 +26,12 @@ environment ENV.fetch("RAILS_ENV") { "development" }
 pidfile ENV.fetch("PIDFILE") { "tmp/pids/server.pid" }
 
 # Workers do not work on Windows. Use single-mode (0 workers) on Windows.
+# Development also defaults to single mode: forked workers crash on macOS
+# (Objective-C fork safety) and add nothing locally.
 unless Gem.win_platform?
-  workers ENV.fetch("WEB_CONCURRENCY") { 2 }
-  preload_app!
+  development = ENV.fetch("RAILS_ENV", "development") == "development"
+  workers ENV.fetch("WEB_CONCURRENCY") { development ? 0 : 2 }
+  preload_app! unless development
 end
 
 # Allow puma to be restarted by `bin/rails restart` command.
