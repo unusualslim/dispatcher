@@ -22,15 +22,24 @@
   <td>
     <div class="input-group input-group-sm">
       <span class="input-group-text">$</span>
-      <input type="number" step="0.01" min="0"
+      <input type="number" step="0.0001" min="0"
              name="customer_order[customer_order_products_attributes][<%= index %>][price]"
-             class="form-control"
+             class="form-control product-price-input"
              placeholder="0.00"
              value="<%= cop.price %>">
     </div>
+    <% if cop.quote_product %>
+      <div class="pricing-rule-hint text-muted small mt-1">
+        Locked: <%= link_to cop.quote_product.quote.quote_number, quote_path(cop.quote_product.quote), target: '_blank' %>
+      </div>
+    <% elsif cop.pricing_rule %>
+      <div class="pricing-rule-hint text-muted small mt-1">From: <%= cop.pricing_rule.name %></div>
+    <% end %>
   </td>
   <td>
     <input type="hidden" name="customer_order[customer_order_products_attributes][<%= index %>][id]" value="<%= cop.id %>">
+    <input type="hidden" name="customer_order[customer_order_products_attributes][<%= index %>][quote_product_id]" value="<%= cop.quote_product_id %>" class="price-source-quote">
+    <input type="hidden" name="customer_order[customer_order_products_attributes][<%= index %>][pricing_rule_id]" value="<%= cop.pricing_rule_id %>" class="price-source-rule">
     <input type="hidden" name="customer_order[customer_order_products_attributes][<%= index %>][_destroy]" value="0" class="destroy-flag">
     <button type="button" class="btn btn-sm btn-outline-danger remove-product-row" title="Remove">
       &times;

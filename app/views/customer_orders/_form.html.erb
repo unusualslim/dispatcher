@@ -189,12 +189,14 @@
     <td>
       <div class="input-group input-group-sm">
         <span class="input-group-text">$</span>
-        <input type="number" step="0.01" min="0"
+        <input type="number" step="0.0001" min="0"
                name="customer_order[customer_order_products_attributes][__INDEX__][price]"
-               class="form-control" placeholder="0.00">
+               class="form-control product-price-input" placeholder="0.00">
       </div>
     </td>
     <td>
+      <input type="hidden" name="customer_order[customer_order_products_attributes][__INDEX__][quote_product_id]" class="price-source-quote">
+      <input type="hidden" name="customer_order[customer_order_products_attributes][__INDEX__][pricing_rule_id]" class="price-source-rule">
       <button type="button" class="btn btn-sm btn-outline-danger remove-product-row" title="Remove">
         &times;
       </button>
@@ -353,6 +355,10 @@
       if (e.target.classList.contains('product-qty-input')) {
         updateRowWeight(e.target.closest('tr'));
       }
+      // A hand-typed price no longer comes from a quote or rule.
+      if (e.target.classList.contains('product-price-input')) {
+        clearPriceSource(e.target.closest('tr'));
+      }
     });
 
     // ── Initialize weights for any existing rows ───────────────────────────
@@ -417,6 +423,13 @@
     var productId  = row.querySelector('.co-product-select').value;
     var customerId = document.querySelector('.co-customer-select') &&
                      document.querySelector('.co-customer-select').value;
+    var priceInput = row.querySelector('input[name*="[price]"]');
+
+    // A price filled in automatically belongs to the previous product — clear it
+    // so the new product gets priced. A price typed by hand is left alone.
+    if (priceInput && isAutoPriced(row)) priceInput.value = '';
+    clearPriceSource(row);
+
     if (!productId || !customerId) return;
 
     fetch('/pricing_rules/lookup?customer_id=' + encodeURIComponent(customerId) +
@@ -425,27 +438,47 @@
     })
     .then(function(r) { return r.json(); })
     .then(function(data) {
-      var oldAlert = row.querySelector('.pricing-rule-missing');
-      if (oldAlert) oldAlert.remove();
-
       if (data.missing_components && data.missing_components.length) {
         showMissingComponents(row, data);
         return;
       }
       if (data.price == null) return;
-      var priceInput = row.querySelector('input[name*="[price]"]');
       if (priceInput && priceInput.value === '') {
         priceInput.value = data.price.toFixed(4);
-        var hint = row.querySelector('.pricing-rule-hint');
-        if (!hint) {
-          hint = document.createElement('div');
-          hint.className = 'pricing-rule-hint text-muted small mt-1';
-          priceInput.closest('td').appendChild(hint);
+        var hint = document.createElement('div');
+        hint.className = 'pricing-rule-hint text-muted small mt-1';
+
+        if (data.source === 'quote') {
+          row.querySelector('.price-source-quote').value = data.quote_product_id;
+          hint.appendChild(document.createTextNode('Locked: '));
+          var link = document.createElement('a');
+          link.href = data.quote_url;
+          link.target = '_blank';
+          link.textContent = data.quote_number;
+          hint.appendChild(link);
+          if (data.locked_through) {
+            hint.appendChild(document.createTextNode(' until ' + data.locked_through));
+          }
+        } else {
+          row.querySelector('.price-source-rule').value = data.rule_id;
+          hint.textContent = 'From: ' + data.rule_name;
         }
-        hint.textContent = 'From: ' + data.rule_name;
+        priceInput.closest('td').appendChild(hint);
       }
     })
     .catch(function() {});
+  }
+
+  function isAutoPriced(row) {
+    return !!(row.querySelector('.price-source-quote').value ||
+              row.querySelector('.price-source-rule').value);
+  }
+
+  // Forget where the row's price came from (hint, alert, and hidden source ids).
+  function clearPriceSource(row) {
+    row.querySelector('.price-source-quote').value = '';
+    row.querySelector('.price-source-rule').value  = '';
+    row.querySelectorAll('.pricing-rule-hint, .pricing-rule-missing').forEach(function(el) { el.remove(); });
   }
 
   // Pricing rule matched but the BOM cost is incomplete — list the components

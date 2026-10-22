@@ -2,6 +2,8 @@ class PricingRule < ApplicationRecord
   belongs_to :customer, optional: true
   has_many :pricing_rule_products, dependent: :destroy
   has_many :products, through: :pricing_rule_products
+  has_many :quote_products,          dependent: :nullify
+  has_many :customer_order_products, dependent: :nullify
 
   BASES   = %w[standard_cost inventory_cost standard_calculated].freeze
   METHODS = %w[markup margin flat].freeze

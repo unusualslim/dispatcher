@@ -46,28 +46,59 @@ class PricingRulesController < ApplicationController
 
   # GET /pricing_rules/lookup?customer_id=X&product_id=Y
   # Returns the calculated price for use in the order form.
+  #   rule_id=Z  price from that specific rule instead of the best match
+  #   live=1     ignore locked quote prices (used when building a new quote)
   def lookup
     product  = Product.find_by(id: params[:product_id])
     customer = Customer.find_by(id: params[:customer_id])
 
-    result = PricingRuleService.lookup(customer, product)
+    result =
+      if params[:rule_id].present?
+        specific_rule_result(PricingRule.find_by(id: params[:rule_id]), product)
+      else
+        PricingRuleService.lookup(customer, product, include_locks: params[:live].blank?)
+      end
 
-    if result
-      render json: {
-        price:     result[:price]&.to_f&.round(4),
-        rule_name: result[:rule].name,
-        method:    result[:rule].pricing_method,
-        basis:     result[:rule].pricing_basis_label,
-        missing_components: result[:missing_components].map { |c|
-          { id: c.id, name: c.name, url: product_path(c) }
-        }
+    return render(json: { price: nil }) unless result
+
+    json = {
+      price: result[:price]&.to_f&.round(4),
+      missing_components: result[:missing_components].map { |c|
+        { id: c.id, name: c.name, url: product_path(c) }
       }
+    }
+
+    if (qp = result[:quote_product])
+      json.merge!(
+        source:           'quote',
+        quote_product_id: qp.id,
+        quote_number:     qp.quote.quote_number,
+        quote_url:        quote_path(qp.quote),
+        locked_through:   qp.locked_through&.strftime('%b %-d, %Y')
+      )
     else
-      render json: { price: nil }
+      rule = result[:rule]
+      json.merge!(
+        source:    'rule',
+        rule_id:   rule.id,
+        rule_name: rule.name,
+        method:    rule.pricing_method,
+        basis:     rule.pricing_basis_label
+      )
     end
+
+    render json: json
   end
 
   private
+
+  def specific_rule_result(rule, product)
+    return nil unless rule && product
+    price   = rule.calculated_price(product)
+    missing = rule.pricing_basis == 'standard_calculated' && price.nil? ? product.bom_components_missing_standard_cost : []
+    return nil if price.nil? && missing.empty?
+    { price: price, rule: rule, quote_product: nil, missing_components: missing }
+  end
 
   def set_rule
     @rule = PricingRule.find(params[:id])

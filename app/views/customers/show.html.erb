@@ -71,6 +71,45 @@
         <% end %>
       </div>
 
+      <!-- Locked Prices -->
+      <% locks = QuoteProduct.joins(:quote).merge(Quote.accepted_locks)
+                             .where(quotes: { customer_id: @customer.id })
+                             .where('quotes.expiry_date >= ?', Date.today)
+                             .includes(:product, :quote)
+                             .order('quotes.valid_from')
+                             .select { |qp| %i[active scheduled].include?(qp.lock_status) } %>
+      <div class="mt-5">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h4 class="mb-0">Locked Prices</h4>
+          <div class="d-flex gap-2">
+            <%= link_to 'All quotes', quotes_path(customer_id: @customer.id), class: 'btn btn-outline-secondary btn-sm' %>
+            <%= link_to 'New Quote', new_quote_path(customer_id: @customer.id), class: 'btn btn-primary btn-sm' %>
+          </div>
+        </div>
+        <% if locks.any? %>
+          <div class="card shadow-sm">
+            <table class="table table-sm align-middle mb-0">
+              <thead class="table-light">
+                <tr><th>Product</th><th class="text-end">Locked Price</th><th>Valid</th><th>Quote</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                <% locks.each do |qp| %>
+                  <tr>
+                    <td><%= qp.product&.name || qp.product_name %></td>
+                    <td class="text-end"><%= number_to_currency(qp.price, precision: 4) %></td>
+                    <td class="small"><%= qp.quote.valid_from.strftime('%b %-d') %> – <%= qp.locked_through.strftime('%b %-d, %Y') %></td>
+                    <td><%= link_to qp.quote.quote_number, quote_path(qp.quote) %></td>
+                    <td><%= lock_status_badge(qp.lock_status) %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% else %>
+          <p class="text-muted text-center">No locked prices. Orders are priced from the live pricing rules.</p>
+        <% end %>
+      </div>
+
       <!-- Orders Table -->
       <div class="mt-5">
         <h4 class="text-center mb-3">Associated Orders</h4>

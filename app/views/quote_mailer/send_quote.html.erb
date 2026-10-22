@@ -29,7 +29,9 @@
     <table>
       <tr><th>Quote #</th><td><%= @quote.quote_number %></td></tr>
       <tr><th>Date</th><td><%= @quote.created_at.strftime("%B %-d, %Y") %></td></tr>
-      <% if @quote.expiry_date %>
+      <% if @quote.valid_from && @quote.expiry_date %>
+        <tr><th>Prices Valid</th><td><%= @quote.valid_from.strftime("%B %-d, %Y") %> through <%= @quote.expiry_date.strftime("%B %-d, %Y") %></td></tr>
+      <% elsif @quote.expiry_date %>
         <tr><th>Valid Until</th><td><%= @quote.expiry_date.strftime("%B %-d, %Y") %></td></tr>
       <% end %>
       <% if @quote.location %>
@@ -50,8 +52,8 @@
         <% @quote.quote_products.each do |qp| %>
           <tr>
             <td><%= qp.product&.name || qp.product_name %></td>
-            <td style="text-align:right;"><%= qp.quantity&.to_i %></td>
-            <td style="text-align:right;"><%= number_to_currency(qp.price) %></td>
+            <td style="text-align:right;"><%= number_with_precision(qp.quantity, precision: 3, strip_insignificant_zeros: true) %></td>
+            <td style="text-align:right;"><%= number_to_currency(qp.price, precision: 4) %></td>
             <td style="text-align:right;"><%= number_to_currency(qp.line_total) %></td>
           </tr>
         <% end %>

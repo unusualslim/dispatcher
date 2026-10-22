@@ -1,6 +1,11 @@
 <div class="container-fluid px-4 py-3">
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="mb-0">Quotes</h4>
+    <div>
+      <h4 class="mb-0">Quotes</h4>
+      <% if params[:customer_id].present? && (filter_customer = Customer.find_by(id: params[:customer_id])) %>
+        <div class="small text-muted">For <%= filter_customer.name %> · <%= link_to 'show all', quotes_path %></div>
+      <% end %>
+    </div>
     <%= link_to new_quote_path, class: "btn btn-primary btn-sm" do %>
       <i class="bi bi-plus-lg"></i> New Quote
     <% end %>
@@ -16,7 +21,7 @@
             <th>Location</th>
             <th>Total</th>
             <th>Status</th>
-            <th>Expires</th>
+            <th>Prices Valid</th>
             <th>Sent</th>
             <th></th>
           </tr>
@@ -30,8 +35,11 @@
               <td><%= number_to_currency(quote.total) %></td>
               <td>
                 <span class="badge <%= status_badge_class(quote.status) %>"><%= quote.status.capitalize %></span>
+                <%= lock_status_badge(quote.lock_status) %>
               </td>
-              <td class="text-muted small"><%= quote.expiry_date&.strftime("%-m/%-d/%y") %></td>
+              <td class="text-muted small">
+                <%= quote.valid_from&.strftime("%-m/%-d/%y") %><%= ' – ' if quote.valid_from %><%= quote.expiry_date&.strftime("%-m/%-d/%y") %>
+              </td>
               <td class="text-muted small"><%= quote.sent_at&.strftime("%-m/%-d/%y") %></td>
               <td>
                 <%= link_to quote, class: "btn btn-outline-secondary btn-sm" do %>

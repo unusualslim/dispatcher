@@ -18,6 +18,13 @@ module ApplicationHelper
     CRON_PRESETS.key(expr) || expr
   end
 
+  # Badge for a quote / quote line price lock (:active, :scheduled, :expired, :superseded).
+  def lock_status_badge(status)
+    return if status.nil?
+    css = { active: 'bg-success', scheduled: 'bg-info text-dark', expired: 'bg-secondary', superseded: 'bg-warning text-dark' }[status]
+    content_tag(:span, "Price lock: #{status.to_s.capitalize}", class: "badge #{css}")
+  end
+
   def status_badge_class(status)
     case status.to_s
     when 'draft'    then 'bg-secondary'

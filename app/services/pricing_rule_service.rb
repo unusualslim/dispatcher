@@ -1,13 +1,28 @@
-# Resolves the best pricing rule for a customer + product on a given date,
-# then calculates the sell price.
+# Resolves the sell price for a customer + product on a given date.
 #
-# Priority: fewest products in the rule wins (most specific).
-# Among ties, most recent effective_date wins.
+# 1. A price locked by an accepted quote wins outright.
+# 2. Otherwise the best pricing rule: customer-specific beats global; within
+#    each group the fewest products wins (most specific), then the most
+#    recent effective_date.
 class PricingRuleService
-  # Returns { price: BigDecimal, rule: PricingRule, missing_components: [] },
-  # { price: nil, rule:, missing_components: [Product, ...] } when a BOM rule applies
-  # but components lack a standard cost, or nil if no rule applies.
-  def self.lookup(customer, product, date: Date.today)
+  # Returns one of:
+  #   { price:, quote_product: QuoteProduct, rule: nil, missing_components: [] }  — locked price
+  #   { price:, rule: PricingRule, quote_product: nil, missing_components: [] }   — rule price
+  #   { price: nil, rule:, quote_product: nil, missing_components: [Product, ...] } — BOM rule
+  #     applies but components lack a standard cost
+  #   nil — nothing applies
+  # Pass include_locks: false to get the live rule price (used when building quotes).
+  def self.lookup(customer, product, date: Date.today, include_locks: true)
+    return nil unless product
+
+    if include_locks && (lock = QuoteProduct.active_lock_for(customer, product, date: date))
+      return { price: lock.price, quote_product: lock, rule: nil, missing_components: [] }
+    end
+
+    rule_lookup(customer, product, date: date)
+  end
+
+  def self.rule_lookup(customer, product, date: Date.today)
     return nil unless product
 
     customer_id = customer.is_a?(Customer) ? customer.id : customer.to_i
@@ -40,10 +55,10 @@ class PricingRuleService
       return nil unless best.pricing_basis == 'standard_calculated'
       missing = product.bom_components_missing_standard_cost(date)
       return nil if missing.empty?
-      return { price: nil, rule: best, missing_components: missing }
+      return { price: nil, rule: best, quote_product: nil, missing_components: missing }
     end
 
-    { price: price, rule: best, missing_components: [] }
+    { price: price, rule: best, quote_product: nil, missing_components: [] }
   end
 
   private

@@ -127,7 +127,9 @@ end
     end
 
     def new
-        @customer_order = CustomerOrder.new
+        # ?from_quote=ID pre-fills the order from an accepted quote at its locked prices.
+        quote = Quote.accepted.find_by(id: params[:from_quote]) if params[:from_quote].present?
+        @customer_order = quote ? quote.build_order : CustomerOrder.new
     end
 
     def edit
@@ -235,6 +237,6 @@ end
     end
 
     def customer_order_params
-      params.require(:customer_order).permit(:required_delivery_date, :product, :freight_only, :customer_id, :location_id, :approximate_product_amount, :notes, :order_status, customer_order_products_attributes: [:id, :product_id, :quantity, :price, :_destroy], thing_ids: [])
+      params.require(:customer_order).permit(:required_delivery_date, :product, :freight_only, :customer_id, :location_id, :approximate_product_amount, :notes, :order_status, customer_order_products_attributes: [:id, :product_id, :quantity, :price, :quote_product_id, :pricing_rule_id, :_destroy], thing_ids: [])
     end
 end

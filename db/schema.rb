@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_10_16_200718) do
+ActiveRecord::Schema[7.0].define(version: 2026_10_22_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -99,8 +99,12 @@ ActiveRecord::Schema[7.0].define(version: 2026_10_16_200718) do
     t.string "product_id"
     t.string "warehouse"
     t.string "item_type", default: "buy", null: false
+    t.bigint "quote_product_id"
+    t.bigint "pricing_rule_id"
     t.index ["customer_order_id"], name: "index_customer_order_products_on_customer_order_id"
+    t.index ["pricing_rule_id"], name: "index_customer_order_products_on_pricing_rule_id"
     t.index ["product_id"], name: "index_customer_order_products_on_product_id"
+    t.index ["quote_product_id"], name: "index_customer_order_products_on_quote_product_id"
   end
 
   create_table "customer_orders", force: :cascade do |t|
@@ -466,6 +470,15 @@ ActiveRecord::Schema[7.0].define(version: 2026_10_16_200718) do
     t.decimal "price", precision: 12, scale: 4
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "pricing_rule_id"
+    t.string "pricing_basis"
+    t.string "pricing_method"
+    t.decimal "rule_value", precision: 12, scale: 4
+    t.decimal "basis_cost", precision: 12, scale: 4
+    t.boolean "price_overridden", default: false, null: false
+    t.date "superseded_on"
+    t.index ["pricing_rule_id"], name: "index_quote_products_on_pricing_rule_id"
+    t.index ["product_id"], name: "index_quote_products_on_product_id"
     t.index ["quote_id"], name: "index_quote_products_on_quote_id"
   end
 
@@ -480,6 +493,11 @@ ActiveRecord::Schema[7.0].define(version: 2026_10_16_200718) do
     t.bigint "customer_order_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.date "valid_from"
+    t.boolean "locks_pricing", default: false, null: false
+    t.datetime "accepted_at"
+    t.bigint "accepted_by_id"
+    t.index ["accepted_by_id"], name: "index_quotes_on_accepted_by_id"
     t.index ["customer_id"], name: "index_quotes_on_customer_id"
     t.index ["customer_order_id"], name: "index_quotes_on_customer_order_id"
     t.index ["location_id"], name: "index_quotes_on_location_id"
@@ -597,7 +615,9 @@ ActiveRecord::Schema[7.0].define(version: 2026_10_16_200718) do
   add_foreign_key "customer_locations", "customers"
   add_foreign_key "customer_locations", "locations"
   add_foreign_key "customer_order_products", "customer_orders"
+  add_foreign_key "customer_order_products", "pricing_rules", on_delete: :nullify
   add_foreign_key "customer_order_products", "products"
+  add_foreign_key "customer_order_products", "quote_products", on_delete: :nullify
   add_foreign_key "customer_orders", "customers"
   add_foreign_key "customer_orders", "locations", on_delete: :cascade
   add_foreign_key "dispatch_customer_orders", "customer_orders", on_delete: :cascade
@@ -628,11 +648,13 @@ ActiveRecord::Schema[7.0].define(version: 2026_10_16_200718) do
   add_foreign_key "production_orders", "products"
   add_foreign_key "purchase_order_line_items", "purchase_orders"
   add_foreign_key "purchase_orders", "vendors"
+  add_foreign_key "quote_products", "pricing_rules", on_delete: :nullify
   add_foreign_key "quote_products", "products"
   add_foreign_key "quote_products", "quotes"
   add_foreign_key "quotes", "customer_orders"
   add_foreign_key "quotes", "customers"
   add_foreign_key "quotes", "locations"
+  add_foreign_key "quotes", "users", column: "accepted_by_id"
   add_foreign_key "things", "dispatches"
   add_foreign_key "user_favorites", "users"
   add_foreign_key "work_orders", "vendors"

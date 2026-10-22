@@ -47,7 +47,13 @@ Released for Dispatch, Dispatched, Released for Picking, Picking in Progress, Sh
 Released for Billing, Billed, Delivered, Accepted/Rejected by Site, Expired, Expired Quote,
 Cancelled as Order/Quote, Quarantine). "Open" work = `CustomerOrder::ACTIVE_STATUSES`.
 Orders mostly arrive via the PDI order sync.
-**Quotes** = separate Quote model with send/accept/reject.
+**Quotes** = price agreements (draft → sent → accepted/rejected). Lines are priced from pricing
+rules and store a snapshot (rule, basis, basis_cost, method, value, price_overridden). An accepted
+quote with `locks_pricing` locks its prices for that customer from `valid_from` through `expiry_date`;
+`PricingRuleService.lookup` checks `QuoteProduct.active_lock_for` before the rules. Accepting a newer
+quote sets `superseded_on` on the customer's older lines for the same products (lock ends the day
+before). Quotes created before Oct 2026 have `locks_pricing: false` and never lock. "Create Order"
+opens the new-order form via `?from_quote=ID`. Order lines record `quote_product_id` / `pricing_rule_id`.
 **ProductionOrder** = STATUSES: pending / in_progress / completed
 **WorkOrders / Jobs** = shop work orders with comments; Jobs + JobWorkers are line-worker clock-in/out (`/line`)
 **User roles**: admin, worker (drivers), line_worker

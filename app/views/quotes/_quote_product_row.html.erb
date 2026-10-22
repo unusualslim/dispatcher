@@ -1,19 +1,35 @@
-<tr>
-  <%= pf.hidden_field :id %>
-  <%= pf.hidden_field :_destroy, class: 'destroy-field' %>
+<% qp = pf.object %>
+<%# Legacy lines stored only a product name — match it to a product so the select shows it. %>
+<% selected_id = qp.product_id.presence || (qp.product_name.present? && products.find { |p| p.name == qp.product_name }&.id) %>
+<% rule_price = qp.rule_price if qp.pricing_rule && qp.product %>
+<tr class="quote-line" data-auto="<%= qp.pricing_rule_id && !qp.price_overridden? ? 1 : 0 %>"
+    data-rule-price="<%= rule_price&.round(4) %>" data-rule-name="<%= qp.pricing_rule&.name %>">
   <td>
-    <%= pf.select :product_name,
-          Product.finished_goods.order(:name).map { |p| [p.name, p.name] },
-          { include_blank: '— Select product —', selected: pf.object.product_name },
+    <%= pf.hidden_field :id if qp.persisted? %>
+    <%= pf.hidden_field :_destroy, class: 'destroy-field' %>
+    <%= pf.hidden_field :pricing_rule_id, class: 'rule-field' %>
+    <%= pf.select :product_id,
+          products.map { |p| [p.name, p.id] },
+          { include_blank: '— Select product —', selected: selected_id },
           class: 'form-select form-select-sm product-select' %>
   </td>
   <td><%= pf.number_field :quantity, class: 'form-control form-control-sm qty-field', step: 'any', placeholder: '0' %></td>
   <td>
     <div class="input-group input-group-sm">
       <span class="input-group-text">$</span>
-      <%= pf.number_field :price, class: 'form-control price-field', step: '0.0001', placeholder: '0.00' %>
+      <%= pf.number_field :price, class: 'form-control price-field', step: '0.0001', min: 0, placeholder: '0.0000' %>
+    </div>
+    <div class="line-source small text-muted mt-1">
+      <% if qp.pricing_rule %>
+        From: <%= qp.pricing_rule.name %>
+        <% if qp.price_overridden? && rule_price %>
+          <span class="text-warning-emphasis">· overridden (rule price <%= number_to_currency(rule_price, precision: 4) %>)</span>
+        <% end %>
+      <% elsif qp.price.present? %>
+        Manual price
+      <% end %>
     </div>
   </td>
-  <td class="text-muted small row-total"><%= number_to_currency(pf.object.line_total) %></td>
-  <td><a href="#" class="remove-product-row text-danger"><i class="bi bi-x-lg"></i></a></td>
+  <td class="text-muted small row-total"><%= number_to_currency(qp.line_total) %></td>
+  <td><a href="#" class="remove-product-row text-danger" title="Remove"><i class="bi bi-x-lg"></i></a></td>
 </tr>
