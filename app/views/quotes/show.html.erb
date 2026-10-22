@@ -32,6 +32,11 @@
           <i class="bi bi-cart-plus"></i> Create Order
         <% end %>
       <% end %>
+      <% if @quote.locks_pricing? && @quote.accepted? %>
+        <%= link_to margin_review_quote_path(@quote), class: "btn btn-outline-primary btn-sm" do %>
+          <i class="bi bi-graph-down-arrow"></i> Margin Review
+        <% end %>
+      <% end %>
       <% if @quote.lock_endable? %>
         <button type="button" class="btn btn-outline-dark btn-sm" data-bs-toggle="modal" data-bs-target="#endLockModal">
           <i class="bi bi-unlock"></i> <%= @quote.lock_ended_on ? 'Change Lock End' : 'End Lock Early' %>

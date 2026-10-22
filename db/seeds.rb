@@ -931,6 +931,19 @@ legacy = Quote.create!(customer: qt, status: 'accepted', expiry_date: today - 60
                        quote_products_attributes: [{ product_name: 'Regular', quantity: 5000, price: 3.10 }])
 legacy.update_columns(created_at: today - 90)
 
+# Costs moved after the quotes were locked — this is what the Quote Margin
+# Review compares. Lines count as priced on their quote's start date.
+QuoteProduct.joins(:quote).merge(Quote.accepted_locks).find_each do |qp|
+  qp.update_column(:priced_at, [qp.quote.valid_from, today].min.to_time)
+end
+std_cost(def_bulk, 1.12, today - 3, admin)        # DEF bulk standard cost +12%
+def_bulk.update_column(:standard_cost, 1.12)
+std_cost(raw[:urea], 0.36, today - 6, admin)      # urea +12.5% → flows into DEF tote BOM cost
+raw[:urea].update_column(:standard_cost, 0.36)
+products[:uls].update!(cost_per_unit: 3.020)      # inventory cost changes are recorded in history
+products[:dyed_uls].update!(cost_per_unit: 2.955)
+products[:regular].update!(cost_per_unit: 2.431)
+
 # Orders priced from a lock and from a rule, so the audit trail has something to show.
 stuckeys_uls = stuckeys_old.quote_products.find_by(product_id: products[:uls].id)
 locked_order = CustomerOrder.create!(customer: stuckeys, location: stuckeys.locations.first || dest_locations.first,

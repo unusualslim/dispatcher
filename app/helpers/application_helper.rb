@@ -25,6 +25,19 @@ module ApplicationHelper
     content_tag(:span, "Price lock: #{status.to_s.capitalize}", class: "badge #{css}")
   end
 
+  # Quote margin review status (see QuoteMarginReview::Line#status).
+  def margin_status_badge(status)
+    label, css = { reprice: ['Re-price', 'bg-danger'], watch: ['Watch', 'bg-warning text-dark'],
+                   ok: ['OK', 'bg-success'], unknown: ['No cost', 'bg-secondary'] }[status]
+    content_tag(:span, label, class: "badge #{css}")
+  end
+
+  # Signed currency, e.g. "+$0.1200" / "-$0.0500".
+  def signed_currency(amount, precision: 4)
+    return '—' if amount.nil?
+    "#{amount.negative? ? '-' : '+'}#{number_to_currency(amount.abs, precision: precision)}"
+  end
+
   def status_badge_class(status)
     case status.to_s
     when 'draft'    then 'bg-secondary'

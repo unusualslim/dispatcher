@@ -1,0 +1,115 @@
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <h1 class="mb-0">Quote Margin Review</h1>
+    <div class="text-muted small">
+      Locked quote prices are fixed; costs and pricing rules move. This compares every active and scheduled
+      price lock with today's cost. <strong>Internal only</strong> — shows costs and margins.
+    </div>
+    <% if @customer %>
+      <div class="small mt-1">For <strong><%= @customer.name %></strong> · <%= link_to 'show all customers', quote_margin_review_path(status: params[:status]) %></div>
+    <% end %>
+  </div>
+</div>
+
+<ul class="nav nav-tabs mb-3">
+  <% [[nil, 'All'], ['reprice', 'Re-price'], ['watch', 'Watch'], ['ok', 'OK'], ['unknown', 'No cost']].each do |key, label| %>
+    <% count = key ? @counts[key.to_sym].to_i : @counts.values.sum %>
+    <li class="nav-item">
+      <%= link_to quote_margin_review_path(status: key, customer_id: params[:customer_id]), class: "nav-link #{'active' if @filter == key}" do %>
+        <%= label %>
+        <span class="badge <%= key == 'reprice' && count.positive? ? 'bg-danger' : 'bg-secondary' %> ms-1"><%= count %></span>
+      <% end %>
+    </li>
+  <% end %>
+</ul>
+
+<% if @lines.empty? %>
+  <div class="text-center text-muted py-5">No locked quote lines<%= ' with this status' if @filter %>.</div>
+<% else %>
+  <div class="card shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle mb-0" style="font-size:.88rem;">
+        <thead class="table-light">
+          <tr>
+            <th>Status</th>
+            <th>Customer / Quote</th>
+            <th>Product</th>
+            <th class="text-end">Locked Price</th>
+            <th class="text-end">Cost Then → Now</th>
+            <th class="text-end">Margin Then → Now</th>
+            <th class="text-end" title="The rule's target margin, or the margin quoted if it was set below target">Margin Floor</th>
+            <th class="text-end">Rule Price Today</th>
+            <th class="text-end">Margin Lost</th>
+            <th>Locked Through</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @lines.each do |l| %>
+            <% quote = l.quote %>
+            <tr>
+              <td><%= margin_status_badge(l.status) %></td>
+              <td>
+                <%= link_to quote.customer.name, quote_margin_review_path(customer_id: quote.customer_id, status: params[:status]), class: 'text-decoration-none' %>
+                <div class="small">
+                  <%= link_to quote.quote_number, quote_path(quote) %> ·
+                  <%= link_to 'justification', margin_review_quote_path(quote) %>
+                </div>
+              </td>
+              <td>
+                <%= l.product.name %>
+                <div class="small text-muted"><%= QuoteMarginReview::BASIS_LABELS[l.basis] %></div>
+              </td>
+              <td class="text-end fw-semibold"><%= number_to_currency(l.price, precision: 4) %></td>
+              <td class="text-end">
+                <%= l.cost_then ? number_to_currency(l.cost_then, precision: 4) : '—' %> →
+                <%= l.cost_now ? number_to_currency(l.cost_now, precision: 4) : '—' %>
+                <% if l.cost_change %>
+                  <div class="small <%= l.cost_change.positive? ? 'text-danger' : 'text-success' %>">
+                    <%= signed_currency(l.cost_change) %><%= format(' (%+.1f%%)', l.cost_change_pct) if l.cost_change_pct %>
+                  </div>
+                <% end %>
+              </td>
+              <td class="text-end">
+                <%= l.margin_pct_then ? number_to_percentage(l.margin_pct_then, precision: 1) : '—' %> →
+                <span class="<%= 'text-danger fw-semibold' if l.status == :reprice %>">
+                  <%= l.margin_pct_now ? number_to_percentage(l.margin_pct_now, precision: 1) : '—' %>
+                </span>
+                <div class="small text-muted"><%= l.margin_now ? "#{number_to_currency(l.margin_now, precision: 4)}/unit" : '' %></div>
+              </td>
+              <td class="text-end small">
+                <%= l.margin_floor_pct ? number_to_percentage(l.margin_floor_pct, precision: 1) : '—' %>
+                <% if l.quoted_below_target? %>
+                  <div class="text-muted">quoted below <%= number_to_percentage(l.target_margin_pct, precision: 1) %> target</div>
+                <% end %>
+              </td>
+              <td class="text-end">
+                <%= l.rule_price_now ? number_to_currency(l.rule_price_now, precision: 4) : '—' %>
+                <% if l.price_gap && l.price_gap.abs >= BigDecimal('0.0001') %>
+                  <div class="small <%= l.price_gap.positive? ? 'text-danger' : 'text-success' %>"><%= signed_currency(l.price_gap) %> vs locked</div>
+                <% end %>
+              </td>
+              <td class="text-end">
+                <% if l.margin_erosion_total && l.margin_erosion.positive? %>
+                  <span class="text-danger"><%= number_to_currency(l.margin_erosion_total) %></span>
+                  <div class="small text-muted">on <%= number_with_delimiter(l.quantity.to_i) %> quoted</div>
+                <% else %>
+                  —
+                <% end %>
+              </td>
+              <td class="small">
+                <%= l.quote_product.locked_through&.strftime('%b %-d, %Y') %>
+                <% if l.quote_product.lock_status == :scheduled %><div class="text-info-emphasis">starts <%= quote.valid_from.strftime('%b %-d') %></div><% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="small text-muted mt-2">
+    <strong>Re-price</strong>: today's margin is below the floor — the pricing rule's target margin, or the margin
+    actually quoted if the price was negotiated below target — or negative.
+    <strong>Watch</strong>: cost has risen but margin is still at or above the floor.
+    Margin lost uses the quantity on the quote. Open a quote's <em>justification</em> for the cost changes behind it and to re-quote at today's prices.
+  </div>
+<% end %>

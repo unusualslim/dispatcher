@@ -62,6 +62,7 @@ class QuoteProduct < ApplicationRecord
   # still editable, so the snapshot reflects costs at the time it was quoted.
   def snapshot_pricing
     self.product_name = product.name if product
+    self.priced_at = Time.current
     if pricing_rule && product
       self.pricing_basis    = pricing_rule.pricing_basis
       self.pricing_method   = pricing_rule.pricing_method

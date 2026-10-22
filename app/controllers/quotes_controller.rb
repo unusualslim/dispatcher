@@ -1,6 +1,6 @@
 class QuotesController < ApplicationController
   before_action :require_admin!
-  before_action :set_quote, only: [:show, :edit, :update, :destroy, :send_quote, :accept, :reject, :end_lock]
+  before_action :set_quote, only: [:show, :edit, :update, :destroy, :send_quote, :accept, :reject, :end_lock, :margin_review, :requote]
   before_action :require_editable, only: [:edit, :update]
 
   def index
@@ -89,6 +89,18 @@ class QuotesController < ApplicationController
     redirect_to @quote, notice: msg
   rescue ActiveRecord::RecordInvalid => e
     redirect_to @quote, alert: "Couldn't end the lock: #{e.record.errors.full_messages.to_sentence}"
+  end
+
+  # Internal justification: locked prices vs today's costs, with the cost
+  # changes behind any margin erosion. Shows costs — never send to customers.
+  def margin_review
+    @lines = QuoteMarginReview.for_quote(@quote)
+  end
+
+  def requote
+    new_quote = @quote.create_requote!(QuoteMarginReview.for_quote(@quote))
+    redirect_to edit_quote_path(new_quote),
+                notice: "Draft #{new_quote.quote_number} created at today's prices. Review, send, and accept it to replace #{@quote.quote_number}."
   end
 
   def reject

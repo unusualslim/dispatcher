@@ -1,0 +1,128 @@
+<div class="container-fluid px-4 py-3" style="max-width: 1100px;">
+  <div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+      <div class="small text-uppercase text-danger fw-semibold">Internal — contains costs. Do not send to customers.</div>
+      <h4 class="mb-0">Price Justification: <%= @quote.quote_number %></h4>
+      <div class="text-muted">
+        <%= @quote.customer.name %> ·
+        locked <%= @quote.valid_from&.strftime('%b %-d, %Y') %> – <%= @quote.lock_last_day&.strftime('%b %-d, %Y') %>
+        <%= lock_status_badge(@quote.lock_status) %>
+      </div>
+      <div class="small text-muted">Prepared <%= Date.today.strftime('%B %-d, %Y') %></div>
+    </div>
+    <div class="d-flex gap-2 d-print-none">
+      <%= link_to quote_path(@quote), class: 'btn btn-outline-secondary btn-sm' do %><i class="bi bi-arrow-left"></i> Quote<% end %>
+      <% if @quote.lock_endable? %>
+        <%= button_to requote_quote_path(@quote), method: :post, class: 'btn btn-primary btn-sm', form: { class: 'd-inline' },
+              data: { confirm: "Create a draft quote for #{@quote.customer.name} at today's prices? #{@quote.quote_number} stays locked until the new quote is accepted." } do %>
+          <i class="bi bi-arrow-repeat"></i> Re-quote at Current Prices
+        <% end %>
+      <% end %>
+      <button onclick="window.print()" class="btn btn-outline-secondary btn-sm"><i class="bi bi-printer"></i></button>
+    </div>
+  </div>
+
+  <% if @lines.empty? %>
+    <div class="alert alert-light border">This quote has no product lines to review.</div>
+  <% else %>
+    <% erosion = @lines.sum { |l| l.margin_erosion_total.to_d } %>
+    <% reprice = @lines.count { |l| l.status == :reprice } %>
+    <div class="row g-3 mb-4">
+      <div class="col-md-4">
+        <div class="card h-100"><div class="card-body">
+          <div class="text-muted small">Lines below target margin</div>
+          <div class="fs-4 fw-semibold <%= 'text-danger' if reprice.positive? %>"><%= reprice %> of <%= @lines.size %></div>
+        </div></div>
+      </div>
+      <div class="col-md-4">
+        <div class="card h-100"><div class="card-body">
+          <div class="text-muted small">Margin lost on quoted volume</div>
+          <div class="fs-4 fw-semibold <%= erosion.positive? ? 'text-danger' : 'text-success' %>"><%= signed_currency(-erosion, precision: 2) %></div>
+        </div></div>
+      </div>
+      <div class="col-md-4">
+        <div class="card h-100"><div class="card-body">
+          <div class="text-muted small">Revenue at today's rule prices (quoted volume)</div>
+          <% repriced = @lines.sum { |l| ((l.rule_price_now || l.price).to_d) * l.quantity.to_d } %>
+          <div class="fs-4 fw-semibold"><%= number_to_currency(repriced) %></div>
+          <div class="small text-muted">vs <%= number_to_currency(@quote.total) %> locked</div>
+        </div></div>
+      </div>
+    </div>
+
+    <% @lines.each do |l| %>
+      <div class="card shadow-sm mb-3" style="break-inside: avoid;">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <div>
+            <span class="fw-semibold"><%= l.product.name %></span>
+            <span class="text-muted small ms-2"><%= QuoteMarginReview::BASIS_LABELS[l.basis] %> basis<%= " · #{l.quote_product.pricing_rule.name}" if l.quote_product.pricing_rule %></span>
+          </div>
+          <%= margin_status_badge(l.status) %>
+        </div>
+        <div class="card-body">
+          <table class="table table-sm mb-3" style="font-size:.88rem;">
+            <thead class="table-light">
+              <tr><th></th><th class="text-end">When quoted (<%= l.since.strftime('%b %-d') %>)</th><th class="text-end">Today</th><th class="text-end">Change</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Cost</td>
+                <td class="text-end"><%= l.cost_then ? number_to_currency(l.cost_then, precision: 4) : '—' %></td>
+                <td class="text-end"><%= l.cost_now ? number_to_currency(l.cost_now, precision: 4) : '—' %></td>
+                <td class="text-end <%= l.cost_change&.positive? ? 'text-danger' : 'text-success' %>">
+                  <%= signed_currency(l.cost_change) %><%= format(' (%+.1f%%)', l.cost_change_pct) if l.cost_change_pct %>
+                </td>
+              </tr>
+              <tr>
+                <td>Price</td>
+                <td class="text-end"><%= number_to_currency(l.price, precision: 4) %> <span class="small text-muted">locked</span></td>
+                <td class="text-end"><%= l.rule_price_now ? number_to_currency(l.rule_price_now, precision: 4) : '—' %> <span class="small text-muted">rule</span></td>
+                <td class="text-end <%= l.price_gap&.positive? ? 'text-danger' : '' %>"><%= signed_currency(l.price_gap) %></td>
+              </tr>
+              <tr>
+                <td>Margin at locked price</td>
+                <td class="text-end"><%= l.margin_then ? "#{number_to_currency(l.margin_then, precision: 4)} (#{number_to_percentage(l.margin_pct_then, precision: 1)})" : '—' %></td>
+                <td class="text-end <%= 'text-danger fw-semibold' if l.status == :reprice %>"><%= l.margin_now ? "#{number_to_currency(l.margin_now, precision: 4)} (#{number_to_percentage(l.margin_pct_now, precision: 1)})" : '—' %></td>
+                <td class="text-end">
+                  <% if l.margin_floor_pct %>
+                    floor <%= number_to_percentage(l.margin_floor_pct, precision: 1) %>
+                    <% if l.quoted_below_target? %><span class="text-muted small">(quoted below <%= number_to_percentage(l.target_margin_pct, precision: 1) %> target)</span><% end %>
+                  <% end %>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="fw-semibold small mb-1">What changed</div>
+          <% if l.drivers.empty? %>
+            <div class="small text-muted"><%= l.cost_change&.nonzero? ? 'No dated cost changes recorded.' : 'No cost change since this was quoted.' %></div>
+          <% else %>
+            <table class="table table-sm table-borderless mb-0 small">
+              <tbody>
+                <% l.drivers.each do |d| %>
+                  <tr>
+                    <td style="width:110px;" class="text-muted"><%= d.date&.strftime('%b %-d, %Y') %></td>
+                    <td><%= d.label %></td>
+                    <td class="text-end text-muted">
+                      <% if d.from && d.to %><%= number_to_currency(d.from, precision: 4) %> → <%= number_to_currency(d.to, precision: 4) %><% end %>
+                    </td>
+                    <td class="text-end fw-semibold <%= d.impact.to_d.positive? ? 'text-danger' : 'text-success' %>" style="width:140px;">
+                      <%= signed_currency(d.impact) %> /unit
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  <% end %>
+</div>
+
+<style>
+  @media print {
+    #sidebar, .sidebar, nav, .sidebar-overlay, .d-print-none, .topbar { display: none !important; }
+    .main-content, .main-wrapper { margin-left: 0 !important; }
+  }
+</style>

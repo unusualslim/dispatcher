@@ -12,6 +12,7 @@ class Product < ApplicationRecord
   has_many :production_order_components
   has_many :inventory_transactions
   has_many :standard_cost_histories, -> { order(effective_date: :desc, created_at: :desc) }, dependent: :destroy
+  has_many :inventory_cost_histories, -> { order(created_at: :desc) }, dependent: :destroy
   has_many :purchase_order_line_items, foreign_key: :product_id, primary_key: :id
   has_many :purchase_orders, through: :purchase_order_line_items
 
@@ -22,6 +23,8 @@ class Product < ApplicationRecord
 
   validates :name, presence: true
   validates :id, presence: true
+
+  after_save :record_inventory_cost_change, if: :saved_change_to_cost_per_unit?
 
   scope :raw_materials,       -> { where(is_raw_material: true) }
   scope :finished_goods,      -> { where(is_raw_material: false) }
@@ -115,5 +118,12 @@ class Product < ApplicationRecord
     else
       :ok
     end
+  end
+
+  private
+
+  def record_inventory_cost_change
+    previous, current = saved_change_to_cost_per_unit
+    inventory_cost_histories.create!(amount: current, previous_amount: previous)
   end
 end

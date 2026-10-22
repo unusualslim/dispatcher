@@ -58,6 +58,11 @@ An accepted lock can be ended early (`Quote#end_lock!` → `lock_ended_on`; `exp
 **Price check**: PDI-imported order lines keep PDI's price (PDI bills). `PriceCheckService` runs on
 import and stores `expected_price` (lock on the order date, else rule) + `price_check`
 (match / lock_mismatch / rule_mismatch / no_price); mismatches on unbilled orders list at /price_exceptions.
+**Quote Margin Review** (`QuoteMarginReview`, /quote_margin_review, /quotes/:id/margin_review): locked
+price vs today's cost on the line's basis since `quote_products.priced_at`; Re-price when margin falls
+below the floor (rule target, or the quoted margin if negotiated below target). Drivers come from
+StandardCostHistory, `InventoryCostHistory` (recorded on every `cost_per_unit` change), and BOM
+component history. "Re-quote" (`Quote#create_requote!`) drafts a quote at today's rule prices.
 **ProductionOrder** = STATUSES: pending / in_progress / completed
 **WorkOrders / Jobs** = shop work orders with comments; Jobs + JobWorkers are line-worker clock-in/out (`/line`)
 **User roles**: admin, worker (drivers), line_worker

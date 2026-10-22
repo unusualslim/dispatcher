@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_10_23_180000) do
+ActiveRecord::Schema[7.0].define(version: 2026_10_23_190000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -200,6 +200,15 @@ ActiveRecord::Schema[7.0].define(version: 2026_10_23_180000) do
     t.bigint "thing_id", null: false
     t.index ["dispatch_id"], name: "index_dispatches_things_on_dispatch_id"
     t.index ["thing_id"], name: "index_dispatches_things_on_thing_id"
+  end
+
+  create_table "inventory_cost_histories", force: :cascade do |t|
+    t.string "product_id", null: false
+    t.decimal "amount", precision: 12, scale: 4
+    t.decimal "previous_amount", precision: 12, scale: 4
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_id", "created_at"], name: "index_inventory_cost_histories_on_product_id_and_created_at"
   end
 
   create_table "inventory_transactions", force: :cascade do |t|
@@ -482,6 +491,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_10_23_180000) do
     t.decimal "basis_cost", precision: 12, scale: 4
     t.boolean "price_overridden", default: false, null: false
     t.date "superseded_on"
+    t.datetime "priced_at"
     t.index ["pricing_rule_id"], name: "index_quote_products_on_pricing_rule_id"
     t.index ["product_id"], name: "index_quote_products_on_product_id"
     t.index ["quote_id"], name: "index_quote_products_on_quote_id"

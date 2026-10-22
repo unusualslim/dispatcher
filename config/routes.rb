@@ -83,6 +83,8 @@ Rails.application.routes.draw do
       post :accept
       post :reject
       patch :end_lock
+      get  :margin_review
+      post :requote
     end
   end
 
@@ -169,6 +171,7 @@ Rails.application.routes.draw do
     end
   end
 
+  get 'quote_margin_review', to: 'quote_margin_reviews#index', as: :quote_margin_review
   resources :price_exceptions, only: [:index] do
     post :recheck, on: :collection
   end

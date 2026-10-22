@@ -102,6 +102,28 @@ class Quote < ApplicationRecord
     end
   end
 
+  # A draft replacement quote for the same customer and products at today's rule
+  # prices, for the same length of validity starting today. Lines with no
+  # applicable rule keep their current price. Accepting it replaces this lock.
+  def create_requote!(review_lines)
+    days = valid_from && expiry_date ? (expiry_date - valid_from).to_i : 29
+    changes = review_lines.select(&:cost_change).map do |l|
+      pct = l.cost_change_pct ? format(' (%+.1f%%)', l.cost_change_pct) : ''
+      "#{l.product.name}: cost #{format('%+.4f', l.cost_change)}#{pct} since #{l.since.strftime('%b %-d')}"
+    end
+
+    Quote.create!(
+      customer: customer, location: location, locks_pricing: true,
+      valid_from: Date.today, expiry_date: Date.today + days,
+      notes: (["Re-quote of #{quote_number}.", *changes].join("\n")),
+      quote_products_attributes: quote_products.select(&:product).map { |qp|
+        result = PricingRuleService.rule_lookup(customer_id, qp.product)
+        { product_id: qp.product_id, quantity: qp.quantity,
+          price: result&.dig(:price) || qp.price, pricing_rule_id: (result[:rule]&.id if result&.dig(:price)) }
+      }
+    )
+  end
+
   # Build an unsaved order at this quote's prices, linked back to the quote lines.
   # Used to pre-fill the new order form; the user sets quantities and saves.
   def build_order
