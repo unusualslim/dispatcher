@@ -229,69 +229,9 @@
 
       <% saved_components = @product.product_components.select(&:persisted?) %>
       <% if saved_components.any? %>
-        <% missing_cost = @product.bom_components_missing_standard_cost %>
         <div class="mb-4">
           <div class="fw-semibold mb-2">Standard Cost Rollup</div>
-          <table class="table table-sm table-bordered mb-1" style="font-size:.85rem;">
-            <thead class="table-light">
-              <tr>
-                <th>Component</th>
-                <th class="text-end">Qty / Unit</th>
-                <th>UOM</th>
-                <th class="text-end">Standard Cost</th>
-                <th class="text-end">Extended (Qty × Cost)</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% partial_total = 0.to_d %>
-              <% saved_components.each do |pc| %>
-                <% component = pc.component_product %>
-                <% cost = component&.current_standard_cost %>
-                <% extended = cost.to_d * pc.quantity_per_unit.to_d if cost %>
-                <% partial_total += extended if extended %>
-                <tr class="<%= 'table-warning' if cost.nil? %>">
-                  <td>
-                    <% if component %>
-                      <%= link_to component.name, product_path(component) %>
-                    <% else %>
-                      <span class="text-muted"><%= pc.component_product_id %></span>
-                    <% end %>
-                  </td>
-                  <td class="text-end"><%= number_with_precision(pc.quantity_per_unit, precision: 4, strip_insignificant_zeros: true) %></td>
-                  <td class="text-muted"><%= pc.uom.presence || '—' %></td>
-                  <td class="text-end">
-                    <% if cost %>
-                      <%= number_to_currency(cost, precision: 4) %>
-                    <% else %>
-                      <span class="text-warning-emphasis"><i class="bi bi-exclamation-triangle me-1"></i>Missing</span>
-                    <% end %>
-                  </td>
-                  <td class="text-end"><%= extended ? number_to_currency(extended, precision: 4) : '—' %></td>
-                </tr>
-              <% end %>
-            </tbody>
-            <tfoot>
-              <tr class="fw-semibold">
-                <td colspan="4" class="text-end">BOM Standard Cost</td>
-                <td class="text-end">
-                  <% if missing_cost.empty? %>
-                    <%= number_to_currency(@product.bom_standard_cost, precision: 4) %>
-                  <% else %>
-                    <span class="text-muted"><%= number_to_currency(partial_total, precision: 4) %></span>
-                  <% end %>
-                </td>
-              </tr>
-            </tfoot>
-          </table>
-          <% if missing_cost.any? %>
-            <div class="small text-warning-emphasis">
-              <i class="bi bi-exclamation-triangle me-1"></i>
-              Incomplete: <%= missing_cost.size %> component(s) have no standard cost, so pricing rules using
-              Standard Calculated (BOM) won't price this product. The total shown is a partial sum.
-            </div>
-          <% else %>
-            <div class="small text-muted">This is the cost used by pricing rules with the Standard Calculated (BOM) basis.</div>
-          <% end %>
+          <%= render 'bom_cost_rollup', components: saved_components %>
         </div>
       <% end %>
 

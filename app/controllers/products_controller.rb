@@ -101,7 +101,7 @@ class ProductsController < ApplicationController
 
       bom_map = ProductComponent
         .where(product_id: product_ids)
-        .includes(:component_product)
+        .includes(component_product: :standard_cost_histories)
         .group_by(&:product_id)
 
       @products.each do |p|

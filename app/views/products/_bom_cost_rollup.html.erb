@@ -1,0 +1,57 @@
+<%# BOM standard cost rollup — same math as Product#bom_standard_cost.
+    Locals: components (saved ProductComponent records) %>
+<% total = 0.to_d %>
+<% missing = [] %>
+<table class="table table-sm table-bordered mb-1" style="font-size:.82rem;">
+  <thead class="table-light">
+    <tr>
+      <th>Component</th>
+      <th class="text-end">Qty / Unit</th>
+      <th>UOM</th>
+      <th class="text-end">Standard Cost</th>
+      <th class="text-end">Extended (Qty × Cost)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% components.each do |pc| %>
+      <% component = pc.component_product %>
+      <% cost = component&.current_standard_cost %>
+      <% extended = cost.to_d * pc.quantity_per_unit.to_d if cost %>
+      <% if extended then total += extended else missing << pc end %>
+      <tr class="<%= 'table-warning' if cost.nil? %>">
+        <td>
+          <% if component %>
+            <%= link_to component.name, product_path(component), data: { turbo_frame: '_top' } %>
+          <% else %>
+            <span class="text-muted"><%= pc.component_product_id %></span>
+          <% end %>
+        </td>
+        <td class="text-end"><%= number_with_precision(pc.quantity_per_unit, precision: 4, strip_insignificant_zeros: true) %></td>
+        <td class="text-muted"><%= pc.uom.presence || '—' %></td>
+        <td class="text-end">
+          <% if cost %>
+            <%= number_to_currency(cost, precision: 4) %>
+          <% else %>
+            <span class="text-warning-emphasis"><i class="bi bi-exclamation-triangle me-1"></i>Missing</span>
+          <% end %>
+        </td>
+        <td class="text-end"><%= extended ? number_to_currency(extended, precision: 4) : '—' %></td>
+      </tr>
+    <% end %>
+  </tbody>
+  <tfoot>
+    <tr class="fw-semibold">
+      <td colspan="4" class="text-end">BOM Standard Cost</td>
+      <td class="text-end <%= 'text-muted' if missing.any? %>"><%= number_to_currency(total, precision: 4) %></td>
+    </tr>
+  </tfoot>
+</table>
+<% if missing.any? %>
+  <div class="small text-warning-emphasis">
+    <i class="bi bi-exclamation-triangle me-1"></i>
+    Incomplete: <%= pluralize(missing.size, 'component') %> missing a standard cost, so pricing rules using
+    Standard Calculated (BOM) won't price this product. The total shown is a partial sum.
+  </div>
+<% else %>
+  <div class="small text-muted">This is the cost used by pricing rules with the Standard Calculated (BOM) basis.</div>
+<% end %>

@@ -171,20 +171,7 @@
                     <div class="col-md-6">
                       <div class="fw-semibold mb-2"><i class="bi bi-diagram-3 me-1"></i>Bill of Materials</div>
                       <% if bom_lines.any? %>
-                        <table class="table table-sm mb-0" style="font-size:.82rem;">
-                          <thead class="table-light">
-                            <tr><th>Component</th><th>Qty / Unit</th><th>UOM</th></tr>
-                          </thead>
-                          <tbody>
-                            <% bom_lines.each do |line| %>
-                              <tr>
-                                <td><%= line.component_product&.name || line.component_product_id %></td>
-                                <td><%= number_with_precision(line.quantity_per_unit, precision: 4, strip_insignificant_zeros: true) %></td>
-                                <td class="text-muted"><%= line.uom.presence || '—' %></td>
-                              </tr>
-                            <% end %>
-                          </tbody>
-                        </table>
+                        <%= render 'bom_cost_rollup', components: bom_lines %>
                       <% else %>
                         <span class="text-muted fst-italic">No BOM defined</span>
                       <% end %>
