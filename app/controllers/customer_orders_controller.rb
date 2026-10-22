@@ -150,19 +150,19 @@ end
     end
 
     def create
-      @location = Location.find(customer_order_params[:location_id])
-    
-      # Check if the location is disabled
-      if @location.disabled?
+      @customer_order = CustomerOrder.new(customer_order_params)
+
+      # A missing location is caught by the model's belongs_to validation below;
+      # re-render (not redirect) so the user keeps what they entered.
+      if @customer_order.location&.disabled?
+        @customer_order.errors.add(:location, "is currently disabled and cannot be used")
         respond_to do |format|
-          format.html { redirect_to new_customer_order_path, alert: "The selected location is currently disabled and cannot be used." }
-          format.json { render json: { error: "The selected location is currently disabled and cannot be used." }, status: :unprocessable_entity }
+          format.html { render :new, status: :unprocessable_entity }
+          format.json { render json: @customer_order.errors, status: :unprocessable_entity }
         end
         return
       end
-    
-      @customer_order = CustomerOrder.new(customer_order_params)
-    
+
       respond_to do |format|
         if @customer_order.save
           format.html { redirect_to customer_order_url(@customer_order), notice: "Order was successfully created." }
@@ -177,14 +177,14 @@ end
     def update
       @customer_order = CustomerOrder.find(params[:id])
     
-      if @customer_order.update(customer_order_params)
-        respond_to do |format|
+      respond_to do |format|
+        if @customer_order.update(customer_order_params)
           format.html { redirect_to @customer_order, notice: 'Customer Order was successfully updated.' }
           format.json { render :show, status: :ok, location: @customer_order }
+        else
+          format.html { render :edit, status: :unprocessable_entity }
+          format.json { render json: @customer_order.errors, status: :unprocessable_entity }
         end
-      else
-        format.html { render :edit, status: :unprocessable_entity }
-        format.json { render json: @customer_order.errors, status: :unprocessable_entity }
       end
     end
 

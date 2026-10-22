@@ -73,7 +73,7 @@ class Quote < ApplicationRecord
   def build_order
     order = CustomerOrder.new(
       customer:     customer,
-      location:     location,
+      location:     location || customer.locations.first,
       order_status: :open_order,
       notes:        "Created from Quote #{quote_number}"
     )
