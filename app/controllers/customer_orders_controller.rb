@@ -129,6 +129,7 @@ end
     def new
         # ?from_quote=ID pre-fills the order from an accepted quote at its locked prices.
         quote = Quote.accepted.find_by(id: params[:from_quote]) if params[:from_quote].present?
+        quote = nil unless quote&.orderable?
         @customer_order = quote ? quote.build_order : CustomerOrder.new
     end
 

@@ -82,6 +82,7 @@ Rails.application.routes.draw do
       post :send_quote
       post :accept
       post :reject
+      patch :end_lock
     end
   end
 

@@ -18,10 +18,10 @@ module ApplicationHelper
     CRON_PRESETS.key(expr) || expr
   end
 
-  # Badge for a quote / quote line price lock (:active, :scheduled, :expired, :superseded).
+  # Badge for a quote / quote line price lock (:active, :scheduled, :expired, :superseded, :ended).
   def lock_status_badge(status)
     return if status.nil?
-    css = { active: 'bg-success', scheduled: 'bg-info text-dark', expired: 'bg-secondary', superseded: 'bg-warning text-dark' }[status]
+    css = { active: 'bg-success', scheduled: 'bg-info text-dark', expired: 'bg-secondary', superseded: 'bg-warning text-dark', ended: 'bg-dark' }[status]
     content_tag(:span, "Price lock: #{status.to_s.capitalize}", class: "badge #{css}")
   end
 

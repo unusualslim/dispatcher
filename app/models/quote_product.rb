@@ -10,11 +10,13 @@ class QuoteProduct < ApplicationRecord
   before_save :snapshot_pricing, unless: -> { quote&.accepted? }
 
   # Lines whose price is locked for the customer on the given date.
-  # A superseded line stops locking the day before its replacement starts.
+  # A superseded line stops locking the day before its replacement starts;
+  # a quote whose lock was ended early stops on lock_ended_on.
   scope :locking_on, ->(date) {
     joins(:quote)
       .merge(Quote.accepted_locks)
       .where('quotes.valid_from <= ? AND quotes.expiry_date >= ?', date, date)
+      .where('quotes.lock_ended_on IS NULL OR quotes.lock_ended_on > ?', date)
       .where('quote_products.superseded_on IS NULL OR quote_products.superseded_on > ?', date)
   }
 
@@ -35,12 +37,14 @@ class QuoteProduct < ApplicationRecord
 
   # Last day this line's price is locked (nil if it doesn't lock).
   def locked_through
-    return nil unless quote.locks_pricing? && quote.expiry_date
-    superseded_on ? [quote.expiry_date, superseded_on - 1].min : quote.expiry_date
+    last = quote.lock_last_day
+    return nil unless last
+    superseded_on ? [last, superseded_on - 1].min : last
   end
 
   def lock_status(date = Date.today)
     return nil unless quote.locks_pricing? && quote.accepted?
+    return :ended      if quote.lock_ended_on && quote.lock_ended_on <= date
     return :superseded if superseded_on && superseded_on <= date
     return :scheduled  if quote.valid_from > date
     return :expired    if quote.expiry_date < date

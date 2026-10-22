@@ -27,10 +27,15 @@
           <i class="bi bi-x-lg"></i> Reject
         <% end %>
       <% end %>
-      <% if @quote.accepted? %>
+      <% if @quote.orderable? %>
         <%= link_to new_customer_order_path(from_quote: @quote.id), class: "btn btn-success btn-sm" do %>
           <i class="bi bi-cart-plus"></i> Create Order
         <% end %>
+      <% end %>
+      <% if @quote.lock_endable? %>
+        <button type="button" class="btn btn-outline-dark btn-sm" data-bs-toggle="modal" data-bs-target="#endLockModal">
+          <i class="bi bi-unlock"></i> <%= @quote.lock_ended_on ? 'Change Lock End' : 'End Lock Early' %>
+        </button>
       <% end %>
       <button onclick="window.print()" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-printer"></i>
@@ -104,6 +109,21 @@
     </div>
   </div>
 
+  <% if @quote.lock_ended_on %>
+    <% ended = @quote.lock_ended_on <= Date.today %>
+    <div class="alert <%= ended ? 'alert-dark' : 'alert-warning' %> small d-print-none">
+      <i class="bi bi-unlock me-1"></i>
+      <strong><%= ended ? 'Price lock ended early' : 'Price lock ends early' %></strong>
+      on <%= @quote.lock_ended_on.strftime('%B %-d, %Y') %>
+      (the quote was valid through <%= @quote.expiry_date.strftime('%B %-d, %Y') %>).
+      <%= ended ? 'Orders for this customer use' : 'From that day, orders for this customer use' %> the live pricing rules.
+      <div class="text-muted mt-1">
+        Ended by <% by = @quote.lock_ended_by %><%= by ? ([by.first_name, by.last_name].compact.join(' ').presence || by.email) : 'unknown' %>
+        on <%= @quote.lock_ended_at&.strftime('%b %-d, %Y') %><% if @quote.lock_end_reason.present? %> — <%= @quote.lock_end_reason %><% end %>
+      </div>
+    </div>
+  <% end %>
+
   <% if !@quote.locks_pricing? %>
     <div class="alert alert-light border small d-print-none">
       This quote doesn't lock prices<%= ' (created before price locking existed)' if @quote.valid_from.nil? %>.
@@ -162,8 +182,10 @@
                   <% status = qp.lock_status %>
                   <% if status == :active %>
                     <span class="text-success">Active through <%= qp.locked_through.strftime('%b %-d, %Y') %></span>
-                    <% if qp.superseded_on %>
+                    <% if qp.superseded_on && (@quote.lock_ended_on.nil? || qp.superseded_on < @quote.lock_ended_on) %>
                       <div class="text-warning-emphasis">Newer quote takes over <%= qp.superseded_on.strftime('%b %-d, %Y') %></div>
+                    <% elsif @quote.lock_ended_on %>
+                      <div class="text-warning-emphasis">Lock ends early</div>
                     <% end %>
                   <% elsif status == :scheduled %>
                     <span class="text-info-emphasis">Starts <%= @quote.valid_from.strftime('%b %-d') %></span>
@@ -171,6 +193,8 @@
                     <span class="text-warning-emphasis">Replaced from <%= qp.superseded_on.strftime('%b %-d, %Y') %></span>
                   <% elsif status == :expired %>
                     <span class="text-muted">Expired</span>
+                  <% elsif status == :ended %>
+                    <span class="text-muted">Ended <%= @quote.lock_ended_on.strftime('%b %-d, %Y') %></span>
                   <% end %>
                 </td>
               <% end %>
@@ -224,6 +248,42 @@
 
   <%= link_to "← All Quotes", quotes_path, class: "text-muted small d-print-none" %>
 </div>
+
+<% if @quote.lock_endable? %>
+  <div class="modal fade d-print-none" id="endLockModal" tabindex="-1" aria-labelledby="endLockModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <%= form_with url: end_lock_quote_path(@quote), method: :patch, local: true, class: 'modal-content' do %>
+        <div class="modal-header">
+          <h5 class="modal-title" id="endLockModalLabel">End price lock early</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="small text-muted">
+            From the date below, new orders for <strong><%= @quote.customer.name %></strong> are priced from the live
+            pricing rules instead of this quote. Orders already priced keep their prices. The quote itself still shows
+            the dates it was quoted for.
+          </p>
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="lock_ended_on">End lock on</label>
+            <input type="date" class="form-control" id="lock_ended_on" name="lock_ended_on" required
+                   value="<%= (@quote.lock_ended_on || Date.today).iso8601 %>"
+                   min="<%= Date.today.iso8601 %>" max="<%= @quote.expiry_date.iso8601 %>">
+            <div class="form-text">The first day orders use the live rules. Choose today to end it now.</div>
+          </div>
+          <div>
+            <label class="form-label fw-semibold" for="lock_end_reason">Reason</label>
+            <textarea class="form-control" id="lock_end_reason" name="lock_end_reason" rows="2"
+                      placeholder="e.g. Customer agreed to re-price after supplier increase"><%= @quote.lock_end_reason %></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-dark">End Lock</button>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>
 
 <style>
   @media print {

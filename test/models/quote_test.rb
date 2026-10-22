@@ -141,4 +141,61 @@ class QuoteTest < ActiveSupport::TestCase
     assert_equal BigDecimal("4.75"), line.price
     assert_equal quote.quote_products.first, line.quote_product
   end
+
+  test "ending a lock early returns the customer to rule pricing from that date" do
+    quote = make_quote(price: 4.75, valid_from: Date.today, expiry_date: Date.today + 30)
+    quote.accept!(@user)
+    quote.end_lock!(@user, on: Date.today + 10, reason: 'Supplier increase')
+
+    assert_equal BigDecimal("4.75"), lookup_price(date: Date.today + 9)
+    assert_equal BigDecimal("5.50"), lookup_price(date: Date.today + 10)
+    assert_equal Date.today + 9, quote.quote_products.first.locked_through
+    assert_equal Date.today + 30, quote.reload.expiry_date, 'quoted validity is kept'
+    assert_equal :active, quote.lock_status
+    assert_equal :ended, quote.lock_status(Date.today + 10)
+    assert_equal @user, quote.lock_ended_by
+    assert_equal 'Supplier increase', quote.lock_end_reason
+  end
+
+  test "ending a lock today stops it immediately" do
+    quote = make_quote(price: 4.75)
+    quote.accept!(@user)
+    quote.end_lock!(@user, on: Date.today)
+
+    assert_equal BigDecimal("5.50"), lookup_price
+    assert_equal :ended, quote.lock_status
+    assert_not quote.lock_endable?
+    assert_not quote.orderable?
+  end
+
+  test "ending a scheduled lock before it starts means it never applies" do
+    quote = make_quote(price: 4.75, valid_from: Date.today + 5, expiry_date: Date.today + 30)
+    quote.accept!(@user)
+    quote.end_lock!(@user, on: Date.today)
+
+    assert_equal BigDecimal("5.50"), lookup_price(date: Date.today + 6)
+  end
+
+  test "a lock can't be ended in the past, after expiry, or when not locked" do
+    quote = make_quote(price: 4.75, expiry_date: Date.today + 10)
+    assert_raises(ArgumentError) { quote.end_lock!(@user) }  # not accepted yet
+
+    quote.accept!(@user)
+    error = assert_raises(ActiveRecord::RecordInvalid) { quote.end_lock!(@user, on: Date.today - 1) }
+    assert_match(/past/, error.message)
+    error = assert_raises(ActiveRecord::RecordInvalid) { quote.end_lock!(@user, on: Date.today + 11) }
+    assert_match(/expires/, error.message)
+    error = assert_raises(ActiveRecord::RecordInvalid) { quote.end_lock!(@user, on: nil) }
+    assert_match(/required/, error.message)
+    assert_nil quote.reload.lock_ended_on
+  end
+
+  test "a newer quote doesn't supersede a lock that already ended" do
+    old_quote = make_quote(price: 4.75, expiry_date: Date.today + 30)
+    old_quote.accept!(@user)
+    old_quote.end_lock!(@user, on: Date.today + 3)
+
+    make_quote(price: 5.10, valid_from: Date.today + 5).accept!(@user)
+    assert_nil old_quote.quote_products.first.reload.superseded_on
+  end
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_10_23_160000) do
+ActiveRecord::Schema[7.0].define(version: 2026_10_23_170000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -498,10 +498,15 @@ ActiveRecord::Schema[7.0].define(version: 2026_10_23_160000) do
     t.boolean "locks_pricing", default: false, null: false
     t.datetime "accepted_at"
     t.bigint "accepted_by_id"
+    t.date "lock_ended_on"
+    t.datetime "lock_ended_at"
+    t.text "lock_end_reason"
+    t.bigint "lock_ended_by_id"
     t.index ["accepted_by_id"], name: "index_quotes_on_accepted_by_id"
     t.index ["customer_id"], name: "index_quotes_on_customer_id"
     t.index ["customer_order_id"], name: "index_quotes_on_customer_order_id"
     t.index ["location_id"], name: "index_quotes_on_location_id"
+    t.index ["lock_ended_by_id"], name: "index_quotes_on_lock_ended_by_id"
     t.index ["quote_number"], name: "index_quotes_on_quote_number", unique: true
   end
 
@@ -657,6 +662,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_10_23_160000) do
   add_foreign_key "quotes", "customers"
   add_foreign_key "quotes", "locations"
   add_foreign_key "quotes", "users", column: "accepted_by_id"
+  add_foreign_key "quotes", "users", column: "lock_ended_by_id"
   add_foreign_key "things", "dispatches"
   add_foreign_key "user_favorites", "users"
   add_foreign_key "work_orders", "vendors"

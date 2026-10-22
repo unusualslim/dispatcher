@@ -1,6 +1,6 @@
 class QuotesController < ApplicationController
   before_action :require_admin!
-  before_action :set_quote, only: [:show, :edit, :update, :destroy, :send_quote, :accept, :reject]
+  before_action :set_quote, only: [:show, :edit, :update, :destroy, :send_quote, :accept, :reject, :end_lock]
   before_action :require_editable, only: [:edit, :update]
 
   def index
@@ -74,6 +74,21 @@ class QuotesController < ApplicationController
                "Quote accepted."
              end
     redirect_to @quote, notice: notice
+  end
+
+  # End an accepted quote's price lock early (today or a later date).
+  def end_lock
+    unless @quote.lock_endable?
+      return redirect_to @quote, alert: "This quote's prices aren't currently locked."
+    end
+
+    on = Date.parse(params[:lock_ended_on].to_s) rescue nil
+    @quote.end_lock!(current_user, on: on, reason: params[:lock_end_reason])
+    msg = on == Date.today ? "Price lock ended. Orders for #{@quote.customer.name} now use the live pricing rules." :
+                             "Price lock will end #{on.strftime('%b %-d, %Y')}; orders from that day use the live pricing rules."
+    redirect_to @quote, notice: msg
+  rescue ActiveRecord::RecordInvalid => e
+    redirect_to @quote, alert: "Couldn't end the lock: #{e.record.errors.full_messages.to_sentence}"
   end
 
   def reject

@@ -3,6 +3,7 @@ class Quote < ApplicationRecord
   belongs_to :location, optional: true
   belongs_to :customer_order, optional: true
   belongs_to :accepted_by, class_name: 'User', optional: true
+  belongs_to :lock_ended_by, class_name: 'User', optional: true
   has_many :quote_products, dependent: :destroy
   accepts_nested_attributes_for :quote_products, allow_destroy: true, reject_if: :all_blank
 
@@ -38,13 +39,45 @@ class Quote < ApplicationRecord
   def rejected? = status == 'rejected'
   def editable? = draft? || sent?
 
-  # Overall lock state for display: :active, :scheduled, :expired, or nil
+  # Overall lock state for display: :active, :scheduled, :expired, :ended, or nil
   # (not accepted / not a price-locking quote). Individual lines may be superseded.
   def lock_status(date = Date.today)
     return nil unless locks_pricing? && accepted?
+    return :ended     if lock_ended_on && lock_ended_on <= date
     return :scheduled if valid_from > date
     return :expired   if expiry_date < date
     :active
+  end
+
+  def lock_endable? = %i[active scheduled].include?(lock_status)
+
+  # Orders can be created at the quoted prices while the lock is (or will be)
+  # in effect, or from an accepted quote that never locked prices.
+  def orderable? = accepted? && (!locks_pricing? || lock_endable?)
+
+  # Last day the quote's prices are locked, accounting for an early end.
+  def lock_last_day
+    return nil unless locks_pricing? && expiry_date
+    lock_ended_on ? [expiry_date, lock_ended_on - 1].min : expiry_date
+  end
+
+  # End the price lock early. From `on` (today or later), orders for this
+  # customer are priced from the live rules again; orders already priced keep
+  # their prices. expiry_date is left as quoted to the customer.
+  def end_lock!(user, on: Date.today, reason: nil)
+    raise ArgumentError, "This quote's prices aren't locked" unless lock_endable?
+
+    self.lock_ended_on   = on
+    self.lock_ended_at   = Time.current
+    self.lock_ended_by   = user
+    self.lock_end_reason = reason.presence
+    validate_lock_end
+    if errors.any?
+      # Keep the error messages but don't leave a rejected end date on the record.
+      restore_attributes(%w[lock_ended_on lock_ended_at lock_ended_by_id lock_end_reason])
+      raise ActiveRecord::RecordInvalid, self
+    end
+    save!
   end
 
   # Accept the quote and lock its prices. Any active or scheduled lock this
@@ -60,6 +93,7 @@ class Quote < ApplicationRecord
           .where.not(quote_id: id)
           .where(product_id: product_ids)
           .where('quotes.expiry_date >= ?', valid_from)
+          .where('quotes.lock_ended_on IS NULL OR quotes.lock_ended_on > ?', valid_from)
           .where('quote_products.superseded_on IS NULL OR quote_products.superseded_on > ?', valid_from)
           .update_all(superseded_on: valid_from, updated_at: Time.current)
       end
@@ -91,6 +125,16 @@ class Quote < ApplicationRecord
   end
 
   private
+
+  def validate_lock_end
+    if lock_ended_on.nil?
+      errors.add(:lock_ended_on, "is required")
+    elsif lock_ended_on < Date.today
+      errors.add(:lock_ended_on, "can't be in the past — orders already priced keep their prices")
+    elsif lock_ended_on > expiry_date
+      errors.add(:lock_ended_on, "is after the quote already expires (#{expiry_date.strftime('%b %-d, %Y')})")
+    end
+  end
 
   def valid_window
     return unless valid_from && expiry_date
