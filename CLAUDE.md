@@ -1,12 +1,15 @@
-# LoadNTrucks — Claude Code Context
+# FPS Team (formerly LoadNTrucks) — Claude Code Context
 
 ## What this app is
 Ruby on Rails 7.2 + PostgreSQL app for **Perry Brothers Oil** (Five Points Service),
 Americus/Albany GA area. Manages petroleum product dispatch, customer orders,
 driver/truck tracking, vendor management, location/terminal management, production
 orders (DEF manufacturing), MRP/inventory, purchasing, and pricing. Integrates with
-**PDI** (the ERP/accounting system) via FTP file exchange. Live at **loadntrucks.com**,
-hosted on Render.
+**PDI** (the ERP/accounting system) via FTP file exchange. Live at **team.fivepointsservice.com**
+(loadntrucks.com still allowed: printed QR batch labels embed it), hosted on Render (`dispatcher2.onrender.com`).
+Production hostnames are allow-listed in `config.hosts` (production.rb). Mail sends from
+`no-reply@fivepointsservice.com`. PDI file names still say "LoadNTrucks" — leave those patterns alone.
+Sidebar uses the fivepointsservice.com palette (warm black, FPS orange) — see the `--sidebar-*` vars in custom.css.
 
 Primary contact: John (admin@perrybrothersoil.com)
 

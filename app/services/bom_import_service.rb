@@ -81,7 +81,7 @@ class BomImportService
       product = Product.find_by(id: finished_id)
       unless product
         result.skipped_no_product += 1
-        result.errors << "Finished product #{finished_id} (#{product_rows.first[COL_FINISHED_NAME]}) not found in LoadNTrucks — skipped"
+        result.errors << "Finished product #{finished_id} (#{product_rows.first[COL_FINISHED_NAME]}) not found in FPS Team — skipped"
         next
       end
 
@@ -110,7 +110,7 @@ class BomImportService
 
         component = Product.find_by(id: component_id)
         unless component
-          result.errors << "#{finished_id}: component #{component_id} not found in LoadNTrucks — skipped"
+          result.errors << "#{finished_id}: component #{component_id} not found in FPS Team — skipped"
           next
         end
 

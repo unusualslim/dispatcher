@@ -82,7 +82,7 @@ class MinMaxImportService
       product = Product.find_by(id: part_id)
       unless product
         result.skipped_no_product += 1
-        result.errors << "#{part_id} not found in LoadNTrucks — skipped"
+        result.errors << "#{part_id} not found in FPS Team — skipped"
         next
       end
 

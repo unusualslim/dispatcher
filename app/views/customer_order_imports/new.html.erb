@@ -4,7 +4,7 @@
 
   <% if @order_count > 0 %>
     <div class="alert alert-info">
-      <strong><%= @order_count %> customer orders</strong> currently in LoadNTrucks.
+      <strong><%= @order_count %> customer orders</strong> currently in FPS Team.
       Orders already imported (matched by Order No) will be updated with fresh data from the report.
     </div>
   <% end %>
@@ -27,7 +27,7 @@
     <div class="card-body small text-muted">
       <ul class="mb-0">
         <li>Reads each order from the XLS: order number, dates, customer, delivery location, status, and line items</li>
-        <li>Creates new customers and locations automatically if not already in LoadNTrucks</li>
+        <li>Creates new customers and locations automatically if not already in FPS Team</li>
         <li>Maps ODOR statuses: <strong>Billed → Complete</strong>, Cancelled → Deleted, all others → New</li>
         <li>Handles amendments (<code>-26A</code>) and credit memos (<code>-26C</code>) as separate orders</li>
         <li>Safe to re-run — existing orders are updated, not duplicated (matched by Order No)</li>

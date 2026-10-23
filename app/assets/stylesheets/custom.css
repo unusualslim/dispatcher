@@ -2,12 +2,16 @@
 :root {
   --sidebar-width: 220px;
   --topbar-height: 52px;
-  --sidebar-bg: #1e2a3a;
-  --sidebar-hover: #2d3f55;
-  --sidebar-active: #375a7f;
-  --sidebar-text: #c8d6e5;
-  --sidebar-label: #6c8aaa;
-  --sidebar-border: #2d3f55;
+  /* Sidebar palette follows fivepointsservice.com: warm near-black with FPS orange accents */
+  --sidebar-bg: #1e1810;
+  --sidebar-hover: #2c241a;
+  --sidebar-active: #a83f12;
+  --sidebar-text: #e9e2da;
+  --sidebar-heading: #fbf7f2;
+  --sidebar-subtext: #cfc4b8;
+  --sidebar-label: #a39686;
+  --sidebar-border: #3a2f23;
+  --sidebar-accent: #ff7a3d;
 }
 
 html, body {
@@ -49,11 +53,24 @@ html, body {
   text-decoration: none;
 }
 
+.sidebar-brand-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebar-brand-logo {
+  height: 30px;
+  width: auto;
+}
+
 .sidebar-brand-text {
-  font-size: 1.1rem;
+  font-family: 'Poppins', var(--bs-body-font-family);
+  font-size: 1.05rem;
   font-weight: 700;
   color: #ffffff;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .sidebar-close-btn {
@@ -78,18 +95,41 @@ html, body {
   margin-top: 6px;
 }
 
+/* Main groups (Sales, Dispatch, …): divided, bold uppercase headers with a colored icon */
+.sidebar-section {
+  border-top: 1px solid var(--sidebar-border);
+  padding: 4px 0;
+}
+
+.sidebar-section .sidebar-section-label {
+  padding: 2px 8px;
+  margin-top: 0;
+}
+
 .sidebar-collapse-toggle {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 7px 10px;
+  padding: 9px 10px;
   border-radius: 6px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: #b0c4d8;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  font-family: 'Poppins', var(--bs-body-font-family);
+  color: var(--sidebar-heading);
   text-decoration: none;
   transition: background 0.15s, color 0.15s;
+}
+
+.sidebar-section-icon {
+  color: var(--sidebar-accent);
+  font-size: 1rem;
+  width: 18px;
+  margin-right: 8px;
+  display: inline-block;
+  text-align: center;
 }
 
 .sidebar-collapse-toggle:hover {
@@ -102,10 +142,36 @@ html, body {
   color: #ffffff;
 }
 
+/* The group holding the current page keeps an accent bar, even when collapsed */
+.sidebar-collapse-toggle.has-active {
+  box-shadow: inset 3px 0 0 var(--sidebar-accent);
+}
+
 .sidebar-collapse-chevron {
   font-size: 0.7rem;
   opacity: 0.7;
   transition: transform 0.2s ease;
+}
+
+/* Links inside a group: indented along a guide line, a step quieter than the header */
+.sidebar-collapse .sidebar-nav {
+  margin: 2px 0 6px 26px;
+  border-left: 1px solid rgba(255,255,255,0.12);
+}
+
+.sidebar-collapse .sidebar-nav li a {
+  padding: 7px 12px;
+  font-size: 0.85rem;
+  color: var(--sidebar-subtext);
+}
+
+.sidebar-collapse .sidebar-nav li a i {
+  font-size: 0.9rem;
+}
+
+.sidebar-collapse .sidebar-nav li a:hover,
+.sidebar-collapse .sidebar-nav li.active a {
+  color: #ffffff;
 }
 
 .sidebar-collapse-toggle[aria-expanded="true"] .sidebar-collapse-chevron {
