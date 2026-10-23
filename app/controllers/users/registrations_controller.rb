@@ -3,6 +3,8 @@
 class Users::RegistrationsController < Devise::RegistrationsController
   before_action :configure_permitted_parameters, if: :devise_controller?
   skip_before_action :require_no_authentication, only: %i[new create]
+  # Sign-up is how admins add users (Users page); it is not public.
+  before_action :require_admin!, only: %i[new create]
   # before_action :configure_sign_up_params, only: [:create]
   # before_action :configure_account_update_params, only: [:update]
 
@@ -55,8 +57,7 @@ class Users::RegistrationsController < Devise::RegistrationsController
     end
 
     if @user.save
-      sign_in(@user)
-      redirect_to dispatches_path, notice: 'Account successfully created.'
+      redirect_to users_path, notice: "Created #{@user.email}."
     else
       render :new, status: :unprocessable_entity
     end
@@ -65,8 +66,8 @@ class Users::RegistrationsController < Devise::RegistrationsController
   protected
 
   def configure_permitted_parameters
-    # Permit additional parameters for account update
-    devise_parameter_sanitizer.permit(:account_update, keys: %i[role sms_opt_in email_opt_in phone_number])
+    # Permit additional parameters for account update. Not :role -- only admins change roles (Users page).
+    devise_parameter_sanitizer.permit(:account_update, keys: %i[sms_opt_in email_opt_in phone_number])
     # Permit additional parameters for account sign up if needed
     devise_parameter_sanitizer.permit(:sign_up, keys: [:role])
   end
