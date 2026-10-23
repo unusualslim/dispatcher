@@ -1,0 +1,38 @@
+# Existing offenses are baselined in .rubocop_todo.yml so only new or changed
+# code gets flagged. Regenerate it after a cleanup with:
+#   bin/rubocop --auto-gen-config --no-exclude-limit --no-offense-counts --no-auto-gen-timestamp
+inherit_from: .rubocop_todo.yml
+
+# Combine Exclude lists below with the baseline's instead of replacing them.
+inherit_mode:
+  merge:
+    - Exclude
+
+require:
+  - rubocop-rails
+
+AllCops:
+  TargetRubyVersion: 3.1
+  NewCops: enable
+  SuggestExtensions: false
+  Exclude:
+    - "bin/**/*"
+    - "db/schema.rb"
+    - "node_modules/**/*"
+    - "tmp/**/*"
+    - "vendor/**/*"
+    - "**/*Zone.Identifier"
+
+# Most of the codebase has no class docs or magic comments; don't require them.
+Style/Documentation:
+  Enabled: false
+
+Style/FrozenStringLiteralComment:
+  Enabled: false
+
+Metrics/BlockLength:
+  Exclude:
+    - "config/routes.rb"
+    - "config/environments/*.rb"
+    - "lib/tasks/**/*.rake"
+    - "test/**/*.rb"

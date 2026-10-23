@@ -165,6 +165,11 @@ Minitest under `test/`. Coverage is concentrated on MRP services/models
 (MrpEngine, BomPopulator, MaterialAvailability, Reorder, ProductionOrderBatch);
 the PDI sync/import code is largely untested.
 
+## Lint
+`bin/rubocop` (rubocop + rubocop-rails, config in `.rubocop.yml`). Existing offenses are
+baselined per file in `.rubocop_todo.yml`; new code should pass clean. After cleaning up a
+file, remove it from the todo (or regenerate with the command at the top of `.rubocop.yml`).
+
 ---
 
 ## Roadmap / known issues
