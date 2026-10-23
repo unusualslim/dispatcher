@@ -1,22 +1,19 @@
 <% current = controller_name %>
+<% action  = action_name %>
 
 <%# ── Active-section detection ──────────────────────────────────────────── %>
-<% dispatch_active      = (%w[quotes dispatches calendar dispatch_messages].include?(current) ||
-                          (current == 'locations' && action_name == 'map') ||
-                          (current == 'customer_orders' && action_name != 'dashboard')) %>
-<% manufacturing_active = (%w[warehouse work_orders jobs].include?(current) ||
-                          (current == 'production_orders' && action_name != 'dashboard')) %>
-<% inventory_active    = %w[purchasing_report products pricing_rules price_exceptions quote_margin_reviews
-                             inventory_adjustments inventory_transactions
-                             inventory_intelligence].include?(current) ||
-                         (current == 'purchase_orders' && action_name != 'dashboard') %>
-<% imports_active      = %w[customer_order_imports inventory_imports pdi_inventory_imports warehouse_transaction_imports
-                             bom_imports min_max_imports vendor_freight_term_imports pdi_product_imports
-                             repack_batch_imports pdi_purchase_order_imports].include?(current) ||
-                         (current == 'customer_order_products' && request.path == product_code_links_path) %>
-<% masterdata_active   = %w[customers vendors users things].include?(current) ||
-                         (current == 'locations' && action_name != 'map') %>
-<% system_active       = %w[automated_processes docs announcements].include?(current) %>
+<% sales_active      = %w[customer_orders quotes customers pricing_rules price_exceptions quote_margin_reviews].include?(current) ||
+                       (current == 'locations' && action != 'map') %>
+<% dispatch_active   = %w[dispatches calendar dispatch_messages].include?(current) ||
+                       (current == 'locations' && action == 'map') %>
+<% production_active = %w[production_orders jobs warehouse work_orders].include?(current) %>
+<% purchasing_active = %w[purchase_orders purchasing_report mrp vendors].include?(current) %>
+<% inventory_active  = %w[inventory_intelligence products inventory_adjustments inventory_transactions].include?(current) %>
+<% imports_active    = %w[customer_order_imports inventory_imports pdi_inventory_imports warehouse_transaction_imports
+                          bom_imports min_max_imports vendor_freight_term_imports pdi_product_imports
+                          repack_batch_imports pdi_purchase_order_imports purchase_order_imports].include?(current) ||
+                       (current == 'customer_order_products' && request.path == product_code_links_path) %>
+<% admin_active      = %w[users things warehouse_locations automated_processes announcements].include?(current) %>
 
 <nav id="sidebar" class="sidebar d-flex flex-column">
   <!-- Brand -->
@@ -37,39 +34,10 @@
         <!-- DRIVER NAV -->
         <div class="sidebar-section-label">My Dispatches</div>
         <ul class="sidebar-nav">
-          <li class="<%= 'active' if current == 'dispatches' && action_name == 'index' %>">
-            <%= link_to dispatches_path do %>
-              <i class="bi bi-truck"></i> My Dispatches
-            <% end %>
-          </li>
+          <%= nav_item 'My Dispatches', dispatches_path, 'bi-truck', active: current == 'dispatches' && action == 'index' %>
         </ul>
 
       <% else %>
-
-        <!-- DASHBOARDS (always visible) -->
-        <div class="sidebar-section-label" style="color: #b0c4d8; font-size: 0.82rem; font-weight: 600; padding: 7px 10px 2px;">Dashboards</div>
-        <ul class="sidebar-nav mb-1">
-          <li class="<%= 'active' if current == 'customer_orders' && action_name == 'dashboard' %>">
-            <%= link_to dashboard_customer_orders_path do %>
-              <i class="bi bi-cart3"></i> Order Dashboard
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'production_orders' && action_name == 'dashboard' %>">
-            <%= link_to dashboard_production_orders_path do %>
-              <i class="bi bi-gear"></i> Production Dashboard
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'mrp' %>">
-            <%= link_to mrp_path do %>
-              <i class="bi bi-graph-up-arrow"></i> MRP Dashboard
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'purchase_orders' && action_name == 'dashboard' %>">
-            <%= link_to dashboard_purchase_orders_path do %>
-              <i class="bi bi-bag-check"></i> PO Dashboard
-            <% end %>
-          </li>
-        </ul>
 
         <!-- FAVORITES (always expanded, outside accordion) -->
         <% favorites = current_user.user_favorites %>
@@ -91,266 +59,118 @@
 
         <div id="sidebarAccordion">
 
+        <!-- SALES -->
+        <%= render 'layouts/sidebar_section', label: 'Sales', icon: 'bi-cart3', id: 'salesCollapse', active: sales_active do %>
+          <%= nav_item 'Order Dashboard',     dashboard_customer_orders_path, 'bi-speedometer2',        active: current == 'customer_orders' && action == 'dashboard' %>
+          <%= nav_item 'Customer Orders',     customer_orders_path,           'bi-cart3',               active: current == 'customer_orders' && action != 'dashboard' %>
+          <%= nav_item 'Quotes',              quotes_path,                    'bi-file-earmark-text',   active: current == 'quotes' %>
+          <%= nav_item 'Customers',           customers_path,                 'bi-people',              active: current == 'customers' %>
+          <%= nav_item 'Locations',           locations_path,                 'bi-geo-alt',             active: current == 'locations' && action != 'map' %>
+          <%= nav_item 'Pricing Rules',       pricing_rules_path,             'bi-tag',                 active: current == 'pricing_rules' %>
+          <%= nav_item 'Price Exceptions',    price_exceptions_path,          'bi-exclamation-diamond', active: current == 'price_exceptions' %>
+          <%= nav_item 'Quote Margin Review', quote_margin_review_path,       'bi-graph-down-arrow',    active: current == 'quote_margin_reviews' %>
+        <% end %>
+
         <!-- DISPATCH -->
-        <%= render 'layouts/sidebar_section',
-              label:     'Dispatch',
-              icon:      'bi-truck',
-              id:        'dispatchCollapse',
-              active:    dispatch_active do %>
-          <li class="<%= 'active' if current == 'customer_orders' && action_name != 'dashboard' %>">
-            <%= link_to customer_orders_path do %>
-              <i class="bi bi-cart3"></i> All Orders
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'quotes' %>">
-            <%= link_to quotes_path do %>
-              <i class="bi bi-file-earmark-text"></i> Quotes
-            <% end %>
-          </li>
-          <li class="<%= 'active' if action_name == 'view_dispatches' %>">
-            <%= link_to view_dispatches_path do %>
-              <i class="bi bi-table"></i> Dispatches
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'dispatches' && action_name == 'kanban' %>">
-            <%= link_to kanban_dispatches_path do %>
-              <i class="bi bi-kanban"></i> Dispatch Kanban
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'calendar' %>">
-            <%= link_to calendar_path do %>
-              <i class="bi bi-calendar3"></i> Calendar
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'locations' && action_name == 'map' %>">
-            <%= link_to locations_map_path do %>
-              <i class="bi bi-map"></i> Map
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'dispatch_messages' %>">
-            <%= link_to dispatch_messages_path do %>
-              <i class="bi bi-chat-dots"></i> Messages
-            <% end %>
-          </li>
+        <%= render 'layouts/sidebar_section', label: 'Dispatch', icon: 'bi-truck', id: 'dispatchCollapse', active: dispatch_active do %>
+          <%= nav_item 'Dispatch Board',  kanban_dispatches_path, 'bi-kanban',    active: current == 'dispatches' && action == 'kanban' %>
+          <%= nav_item 'Dispatch List',   view_dispatches_path,   'bi-table',     active: current == 'dispatches' && action == 'view_dispatches' %>
+          <%= nav_item 'Calendar',        calendar_path,          'bi-calendar3', active: current == 'calendar' %>
+          <%= nav_item 'Map',             locations_map_path,     'bi-map',       active: current == 'locations' && action == 'map' %>
+          <%= nav_item 'Driver Messages', dispatch_messages_path, 'bi-chat-dots', active: current == 'dispatch_messages' %>
         <% end %>
 
-        <!-- MANUFACTURING -->
-        <%= render 'layouts/sidebar_section',
-              label:  'Manufacturing',
-              icon:   'bi-gear',
-              id:     'manufacturingCollapse',
-              active: manufacturing_active do %>
-          <li class="<%= 'active' if current == 'production_orders' && action_name == 'kanban' %>">
-            <%= link_to kanban_production_orders_path do %>
-              <i class="bi bi-layout-three-columns"></i> Kanban
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'production_orders' && action_name == 'index' %>">
-            <%= link_to production_orders_path do %>
-              <i class="bi bi-table"></i> All Orders
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'jobs' %>">
-            <%= link_to line_path do %>
-              <i class="bi bi-stopwatch"></i> Line Production
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'warehouse' %>">
-            <%= link_to warehouse_kanban_path do %>
-              <i class="bi bi-tv"></i> Warehouse Board
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'work_orders' %>">
-            <%= link_to work_orders_path do %>
-              <i class="bi bi-wrench-adjustable"></i> Work Orders
-            <% end %>
-          </li>
+        <!-- PRODUCTION -->
+        <%= render 'layouts/sidebar_section', label: 'Production', icon: 'bi-gear', id: 'productionCollapse', active: production_active do %>
+          <%= nav_item 'Production Dashboard', dashboard_production_orders_path, 'bi-speedometer2',          active: current == 'production_orders' && action == 'dashboard' %>
+          <%= nav_item 'Production Kanban',    kanban_production_orders_path,    'bi-layout-three-columns',  active: current == 'production_orders' && action == 'kanban' %>
+          <%= nav_item 'Production Orders',    production_orders_path,           'bi-table',                 active: current == 'production_orders' && !%w[dashboard kanban].include?(action) %>
+          <%= nav_item 'Line Production',      line_path,                        'bi-stopwatch',             active: current == 'jobs' %>
+          <%= nav_item 'Warehouse Board',      warehouse_kanban_path,            'bi-tv',                    active: current == 'warehouse' %>
+          <%= nav_item 'Work Orders',          work_orders_path,                 'bi-wrench-adjustable',     active: current == 'work_orders' %>
         <% end %>
 
-        <!-- INVENTORY & MRP -->
-        <%= render 'layouts/sidebar_section',
-              label:  'Inventory & MRP',
-              icon:   'bi-box-seam',
-              id:     'inventoryCollapse',
-              active: inventory_active do %>
-          <li class="<%= 'active' if current == 'inventory_intelligence' %>">
-            <%= link_to inventory_intelligence_path do %>
-              <i class="bi bi-lightbulb"></i> Intelligence
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'purchasing_report' %>">
-            <%= link_to purchasing_report_path do %>
-              <i class="bi bi-cart-check"></i> Purchasing
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'products' %>">
-            <%= link_to products_path do %>
-              <i class="bi bi-box-seam"></i> Products
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'pricing_rules' %>">
-            <%= link_to pricing_rules_path do %>
-              <i class="bi bi-tag"></i> Pricing Rules
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'quote_margin_reviews' %>">
-            <%= link_to quote_margin_review_path do %>
-              <i class="bi bi-graph-down-arrow"></i> Quote Margin Review
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'price_exceptions' %>">
-            <%= link_to price_exceptions_path do %>
-              <i class="bi bi-exclamation-diamond"></i> Price Exceptions
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'purchase_orders' %>">
-            <%= link_to purchase_orders_path do %>
-              <i class="bi bi-bag-check"></i> Purchase Orders
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'inventory_adjustments' %>">
-            <%= link_to new_inventory_adjustment_path do %>
-              <i class="bi bi-sliders"></i> Adjust Inventory
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'inventory_transactions' %>">
-            <%= link_to inventory_transactions_path do %>
-              <i class="bi bi-clock-history"></i> Inventory History
-            <% end %>
-          </li>
-          <% if admin? %>
-            <li class="<%= 'active' if request.path == edit_warehouse_locations_path %>">
-              <%= link_to edit_warehouse_locations_path do %>
-                <i class="bi bi-building-gear"></i> Warehouse Locations
-              <% end %>
-            </li>
-          <% end %>
+        <!-- PURCHASING -->
+        <%= render 'layouts/sidebar_section', label: 'Purchasing', icon: 'bi-bag-check', id: 'purchasingCollapse', active: purchasing_active do %>
+          <%= nav_item 'PO Dashboard',      dashboard_purchase_orders_path, 'bi-speedometer2',    active: current == 'purchase_orders' && action == 'dashboard' %>
+          <%= nav_item 'Purchase Orders',   purchase_orders_path,           'bi-bag-check',       active: current == 'purchase_orders' && action != 'dashboard' %>
+          <%= nav_item 'Purchasing Report', purchasing_report_path,         'bi-cart-check',      active: current == 'purchasing_report' %>
+          <%= nav_item 'MRP',               mrp_path,                       'bi-graph-up-arrow',  active: current == 'mrp' %>
+          <%= nav_item 'Vendors',           vendors_path,                   'bi-building',        active: current == 'vendors' %>
+        <% end %>
+
+        <!-- INVENTORY -->
+        <%= render 'layouts/sidebar_section', label: 'Inventory', icon: 'bi-box-seam', id: 'inventoryCollapse', active: inventory_active do %>
+          <%= nav_item 'Inventory Insights', inventory_intelligence_path,  'bi-lightbulb',     active: current == 'inventory_intelligence' %>
+          <%= nav_item 'Products',           products_path,                'bi-box-seam',      active: current == 'products' %>
+          <%= nav_item 'Adjust Inventory',   new_inventory_adjustment_path, 'bi-sliders',      active: current == 'inventory_adjustments' %>
+          <%= nav_item 'Inventory History',  inventory_transactions_path,  'bi-clock-history', active: current == 'inventory_transactions' %>
         <% end %>
 
         <!-- IMPORTS -->
-        <%= render 'layouts/sidebar_section',
-              label:  'Imports',
-              icon:   'bi-file-earmark-arrow-up',
-              id:     'importsCollapse',
-              active: imports_active do %>
-          <li class="<%= 'active' if current == 'customer_order_imports' %>">
-            <%= link_to new_customer_order_import_path do %>
-              <i class="bi bi-file-earmark-arrow-up"></i> Customer Orders
-            <% end %>
-          </li>
-          <li class="<%= 'active' if request.path == product_code_links_path %>">
-            <%= link_to product_code_links_path do %>
-              <i class="bi bi-link-45deg"></i> Link ODOR Products
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'pdi_inventory_imports' %>">
-            <%= link_to new_pdi_inventory_import_path do %>
-              <i class="bi bi-upload"></i> PDI Inventory
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'warehouse_transaction_imports' %>">
-            <%= link_to new_warehouse_transaction_import_path do %>
-              <i class="bi bi-clock-history"></i> Tx History
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'pdi_product_imports' %>">
-            <%= link_to new_pdi_product_import_path do %>
-              <i class="bi bi-box-seam"></i> PDI Products
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'bom_imports' %>">
-            <%= link_to new_bom_import_path do %>
-              <i class="bi bi-diagram-3"></i> BOM
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'pdi_purchase_order_imports' %>">
-            <%= link_to new_pdi_purchase_order_import_path do %>
-              <i class="bi bi-bag-check"></i> PDI Purchase Orders
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'repack_batch_imports' %>">
-            <%= link_to new_repack_batch_import_path do %>
-              <i class="bi bi-recycle"></i> Repack Batches
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'min_max_imports' %>">
-            <%= link_to new_min_max_import_path do %>
-              <i class="bi bi-sliders2"></i> Min/Max
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'vendor_freight_term_imports' %>">
-            <%= link_to new_vendor_freight_term_import_path do %>
-              <i class="bi bi-building"></i> Vendor Freight Terms
-            <% end %>
-          </li>
+        <%= render 'layouts/sidebar_section', label: 'Imports', icon: 'bi-file-earmark-arrow-up', id: 'importsCollapse', active: imports_active do %>
+          <%= nav_item 'Customer Orders',            new_customer_order_import_path,         'bi-file-earmark-arrow-up', active: current == 'customer_order_imports' %>
+          <%= nav_item 'Link ODOR Products',         product_code_links_path,                'bi-link-45deg',            active: request.path == product_code_links_path %>
+          <%= nav_item 'PDI Products',               new_pdi_product_import_path,            'bi-box-seam',              active: current == 'pdi_product_imports' %>
+          <%= nav_item 'PDI Inventory',              new_pdi_inventory_import_path,          'bi-upload',                active: current == 'pdi_inventory_imports' %>
+          <%= nav_item 'PDI Purchase Orders',        new_pdi_purchase_order_import_path,     'bi-bag-check',             active: current == 'pdi_purchase_order_imports' %>
+          <%= nav_item 'Purchase Orders',            new_purchase_order_imports_path,        'bi-bag-plus',              active: current == 'purchase_order_imports' %>
+          <%= nav_item 'Inventory',                  new_inventory_import_path,              'bi-boxes',                 active: current == 'inventory_imports' %>
+          <%= nav_item 'Warehouse Transactions',     new_warehouse_transaction_import_path,  'bi-clock-history',         active: current == 'warehouse_transaction_imports' %>
+          <%= nav_item 'BOM',                        new_bom_import_path,                    'bi-diagram-3',             active: current == 'bom_imports' %>
+          <%= nav_item 'Repack Batches',             new_repack_batch_import_path,           'bi-recycle',               active: current == 'repack_batch_imports' %>
+          <%= nav_item 'Min/Max',                    new_min_max_import_path,                'bi-sliders2',              active: current == 'min_max_imports' %>
+          <%= nav_item 'Vendor Freight Terms',       new_vendor_freight_term_import_path,    'bi-truck-flatbed',         active: current == 'vendor_freight_term_imports' %>
         <% end %>
 
-        <!-- MASTER DATA -->
-        <%= render 'layouts/sidebar_section',
-              label:  'Master Data',
-              icon:   'bi-database',
-              id:     'masterDataCollapse',
-              active: masterdata_active do %>
-          <li class="<%= 'active' if current == 'customers' %>">
-            <%= link_to customers_path do %>
-              <i class="bi bi-people"></i> Customers
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'locations' && action_name != 'map' %>">
-            <%= link_to locations_path do %>
-              <i class="bi bi-geo-alt"></i> Locations
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'vendors' %>">
-            <%= link_to vendors_path do %>
-              <i class="bi bi-building"></i> Vendors
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'users' %>">
-            <%= link_to users_path do %>
-              <i class="bi bi-person-badge"></i> Users
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'things' %>">
-            <%= link_to things_path do %>
-              <i class="bi bi-tools"></i> Assets
-            <% end %>
-          </li>
-        <% end %>
-
-        <!-- SYSTEM -->
-        <%= render 'layouts/sidebar_section',
-              label:  'System',
-              icon:   'bi-gear-wide-connected',
-              id:     'systemCollapse',
-              active: system_active do %>
-          <li class="<%= 'active' if current == 'automated_processes' %>">
-            <%= link_to automated_processes_path do %>
-              <i class="bi bi-arrow-repeat"></i> Automated Processes
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'docs' %>">
-            <%= link_to docs_path do %>
-              <i class="bi bi-journal-text"></i> Help & Guides
-            <% end %>
-          </li>
-          <li class="<%= 'active' if current == 'announcements' %>">
-            <%= link_to announcements_path do %>
-              <i class="bi bi-megaphone"></i> Announcements
-            <% end %>
-          </li>
+        <!-- ADMIN -->
+        <%= render 'layouts/sidebar_section', label: 'Admin', icon: 'bi-gear-wide-connected', id: 'adminCollapse', active: admin_active do %>
+          <%= nav_item 'Users',               users_path,               'bi-person-badge', active: current == 'users' %>
+          <%= nav_item 'Equipment & Assets',  things_path,              'bi-tools',        active: current == 'things' %>
+          <% if admin? %>
+            <%= nav_item 'Warehouse Locations', edit_warehouse_locations_path, 'bi-building-gear', active: current == 'warehouse_locations' %>
+          <% end %>
+          <%= nav_item 'Automated Processes', automated_processes_path, 'bi-arrow-repeat', active: current == 'automated_processes' %>
+          <%= nav_item 'Announcements',       announcements_path,       'bi-megaphone',    active: current == 'announcements' %>
         <% end %>
 
         </div><%# /sidebarAccordion %>
+
+        <script>
+          // Sections open independently; remember which ones each user left open.
+          (function() {
+            var KEY = 'sidebarOpenSections';
+            var open = [];
+            try { open = JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) {}
+            open.forEach(function(id) {
+              var el = document.getElementById(id);
+              if (!el) return;
+              el.classList.add('show');
+              var toggle = document.querySelector('[data-bs-target="#' + id + '"]');
+              if (toggle) toggle.setAttribute('aria-expanded', 'true');
+            });
+            function save() {
+              var ids = Array.from(document.querySelectorAll('#sidebarAccordion .sidebar-collapse.show')).map(function(el) { return el.id; });
+              try { localStorage.setItem(KEY, JSON.stringify(ids)); } catch (e) {}
+            }
+            var acc = document.getElementById('sidebarAccordion');
+            acc.addEventListener('shown.bs.collapse', save);
+            acc.addEventListener('hidden.bs.collapse', save);
+          })();
+        </script>
 
       <% end %>
 
     <% end %>
   </div>
 
-  <!-- Bottom: Profile & Logout -->
+  <!-- Bottom: Help, Profile & Logout -->
   <% if user_signed_in? %>
     <div class="sidebar-footer">
+      <%= link_to docs_path, class: "sidebar-footer-link #{'active' if current == 'docs'}" do %>
+        <i class="bi bi-journal-text"></i>
+        <span>Help &amp; Guides</span>
+      <% end %>
       <%= link_to edit_user_registration_path, class: "sidebar-footer-link" do %>
         <i class="bi bi-person-circle"></i>
         <span><%= current_user.first_name.presence || current_user.email %></span>
@@ -365,4 +185,3 @@
 
 <!-- Mobile overlay -->
 <div id="sidebarOverlay" class="sidebar-overlay d-none"></div>
-

@@ -18,6 +18,13 @@ module ApplicationHelper
     CRON_PRESETS.key(expr) || expr
   end
 
+  # Sidebar link (layouts/_sidebar); `active` controls the highlight.
+  def nav_item(label, path, icon, active: false)
+    content_tag(:li, class: ('active' if active)) do
+      link_to(path) { content_tag(:i, '', class: "bi #{icon}") + " #{label}" }
+    end
+  end
+
   # Badge for a quote / quote line price lock (:active, :scheduled, :expired, :superseded, :ended).
   def lock_status_badge(status)
     return if status.nil?
