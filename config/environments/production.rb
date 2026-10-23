@@ -51,6 +51,17 @@ Rails.application.configure do
   config.force_ssl = true
   config.ssl_options = { redirect: { exclude: ->(request) { request.get_header('HTTP_X_FORWARDED_PROTO').blank? } } }
 
+  # Only answer to our own hostnames. team.fivepointsservice.com is primary; loadntrucks.com stays
+  # so bookmarks and printed QR batch labels (which embed the host) keep working. The health check
+  # is excluded for the same reason as the SSL redirect above.
+  config.hosts = [
+    'team.fivepointsservice.com',
+    'www.loadntrucks.com',
+    'loadntrucks.com',
+    'dispatcher2.onrender.com'
+  ]
+  config.host_authorization = { exclude: ->(request) { request.get_header('HTTP_X_FORWARDED_PROTO').blank? } }
+
   # Include generic and useful information about system operation, but avoid logging too much
   # information to avoid inadvertent exposure of personally identifiable information (PII).
   config.log_level = :info
@@ -69,14 +80,15 @@ Rails.application.configure do
 
   config.action_mailer.perform_caching = false
 
-  config.action_mailer.default_url_options = { host: ENV.fetch('HOSTNAME', nil), protocol: 'https' }
+  config.action_mailer.default_url_options = { host: ENV.fetch('HOSTNAME', 'team.fivepointsservice.com'),
+                                               protocol: 'https' }
 
   config.action_mailer.delivery_method = :smtp
 
   config.action_mailer.smtp_settings = {
     user_name: ENV.fetch('SENDGRID_USERNAME', nil),
     password: ENV.fetch('SENDGRID_PASSWORD', nil),
-    domain: 'loadntrucks.com',
+    domain: 'fivepointsservice.com',
     address: 'smtp.sendgrid.net',
     port: 587,
     authentication: :plain,

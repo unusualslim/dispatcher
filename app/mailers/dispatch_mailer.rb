@@ -1,5 +1,5 @@
 class DispatchMailer < ApplicationMailer
-  default from: 'no_reply@loadntrucks.com'
+  default from: 'no-reply@fivepointsservice.com'
 
   def send_dispatch_email(dispatch, email_message)
     @dispatch = dispatch

@@ -1,5 +1,5 @@
 class ApplicationMailer < ActionMailer::Base
-  default from: 'from@example.com'
+  default from: 'no-reply@fivepointsservice.com'
   layout 'mailer'
 
   # Log email after sending

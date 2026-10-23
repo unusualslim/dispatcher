@@ -323,7 +323,7 @@
       }.join(", ")
       "ORDER #{i+1}:\nCUSTOMER: #{order.customer&.name || 'Unknown'}\nLOCATION: #{order.location&.full_address_with_company || 'Unknown'}\nPRODUCTS: #{products}"
     end.join("\n\n")
-    default_msg = "You have been assigned a new dispatch.\nORIGIN: #{origin_loc&.full_address_with_company || 'Unknown'}\nORIGIN NOTES: #{origin_loc&.notes || 'None'}\nDESTINATION: #{dest_loc&.full_address_with_company || 'Unknown'}\nDESTINATION NOTES: #{dest_loc&.notes || 'None'}\nDISPATCH DATE: #{@dispatch.dispatch_date}\nNOTES: #{@dispatch.notes}\n\n#{order_lines}\n\nVIEW: loadntrucks.com/dispatches/#{@dispatch.id}"
+    default_msg = "You have been assigned a new dispatch.\nORIGIN: #{origin_loc&.full_address_with_company || 'Unknown'}\nORIGIN NOTES: #{origin_loc&.notes || 'None'}\nDESTINATION: #{dest_loc&.full_address_with_company || 'Unknown'}\nDESTINATION NOTES: #{dest_loc&.notes || 'None'}\nDISPATCH DATE: #{@dispatch.dispatch_date}\nNOTES: #{@dispatch.notes}\n\n#{order_lines}\n\nVIEW: team.fivepointsservice.com/dispatches/#{@dispatch.id}"
   %>
   <div class="modal fade" id="notificationModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">

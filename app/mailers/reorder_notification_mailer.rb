@@ -1,5 +1,5 @@
 class ReorderNotificationMailer < ApplicationMailer
-  default from: 'noreply@loadntrucks.com'
+  default from: 'no-reply@fivepointsservice.com'
 
   def notify(user, purchase_orders)
     @user            = user

@@ -1,5 +1,5 @@
 class InventoryIntelligenceMailer < ApplicationMailer
-  default from: 'noreply@loadntrucks.com'
+  default from: 'no-reply@fivepointsservice.com'
 
   def daily_report(user, report)
     @user   = user
