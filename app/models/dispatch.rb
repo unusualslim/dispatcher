@@ -12,6 +12,9 @@ class Dispatch < ApplicationRecord
   belongs_to :trailer, class_name: 'Thing', optional: true
   has_many :things
   belongs_to :destination_location, class_name: 'Location', optional: true
+  # Not a database column (the real status lives in `status`); declared so Rails 7.1+
+  # accepts the enum. Behaves as before: in-memory only, never saved.
+  attribute :dispatch_status, :string
   enum :dispatch_status, { New: 'New', sent_to_driver: 'Sent to Driver', complete: 'Complete', billed: 'Billed',
                            deleted: 'Deleted' }
 
