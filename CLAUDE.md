@@ -1,7 +1,7 @@
 # LoadNTrucks — Claude Code Context
 
 ## What this app is
-Ruby on Rails 7.0.8 + PostgreSQL app for **Perry Brothers Oil** (Five Points Service),
+Ruby on Rails 7.2 + PostgreSQL app for **Perry Brothers Oil** (Five Points Service),
 Americus/Albany GA area. Manages petroleum product dispatch, customer orders,
 driver/truck tracking, vendor management, location/terminal management, production
 orders (DEF manufacturing), MRP/inventory, purchasing, and pricing. Integrates with
@@ -13,7 +13,7 @@ Primary contact: John (admin@perrybrothersoil.com)
 ---
 
 ## Stack
-- Ruby 3.1.2, Rails 7.0.8, PostgreSQL 15
+- Ruby 3.4.11, Rails 7.2 (`config.load_defaults 7.0` — newer framework defaults not yet enabled), PostgreSQL 15, Puma 7
 - Bootstrap 5, Leaflet.js (maps), Select2, FullCalendar
 - jsbundling-rails (esbuild) + cssbundling-rails (sass via yarn)
 - Devise authentication + **Cloudflare Turnstile** on registration (reCAPTCHA was removed)
@@ -30,7 +30,10 @@ Primary contact: John (admin@perrybrothersoil.com)
 - `config/database.yml` and `.env` are gitignored and must be created locally
 - Run everything: `bin/dev` (Procfile.dev: rails server + `yarn build --watch` + `yarn watch:css`)
 - Or just the server: `bundle exec rails server` (run `yarn build && yarn build:css` first if assets are missing)
-- Gemfile pins Ruby **3.1.2** — make sure rbenv has it installed
+- Ruby version comes from `.ruby-version` (**3.4.11**; the Gemfile reads it) — make sure rbenv has it installed
+- **libvips is required** (`brew install vips`): Rails 7.2's Active Storage loads ruby-vips at boot and
+  refuses to start without libvips >= 8.13 (Render's Debian 12 image ships it)
+- Tests use the `:test` Active Job adapter; jobs are enqueued, not run
 - Windows quirks (from earlier dev on Windows 10): Puma workers/threads limited via
   `Gem.win_platform?` guard in config/puma.rb; Sprockets uses MemoryStore cache in
   config/environments/development.rb. On Windows, PG15 was on port 5433.

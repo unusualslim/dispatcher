@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-ruby '3.1.2'
+ruby file: '.ruby-version'
 
 gem 'bootstrap'
 
@@ -15,6 +15,7 @@ gem 'twilio-ruby'
 
 gem 'dotenv-rails'
 
+gem 'csv' # not a default gem since Ruby 3.4; used by the CSV import/export code
 gem 'net-ftp'
 gem 'pdf-reader'
 gem 'redcarpet'
