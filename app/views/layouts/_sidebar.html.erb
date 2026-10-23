@@ -125,7 +125,7 @@
         <%= render 'layouts/sidebar_section', label: 'Admin', icon: 'bi-gear-wide-connected', id: 'adminCollapse', active: admin_active do %>
           <%= nav_item 'Data Imports',        imports_path,             'bi-file-earmark-arrow-up', active: imports_active, keywords: 'upload file' %>
           <% ImportsController::IMPORTS.each do |imp| %>
-            <%= nav_item "Import: #{imp[:title]}", send(imp[:path]), imp[:icon], search_only: true, keywords: imp[:description] %>
+            <%= nav_search_item "Import: #{imp[:title]}", send(imp[:path]), imp[:icon], keywords: imp[:description] %>
           <% end %>
           <%= nav_item 'Users',               users_path,               'bi-person-badge', active: current == 'users' %>
           <%= nav_item 'Equipment & Assets',  things_path,              'bi-tools',        active: current == 'things', keywords: 'things' %>
