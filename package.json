@@ -13,7 +13,7 @@
     "esbuild": "^0.19.5",
     "jquery": "^3.7.1",
     "nodemon": "^3.0.1",
-    "postcss": "^8.4.31",
+    "postcss": "^8.5.31",
     "postcss-cli": "^10.1.0",
     "qrcode-generator": "^2.0.4",
     "sass": "^1.69.5",
