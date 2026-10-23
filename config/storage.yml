@@ -6,6 +6,19 @@ local:
   service: Disk
   root: <%= Rails.root.join("storage") %>
 
+# Production uploads (Render's disk is wiped on every deploy). Private Space; Rails serves
+# files through short-lived signed URLs. Keys are Render env vars on the web service.
+digitalocean:
+  service: S3
+  endpoint: https://nyc3.digitaloceanspaces.com
+  region: nyc3
+  bucket: loadntrucks
+  access_key_id: <%= ENV.fetch("DO_SPACES_KEY", nil) %>
+  secret_access_key: <%= ENV.fetch("DO_SPACES_SECRET", nil) %>
+  # Spaces doesn't support the AWS SDK's newer default upload checksums.
+  request_checksum_calculation: when_required
+  response_checksum_validation: when_required
+
 # Use bin/rails credentials:edit to set the AWS secrets (as aws:access_key_id|secret_access_key)
 # amazon:
 #   service: S3
