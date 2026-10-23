@@ -23,8 +23,6 @@ gem 'roo'
 gem 'roo-xls'
 gem 'will_paginate'
 
-gem 'fullcalendar-rails'
-
 # mini_racer does not compile on Windows; Node.js (already installed) is used as the JS runtime instead
 # gem "mini_racer"
 
