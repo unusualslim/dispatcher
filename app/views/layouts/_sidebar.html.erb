@@ -9,11 +9,11 @@
 <% production_active = %w[production_orders jobs warehouse work_orders].include?(current) %>
 <% purchasing_active = %w[purchase_orders purchasing_report mrp vendors].include?(current) %>
 <% inventory_active  = %w[inventory_intelligence products inventory_adjustments inventory_transactions].include?(current) %>
-<% imports_active    = %w[customer_order_imports inventory_imports pdi_inventory_imports warehouse_transaction_imports
+<% imports_active    = %w[imports customer_order_imports inventory_imports pdi_inventory_imports warehouse_transaction_imports
                           bom_imports min_max_imports vendor_freight_term_imports pdi_product_imports
                           repack_batch_imports pdi_purchase_order_imports purchase_order_imports].include?(current) ||
                        (current == 'customer_order_products' && request.path == product_code_links_path) %>
-<% admin_active      = %w[users things warehouse_locations automated_processes announcements].include?(current) %>
+<% admin_active      = imports_active || %w[users things warehouse_locations automated_processes announcements].include?(current) %>
 
 <nav id="sidebar" class="sidebar d-flex flex-column">
   <!-- Brand -->
@@ -35,6 +35,14 @@
         <div class="sidebar-section-label">My Dispatches</div>
         <ul class="sidebar-nav">
           <%= nav_item 'My Dispatches', dispatches_path, 'bi-truck', active: current == 'dispatches' && action == 'index' %>
+        </ul>
+
+      <% elsif line_worker? %>
+
+        <!-- LINE WORKER NAV -->
+        <div class="sidebar-section-label">Production</div>
+        <ul class="sidebar-nav">
+          <%= nav_item 'Line Production', line_path, 'bi-stopwatch', active: current == 'jobs' %>
         </ul>
 
       <% else %>
@@ -107,24 +115,9 @@
           <%= nav_item 'Inventory History',  inventory_transactions_path,  'bi-clock-history', active: current == 'inventory_transactions' %>
         <% end %>
 
-        <!-- IMPORTS -->
-        <%= render 'layouts/sidebar_section', label: 'Imports', icon: 'bi-file-earmark-arrow-up', id: 'importsCollapse', active: imports_active do %>
-          <%= nav_item 'Customer Orders',            new_customer_order_import_path,         'bi-file-earmark-arrow-up', active: current == 'customer_order_imports' %>
-          <%= nav_item 'Link ODOR Products',         product_code_links_path,                'bi-link-45deg',            active: request.path == product_code_links_path %>
-          <%= nav_item 'PDI Products',               new_pdi_product_import_path,            'bi-box-seam',              active: current == 'pdi_product_imports' %>
-          <%= nav_item 'PDI Inventory',              new_pdi_inventory_import_path,          'bi-upload',                active: current == 'pdi_inventory_imports' %>
-          <%= nav_item 'PDI Purchase Orders',        new_pdi_purchase_order_import_path,     'bi-bag-check',             active: current == 'pdi_purchase_order_imports' %>
-          <%= nav_item 'Purchase Orders',            new_purchase_order_imports_path,        'bi-bag-plus',              active: current == 'purchase_order_imports' %>
-          <%= nav_item 'Inventory',                  new_inventory_import_path,              'bi-boxes',                 active: current == 'inventory_imports' %>
-          <%= nav_item 'Warehouse Transactions',     new_warehouse_transaction_import_path,  'bi-clock-history',         active: current == 'warehouse_transaction_imports' %>
-          <%= nav_item 'BOM',                        new_bom_import_path,                    'bi-diagram-3',             active: current == 'bom_imports' %>
-          <%= nav_item 'Repack Batches',             new_repack_batch_import_path,           'bi-recycle',               active: current == 'repack_batch_imports' %>
-          <%= nav_item 'Min/Max',                    new_min_max_import_path,                'bi-sliders2',              active: current == 'min_max_imports' %>
-          <%= nav_item 'Vendor Freight Terms',       new_vendor_freight_term_import_path,    'bi-truck-flatbed',         active: current == 'vendor_freight_term_imports' %>
-        <% end %>
-
         <!-- ADMIN -->
         <%= render 'layouts/sidebar_section', label: 'Admin', icon: 'bi-gear-wide-connected', id: 'adminCollapse', active: admin_active do %>
+          <%= nav_item 'Data Imports',        imports_path,             'bi-file-earmark-arrow-up', active: imports_active %>
           <%= nav_item 'Users',               users_path,               'bi-person-badge', active: current == 'users' %>
           <%= nav_item 'Equipment & Assets',  things_path,              'bi-tools',        active: current == 'things' %>
           <% if admin? %>
@@ -167,9 +160,11 @@
   <!-- Bottom: Help, Profile & Logout -->
   <% if user_signed_in? %>
     <div class="sidebar-footer">
-      <%= link_to docs_path, class: "sidebar-footer-link #{'active' if current == 'docs'}" do %>
-        <i class="bi bi-journal-text"></i>
-        <span>Help &amp; Guides</span>
+      <% if admin? %>
+        <%= link_to docs_path, class: "sidebar-footer-link #{'active' if current == 'docs'}" do %>
+          <i class="bi bi-journal-text"></i>
+          <span>Help &amp; Guides</span>
+        <% end %>
       <% end %>
       <%= link_to edit_user_registration_path, class: "sidebar-footer-link" do %>
         <i class="bi bi-person-circle"></i>

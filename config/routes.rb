@@ -183,6 +183,7 @@ Rails.application.routes.draw do
   end
   resources :inventory_adjustments, only: [:new, :create]
   resources :inventory_transactions, only: [:index]
+  get 'imports', to: 'imports#index', as: :imports
   resource :pdi_inventory_import, only: [:new, :create]
   resource :inventory_import, only: [:new, :create] do
     post :preview, on: :collection

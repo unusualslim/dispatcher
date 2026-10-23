@@ -1,0 +1,36 @@
+<div class="container-fluid py-4" style="max-width: 1100px;">
+  <div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+      <h1 class="h3 mb-1">Data Imports</h1>
+      <p class="text-muted mb-0">Manual file imports. Each one previews the file before anything is saved.</p>
+    </div>
+    <%= link_to automated_processes_path, class: 'btn btn-outline-secondary btn-sm' do %>
+      <i class="bi bi-arrow-repeat me-1"></i> Scheduled PDI syncs
+    <% end %>
+  </div>
+
+  <% @imports.group_by { |i| i[:group] }.each do |group, imports| %>
+    <h5 class="text-muted fw-semibold border-bottom pb-2 mb-3"><%= group %></h5>
+    <div class="row g-3 mb-4">
+      <% imports.each do |imp| %>
+        <% log = imp[:process] && @last_logs[imp[:process]] %>
+        <div class="col-md-6 col-xl-4">
+          <%= link_to send(imp[:path]), class: 'card h-100 shadow-sm text-decoration-none text-body' do %>
+            <div class="card-body">
+              <h6 class="fw-bold mb-1"><i class="bi <%= imp[:icon] %> text-primary me-2"></i><%= imp[:title] %></h6>
+              <p class="text-muted small mb-2"><%= imp[:description] %></p>
+              <% if log %>
+                <div class="small">
+                  <span class="badge <%= log.status == 'success' ? 'bg-success' : log.status == 'failed' ? 'bg-danger' : 'bg-secondary' %>"><%= log.status %></span>
+                  <span class="text-muted ms-1">Last run <%= time_ago_in_words(log.started_at) %> ago</span>
+                </div>
+              <% elsif imp[:process] %>
+                <div class="small text-muted">Never run</div>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>

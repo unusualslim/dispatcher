@@ -7,7 +7,7 @@
   <div class="flex-grow-1"></div>
 
   <!-- Warehouse selector -->
-  <% if user_signed_in? && !driver? %>
+  <% if user_signed_in? && !driver? && !line_worker? %>
     <% warehouses = Location.where(location_category_id: 1, show_in_warehouse_dropdown: true).order(:company_name) %>
     <div class="dropdown me-2">
       <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
@@ -43,7 +43,7 @@
   <!-- Quick actions -->
   <div class="d-flex align-items-center gap-2">
     <% if user_signed_in? %>
-      <% unless driver? %>
+      <% unless driver? || line_worker? %>
         <%= link_to "New Order", new_customer_order_path, class: "btn btn-success btn-sm" %>
         <%= link_to "New Dispatch", new_dispatch_path, class: "btn btn-primary btn-sm" %>
       <% end %>

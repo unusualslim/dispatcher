@@ -37,6 +37,8 @@ class ApplicationController < ActionController::Base
     def after_sign_in_path_for(resource)
       if resource.role == 'worker'
         dispatches_path
+      elsif resource.role == 'line_worker'
+        line_path
       else
         authenticated_root_path
       end
