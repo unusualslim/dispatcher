@@ -1,5 +1,5 @@
 <h1><%= @announcement.title %></h1>
-<p><%= @announcement.content %></p>
+<%= @announcement.content %>
 <p><%= @announcement.published_at.in_time_zone('Eastern Time (US & Canada)').strftime("%B %d, %Y %I:%M %p %Z") %></p>
 <p><%= @announcement.status %></p>
 
