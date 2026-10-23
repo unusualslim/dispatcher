@@ -290,3 +290,54 @@ html, body {
 .card-link {
   text-decoration: none;
 }
+
+/* ─── Sidebar quick-jump search ──────────────────────────── */
+.sidebar-search {
+  position: relative;
+  margin: 2px 10px 6px;
+}
+
+.sidebar-search i {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.8rem;
+  color: var(--sidebar-label);
+  pointer-events: none;
+}
+
+.sidebar-search input {
+  width: 100%;
+  padding: 6px 10px 6px 30px;
+  border: 1px solid var(--sidebar-border);
+  border-radius: 6px;
+  background-color: rgba(255,255,255,0.06);
+  color: #ffffff;
+  font-size: 0.82rem;
+  outline: none;
+}
+
+.sidebar-search input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+}
+
+.sidebar-search input::placeholder {
+  color: var(--sidebar-label);
+}
+
+.sidebar-search input:focus {
+  border-color: var(--sidebar-active);
+  background-color: rgba(255,255,255,0.1);
+}
+
+#sidebarAccordion:not(.searching) .sidebar-search-only {
+  display: none;
+}
+
+.sidebar-nav li.search-cursor a,
+.sidebar-nav li.search-cursor a:hover {
+  background-color: var(--sidebar-hover);
+  color: #ffffff;
+  box-shadow: inset 3px 0 0 var(--sidebar-active);
+}

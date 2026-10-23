@@ -42,10 +42,16 @@
         <!-- LINE WORKER NAV -->
         <div class="sidebar-section-label">Production</div>
         <ul class="sidebar-nav">
-          <%= nav_item 'Line Production', line_path, 'bi-stopwatch', active: current == 'jobs' %>
+          <%= nav_item 'Line Production', line_path, 'bi-stopwatch', active: current == 'jobs', keywords: 'clock in jobs' %>
         </ul>
 
       <% else %>
+
+        <!-- QUICK-JUMP SEARCH -->
+        <div class="sidebar-search">
+          <i class="bi bi-search"></i>
+          <input type="search" id="sidebarSearch" placeholder="Jump to…  ( / )" autocomplete="off" aria-label="Search pages">
+        </div>
 
         <!-- FAVORITES (always expanded, outside accordion) -->
         <% favorites = current_user.user_favorites %>
@@ -70,60 +76,63 @@
         <!-- SALES -->
         <%= render 'layouts/sidebar_section', label: 'Sales', icon: 'bi-cart3', id: 'salesCollapse', active: sales_active do %>
           <%= nav_item 'Order Dashboard',     dashboard_customer_orders_path, 'bi-speedometer2',        active: current == 'customer_orders' && action == 'dashboard' %>
-          <%= nav_item 'Customer Orders',     customer_orders_path,           'bi-cart3',               active: current == 'customer_orders' && action != 'dashboard' %>
+          <%= nav_item 'Customer Orders',     customer_orders_path,           'bi-cart3',               active: current == 'customer_orders' && action != 'dashboard', keywords: 'sales orders pdi' %>
           <%= nav_item 'Quotes',              quotes_path,                    'bi-file-earmark-text',   active: current == 'quotes' %>
           <%= nav_item 'Customers',           customers_path,                 'bi-people',              active: current == 'customers' %>
           <%= nav_item 'Locations',           locations_path,                 'bi-geo-alt',             active: current == 'locations' && action != 'map' %>
-          <%= nav_item 'Pricing Rules',       pricing_rules_path,             'bi-tag',                 active: current == 'pricing_rules' %>
-          <%= nav_item 'Price Exceptions',    price_exceptions_path,          'bi-exclamation-diamond', active: current == 'price_exceptions' %>
-          <%= nav_item 'Quote Margin Review', quote_margin_review_path,       'bi-graph-down-arrow',    active: current == 'quote_margin_reviews' %>
+          <%= nav_item 'Pricing Rules',       pricing_rules_path,             'bi-tag',                 active: current == 'pricing_rules', keywords: 'prices' %>
+          <%= nav_item 'Price Exceptions',    price_exceptions_path,          'bi-exclamation-diamond', active: current == 'price_exceptions', keywords: 'price check mismatch' %>
+          <%= nav_item 'Quote Margin Review', quote_margin_review_path,       'bi-graph-down-arrow',    active: current == 'quote_margin_reviews', keywords: 're-price requote' %>
         <% end %>
 
         <!-- DISPATCH -->
         <%= render 'layouts/sidebar_section', label: 'Dispatch', icon: 'bi-truck', id: 'dispatchCollapse', active: dispatch_active do %>
-          <%= nav_item 'Dispatch Board',  kanban_dispatches_path, 'bi-kanban',    active: current == 'dispatches' && action == 'kanban' %>
-          <%= nav_item 'Dispatch List',   view_dispatches_path,   'bi-table',     active: current == 'dispatches' && action == 'view_dispatches' %>
+          <%= nav_item 'Dispatch Board',  kanban_dispatches_path, 'bi-kanban',    active: current == 'dispatches' && action == 'kanban', keywords: 'kanban' %>
+          <%= nav_item 'Dispatch List',   view_dispatches_path,   'bi-table',     active: current == 'dispatches' && action == 'view_dispatches', keywords: 'dispatches table' %>
           <%= nav_item 'Calendar',        calendar_path,          'bi-calendar3', active: current == 'calendar' %>
-          <%= nav_item 'Map',             locations_map_path,     'bi-map',       active: current == 'locations' && action == 'map' %>
-          <%= nav_item 'Driver Messages', dispatch_messages_path, 'bi-chat-dots', active: current == 'dispatch_messages' %>
+          <%= nav_item 'Map',             locations_map_path,     'bi-map',       active: current == 'locations' && action == 'map', keywords: 'gps trucks samsara routes' %>
+          <%= nav_item 'Driver Messages', dispatch_messages_path, 'bi-chat-dots', active: current == 'dispatch_messages', keywords: 'sms twilio' %>
         <% end %>
 
         <!-- PRODUCTION -->
         <%= render 'layouts/sidebar_section', label: 'Production', icon: 'bi-gear', id: 'productionCollapse', active: production_active do %>
           <%= nav_item 'Production Dashboard', dashboard_production_orders_path, 'bi-speedometer2',          active: current == 'production_orders' && action == 'dashboard' %>
-          <%= nav_item 'Production Kanban',    kanban_production_orders_path,    'bi-layout-three-columns',  active: current == 'production_orders' && action == 'kanban' %>
-          <%= nav_item 'Production Orders',    production_orders_path,           'bi-table',                 active: current == 'production_orders' && !%w[dashboard kanban].include?(action) %>
-          <%= nav_item 'Line Production',      line_path,                        'bi-stopwatch',             active: current == 'jobs' %>
+          <%= nav_item 'Production Kanban',    kanban_production_orders_path,    'bi-layout-three-columns',  active: current == 'production_orders' && action == 'kanban', keywords: 'board' %>
+          <%= nav_item 'Production Orders',    production_orders_path,           'bi-table',                 active: current == 'production_orders' && !%w[dashboard kanban].include?(action), keywords: 'def manufacturing bom cost' %>
+          <%= nav_item 'Line Production',      line_path,                        'bi-stopwatch',             active: current == 'jobs', keywords: 'clock in jobs' %>
           <%= nav_item 'Warehouse Board',      warehouse_kanban_path,            'bi-tv',                    active: current == 'warehouse' %>
-          <%= nav_item 'Work Orders',          work_orders_path,                 'bi-wrench-adjustable',     active: current == 'work_orders' %>
+          <%= nav_item 'Work Orders',          work_orders_path,                 'bi-wrench-adjustable',     active: current == 'work_orders', keywords: 'shop' %>
         <% end %>
 
         <!-- PURCHASING -->
         <%= render 'layouts/sidebar_section', label: 'Purchasing', icon: 'bi-bag-check', id: 'purchasingCollapse', active: purchasing_active do %>
           <%= nav_item 'PO Dashboard',      dashboard_purchase_orders_path, 'bi-speedometer2',    active: current == 'purchase_orders' && action == 'dashboard' %>
           <%= nav_item 'Purchase Orders',   purchase_orders_path,           'bi-bag-check',       active: current == 'purchase_orders' && action != 'dashboard' %>
-          <%= nav_item 'Purchasing Report', purchasing_report_path,         'bi-cart-check',      active: current == 'purchasing_report' %>
-          <%= nav_item 'MRP',               mrp_path,                       'bi-graph-up-arrow',  active: current == 'mrp' %>
+          <%= nav_item 'Purchasing Report', purchasing_report_path,         'bi-cart-check',      active: current == 'purchasing_report', keywords: 'buy reorder' %>
+          <%= nav_item 'MRP',               mrp_path,                       'bi-graph-up-arrow',  active: current == 'mrp', keywords: 'requirements raw materials' %>
           <%= nav_item 'Vendors',           vendors_path,                   'bi-building',        active: current == 'vendors' %>
         <% end %>
 
         <!-- INVENTORY -->
         <%= render 'layouts/sidebar_section', label: 'Inventory', icon: 'bi-box-seam', id: 'inventoryCollapse', active: inventory_active do %>
-          <%= nav_item 'Inventory Insights', inventory_intelligence_path,  'bi-lightbulb',     active: current == 'inventory_intelligence' %>
+          <%= nav_item 'Inventory Insights', inventory_intelligence_path,  'bi-lightbulb',     active: current == 'inventory_intelligence', keywords: 'intelligence report' %>
           <%= nav_item 'Products',           products_path,                'bi-box-seam',      active: current == 'products' %>
-          <%= nav_item 'Adjust Inventory',   new_inventory_adjustment_path, 'bi-sliders',      active: current == 'inventory_adjustments' %>
-          <%= nav_item 'Inventory History',  inventory_transactions_path,  'bi-clock-history', active: current == 'inventory_transactions' %>
+          <%= nav_item 'Adjust Inventory',   new_inventory_adjustment_path, 'bi-sliders',      active: current == 'inventory_adjustments', keywords: 'adjustment stock count' %>
+          <%= nav_item 'Inventory History',  inventory_transactions_path,  'bi-clock-history', active: current == 'inventory_transactions', keywords: 'transactions' %>
         <% end %>
 
         <!-- ADMIN -->
         <%= render 'layouts/sidebar_section', label: 'Admin', icon: 'bi-gear-wide-connected', id: 'adminCollapse', active: admin_active do %>
-          <%= nav_item 'Data Imports',        imports_path,             'bi-file-earmark-arrow-up', active: imports_active %>
+          <%= nav_item 'Data Imports',        imports_path,             'bi-file-earmark-arrow-up', active: imports_active, keywords: 'upload file' %>
+          <% ImportsController::IMPORTS.each do |imp| %>
+            <%= nav_item "Import: #{imp[:title]}", send(imp[:path]), imp[:icon], search_only: true, keywords: imp[:description] %>
+          <% end %>
           <%= nav_item 'Users',               users_path,               'bi-person-badge', active: current == 'users' %>
-          <%= nav_item 'Equipment & Assets',  things_path,              'bi-tools',        active: current == 'things' %>
+          <%= nav_item 'Equipment & Assets',  things_path,              'bi-tools',        active: current == 'things', keywords: 'things' %>
           <% if admin? %>
             <%= nav_item 'Warehouse Locations', edit_warehouse_locations_path, 'bi-building-gear', active: current == 'warehouse_locations' %>
           <% end %>
-          <%= nav_item 'Automated Processes', automated_processes_path, 'bi-arrow-repeat', active: current == 'automated_processes' %>
+          <%= nav_item 'Automated Processes', automated_processes_path, 'bi-arrow-repeat', active: current == 'automated_processes', keywords: 'pdi sync schedule cron ftp' %>
           <%= nav_item 'Announcements',       announcements_path,       'bi-megaphone',    active: current == 'announcements' %>
         <% end %>
 
@@ -149,6 +158,100 @@
             var acc = document.getElementById('sidebarAccordion');
             acc.addEventListener('shown.bs.collapse', save);
             acc.addEventListener('hidden.bs.collapse', save);
+          })();
+        </script>
+
+        <script>
+          // Quick-jump search: filters sidebar links as you type. "/" focuses,
+          // arrows move, Enter opens the highlighted link, Escape clears.
+          (function() {
+            var input = document.getElementById('sidebarSearch');
+            var acc   = document.getElementById('sidebarAccordion');
+            var favs  = document.getElementById('favoritesSidebarList');
+            var items = Array.from(acc.querySelectorAll('.sidebar-nav li'));
+            if (favs) items = items.concat(Array.from(favs.querySelectorAll('li')));
+            var wasOpen = null;
+            var matches = [];
+            var cursor  = 0;
+
+            function haystack(li) {
+              return (li.innerText + ' ' + (li.dataset.keywords || '')).toLowerCase();
+            }
+
+            function highlight() {
+              items.forEach(function(li) { li.classList.remove('search-cursor'); });
+              if (matches[cursor]) {
+                matches[cursor].classList.add('search-cursor');
+                matches[cursor].scrollIntoView({ block: 'nearest' });
+              }
+            }
+
+            function filter() {
+              var terms = input.value.toLowerCase().trim().split(/\s+/).filter(Boolean);
+              var searching = terms.length > 0;
+
+              if (searching && !wasOpen) {
+                wasOpen = Array.from(acc.querySelectorAll('.sidebar-collapse.show')).map(function(el) { return el.id; });
+              }
+              acc.classList.toggle('searching', searching);
+              if (favs) favs.classList.toggle('searching', searching);
+
+              // Name matches rank ahead of keyword-only matches.
+              var byName = [], byKeyword = [];
+              items.forEach(function(li) {
+                var hit = !searching || terms.every(function(t) { return haystack(li).includes(t); });
+                li.classList.toggle('d-none', !hit);
+                if (!hit || !searching) return;
+                var name = li.innerText.toLowerCase();
+                (terms.every(function(t) { return name.includes(t); }) ? byName : byKeyword).push(li);
+              });
+              matches = byName.concat(byKeyword);
+
+              acc.querySelectorAll('.sidebar-section').forEach(function(section) {
+                var collapse = section.querySelector('.sidebar-collapse');
+                var any = section.querySelector('.sidebar-nav li:not(.d-none)');
+                section.classList.toggle('d-none', searching && !any);
+                if (searching) collapse.classList.add('show');
+              });
+
+              if (!searching && wasOpen) {
+                acc.querySelectorAll('.sidebar-collapse').forEach(function(el) {
+                  el.classList.toggle('show', wasOpen.includes(el.id));
+                });
+                wasOpen = null;
+              }
+
+              cursor = 0;
+              highlight();
+            }
+
+            function clear() {
+              input.value = '';
+              filter();
+            }
+
+            input.addEventListener('input', filter);
+            input.addEventListener('keydown', function(e) {
+              if (e.key === 'ArrowDown' && matches.length) {
+                e.preventDefault(); cursor = (cursor + 1) % matches.length; highlight();
+              } else if (e.key === 'ArrowUp' && matches.length) {
+                e.preventDefault(); cursor = (cursor - 1 + matches.length) % matches.length; highlight();
+              } else if (e.key === 'Enter') {
+                e.preventDefault();
+                var link = matches[cursor] && matches[cursor].querySelector('a[href]');
+                if (link) window.location.href = link.href;
+              } else if (e.key === 'Escape') {
+                clear(); input.blur();
+              }
+            });
+
+            document.addEventListener('keydown', function(e) {
+              if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
+              var t = e.target;
+              if (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+              e.preventDefault();
+              input.focus();
+            });
           })();
         </script>
 

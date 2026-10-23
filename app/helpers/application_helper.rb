@@ -18,9 +18,11 @@ module ApplicationHelper
     CRON_PRESETS.key(expr) || expr
   end
 
-  # Sidebar link (layouts/_sidebar); `active` controls the highlight.
-  def nav_item(label, path, icon, active: false)
-    content_tag(:li, class: ('active' if active)) do
+  # Sidebar link (layouts/_sidebar); `active` controls the highlight, `keywords`
+  # are extra terms for the sidebar quick-jump search.
+  def nav_item(label, path, icon, active: false, keywords: nil, search_only: false)
+    classes = [('active' if active), ('sidebar-search-only' if search_only)].compact.join(' ')
+    content_tag(:li, class: classes.presence, data: { keywords: keywords }) do
       link_to(path) { content_tag(:i, '', class: "bi #{icon}") + " #{label}" }
     end
   end
