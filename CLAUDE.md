@@ -17,9 +17,12 @@ Primary contact: John (admin@perrybrothersoil.com)
 
 ## Stack
 - Ruby 3.4.11, Rails 7.2 (`config.load_defaults 7.0` — newer framework defaults not yet enabled), PostgreSQL 15, Puma 7
-- Bootstrap 5, Leaflet.js (maps), Select2, FullCalendar
-- jsbundling-rails (esbuild) + cssbundling-rails (sass via yarn)
-- Devise authentication + **Cloudflare Turnstile** on registration (reCAPTCHA was removed)
+- Bootstrap 5 + jQuery + Select2 + FullCalendar 5 (all from CDN in the layout), Leaflet.js (maps)
+- jsbundling-rails (esbuild) + cssbundling-rails (sass via yarn); Turbo 7, Trix 2.1 / Action Text
+- Devise authentication. Sign-up (`/users/sign_up`) is **admin-only** — it's how admins add users
+  (Users → New user), with **Cloudflare Turnstile**. Users can't change their own role (only admins, on /users).
+- Active Storage: **DigitalOcean Space `loadntrucks` (nyc3)** in production (`:digitalocean` in storage.yml,
+  keys from env); local disk in dev/test. Action Text rich text on Location notes and Announcements.
 - Samsara Fleet API for live GPS truck tracking
 - Twilio for SMS (dispatch notifications / messages)
 - roo / roo-xls for spreadsheet imports, net-ftp for PDI, fugit for cron parsing
@@ -40,6 +43,18 @@ Primary contact: John (admin@perrybrothersoil.com)
 - Windows quirks (from earlier dev on Windows 10): Puma workers/threads limited via
   `Gem.win_platform?` guard in config/puma.rb; Sprockets uses MemoryStore cache in
   config/environments/development.rb. On Windows, PG15 was on port 5433.
+
+---
+
+## Navigation (sidebar)
+- `app/views/layouts/_sidebar.html.erb`: admins get collapsible groups Sales / Dispatch / Production /
+  Purchasing / Inventory / Admin (each group's dashboard is its first link); drivers and line workers
+  get short navs. Open/closed state is remembered per browser (localStorage).
+- Links use the `nav_item(label, path, icon, active:, keywords:)` helper; `keywords` feed the quick-jump
+  search box (press `/`). `nav_search_item` adds search-only entries (used for each importer).
+- All manual importers are listed once in `ImportsController::IMPORTS` (hub at `/imports`, Admin → Data Imports);
+  add new importers there.
+- Styling: `--sidebar-*` variables and group/link rules in `app/assets/stylesheets/custom.css`.
 
 ---
 
@@ -155,21 +170,34 @@ download the file, delete it from FTP, run an import service, and record a `Sync
 - `PDI_FTP_HOST`, `PDI_FTP_USER`, `PDI_FTP_PASSWORD` (+ optional `PDI_FTP_ORDER_DIR`,
   `PDI_FTP_VENDOR_DIR`, `PDI_FTP_PRODUCT_DIR`, `PDI_FTP_PO_DIR`, `PDI_FTP_PATH`)
 - `SENDGRID_USERNAME`, `SENDGRID_PASSWORD`
-- `TWILIO_SID`, `TWILIO_TOKEN`, `TWILIO_NUMBER`
+- `TWILIO_SID`, `TWILIO_TOKEN`, `TWILIO_NUMBER` (MessagesController reads Twilio creds from Rails credentials)
 - `BATCH_QR_PASSWORD`, `BATCH_QR_SECRET` — batch label/QR gate (/gate, /labels, /l)
+- `DO_SPACES_KEY`, `DO_SPACES_SECRET` — Active Storage on the DigitalOcean Space (key needs read/write/delete)
+- `HOSTNAME=team.fivepointsservice.com` — host for links in emails. Keep it set explicitly (Linux may set its own HOSTNAME)
+- `WEB_CONCURRENCY=0` — Puma single mode (cluster with 1 worker only wastes memory)
 - `EXECJS_RUNTIME=Node` on Render (prevents Bun conflict)
 
-## Render production notes
-- db:migrate runs automatically on deploy
-- Seeds are guarded: `return if Rails.env.production?`
-- Cron job runs `rake scheduler:tick` every minute
+## Render / hosting notes
+- Two services deploy from `main`: web **Dispatcher** (`srv-cloa2b0gqk6s73860dmg`, build `bin/render-build.sh`)
+  and cron **Automated Processes Scheduler** (`crn-d8u1kjbtqb8s73anodag`, `rake scheduler:tick` every minute;
+  its build command is set in the Render dashboard). The Render CLI is installed (workspace "PerryBrothers").
+- db:migrate runs automatically on deploy (web build). Seeds are guarded: `return if Rails.env.production?`
+- Cloudflare proxies both domains (same account). loadntrucks.com → team.fivepointsservice.com is a
+  Cloudflare Single Redirect in the **loadntrucks.com** zone (path + query preserved for QR labels).
+- production.rb: `force_ssl` (HSTS, secure cookies) and the `config.hosts` allowlist both skip requests
+  without `X-Forwarded-Proto` — that's Render's internal health check (`HEAD /`).
+- Render's image provides libvips 8.14 (Debian 12); Rails 7.2.4 needs >= 8.13 and ruby-vips >= 2.2.1 to boot.
 
 ---
 
 ## Tests
 Minitest under `test/`. Coverage is concentrated on MRP services/models
 (MrpEngine, BomPopulator, MaterialAvailability, Reorder, ProductionOrderBatch);
-the PDI sync/import code is largely untested.
+the PDI sync/import code and most controllers are largely untested. Security regression tests live in
+`test/integration/` (admin-only sign-up, Twilio webhook signature, announcement rich text).
+The suite has **~35 pre-existing failures/errors** (unauthenticated scaffold controller tests, MRP tests
+using old statuses, order-dependent data) — compare failures against that baseline rather than expecting green.
+CI (`.github/workflows/lint.yml`) runs RuboCop only.
 
 ## Lint
 `bin/rubocop` (rubocop + rubocop-rails, config in `.rubocop.yml`). Existing offenses are
@@ -186,7 +214,18 @@ file, remove it from the todo (or regenerate with the command at the top of `.ru
 - Finish multi-location inventory (LocationProduct exists; stock falls back to global `current_stock` when no location)
 - Production order completion UI improvements
 
+### Upgrades / security still open (as of Oct 2026)
+- **Rails 8.1** — Brakeman flags Rails 7.2's security support as ended (2026-08-09)
+- Turbo 7 → 8 (navigation behavior changes), Devise 5, rubyzip 3 (needs `roo` + `roo-xls` upgraded together)
+- Build-tool npm alerts via Dependabot yarn PRs (skip `@rails/actiontext` 8.x while on Rails 7.2)
+- Flip `load_defaults` stepwise; Rack `:unprocessable_entity` → `:unprocessable_content`
+
 ### Known issues / notes
+- `Dispatch#dispatch_status` is a declared, non-persisted attribute (the real column is `status`), but the
+  dispatch show page and production dashboard still read it — those status badges never match saved records
+- The Twilio number is shared with other apps and has no inbound webhook, so `/messages/reply` is unused
+  (it rejects requests without a valid `X-Twilio-Signature`)
+- `app/assets/javascript/custom.js` page-specific scripts throw null `addEventListener` errors on other pages (harmless)
 - `dispatch_customer_orders` join table is legacy but still used by `CustomerOrder.unassigned_open_orders`
 - With the :async adapter, failed jobs are only visible in `SyncLog` and the Rails log
 - Zone.Identifier files from Windows show as deleted in git status — safe to ignore
