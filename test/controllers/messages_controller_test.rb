@@ -1,8 +1,9 @@
 require 'test_helper'
 
 class MessagesControllerTest < ActionDispatch::IntegrationTest
-  test 'should get reply' do
+  # The webhook only answers requests signed by Twilio; see TwilioWebhookTest.
+  test 'unsigned reply requests are forbidden' do
     get messages_reply_url
-    assert_response :success
+    assert_response :forbidden
   end
 end
