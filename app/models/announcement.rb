@@ -1,3 +1,3 @@
 class Announcement < ApplicationRecord
-    scope :active, -> { where(status: 'active') }
+  scope :active, -> { where(status: 'active') }
 end

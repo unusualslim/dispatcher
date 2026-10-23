@@ -28,9 +28,9 @@ class MrpEngine
         requirements[key][:total_needed] += quantity
       else
         requirements[key] = {
-          description:  comp.description.presence || product&.name || key,
+          description: comp.description.presence || product&.name || key,
           total_needed: quantity,
-          product:      product
+          product: product
         }
       end
     end
@@ -43,22 +43,22 @@ class MrpEngine
       vendor       = if product
                        product.primary_vendor ||
                          PurchaseOrder.joins(:vendor, :line_items)
-                           .where(purchase_order_line_items: { product_id: product.id })
-                           .order(created_at: :desc).first&.vendor
+                                      .where(purchase_order_line_items: { product_id: product.id })
+                                      .order(created_at: :desc).first&.vendor
                      end
       lead_time    = vendor&.lead_time_days
       order_by_date = lead_time ? Date.today + lead_time.days : nil
 
       Requirement.new(
-        product:         product,
-        description:     data[:description],
-        total_needed:    total_needed,
+        product: product,
+        description: data[:description],
+        total_needed: total_needed,
         available_stock: available,
-        shortfall:       shortfall,
-        vendor:          vendor,
-        lead_time_days:  lead_time,
-        order_by_date:   order_by_date,
-        urgent:          shortfall > 0
+        shortfall: shortfall,
+        vendor: vendor,
+        lead_time_days: lead_time,
+        order_by_date: order_by_date,
+        urgent: shortfall > 0
       )
     end.sort_by { |r| [r.urgent ? 0 : 1, r.description.to_s] }
   end
@@ -67,9 +67,9 @@ class MrpEngine
 
   def open_production_order_components
     scope = ProductionOrderComponent
-      .joins(:production_order)
-      .where(production_orders: { status: %w[pending in_progress] })
-      .includes(:product)
+            .joins(:production_order)
+            .where(production_orders: { status: %w[pending in_progress] })
+            .includes(:product)
     scope = scope.where(production_orders: { location_id: @location_id }) if @location_id
     scope
   end

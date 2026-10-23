@@ -10,11 +10,13 @@ class WarehouseTransactionImportService
   COL_UNIT_COST     = 18
 
   TRANSACTION_TYPE_MAP = {
-    'Purchases' => 'in',
+    'Purchases' => 'in'
   }.freeze
 
-  Result     = Struct.new(:imported, :retagged, :skipped_no_product, :skipped_unknown_type, :skipped_duplicate, :errors, keyword_init: true)
-  PreviewRow = Struct.new(:product_id, :description, :product, :direction, :quantity, :unit_cost, :reference, :business_date, :action, keyword_init: true)
+  Result     = Struct.new(:imported, :retagged, :skipped_no_product, :skipped_unknown_type, :skipped_duplicate,
+                          :errors, keyword_init: true)
+  PreviewRow = Struct.new(:product_id, :description, :product, :direction, :quantity, :unit_cost, :reference,
+                          :business_date, :action, keyword_init: true)
 
   def self.call(path, posted: true)
     new(path, posted: posted).run
@@ -67,8 +69,8 @@ class WarehouseTransactionImportService
 
       # Check for existing with old/different posted status — will be re-tagged
       old_match = InventoryTransaction.where(product_id: product_id, reference_number: reference)
-                    .where("notes LIKE '[PDI Historical Import%'")
-                    .first
+                                      .where("notes LIKE '[PDI Historical Import%'")
+                                      .first
       if old_match
         rows << PreviewRow.new(product_id: product_id, description: description.to_s, product: product,
                                direction: direction, quantity: quantity, unit_cost: unit_cost,
@@ -85,7 +87,8 @@ class WarehouseTransactionImportService
   end
 
   def run
-    result = Result.new(imported: 0, retagged: 0, skipped_no_product: 0, skipped_unknown_type: 0, skipped_duplicate: 0, errors: [])
+    result = Result.new(imported: 0, retagged: 0, skipped_no_product: 0, skipped_unknown_type: 0, skipped_duplicate: 0,
+                        errors: [])
 
     wb = Roo::Excel.new(@path)
     (1..wb.last_row).each do |i|
@@ -118,18 +121,18 @@ class WarehouseTransactionImportService
 
       # Duplicate guard: same reference + product + exact notes
       if InventoryTransaction.exists?(
-           product_id:       product_id,
-           reference_number: reference,
-           notes:            notes_for(description, unit_cost)
-         )
+        product_id: product_id,
+        reference_number: reference,
+        notes: notes_for(description, unit_cost)
+      )
         result.skipped_duplicate += 1
         next
       end
 
       # Re-tag existing transaction with old/different posted status
       old_match = InventoryTransaction.where(product_id: product_id, reference_number: reference)
-                    .where("notes LIKE '[PDI Historical Import%'")
-                    .first
+                                      .where("notes LIKE '[PDI Historical Import%'")
+                                      .first
       if old_match
         old_match.update!(notes: notes_for(description, unit_cost))
         result.retagged += 1
@@ -137,15 +140,15 @@ class WarehouseTransactionImportService
       end
 
       InventoryTransaction.create!(
-        product:          product,
-        quantity:         quantity,
-        direction:        direction,
+        product: product,
+        quantity: quantity,
+        direction: direction,
         reference_number: reference,
-        notes:            notes_for(description, unit_cost),
-        created_at:       business_date.to_time
+        notes: notes_for(description, unit_cost),
+        created_at: business_date.to_time
       )
       result.imported += 1
-    rescue => e
+    rescue StandardError => e
       result.errors << "Row #{i} (#{product_id}): #{e.message}"
     end
 

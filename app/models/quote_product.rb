@@ -1,6 +1,6 @@
 class QuoteProduct < ApplicationRecord
   belongs_to :quote
-  belongs_to :product, foreign_key: :product_id, primary_key: :id, optional: true
+  belongs_to :product, primary_key: :id, optional: true
   belongs_to :pricing_rule, optional: true
   has_many :customer_order_products, dependent: :nullify
 
@@ -12,7 +12,7 @@ class QuoteProduct < ApplicationRecord
   # Lines whose price is locked for the customer on the given date.
   # A superseded line stops locking the day before its replacement starts;
   # a quote whose lock was ended early stops on lock_ended_on.
-  scope :locking_on, ->(date) {
+  scope :locking_on, lambda { |date|
     joins(:quote)
       .merge(Quote.accepted_locks)
       .where('quotes.valid_from <= ? AND quotes.expiry_date >= ?', date, date)
@@ -39,6 +39,7 @@ class QuoteProduct < ApplicationRecord
   def locked_through
     last = quote.lock_last_day
     return nil unless last
+
     superseded_on ? [last, superseded_on - 1].min : last
   end
 
@@ -48,6 +49,7 @@ class QuoteProduct < ApplicationRecord
     return :superseded if superseded_on && superseded_on <= date
     return :scheduled  if quote.valid_from > date
     return :expired    if quote.expiry_date < date
+
     :active
   end
 

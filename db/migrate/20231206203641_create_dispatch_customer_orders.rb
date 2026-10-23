@@ -6,7 +6,7 @@ class CreateDispatchCustomerOrders < ActiveRecord::Migration[7.0]
       t.timestamps
     end
 
-    #add_index :dispatch_customer_orders, :dispatch_id
-    #add_index :dispatch_customer_orders, :customer_order_id
+    # add_index :dispatch_customer_orders, :dispatch_id
+    # add_index :dispatch_customer_orders, :customer_order_id
   end
 end

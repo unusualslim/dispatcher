@@ -12,7 +12,7 @@ class BackfillCustomerLocationsFromOrders < ActiveRecord::Migration[7.0]
         AND a.id > b.id
     SQL
 
-    add_index :customer_locations, [:customer_id, :location_id], unique: true
+    add_index :customer_locations, %i[customer_id location_id], unique: true
 
     execute <<~SQL
       INSERT INTO customer_locations (customer_id, location_id, created_at, updated_at)
@@ -27,6 +27,6 @@ class BackfillCustomerLocationsFromOrders < ActiveRecord::Migration[7.0]
 
   def down
     # Backfilled links can't be told apart from ones added by hand, so they stay.
-    remove_index :customer_locations, [:customer_id, :location_id]
+    remove_index :customer_locations, %i[customer_id location_id]
   end
 end

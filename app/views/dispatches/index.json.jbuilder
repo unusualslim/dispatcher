@@ -1,1 +1,1 @@
-json.array! @dispatches, partial: "dispatches/dispatch", as: :dispatch
+json.array! @dispatches, partial: 'dispatches/dispatch', as: :dispatch

@@ -10,8 +10,12 @@ class CustomerOrderImportsController < ApplicationController
 
   def preview
     file = params[:file]
-    return redirect_to new_customer_order_import_path, alert: "Please select a file." unless file
-    return redirect_to new_customer_order_import_path, alert: "File must be an XLS file." unless file.original_filename.downcase.end_with?('.xls')
+    return redirect_to new_customer_order_import_path, alert: 'Please select a file.' unless file
+
+    unless file.original_filename.downcase.end_with?('.xls')
+      return redirect_to new_customer_order_import_path,
+                         alert: 'File must be an XLS file.'
+    end
 
     tmp = Tempfile.new(['customer_order_import', '.xls'], binmode: true)
     IO.copy_stream(file.tempfile, tmp)
@@ -27,7 +31,7 @@ class CustomerOrderImportsController < ApplicationController
 
   def create
     unless session[:co_import_tmp_path].present? && File.exist?(session[:co_import_tmp_path].to_s)
-      return redirect_to new_customer_order_import_path, alert: "Import session expired. Please re-upload the file."
+      return redirect_to new_customer_order_import_path, alert: 'Import session expired. Please re-upload the file.'
     end
 
     file_path = session[:co_import_tmp_path]
@@ -35,41 +39,41 @@ class CustomerOrderImportsController < ApplicationController
 
     # Encode in 45 KB chunks (multiple of 3 → no mid-stream padding)
     file_content = File.open(file_path, 'rb') do |f|
-      buf = +""
+      buf = +''
       while (chunk = f.read(45_000))
-        buf << [chunk].pack("m0")
+        buf << [chunk].pack('m0')
       end
       buf
     end
 
     log = SyncLog.create!(
       process_name: PROCESS_NAME,
-      status:       'running',
-      file_name:    file_name,
+      status: 'running',
+      file_name: file_name,
       file_content: file_content,
-      file_binary:  true,
-      started_at:   Time.current
+      file_binary: true,
+      started_at: Time.current
     )
 
-    file_content = nil
+    file_content = nil # rubocop:disable Lint/UselessAssignment -- drop the encoded file so GC.start can free it
     GC.start
 
     begin
       result = CustomerOrderImportService.call(file_path)
 
       log.update!(
-        status:          'success',
-        completed_at:    Time.current,
+        status: 'success',
+        completed_at: Time.current,
         records_created: result.created,
         records_updated: result.updated,
         records_skipped: result.skipped,
-        warnings:        result.errors.any? ? result.errors.join("\n") : nil
+        warnings: result.errors.any? ? result.errors.join("\n") : nil
       )
 
       summary = "Import complete — #{result.created} orders created, #{result.updated} updated."
       summary += " #{result.errors.count} warning(s)." if result.errors.any?
       flash[:notice] = summary
-    rescue => e
+    rescue StandardError => e
       log.update!(status: 'failed', completed_at: Time.current, error_message: e.message)
       flash[:alert] = "Import failed: #{e.message}"
     ensure
@@ -83,10 +87,10 @@ class CustomerOrderImportsController < ApplicationController
 
   def download
     log = SyncLog.find(params[:log_id])
-    return redirect_to new_customer_order_import_path, alert: "File not available." if log.file_content.blank?
+    return redirect_to new_customer_order_import_path, alert: 'File not available.' if log.file_content.blank?
 
     send_data Base64.strict_decode64(log.file_content),
-              type:        'application/vnd.ms-excel',
+              type: 'application/vnd.ms-excel',
               disposition: "attachment; filename=\"#{log.file_name}\""
   end
 end

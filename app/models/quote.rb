@@ -11,11 +11,11 @@ class Quote < ApplicationRecord
 
   # Validity presets offered on the quote form: label => ->(start_date) { end_date }
   DURATION_PRESETS = {
-    'End of month'   => ->(d) { d.end_of_month },
+    'End of month' => ->(d) { d.end_of_month },
     'End of quarter' => ->(d) { d.end_of_quarter },
-    '30 days'        => ->(d) { d + 29 },
-    '60 days'        => ->(d) { d + 59 },
-    '90 days'        => ->(d) { d + 89 },
+    '30 days' => ->(d) { d + 29 },
+    '60 days' => ->(d) { d + 59 },
+    '90 days' => ->(d) { d + 89 }
   }.freeze
 
   validates :status, inclusion: { in: STATUSES }
@@ -46,6 +46,7 @@ class Quote < ApplicationRecord
     return :ended     if lock_ended_on && lock_ended_on <= date
     return :scheduled if valid_from > date
     return :expired   if expiry_date < date
+
     :active
   end
 
@@ -58,6 +59,7 @@ class Quote < ApplicationRecord
   # Last day the quote's prices are locked, accounting for an early end.
   def lock_last_day
     return nil unless locks_pricing? && expiry_date
+
     lock_ended_on ? [expiry_date, lock_ended_on - 1].min : expiry_date
   end
 
@@ -115,12 +117,12 @@ class Quote < ApplicationRecord
     Quote.create!(
       customer: customer, location: location, locks_pricing: true,
       valid_from: Date.today, expiry_date: Date.today + days,
-      notes: (["Re-quote of #{quote_number}.", *changes].join("\n")),
-      quote_products_attributes: quote_products.select(&:product).map { |qp|
+      notes: ["Re-quote of #{quote_number}.", *changes].join("\n"),
+      quote_products_attributes: quote_products.select(&:product).map do |qp|
         result = PricingRuleService.rule_lookup(customer_id, qp.product)
         { product_id: qp.product_id, quantity: qp.quantity,
           price: result&.dig(:price) || qp.price, pricing_rule_id: (result[:rule]&.id if result&.dig(:price)) }
-      }
+      end
     )
   end
 
@@ -128,18 +130,18 @@ class Quote < ApplicationRecord
   # Used to pre-fill the new order form; the user sets quantities and saves.
   def build_order
     order = CustomerOrder.new(
-      customer:     customer,
-      location:     location || customer.locations.first,
+      customer: customer,
+      location: location || customer.locations.first,
       order_status: :open_order,
-      notes:        "Created from Quote #{quote_number}"
+      notes: "Created from Quote #{quote_number}"
     )
 
     quote_products.each do |qp|
       order.customer_order_products.build(
-        product_id:    qp.product_id,
-        product_name:  qp.product_name,
-        quantity:      qp.quantity,
-        price:         qp.price,
+        product_id: qp.product_id,
+        product_name: qp.product_name,
+        quantity: qp.quantity,
+        price: qp.price,
         quote_product: (qp if locks_pricing?)
       )
     end
@@ -150,7 +152,7 @@ class Quote < ApplicationRecord
 
   def validate_lock_end
     if lock_ended_on.nil?
-      errors.add(:lock_ended_on, "is required")
+      errors.add(:lock_ended_on, 'is required')
     elsif lock_ended_on < Date.today
       errors.add(:lock_ended_on, "can't be in the past — orders already priced keep their prices")
     elsif lock_ended_on > expiry_date
@@ -160,12 +162,13 @@ class Quote < ApplicationRecord
 
   def valid_window
     return unless valid_from && expiry_date
-    errors.add(:expiry_date, "must be on or after the valid from date") if expiry_date < valid_from
+
+    errors.add(:expiry_date, 'must be on or after the valid from date') if expiry_date < valid_from
   end
 
   def assign_quote_number
     last = Quote.where("quote_number LIKE 'Q-%'")
-                .order(Arel.sql("CAST(SUBSTRING(quote_number FROM 3) AS INTEGER) DESC"))
+                .order(Arel.sql('CAST(SUBSTRING(quote_number FROM 3) AS INTEGER) DESC'))
                 .first
     next_num = last ? last.quote_number.sub('Q-', '').to_i + 1 : 1001
     self.quote_number = "Q-#{next_num}"

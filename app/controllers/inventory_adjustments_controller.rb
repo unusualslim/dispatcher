@@ -29,36 +29,34 @@ class InventoryAdjustmentsController < ApplicationController
 
     if quantity <= 0
       redirect_to new_inventory_adjustment_path(product_id: product.id),
-                  alert: "Quantity must be greater than zero."
+                  alert: 'Quantity must be greater than zero.'
       return
     end
 
     ActiveRecord::Base.transaction do
       InventoryTransaction.create!(
-        product:          product,
-        quantity:         quantity,
-        direction:        direction,
+        product: product,
+        quantity: quantity,
+        direction: direction,
         reference_number: "ADJ-#{Time.current.strftime('%Y%m%d%H%M%S')}",
-        notes:            notes,
-        created_by_id:    current_user.id,
-        location_id:      location&.id
+        notes: notes,
+        created_by_id: current_user.id,
+        location_id: location&.id
       )
 
       delta = direction == 'in' ? quantity : -quantity
       if location.present?
         LocationProduct.adjust!(location, product, delta)
+      elsif direction == 'in'
+        product.increment!(:current_stock, quantity)
       else
-        if direction == 'in'
-          product.increment!(:current_stock, quantity)
-        else
-          product.decrement!(:current_stock, quantity)
-        end
+        product.decrement!(:current_stock, quantity)
       end
     end
 
     redirect_to inventory_transactions_path(product_id: product.id),
                 notice: "#{direction == 'in' ? 'Added' : 'Removed'} #{quantity} #{product.unit_of_measurement} #{direction == 'in' ? 'to' : 'from'} #{product.name}#{location ? " at #{location.company_name}" : ''}."
-  rescue => e
+  rescue StandardError => e
     redirect_to new_inventory_adjustment_path(product_id: params[:product_id]),
                 alert: "Adjustment failed: #{e.message}"
   end

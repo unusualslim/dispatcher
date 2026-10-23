@@ -1,7 +1,6 @@
 class CalendarController < ApplicationController
   before_action :require_admin!
-  def index
-  end
+  def index; end
 
   def events
     customer_orders = CustomerOrder.all.map do |order|

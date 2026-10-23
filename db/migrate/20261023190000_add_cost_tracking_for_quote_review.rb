@@ -8,7 +8,7 @@ class AddCostTrackingForQuoteReview < ActiveRecord::Migration[7.0]
       t.decimal :previous_amount, precision: 12, scale: 4
       t.timestamps
     end
-    add_index :inventory_cost_histories, [:product_id, :created_at]
+    add_index :inventory_cost_histories, %i[product_id created_at]
 
     # When a quote line's cost snapshot was taken, so cost changes since then
     # can be measured against the right date.

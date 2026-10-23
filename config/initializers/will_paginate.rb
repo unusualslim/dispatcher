@@ -18,12 +18,12 @@ class BootstrapPaginationRenderer < WillPaginate::ActionView::LinkRenderer
   end
 
   def previous_page
-    num = @collection.current_page > 1 && @collection.current_page - 1
+    num = @collection.current_page > 1 && (@collection.current_page - 1)
     previous_or_next_page(num, '&lsaquo;', 'previous')
   end
 
   def next_page
-    num = @collection.current_page < total_pages && @collection.current_page + 1
+    num = @collection.current_page < total_pages && (@collection.current_page + 1)
     previous_or_next_page(num, '&rsaquo;', 'next')
   end
 

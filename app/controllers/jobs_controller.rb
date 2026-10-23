@@ -1,6 +1,6 @@
 class JobsController < ApplicationController
   before_action :require_admin_or_line_lead!
-  before_action :set_job, only: [:show, :clock_out]
+  before_action :set_job, only: %i[show clock_out]
 
   def line
     @line_workers = User.line_workers.order(:first_name, :last_name)
@@ -11,9 +11,7 @@ class JobsController < ApplicationController
 
   def create
     worker_ids = params[:worker_ids].presence || []
-    if worker_ids.empty?
-      return redirect_to line_path, alert: "Select at least one worker before clocking in."
-    end
+    return redirect_to line_path, alert: 'Select at least one worker before clocking in.' if worker_ids.empty?
 
     production_order = ProductionOrder.find(params[:production_order_id])
     now = Time.current
@@ -32,18 +30,17 @@ class JobsController < ApplicationController
       end
     end
 
-    redirect_to line_path, notice: "Clocked in — timer running."
+    redirect_to line_path, notice: 'Clocked in — timer running.'
   rescue ActiveRecord::RecordInvalid => e
     redirect_to line_path, alert: "Could not clock in: #{e.message}"
   end
 
-  def show
-  end
+  def show; end
 
   def clock_out
     @job.clock_out!
     redirect_to line_path, notice: "Clocked out. Job duration: #{@job.duration_formatted}."
-  rescue => e
+  rescue StandardError => e
     redirect_to line_path, alert: "Clock out failed: #{e.message}"
   end
 
@@ -54,8 +51,6 @@ class JobsController < ApplicationController
   end
 
   def require_admin_or_line_lead!
-    unless admin? || current_user.role == 'line_worker'
-      redirect_to dispatches_path, alert: "Access denied."
-    end
+    redirect_to dispatches_path, alert: 'Access denied.' unless admin? || current_user.role == 'line_worker'
   end
 end

@@ -10,8 +10,12 @@ class PdiProductImportsController < ApplicationController
 
   def preview
     file = params[:file]
-    return redirect_to new_pdi_product_import_path, alert: "Please select a file." unless file
-    return redirect_to new_pdi_product_import_path, alert: "File must be a CSV file." unless file.original_filename.downcase.end_with?('.csv')
+    return redirect_to new_pdi_product_import_path, alert: 'Please select a file.' unless file
+
+    unless file.original_filename.downcase.end_with?('.csv')
+      return redirect_to new_pdi_product_import_path,
+                         alert: 'File must be a CSV file.'
+    end
 
     tmp = Tempfile.new(['pdi_product_import', '.csv'])
     tmp.binmode
@@ -29,7 +33,7 @@ class PdiProductImportsController < ApplicationController
 
   def create
     unless session[:pdi_product_import_tmp_path].present? && File.exist?(session[:pdi_product_import_tmp_path].to_s)
-      return redirect_to new_pdi_product_import_path, alert: "Import session expired. Please re-upload the file."
+      return redirect_to new_pdi_product_import_path, alert: 'Import session expired. Please re-upload the file.'
     end
 
     file_path = session[:pdi_product_import_tmp_path]
@@ -37,29 +41,29 @@ class PdiProductImportsController < ApplicationController
 
     log = SyncLog.create!(
       process_name: PROCESS_NAME,
-      status:       'running',
-      file_name:    file_name,
+      status: 'running',
+      file_name: file_name,
       file_content: File.read(file_path),
-      file_binary:  false,
-      started_at:   Time.current
+      file_binary: false,
+      started_at: Time.current
     )
 
     begin
       result = PdiProductImportService.call(file_path)
 
       log.update!(
-        status:          'success',
-        completed_at:    Time.current,
+        status: 'success',
+        completed_at: Time.current,
         records_created: result.created,
         records_skipped: result.unchanged,
-        warnings:        result.errors.any? ? result.errors.join("\n") : nil
+        warnings: result.errors.any? ? result.errors.join("\n") : nil
       )
 
       summary = "Import complete — #{result.created} created, #{result.updated} updated, #{result.unchanged} unchanged."
       summary += " #{result.errors.count} errors." if result.errors.any?
 
       flash[:notice] = summary
-    rescue => e
+    rescue StandardError => e
       log.update!(status: 'failed', completed_at: Time.current, error_message: e.message)
       flash[:alert] = "Import failed: #{e.message}"
     ensure
@@ -73,10 +77,10 @@ class PdiProductImportsController < ApplicationController
 
   def download
     log = SyncLog.find(params[:log_id])
-    return redirect_to new_pdi_product_import_path, alert: "File not available." if log.file_content.blank?
+    return redirect_to new_pdi_product_import_path, alert: 'File not available.' if log.file_content.blank?
 
     send_data log.file_content,
-              type:        'text/csv',
+              type: 'text/csv',
               disposition: "attachment; filename=\"#{log.file_name}\""
   end
 end

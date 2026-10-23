@@ -3,8 +3,7 @@ class MessagesController < ApplicationController
   skip_before_action :authenticate_user!, only: :reply
 
   def reply
-    message_body = params["Body"]
-    from_number = params["From"]
+    from_number = params['From']
     boot_twilio
 
     user = User.find_by(phone_number: from_number)
@@ -20,9 +19,9 @@ class MessagesController < ApplicationController
     DispatchMessage.create!(
       user_id: user.id, # Use the found user
       message_body: sms.body,
-      delivery_method: "SMS",
+      delivery_method: 'SMS',
       reference_id: sms.sid, # Twilio's unique identifier for the message
-      status: "sent",
+      status: 'sent',
       sent_at: Time.current
     )
   rescue StandardError => e

@@ -4,10 +4,14 @@ class AutomatedProcessesController < ApplicationController
   before_action :require_admin!
 
   PROCESSES = [
-    { slug: 'pdi-order-sync',   name: 'PDI Order Sync',   job: 'PdiOrderSyncJob',   description: 'Syncs customer orders from PDI FTP (Loadntrucks-Order-Export.pdf)', default_schedule: '*/15 * * * *' },
-    { slug: 'pdi-vendor-sync',  name: 'PDI Vendor Sync',  job: 'PdiVendorSyncJob',  description: 'Syncs vendor list from PDI FTP (AP Vendor List.csv)' },
-    { slug: 'pdi-product-sync', name: 'PDI Product Sync', job: 'PdiProductSyncJob', description: 'Syncs product inventory from PDI FTP (LoadNTrucks-CurrentInventory.xls)' },
-    { slug: 'pdi-po-sync',      name: 'PDI Purchase Order Sync', job: 'PdiPurchaseOrderSyncJob', description: 'Imports purchase orders from PDI FTP (Warehouse Transaction Report.xls)' },
+    { slug: 'pdi-order-sync',   name: 'PDI Order Sync',   job: 'PdiOrderSyncJob',
+      description: 'Syncs customer orders from PDI FTP (Loadntrucks-Order-Export.pdf)', default_schedule: '*/15 * * * *' },
+    { slug: 'pdi-vendor-sync',  name: 'PDI Vendor Sync',  job: 'PdiVendorSyncJob',
+      description: 'Syncs vendor list from PDI FTP (AP Vendor List.csv)' },
+    { slug: 'pdi-product-sync', name: 'PDI Product Sync', job: 'PdiProductSyncJob',
+      description: 'Syncs product inventory from PDI FTP (LoadNTrucks-CurrentInventory.xls)' },
+    { slug: 'pdi-po-sync',      name: 'PDI Purchase Order Sync', job: 'PdiPurchaseOrderSyncJob',
+      description: 'Imports purchase orders from PDI FTP (Warehouse Transaction Report.xls)' }
   ].freeze
 
   def index
@@ -15,11 +19,11 @@ class AutomatedProcessesController < ApplicationController
       logs   = SyncLog.for_process(p[:name])
       config = AutomatedProcessConfig.for_slug(p[:slug], default_schedule: p[:default_schedule] || '0 * * * *')
       p.merge(
-        config:        config,
-        last_run:      logs.first,
-        run_count:     logs.count,
+        config: config,
+        last_run: logs.first,
+        run_count: logs.count,
         success_count: logs.where(status: 'success').count,
-        failed_count:  logs.where(status: 'failed').count
+        failed_count: logs.where(status: 'failed').count
       )
     end
   end
@@ -34,7 +38,7 @@ class AutomatedProcessesController < ApplicationController
     process = find_process!
     config  = AutomatedProcessConfig.for_slug(process[:slug])
     config.update!(config_params)
-    redirect_to automated_process_path(params[:id]), notice: "Schedule updated."
+    redirect_to automated_process_path(params[:id]), notice: 'Schedule updated.'
   end
 
   def trigger
@@ -45,15 +49,15 @@ class AutomatedProcessesController < ApplicationController
 
   def download_file
     log = SyncLog.find(params[:log_id])
-    return redirect_to automated_process_path(params[:id]), alert: "File not available." if log.file_content.blank?
+    return redirect_to automated_process_path(params[:id]), alert: 'File not available.' if log.file_content.blank?
 
     if log.file_binary?
       send_data Base64.strict_decode64(log.file_content),
-                type:        'application/octet-stream',
+                type: 'application/octet-stream',
                 disposition: "attachment; filename=\"#{log.file_name}\""
     else
       send_data log.file_content,
-                type:        'text/csv',
+                type: 'text/csv',
                 disposition: "attachment; filename=\"#{log.file_name || 'export.csv'}\""
     end
   end
@@ -62,7 +66,7 @@ class AutomatedProcessesController < ApplicationController
 
   def find_process!
     process = PROCESSES.find { |p| p[:slug] == params[:id] }
-    redirect_to automated_processes_path, alert: "Unknown process." unless process
+    redirect_to automated_processes_path, alert: 'Unknown process.' unless process
     process
   end
 

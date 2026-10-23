@@ -2,29 +2,30 @@ require 'csv'
 require 'net/http'
 
 class DispatchesController < ApplicationController
-  before_action :set_dispatch, only: %i[show edit update destroy mark_as_complete mark_as_billed send_notification upload_files]
-  before_action :require_admin!, only: %i[new create edit update destroy view_dispatches kanban export_csv send_notification mark_as_complete mark_as_billed mark_as_sent_to_driver destroy_file search]
+  before_action :set_dispatch,
+                only: %i[show edit update destroy mark_as_complete mark_as_billed send_notification upload_files]
+  before_action :require_admin!,
+                only: %i[new create edit update destroy view_dispatches kanban export_csv send_notification mark_as_complete
+                         mark_as_billed mark_as_sent_to_driver destroy_file search]
 
   # GET / (dashboard)
   def index
     if driver?
       dispatches = current_user.dispatches
-        .where.not(status: ["deleted"])
-        .includes(customer_orders: :location)
+                               .where.not(status: ['deleted'])
+                               .includes(customer_orders: :location)
 
       if params[:query].present?
         q = "%#{params[:query].downcase}%"
         dispatches = dispatches.left_joins(customer_orders: :location)
-          .where("LOWER(locations.company_name) LIKE :q OR LOWER(locations.city) LIKE :q OR LOWER(dispatches.origin) LIKE :q OR LOWER(dispatches.notes) LIKE :q", q: q)
-          .distinct
+                               .where('LOWER(locations.company_name) LIKE :q OR LOWER(locations.city) LIKE :q OR LOWER(dispatches.origin) LIKE :q OR LOWER(dispatches.notes) LIKE :q', q: q)
+                               .distinct
       end
 
-      if params[:status].present?
-        dispatches = dispatches.where(status: params[:status])
-      end
+      dispatches = dispatches.where(status: params[:status]) if params[:status].present?
 
       @my_dispatches = dispatches.order(dispatch_date: :desc)
-      @statuses = current_user.dispatches.where.not(status: ["deleted"]).distinct.pluck(:status).compact.sort
+      @statuses = current_user.dispatches.where.not(status: ['deleted']).distinct.pluck(:status).compact.sort
       render :driver_index
       return
     end
@@ -32,50 +33,47 @@ class DispatchesController < ApplicationController
     today = Date.today
 
     # Stat card counts
-    @stat_active         = Dispatch.where(status: ["New", "Sent to Driver"]).count
-    @stat_in_transit     = Dispatch.where(status: "Sent to Driver").count
+    @stat_active         = Dispatch.where(status: ['New', 'Sent to Driver']).count
+    @stat_in_transit     = Dispatch.where(status: 'Sent to Driver').count
     @stat_unassigned     = CustomerOrder.where(order_status: CustomerOrder::ACTIVE_STATUSES)
-                                        .left_joins(:dispatch_customer_orders)
-                                        .where(dispatch_customer_orders: { id: nil }).count
-    @stat_on_hold        = CustomerOrder.where(order_status: ["Expired", "Rejected by Site"]).count
+                                        .where.missing(:dispatch_customer_orders).count
+    @stat_on_hold        = CustomerOrder.where(order_status: ['Expired', 'Rejected by Site']).count
 
     # Today's dispatches
     @today_dispatches = Dispatch
-      .where(dispatch_date: today)
-      .where.not(status: ["Complete", "Billed", "deleted"])
-      .includes(:driver, customer_orders: [:location, { customer_order_products: :product }])
-      .order(:id)
+                        .where(dispatch_date: today)
+                        .where.not(status: %w[Complete Billed deleted])
+                        .includes(:driver, customer_orders: [:location, { customer_order_products: :product }])
+                        .order(:id)
 
     # Upcoming dispatches (next 7 days, not today)
     @upcoming_dispatches = Dispatch
-      .where(dispatch_date: (today + 1)..(today + 7))
-      .where.not(status: ["Complete", "Billed", "deleted"])
-      .includes(:driver, customer_orders: :location)
-      .order(:dispatch_date, :id)
-      .limit(15)
+                           .where(dispatch_date: (today + 1)..(today + 7))
+                           .where.not(status: %w[Complete Billed deleted])
+                           .includes(:driver, customer_orders: :location)
+                           .order(:dispatch_date, :id)
+                           .limit(15)
 
     # Unassigned orders (oldest delivery date first)
     @unassigned_orders = CustomerOrder
-      .where(order_status: CustomerOrder::ACTIVE_STATUSES)
-      .left_joins(:dispatch_customer_orders)
-      .where(dispatch_customer_orders: { id: nil })
-      .includes(:location, customer_order_products: :product)
-      .order(Arel.sql("required_delivery_date ASC NULLS LAST"))
-      .limit(20)
+                         .where(order_status: CustomerOrder::ACTIVE_STATUSES)
+                         .where.missing(:dispatch_customer_orders)
+                         .includes(:location, customer_order_products: :product)
+                         .order(Arel.sql('required_delivery_date ASC NULLS LAST'))
+                         .limit(20)
 
     # On hold orders
     @on_hold_orders = CustomerOrder
-      .where(order_status: ["Expired", "Rejected by Site"])
-      .includes(:location)
-      .order(Arel.sql("required_delivery_date ASC NULLS LAST"))
-      .limit(10)
+                      .where(order_status: ['Expired', 'Rejected by Site'])
+                      .includes(:location)
+                      .order(Arel.sql('required_delivery_date ASC NULLS LAST'))
+                      .limit(10)
   end
-  
 
   # GET /dispatches/1 or /dispatches/1.json
   def show
     if driver? && @dispatch.driver_id != current_user.id
-      redirect_to dispatches_path, alert: "You can only view your own dispatches."
+      redirect_to dispatches_path, alert: 'You can only view your own dispatches.'
       return
     end
 
@@ -86,68 +84,68 @@ class DispatchesController < ApplicationController
     origin = @origin_locations.find { |l| l.full_address_with_company == @dispatch.origin }
     dest = @customer_orders.first&.location
 
-    if origin&.latitude && origin&.longitude && dest&.latitude && dest&.longitude
-      begin
-        uri = URI("https://router.project-osrm.org/route/v1/driving/#{origin.longitude},#{origin.latitude};#{dest.longitude},#{dest.latitude}?overview=false")
-        response = Net::HTTP.get(uri)
-        data = JSON.parse(response)
-        meters = data.dig("routes", 0, "distance")
-        @road_distance = (meters / 1609.34).round(1) if meters
-      rescue StandardError
-        @road_distance = nil
-      end
+    return unless origin&.latitude && origin.longitude && dest&.latitude && dest.longitude
+
+    begin
+      uri = URI("https://router.project-osrm.org/route/v1/driving/#{origin.longitude},#{origin.latitude};#{dest.longitude},#{dest.latitude}?overview=false")
+      response = Net::HTTP.get(uri)
+      data = JSON.parse(response)
+      meters = data.dig('routes', 0, 'distance')
+      @road_distance = (meters / 1609.34).round(1) if meters
+    rescue StandardError
+      @road_distance = nil
     end
   end
 
   # POST /dispatches/1/upload_files
   def upload_files
     if driver? && @dispatch.driver_id != current_user.id
-      redirect_to dispatches_path, alert: "Access denied."
+      redirect_to dispatches_path, alert: 'Access denied.'
       return
     end
 
     if params[:files].present?
       @dispatch.files.attach(params[:files])
-      redirect_to dispatch_path(@dispatch), notice: "File(s) uploaded successfully."
+      redirect_to dispatch_path(@dispatch), notice: 'File(s) uploaded successfully.'
     else
-      redirect_to dispatch_path(@dispatch), alert: "Please select a file to upload."
+      redirect_to dispatch_path(@dispatch), alert: 'Please select a file to upload.'
     end
   end
 
   # GET /dispatches/new
   def new
     @dispatch = Dispatch.new
-    
+
     # Check if a customer_order_id was passed and set default values based on that
     if params[:customer_order_id]
       customer_order = CustomerOrder.find(params[:customer_order_id])
-      
+
       # Set default values in @dispatch from the customer_order
       @dispatch.customer_order_ids = [customer_order.id]
       @dispatch.origin = customer_order.location.city if customer_order.location
       @dispatch.dispatch_date = Date.today
-      
+
       # Assign for pre-selecting in the form
       @selected_customer_order_id = customer_order.id
     end
-    
+
     # Load data needed for form options
     @locations = Location.all
     @recent_customer_orders = CustomerOrder
-      .where(order_status: CustomerOrder::ACTIVE_STATUSES)
-      .order(created_at: :desc)
+                              .where(order_status: CustomerOrder::ACTIVE_STATUSES)
+                              .order(created_at: :desc)
     @origin_locations = Location.where(location_category_id: 1)
     @available_things = Thing.all
     @selected_thing_ids = [] # Pre-select none
-  end  
+  end
 
   # GET /dispatches/1/edit
   def edit
     @dispatch = Dispatch.find(params[:id])
     @locations = Location.all
     @recent_customer_orders = CustomerOrder
-      .where(order_status: CustomerOrder::ACTIVE_STATUSES)
-      .order(created_at: :desc)
+                              .where(order_status: CustomerOrder::ACTIVE_STATUSES)
+                              .order(created_at: :desc)
     @origin_locations = Location.where(location_category_id: 1)
     @available_things = Thing.all
     @selected_thing_ids = [] # Pre-select none
@@ -157,14 +155,14 @@ class DispatchesController < ApplicationController
   def create
     @origin_locations = Location.where(location_category_id: 1)
     @recent_customer_orders = CustomerOrder
-      .where(order_status: CustomerOrder::ACTIVE_STATUSES)
-      .order(created_at: :desc)
+                              .where(order_status: CustomerOrder::ACTIVE_STATUSES)
+                              .order(created_at: :desc)
     @dispatch = Dispatch.new(dispatch_params)
 
     respond_to do |format|
       if @dispatch.save
         update_destination_from_customer_orders(@dispatch)
-        format.html { redirect_to dispatch_url(@dispatch), notice: "Dispatch was successfully created." }
+        format.html { redirect_to dispatch_url(@dispatch), notice: 'Dispatch was successfully created.' }
         format.json { render :show, status: :created, location: @dispatch }
       else
         format.html { render :new, status: :unprocessable_entity }
@@ -172,27 +170,22 @@ class DispatchesController < ApplicationController
       end
     end
   end
-  
 
   # PATCH/PUT /dispatches/1 or /dispatches/1.json
   def update
     @dispatch = Dispatch.find(params[:id])
     previous_driver_id = @dispatch.driver_id
-  
+
     # Check if new files are uploaded and append them instead of replacing
-    if params[:dispatch][:files].present?
-      @dispatch.files.attach(params[:dispatch][:files])
-    end
-  
+    @dispatch.files.attach(params[:dispatch][:files]) if params[:dispatch][:files].present?
+
     respond_to do |format|
       if @dispatch.update(dispatch_params.except(:files)) # Exclude :files to prevent overwrite
         update_destination_from_customer_orders(@dispatch)
-  
-        if @dispatch.driver_id.blank? && previous_driver_id.present?
-          @dispatch.update(status: "New")
-        end
-  
-        format.html { redirect_to dispatch_url(@dispatch), notice: "Dispatch was successfully updated." }
+
+        @dispatch.update(status: 'New') if @dispatch.driver_id.blank? && previous_driver_id.present?
+
+        format.html { redirect_to dispatch_url(@dispatch), notice: 'Dispatch was successfully updated.' }
         format.json { render :show, status: :ok, location: @dispatch }
       else
         format.html { render :edit, status: :unprocessable_entity }
@@ -200,37 +193,34 @@ class DispatchesController < ApplicationController
       end
     end
   end
-  
 
   def view_dispatches
     @statuses = Dispatch.distinct.pluck(:status)
-    @selected_status = params[:status].presence || "all"
+    @selected_status = params[:status].presence || 'all'
     @selected_driver = params[:driver]
-    @sort_by = params[:sort_by].presence || "dispatch_date"
+    @sort_by = params[:sort_by].presence || 'dispatch_date'
 
     # Start with a relation (includes prevents N+1 in your view)
     dispatches = Dispatch.includes(:driver, customer_orders: { location: {}, customer_order_products: :product })
 
     # Status filter
-    if @selected_status == "exclude_complete_deleted"
-      dispatches = dispatches.where.not(status: ["Complete", "Deleted"])
-    elsif @selected_status != "all"
+    if @selected_status == 'exclude_complete_deleted'
+      dispatches = dispatches.where.not(status: %w[Complete Deleted])
+    elsif @selected_status != 'all'
       dispatches = dispatches.where(status: @selected_status)
     end
 
     # Driver filter
-    if @selected_driver.present?
-      dispatches = dispatches.where(driver_id: @selected_driver)
-    end
+    dispatches = dispatches.where(driver_id: @selected_driver) if @selected_driver.present?
 
     # Sorting
     dispatches =
       case @sort_by
-      when "newest"
+      when 'newest'
         dispatches.order(created_at: :desc)
-      when "oldest"
+      when 'oldest'
         dispatches.order(created_at: :asc)
-      when "dispatch_date"
+      when 'dispatch_date'
         dispatches.order(dispatch_date: :asc)
       else
         dispatches
@@ -240,38 +230,40 @@ class DispatchesController < ApplicationController
     @dispatches = dispatches.paginate(page: params[:page], per_page: 25)
 
     origin_locations = Location.where.not(latitude: nil, longitude: nil)
-                                     .index_by(&:full_address_with_company)
+                               .index_by(&:full_address_with_company)
 
     @map_data = @dispatches.filter_map do |dispatch|
       origin = origin_locations[dispatch.origin]
       next unless origin
-      dest = dispatch.customer_orders.map(&:location).find { |l| l&.latitude && l&.longitude }
+
+      dest = dispatch.customer_orders.map(&:location).find { |l| l&.latitude && l.longitude }
       next unless dest
+
       {
-        id:           dispatch.id,
-        origin:       { lat: origin.latitude, lng: origin.longitude, name: origin.company_name },
-        destination:  { lat: dest.latitude,   lng: dest.longitude,   name: dest.company_name },
-        driver:       dispatch.driver&.full_name,
+        id: dispatch.id,
+        origin: { lat: origin.latitude, lng: origin.longitude, name: origin.company_name },
+        destination: { lat: dest.latitude,   lng: dest.longitude, name: dest.company_name },
+        driver: dispatch.driver&.full_name,
         dispatch_date: dispatch.dispatch_date&.to_s,
-        status:       dispatch.status
+        status: dispatch.status
       }
     end
 
     @dispatch_detail_data = @dispatches.map do |dispatch|
       {
-        id:           dispatch.id,
-        driver:       dispatch.driver&.full_name,
-        dispatch_date: dispatch.dispatch_date&.strftime("%B %-d, %Y"),
-        status:       dispatch.status,
-        origin:       dispatch.origin.presence || '—',
-        notes:        dispatch.notes.presence,
+        id: dispatch.id,
+        driver: dispatch.driver&.full_name,
+        dispatch_date: dispatch.dispatch_date&.strftime('%B %-d, %Y'),
+        status: dispatch.status,
+        origin: dispatch.origin.presence || '—',
+        notes: dispatch.notes.presence,
         orders: dispatch.customer_orders.map do |o|
           {
-            id:       o.id,
+            id: o.id,
             location: o.location&.company_name,
-            city:     o.location&.city,
-            due:      o.required_delivery_date&.strftime("%b %-d, %Y"),
-            status:   o.order_status,
+            city: o.location&.city,
+            due: o.required_delivery_date&.strftime('%b %-d, %Y'),
+            status: o.order_status,
             products: o.customer_order_products.map do |cop|
               { name: cop.product&.name || cop.product_name, quantity: cop.quantity }
             end
@@ -281,21 +273,19 @@ class DispatchesController < ApplicationController
     end
   end
 
-  
-
   def search
     query = params[:query]
     @searched_orders = CustomerOrder.where('id LIKE ?', "%#{query}%")
-                                   .or(CustomerOrder.joins(:location).where('locations.name LIKE ?', "%#{query}%"))
-                                   .order(created_at: :desc).limit(5)
-  end  
+                                    .or(CustomerOrder.joins(:location).where('locations.name LIKE ?', "%#{query}%"))
+                                    .order(created_at: :desc).limit(5)
+  end
 
   # DELETE /dispatches/1 or /dispatches/1.json
   def destroy
     @dispatch.destroy
 
     respond_to do |format|
-      format.html { redirect_to dispatches_url, notice: "Dispatch was successfully destroyed." }
+      format.html { redirect_to dispatches_url, notice: 'Dispatch was successfully destroyed.' }
       format.json { head :no_content }
     end
   end
@@ -308,35 +298,35 @@ class DispatchesController < ApplicationController
     Rails.logger.info "Dispatch ID: #{@dispatch.id}"
     Rails.logger.info "Email Message: #{email_message}"
     Rails.logger.info "SMS Message: #{sms_message}"
-    
+
     # Update dispatch status to "Sent to driver"
-    if @dispatch.update(status: "Sent to driver")
+    if @dispatch.update(status: 'Sent to driver')
       Rails.logger.info "Dispatch status updated to 'Sent to driver'"
     else
       Rails.logger.error "Failed to update dispatch status: #{@dispatch.errors.full_messages.join(', ')}"
     end
-  
+
     # Send email if driver has opted in for email notifications
     if @dispatch.driver.present? && @dispatch.driver.email_opt_in?
       DispatchMailer.send_dispatch_email(@dispatch, email_message).deliver_now
-      MessageLogger.log(@dispatch, email_message, "email", "sent")
-      Rails.logger.info "Email sent to driver"
+      MessageLogger.log(@dispatch, email_message, 'email', 'sent')
+      Rails.logger.info 'Email sent to driver'
     else
-      Rails.logger.info "Driver not present or not opted in for email notifications"
+      Rails.logger.info 'Driver not present or not opted in for email notifications'
     end
-    
+
     # Send SMS if driver has opted in for SMS notifications and has a phone number
     if @dispatch.driver.present? && @dispatch.driver.sms_opt_in? && @dispatch.driver.phone_number.present?
       send_text_to_driver(@dispatch, sms_message)
-      Rails.logger.info "SMS sent to driver"
+      Rails.logger.info 'SMS sent to driver'
     else
-      Rails.logger.info "Driver not present, not opted in for SMS notifications, or phone number not present"
+      Rails.logger.info 'Driver not present, not opted in for SMS notifications, or phone number not present'
     end
-  
+
     # Respond to JS or HTML format
     respond_to do |format|
       format.js { render js: "alert('Notification sent successfully!');" }
-      format.html { redirect_to dispatch_path(@dispatch), notice: "Notification sent successfully." }
+      format.html { redirect_to dispatch_path(@dispatch), notice: 'Notification sent successfully.' }
     end
   end
 
@@ -353,11 +343,10 @@ class DispatchesController < ApplicationController
                          .order(:dispatch_date)
     @dispatches_by_date = dispatches.group_by(&:dispatch_date)
     fps_carriers = ['Five Points Logistics, LLC', 'Five Points Service, Inc.']
-    @unassigned_orders = CustomerOrder.left_joins(:dispatch_customer_orders)
-                                      .where(dispatch_customer_orders: { id: nil })
+    @unassigned_orders = CustomerOrder.where.missing(:dispatch_customer_orders)
                                       .where(order_status: CustomerOrder::ACTIVE_STATUSES)
                                       .where(
-                                        "external_order_no IS NULL OR carrier IN (?)",
+                                        'external_order_no IS NULL OR carrier IN (?)',
                                         fps_carriers
                                       )
                                       .includes(:location, customer_order_products: :product)
@@ -365,203 +354,201 @@ class DispatchesController < ApplicationController
   end
 
   def mark_as_complete
-    if @dispatch.update(status: "Complete")
-      redirect_to dispatch_path(@dispatch), notice: "Dispatch marked as complete."
+    if @dispatch.update(status: 'Complete')
+      redirect_to dispatch_path(@dispatch), notice: 'Dispatch marked as complete.'
     else
-      redirect_to dispatch_path(@dispatch), alert: "Failed to mark dispatch as complete."
+      redirect_to dispatch_path(@dispatch), alert: 'Failed to mark dispatch as complete.'
     end
   end
 
   def mark_as_billed
-    if @dispatch.update(status: "Billed")
-      redirect_to dispatch_path(@dispatch), notice: "Dispatch marked as billed."
+    if @dispatch.update(status: 'Billed')
+      redirect_to dispatch_path(@dispatch), notice: 'Dispatch marked as billed.'
     else
-      redirect_to dispatch_path(@dispatch), alert: "Failed to mark dispatch as billed."
+      redirect_to dispatch_path(@dispatch), alert: 'Failed to mark dispatch as billed.'
     end
   end
 
   def mark_as_sent_to_driver
     @dispatch = Dispatch.find(params[:id])
-    
-    if @dispatch.update(status: "Sent to Driver")
-      redirect_to dispatch_path(@dispatch), notice: "Dispatch marked as Sent to Driver."
+
+    if @dispatch.update(status: 'Sent to Driver')
+      redirect_to dispatch_path(@dispatch), notice: 'Dispatch marked as Sent to Driver.'
     else
-      redirect_to dispatch_path(@dispatch), alert: "Failed to update dispatch status."
+      redirect_to dispatch_path(@dispatch), alert: 'Failed to update dispatch status.'
     end
   end
 
   def destroy_file
     @dispatch = Dispatch.find_by(id: params[:dispatch_id]) # Use find_by to avoid an exception
-    return redirect_to dispatches_path, alert: "Dispatch not found." unless @dispatch
-  
+    return redirect_to dispatches_path, alert: 'Dispatch not found.' unless @dispatch
+
     file = @dispatch.files.find_by(id: params[:id]) # Use find_by to avoid an exception
-    return redirect_to dispatch_path(@dispatch), alert: "File not found." unless file
-  
+    return redirect_to dispatch_path(@dispatch), alert: 'File not found.' unless file
+
     file.purge # Deletes the file from Active Storage
-    redirect_to dispatch_path(@dispatch), notice: "File was successfully deleted."
+    redirect_to dispatch_path(@dispatch), notice: 'File was successfully deleted.'
   end
 
-def export_csv
-  # Apply the same filters as in view_dispatches
-  selected_status = params[:status] || 'all'
-  selected_driver = params[:driver]
-  sort_by = params[:sort_by] || 'dispatch_date'
+  def export_csv
+    # Apply the same filters as in view_dispatches
+    selected_status = params[:status] || 'all'
+    selected_driver = params[:driver]
+    sort_by = params[:sort_by] || 'dispatch_date'
 
-  dispatches = Dispatch.all
-  if selected_status == 'exclude_complete_deleted'
-    dispatches = dispatches.where.not('LOWER(status)' => ['complete', 'deleted'])
-  elsif selected_status != 'all'
-    dispatches = dispatches.where('LOWER(status) = ?', selected_status.downcase)
-  end
+    dispatches = Dispatch.all
+    if selected_status == 'exclude_complete_deleted'
+      dispatches = dispatches.where.not('LOWER(status)' => %w[complete deleted])
+    elsif selected_status != 'all'
+      dispatches = dispatches.where('LOWER(status) = ?', selected_status.downcase)
+    end
 
-  if selected_driver.present?
-    dispatches = dispatches.where(driver_id: selected_driver)
-  end
+    dispatches = dispatches.where(driver_id: selected_driver) if selected_driver.present?
 
-  dispatches = case sort_by
-               when 'newest'
-                 dispatches.order(created_at: :desc)
-               when 'oldest'
-                 dispatches.order(created_at: :asc)
-               when 'dispatch_date'
-                 dispatches.order(dispatch_date: :asc)
-               else
-                 dispatches
-               end
+    dispatches = case sort_by
+                 when 'newest'
+                   dispatches.order(created_at: :desc)
+                 when 'oldest'
+                   dispatches.order(created_at: :asc)
+                 when 'dispatch_date'
+                   dispatches.order(dispatch_date: :asc)
+                 else
+                   dispatches
+                 end
 
-headers = [
-  "Dispatch ID", "Assigned To", "Dispatch Date", "Status", "Origin", "Destination", "Notes", "Created On",
-  "Customer Order ID", "Order Company", "Order Delivery Date", "Order Product", "Order Amount"
-]
-
-csv_data = CSV.generate(headers: true) do |csv|
-  csv << headers
-  dispatches.each do |dispatch|
-    # Write the dispatch row (customer order columns blank)
-    csv << [
-      dispatch.id,
-      dispatch.driver&.full_name || 'Unassigned',
-      dispatch.dispatch_date,
-      dispatch.status,
-      dispatch.origin,
-      (dispatch.customer_orders.first&.location ? [
-        dispatch.customer_orders.first.location.company_name,
-        dispatch.customer_orders.first.location.address,
-        dispatch.customer_orders.first.location.city,
-        dispatch.customer_orders.first.location.state,
-        dispatch.customer_orders.first.location.zip
-      ].compact.join(', ') : "No destination location found"),
-      dispatch.notes,
-      dispatch.created_at.in_time_zone('Eastern Time (US & Canada)').strftime('%Y-%m-%d %I:%M %p'),
-      nil, nil, nil, nil, nil
+    headers = [
+      'Dispatch ID', 'Assigned To', 'Dispatch Date', 'Status', 'Origin', 'Destination', 'Notes', 'Created On',
+      'Customer Order ID', 'Order Company', 'Order Delivery Date', 'Order Product', 'Order Amount'
     ]
 
-    # Write a row for each customer order
-    dispatch.customer_orders.each do |co|
-      csv << [
-        nil, nil, nil, nil, nil, nil, nil, nil, # Dispatch columns blank
-        co.id,
-        co.location&.company_name,
-        co.required_delivery_date,
-        co.product,
-        co.approximate_product_amount
-      ]
-    end
-  end
-end
+    csv_data = CSV.generate(headers: true) do |csv|
+      csv << headers
+      dispatches.each do |dispatch|
+        # Write the dispatch row (customer order columns blank)
+        csv << [
+          dispatch.id,
+          dispatch.driver&.full_name || 'Unassigned',
+          dispatch.dispatch_date,
+          dispatch.status,
+          dispatch.origin,
+          (dispatch.customer_orders.first&.location ? [
+            dispatch.customer_orders.first.location.company_name,
+            dispatch.customer_orders.first.location.address,
+            dispatch.customer_orders.first.location.city,
+            dispatch.customer_orders.first.location.state,
+            dispatch.customer_orders.first.location.zip
+          ].compact.join(', ') : 'No destination location found'),
+          dispatch.notes,
+          dispatch.created_at.in_time_zone('Eastern Time (US & Canada)').strftime('%Y-%m-%d %I:%M %p'),
+          nil, nil, nil, nil, nil
+        ]
 
-  send_data csv_data, filename: "dispatches-#{Date.today}.csv"
-end
-  
-
-  private
-
-    def boot_twilio
-      account_sid = ENV['TWILIO_SID']
-      auth_token = ENV['TWILIO_TOKEN']
-      @client = Twilio::REST::Client.new(account_sid, auth_token)
-    end
-
-    def create_dispatch_message(dispatch, message_body, delivery_method, status, reference_id = nil)
-      Rails.logger.info "Creating dispatch message with dispatch_id: #{dispatch.id}, message_body: #{message_body}, delivery_method: #{delivery_method}, status: #{status}, reference_id: #{reference_id}"
-      DispatchMessage.create!(
-        dispatch: dispatch,
-        user: dispatch.driver,
-        message_body: message_body,
-        delivery_method: delivery_method,
-        status: status,
-        reference_id: reference_id,
-        sent_at: Time.current
-      )
-    rescue ActiveRecord::RecordInvalid => e
-      Rails.logger.error "Failed to create dispatch message: #{e.message}"
-      Rails.logger.error "DispatchMessage errors: #{e.record.errors.full_messages.join(', ')}"
-    end
-  
-    def send_text_to_driver(dispatch, sms_message)
-      boot_twilio # Ensure Twilio client is initialized correctly.
-    
-      # Default product and amount values.
-      product = "N/A"
-      amount = "N/A"
-    
-      # Populate product and amount based on customer orders.
-      if dispatch.customer_orders.size == 1
-        product = dispatch.customer_orders.first.product
-        amount = dispatch.customer_orders.first.approximate_product_amount
-      elsif dispatch.customer_orders.size > 1
-        product = dispatch.customer_orders.map(&:product).join(", ")
-        amount = dispatch.customer_orders.map(&:approximate_product_amount).join(", ")
-      end
-    
-      # Construct the SMS body.
-      sms_body = sms_message.presence || <<~SMS
-        You have been assigned a new dispatch.
-        Dispatch ID: #{dispatch.id}
-        Origin: #{dispatch.origin}
-        Destination: #{dispatch.destination}
-        Product: #{product}
-        Amount: #{amount} gal
-        Notes: #{dispatch.notes}
-      SMS
-    
-      begin
-        # Send the SMS.
-        sms = @client.messages.create(
-          from: ENV['TWILIO_NUMBER'],
-          to: dispatch.driver.phone_number,
-          body: sms_body.strip # Strip unnecessary whitespace from the body.
-        )
-    
-        # Log the SMS in the database.
-        MessageLogger.log(dispatch, sms_body, "sms", "sent", sms.sid)
-        Rails.logger.info "SMS sent successfully with SID: #{sms.sid}"
-      rescue Twilio::REST::RestError => e
-        # Log the error and create a failed message record.
-        Rails.logger.error "Failed to send SMS: #{e.message}"
-    
-        MessageLogger.log(dispatch, sms_body, "sms", "failed")
-      end
-    end
-
-    def update_destination_from_customer_orders(dispatch)
-      if dispatch.customer_orders.any?
-        first_customer_order = dispatch.customer_orders.first
-        location_name = Location.find(first_customer_order.location_id).city
-        destination_count = dispatch.customer_orders.size - 1
-        if destination_count > 0
-          dispatch.update(destination: "#{location_name} + #{destination_count}")
-        else
-          dispatch.update(destination: location_name)
+        # Write a row for each customer order
+        dispatch.customer_orders.each do |co|
+          csv << [
+            nil, nil, nil, nil, nil, nil, nil, nil, # Dispatch columns blank
+            co.id,
+            co.location&.company_name,
+            co.required_delivery_date,
+            co.product,
+            co.approximate_product_amount
+          ]
         end
       end
     end
 
-    def set_dispatch
-      @dispatch = Dispatch.find(params[:id])
+    send_data csv_data, filename: "dispatches-#{Date.today}.csv"
+  end
+
+  private
+
+  def boot_twilio
+    account_sid = ENV.fetch('TWILIO_SID', nil)
+    auth_token = ENV.fetch('TWILIO_TOKEN', nil)
+    @client = Twilio::REST::Client.new(account_sid, auth_token)
+  end
+
+  def create_dispatch_message(dispatch, message_body, delivery_method, status, reference_id = nil)
+    Rails.logger.info "Creating dispatch message with dispatch_id: #{dispatch.id}, message_body: #{message_body}, delivery_method: #{delivery_method}, status: #{status}, reference_id: #{reference_id}"
+    DispatchMessage.create!(
+      dispatch: dispatch,
+      user: dispatch.driver,
+      message_body: message_body,
+      delivery_method: delivery_method,
+      status: status,
+      reference_id: reference_id,
+      sent_at: Time.current
+    )
+  rescue ActiveRecord::RecordInvalid => e
+    Rails.logger.error "Failed to create dispatch message: #{e.message}"
+    Rails.logger.error "DispatchMessage errors: #{e.record.errors.full_messages.join(', ')}"
+  end
+
+  def send_text_to_driver(dispatch, sms_message)
+    boot_twilio # Ensure Twilio client is initialized correctly.
+
+    # Default product and amount values.
+    product = 'N/A'
+    amount = 'N/A'
+
+    # Populate product and amount based on customer orders.
+    if dispatch.customer_orders.size == 1
+      product = dispatch.customer_orders.first.product
+      amount = dispatch.customer_orders.first.approximate_product_amount
+    elsif dispatch.customer_orders.size > 1
+      product = dispatch.customer_orders.map(&:product).join(', ')
+      amount = dispatch.customer_orders.map(&:approximate_product_amount).join(', ')
     end
 
-    def dispatch_params
-      params.require(:dispatch).permit(:driver_id, :origin, :destination, :info, :dispatch_date, :status, :notes, :vendor_id, :truck_id, :trailer_id, :customer_order_ids => [], files: [], thing_ids: [])
+    # Construct the SMS body.
+    sms_body = sms_message.presence || <<~SMS
+      You have been assigned a new dispatch.
+      Dispatch ID: #{dispatch.id}
+      Origin: #{dispatch.origin}
+      Destination: #{dispatch.destination}
+      Product: #{product}
+      Amount: #{amount} gal
+      Notes: #{dispatch.notes}
+    SMS
+
+    begin
+      # Send the SMS.
+      sms = @client.messages.create(
+        from: ENV.fetch('TWILIO_NUMBER', nil),
+        to: dispatch.driver.phone_number,
+        body: sms_body.strip # Strip unnecessary whitespace from the body.
+      )
+
+      # Log the SMS in the database.
+      MessageLogger.log(dispatch, sms_body, 'sms', 'sent', sms.sid)
+      Rails.logger.info "SMS sent successfully with SID: #{sms.sid}"
+    rescue Twilio::REST::RestError => e
+      # Log the error and create a failed message record.
+      Rails.logger.error "Failed to send SMS: #{e.message}"
+
+      MessageLogger.log(dispatch, sms_body, 'sms', 'failed')
     end
+  end
+
+  def update_destination_from_customer_orders(dispatch)
+    return unless dispatch.customer_orders.any?
+
+    first_customer_order = dispatch.customer_orders.first
+    location_name = Location.find(first_customer_order.location_id).city
+    destination_count = dispatch.customer_orders.size - 1
+    if destination_count > 0
+      dispatch.update(destination: "#{location_name} + #{destination_count}")
+    else
+      dispatch.update(destination: location_name)
+    end
+  end
+
+  def set_dispatch
+    @dispatch = Dispatch.find(params[:id])
+  end
+
+  def dispatch_params
+    params.require(:dispatch).permit(:driver_id, :origin, :destination, :info, :dispatch_date, :status, :notes,
+                                     :vendor_id, :truck_id, :trailer_id, customer_order_ids: [], files: [], thing_ids: [])
+  end
 end

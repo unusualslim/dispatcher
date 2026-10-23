@@ -2,7 +2,7 @@ require 'csv'
 
 class PurchaseOrdersController < ApplicationController
   before_action :require_admin!
-  before_action :set_purchase_order, only: [:show, :edit, :update, :approve, :submit, :receive, :post_to_inventory]
+  before_action :set_purchase_order, only: %i[show edit update approve submit receive post_to_inventory]
 
   def dashboard
     today = Date.today
@@ -68,33 +68,34 @@ class PurchaseOrdersController < ApplicationController
       products = Product.where(id: product_ids).index_by(&:id)
 
       on_order_map = PurchaseOrderLineItem
-        .joins(:purchase_order)
-        .where(product_id: product_ids)
-        .where(purchase_orders: { status: %w[draft pending_approval approved submitted] })
-        .group(:product_id).sum(:quantity)
+                     .joins(:purchase_order)
+                     .where(product_id: product_ids)
+                     .where(purchase_orders: { status: %w[draft pending_approval approved submitted] })
+                     .group(:product_id).sum(:quantity)
 
       committed_map = ProductionOrderComponent
-        .joins(:production_order)
-        .where(product_id: product_ids)
-        .where(production_orders: { status: %w[pending in_progress] })
-        .group(:product_id).sum(:quantity)
+                      .joins(:production_order)
+                      .where(product_id: product_ids)
+                      .where(production_orders: { status: %w[pending in_progress] })
+                      .group(:product_id).sum(:quantity)
 
       dashboard_qty = params[:quantity].presence&.to_f
 
       product_ids.each do |pid|
         p = products[pid]
         next unless p
+
         on_order  = on_order_map[pid]  || 0
         committed = committed_map[pid] || 0
         available = (p.current_stock || 0) + on_order - p.safety_stock.to_f
         calculated_qty = [committed - available, p.reorder_point.to_f - available, 0].max.ceil
         qty = dashboard_qty || (calculated_qty > 0 ? calculated_qty : nil)
         @purchase_order.line_items.build(
-          product_id:   p.id,
+          product_id: p.id,
           product_name: p.name,
-          unit_cost:    p.cost_per_unit,
+          unit_cost: p.cost_per_unit,
           package_code: p.pdi_package_code,
-          quantity:     qty
+          quantity: qty
         )
       end
       @purchase_order.line_items.build if @purchase_order.line_items.empty?
@@ -117,8 +118,7 @@ class PurchaseOrdersController < ApplicationController
     end
   end
 
-  def show
-  end
+  def show; end
 
   def edit
     unless %w[draft pending_approval].include?(@purchase_order.status)
@@ -133,6 +133,7 @@ class PurchaseOrdersController < ApplicationController
     unless %w[draft pending_approval].include?(@purchase_order.status)
       redirect_to @purchase_order, alert: 'Only draft or pending approval POs can be edited.' and return
     end
+
     if @purchase_order.update(purchase_order_params)
       redirect_to @purchase_order, notice: 'Purchase order updated.'
     else
@@ -156,9 +157,11 @@ class PurchaseOrdersController < ApplicationController
         delivery = (po.expected_delivery_date || Date.today).strftime('%-m/%-d/%Y')
         total    = po.total_cost.to_f
 
-        out << ['REM', 'Vendor ID', 'PO Number', 'Business Date', 'Order Date', 'Delivery Date', '', '', '', '', '', '', 'Invoice Total']
+        out << ['REM', 'Vendor ID', 'PO Number', 'Business Date', 'Order Date', 'Delivery Date', '', '', '', '', '',
+                '', 'Invoice Total']
         out << ['POH', vendor.id, '', today, today, delivery, '', '', '', '', '', '', total]
-        out << ['REM', 'Site ID', 'Product ID', 'Package Code', '', '', 'Inventory Package Qty', 'Invoice Qty', 'Delivery qty', '', 'Billing Units Costs', '', '']
+        out << ['REM', 'Site ID', 'Product ID', 'Package Code', '', '', 'Inventory Package Qty', 'Invoice Qty',
+                'Delivery qty', '', 'Billing Units Costs', '', '']
         po.line_items.each do |line|
           out << ['POD', PDI_SITE_ID, line.product_id, line.product&.pdi_package_code || line.package_code,
                   '', '', line.quantity.to_f, line.quantity.to_f, '', '', line.unit_cost&.to_f, '', '']
@@ -167,7 +170,7 @@ class PurchaseOrdersController < ApplicationController
     end
 
     send_data csv,
-              type:        'text/csv; charset=utf-8',
+              type: 'text/csv; charset=utf-8',
               disposition: "attachment; filename=\"PDI_PO_Export_#{Date.today}.csv\""
   end
 
@@ -179,14 +182,14 @@ class PurchaseOrdersController < ApplicationController
   def submit
     @purchase_order.update!(status: 'submitted', submitted_at: Time.current)
     redirect_to @purchase_order, notice: 'Purchase order submitted — PDI export queued.'
-  rescue => e
+  rescue StandardError => e
     redirect_to @purchase_order, alert: "Could not submit: #{e.message}"
   end
 
   def receive
     @purchase_order.mark_received!(current_user)
     redirect_to @purchase_order, notice: 'Marked as received. Post to inventory when ready.'
-  rescue => e
+  rescue StandardError => e
     redirect_to @purchase_order, alert: "Could not mark received: #{e.message}"
   end
 
@@ -196,7 +199,7 @@ class PurchaseOrdersController < ApplicationController
     else
       redirect_to @purchase_order, alert: 'Already posted to inventory.'
     end
-  rescue => e
+  rescue StandardError => e
     redirect_to @purchase_order, alert: "Could not post to inventory: #{e.message}"
   end
 
@@ -210,7 +213,7 @@ class PurchaseOrdersController < ApplicationController
     params.require(:purchase_order).permit(
       :vendor_id, :location_id, :trigger_type, :notes, :expected_delivery_date, :freight_terms, :freight_amount,
       :other_charges, :other_charges_description,
-      line_items_attributes: [:id, :product_id, :quantity, :unit_cost, :package_code, :_destroy]
+      line_items_attributes: %i[id product_id quantity unit_cost package_code _destroy]
     )
   end
 end

@@ -29,7 +29,7 @@ class PdiInventoryImportService
       begin
         set_stock!(product, ending)
         updated += 1
-      rescue => e
+      rescue StandardError => e
         errors << "#{product.name}: #{e.message}"
       end
     end
@@ -49,7 +49,7 @@ class PdiInventoryImportService
   end
 
   def parse_number(val)
-    val.to_s.gsub(/,/, '').to_d
+    val.to_s.gsub(',', '').to_d
   end
 
   def set_stock!(product, ending)
@@ -62,12 +62,12 @@ class PdiInventoryImportService
 
     ActiveRecord::Base.transaction do
       InventoryTransaction.create!(
-        product:          product,
-        quantity:         quantity,
-        direction:        direction,
+        product: product,
+        quantity: quantity,
+        direction: direction,
         reference_number: "PDI-#{Date.today.strftime('%Y%m%d')}",
-        notes:            "PDI FI Inventory Report sync — ending #{ending}",
-        created_by_id:    @user.id
+        notes: "PDI FI Inventory Report sync — ending #{ending}",
+        created_by_id: @user.id
       )
 
       product.update!(current_stock: ending)

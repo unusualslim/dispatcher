@@ -4,7 +4,7 @@ class QuoteMailer < ApplicationMailer
   def send_quote(quote)
     @quote = quote
     mail(
-      to:      quote.customer.email,
+      to: quote.customer.email,
       subject: "Quote #{quote.quote_number} from Five Points Service"
     )
   end

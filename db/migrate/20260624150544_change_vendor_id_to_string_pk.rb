@@ -50,10 +50,10 @@ class ChangeVendorIdToStringPk < ActiveRecord::Migration[7.0]
     rename_column :work_orders,     :vendor_new_id, :vendor_id
 
     # Step 5: swap the vendors primary key to the string new_id
-    execute "ALTER TABLE vendors DROP CONSTRAINT vendors_pkey"
+    execute 'ALTER TABLE vendors DROP CONSTRAINT vendors_pkey'
     remove_column :vendors, :id
     rename_column :vendors, :new_id, :id
-    execute "ALTER TABLE vendors ADD PRIMARY KEY (id)"
+    execute 'ALTER TABLE vendors ADD PRIMARY KEY (id)'
 
     # Step 6: drop pdi_vendor_id — it's now the primary key
     remove_column :vendors, :pdi_vendor_id

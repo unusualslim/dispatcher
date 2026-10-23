@@ -2,7 +2,7 @@
 
 class Users::RegistrationsController < Devise::RegistrationsController
   before_action :configure_permitted_parameters, if: :devise_controller?
-  skip_before_action :require_no_authentication, only: [:new, :create]
+  skip_before_action :require_no_authentication, only: %i[new create]
   # before_action :configure_sign_up_params, only: [:create]
   # before_action :configure_account_update_params, only: [:update]
 
@@ -50,13 +50,13 @@ class Users::RegistrationsController < Devise::RegistrationsController
     @user = User.new(sign_up_params)
 
     unless verify_turnstile
-      flash.now[:alert] = "Security check failed. Please try again."
+      flash.now[:alert] = 'Security check failed. Please try again.'
       return render :new, status: :unprocessable_entity
     end
 
     if @user.save
       sign_in(@user)
-      redirect_to dispatches_path, notice: "Account successfully created."
+      redirect_to dispatches_path, notice: 'Account successfully created.'
     else
       render :new, status: :unprocessable_entity
     end
@@ -66,7 +66,7 @@ class Users::RegistrationsController < Devise::RegistrationsController
 
   def configure_permitted_parameters
     # Permit additional parameters for account update
-    devise_parameter_sanitizer.permit(:account_update, keys: [:role, :sms_opt_in, :email_opt_in, :phone_number])
+    devise_parameter_sanitizer.permit(:account_update, keys: %i[role sms_opt_in email_opt_in phone_number])
     # Permit additional parameters for account sign up if needed
     devise_parameter_sanitizer.permit(:sign_up, keys: [:role])
   end
@@ -93,22 +93,23 @@ class Users::RegistrationsController < Devise::RegistrationsController
   private
 
   def verify_turnstile
-    token = params["cf-turnstile-response"].to_s
+    token = params['cf-turnstile-response'].to_s
     return false if token.blank?
 
     secret = Rails.application.credentials.dig(:turnstile, :secret_key) ||
-             ENV["TURNSTILE_SECRET_KEY"]
+             ENV.fetch('TURNSTILE_SECRET_KEY', nil)
     return false if secret.blank?
 
-    uri      = URI("https://challenges.cloudflare.com/turnstile/v0/siteverify")
-    response = Net::HTTP.post_form(uri, "secret" => secret, "response" => token)
-    JSON.parse(response.body)["success"] == true
-  rescue => e
+    uri      = URI('https://challenges.cloudflare.com/turnstile/v0/siteverify')
+    response = Net::HTTP.post_form(uri, 'secret' => secret, 'response' => token)
+    JSON.parse(response.body)['success'] == true
+  rescue StandardError => e
     Rails.logger.error "Turnstile verification error: #{e.message}"
     false
   end
 
   def sign_up_params
-    params.require(:user).permit(:email, :password, :password_confirmation, :first_name, :last_name, :phone_number, :role)
+    params.require(:user).permit(:email, :password, :password_confirmation, :first_name, :last_name, :phone_number,
+                                 :role)
   end
 end

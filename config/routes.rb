@@ -1,16 +1,16 @@
 Rails.application.routes.draw do
   # Batch QR label routes — BatchController uses its own session gate, not Devise
-  get  '/gate',          to: 'batch#gate',          as: :gate
+  get  '/gate',          to: 'batch#gate', as: :gate
   post '/gate',          to: 'batch#authenticate'
   get  '/labels',        to: 'batch#new',            as: :labels
   post '/labels/encode', to: 'batch#encode',         as: :labels_encode
   get  '/l',             to: 'batch#show',           as: :label
 
-  #get 'assets/index'
-  #get 'assets/show'
+  # get 'assets/index'
+  # get 'assets/show'
   get 'warehouse/kanban', to: 'warehouse#kanban', as: :warehouse_kanban
   get 'set_warehouse', to: 'warehouses#set', as: :set_warehouse
-  resource :warehouse_locations, only: [:edit, :update]
+  resource :warehouse_locations, only: %i[edit update]
   get 'calendar', to: 'calendar#index'
   get 'calendar/events', to: 'calendar#events'
   get 'vendors/index'
@@ -21,16 +21,16 @@ Rails.application.routes.draw do
 
   devise_for :users, controllers: {
     registrations: 'users/registrations',
-    sessions: 'users/sessions', 
+    sessions: 'users/sessions',
     passwords: 'users/passwords'
   }
-  
+
   resources :users do
     collection do
       post :create_line_worker
     end
   end
-  resources :user_favorites, only: [:create, :destroy] do
+  resources :user_favorites, only: %i[create destroy] do
     collection { patch :reorder }
   end
 
@@ -47,12 +47,12 @@ Rails.application.routes.draw do
       get :export_csv
     end
   end
-  
+
   get 'locations/map', to: 'locations#map', as: :locations_map
   get 'locations/vehicles', to: 'locations#vehicles', as: :locations_vehicles
   get 'locations/dispatch_routes', to: 'locations#dispatch_routes', as: :locations_dispatch_routes
   resources :locations do
-    resources :location_products, only: [:new, :create, :edit, :update, :destroy]
+    resources :location_products, only: %i[new create edit update destroy]
     collection do
       get :search
       get :select2
@@ -76,7 +76,7 @@ Rails.application.routes.draw do
       post :confirm_import
     end
   end
-  
+
   resources :quotes do
     member do
       post :send_quote
@@ -90,7 +90,7 @@ Rails.application.routes.draw do
 
   resources :customer_orders do
     post 'create_dispatch', on: :member
-    resources :customer_order_products, only: [:create, :update, :destroy]
+    resources :customer_order_products, only: %i[create update destroy]
     collection do
       get  :dashboard
       post :bulk_close
@@ -99,7 +99,7 @@ Rails.application.routes.draw do
 
   get  'product_code_links',        to: 'customer_order_products#unlinked',   as: :product_code_links
   post 'product_code_links/update', to: 'customer_order_products#link_codes', as: :link_product_codes
-  
+
   resource :messages do
     collection do
       post 'reply'
@@ -124,9 +124,8 @@ Rails.application.routes.draw do
     end
   end
 
-
-  get  'line', to: 'jobs#line', as: :line
-  resources :jobs, only: [:create, :show] do
+  get 'line', to: 'jobs#line', as: :line
+  resources :jobs, only: %i[create show] do
     member do
       patch :clock_out
     end
@@ -138,13 +137,13 @@ Rails.application.routes.draw do
     post :send_test, on: :member
     post :send_all,  on: :member
   end
-  get 'docs',                  to: 'docs#index',         as: :docs
+  get 'docs',                  to: 'docs#index', as: :docs
   get 'docs/dispatch-guide',   to: 'docs#dispatch_guide', as: :docs_dispatch
   get 'docs/manufacturing',    to: 'docs#manufacturing',  as: :docs_manufacturing
   get 'docs/mrp-guide',        to: 'docs#mrp_guide',     as: :docs_mrp_guide
   get 'docs/changelog',        to: 'docs#changelog',     as: :docs_changelog
 
-  resources :purchase_orders, only: [:index, :new, :create, :show, :edit, :update] do
+  resources :purchase_orders, only: %i[index new create show edit update] do
     member do
       patch :approve
       patch :submit
@@ -157,12 +156,13 @@ Rails.application.routes.draw do
     end
   end
 
-  resource :purchase_order_imports, only: [:new, :create] do
+  resource :purchase_order_imports, only: %i[new create] do
     collection do
       post :preview
     end
   end
-  get 'purchase_order_imports/download/:log_id', to: 'purchase_order_imports#download', as: :download_purchase_order_import
+  get 'purchase_order_imports/download/:log_id', to: 'purchase_order_imports#download',
+                                                 as: :download_purchase_order_import
 
   resources :production_order_batches, only: [] do
     member do
@@ -181,47 +181,50 @@ Rails.application.routes.draw do
       get :lookup
     end
   end
-  resources :inventory_adjustments, only: [:new, :create]
+  resources :inventory_adjustments, only: %i[new create]
   resources :inventory_transactions, only: [:index]
   get 'imports', to: 'imports#index', as: :imports
-  resource :pdi_inventory_import, only: [:new, :create]
-  resource :inventory_import, only: [:new, :create] do
+  resource :pdi_inventory_import, only: %i[new create]
+  resource :inventory_import, only: %i[new create] do
     post :preview, on: :collection
   end
-  resource :pdi_product_import, only: [:new, :create] do
+  resource :pdi_product_import, only: %i[new create] do
     post :preview, on: :collection
   end
   get 'pdi_product_import/download/:log_id', to: 'pdi_product_imports#download', as: :download_pdi_product_import
 
-  resource :pdi_purchase_order_import, only: [:new, :create] do
+  resource :pdi_purchase_order_import, only: %i[new create] do
     post :preview, on: :collection
   end
-  get 'pdi_purchase_order_import/download/:log_id', to: 'pdi_purchase_order_imports#download', as: :download_pdi_purchase_order_import
+  get 'pdi_purchase_order_import/download/:log_id', to: 'pdi_purchase_order_imports#download',
+                                                    as: :download_pdi_purchase_order_import
 
-  resource :repack_batch_import, only: [:new, :create] do
+  resource :repack_batch_import, only: %i[new create] do
     post :preview, on: :collection
   end
   get 'repack_batch_import/download/:log_id', to: 'repack_batch_imports#download', as: :download_repack_batch_import
 
-  resource :bom_import, only: [:new, :create] do
+  resource :bom_import, only: %i[new create] do
     post :preview, on: :collection
   end
   get 'bom_import/download/:log_id', to: 'bom_imports#download', as: :download_bom_import
 
-  resource :min_max_import, only: [:new, :create] do
+  resource :min_max_import, only: %i[new create] do
     post :preview, on: :collection
   end
   get 'min_max_import/download/:log_id', to: 'min_max_imports#download', as: :download_min_max_import
 
-  resource :warehouse_transaction_import, only: [:new, :create] do
+  resource :warehouse_transaction_import, only: %i[new create] do
     post :preview, on: :collection
   end
-  get 'warehouse_transaction_import/download/:log_id', to: 'warehouse_transaction_imports#download', as: :download_warehouse_transaction_import
+  get 'warehouse_transaction_import/download/:log_id', to: 'warehouse_transaction_imports#download',
+                                                       as: :download_warehouse_transaction_import
 
-  resource :customer_order_import, only: [:new, :create] do
+  resource :customer_order_import, only: %i[new create] do
     post :preview, on: :collection
   end
-  get 'customer_order_import/download/:log_id', to: 'customer_order_imports#download', as: :download_customer_order_import
+  get 'customer_order_import/download/:log_id', to: 'customer_order_imports#download',
+                                                as: :download_customer_order_import
 
   resources :things
 
@@ -241,9 +244,9 @@ Rails.application.routes.draw do
     resources :standard_cost_histories, only: [:create]
   end
 
-  resources :dispatch_messages, only: [:index, :show]
+  resources :dispatch_messages, only: %i[index show]
 
-  resources :vendors, only: [:index, :new, :create, :destroy, :show, :edit, :update] do
+  resources :vendors, only: %i[index new create destroy show edit update] do
     collection do
       post :import_preferred_vendors
       get  :export_csv
@@ -253,11 +256,11 @@ Rails.application.routes.draw do
     end
   end
 
-  resource :vendor_freight_term_import, only: [:new, :create] do
+  resource :vendor_freight_term_import, only: %i[new create] do
     post :preview, on: :collection
   end
 
-  resources :automated_processes, only: [:index, :show], param: :id do
+  resources :automated_processes, only: %i[index show], param: :id do
     member do
       post  :trigger
       patch :update_config
@@ -268,13 +271,13 @@ Rails.application.routes.draw do
   delete 'dispatches/:dispatch_id/files/:id', to: 'dispatches#destroy_file', as: 'dispatch_file'
 
   resources :phone_numbers, only: [:destroy]
-  
+
   delete '/dispatches/:id', to: 'dispatches#destroy', as: 'destroy_dispatch'
   get '/view_dispatches', to: 'dispatches#view_dispatches', as: 'view_dispatches'
   get '/search', to: 'customer_orders#search', as: 'search'
-  
+
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
-  
+
   devise_scope :user do
     authenticated :user do
       root to: 'dispatches#index', as: :authenticated_root
@@ -285,4 +288,3 @@ Rails.application.routes.draw do
     end
   end
 end
-

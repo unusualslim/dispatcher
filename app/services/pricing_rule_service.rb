@@ -33,9 +33,9 @@ class PricingRuleService
     return nil if matching_ids.empty?
 
     rules = PricingRule
-      .where(id: matching_ids)
-      .where('(customer_id = ? OR customer_id IS NULL)', customer_id)
-      .includes(:pricing_rule_products, :products)
+            .where(id: matching_ids)
+            .where('(customer_id = ? OR customer_id IS NULL)', customer_id)
+            .includes(:pricing_rule_products, :products)
 
     active_rules = rules.select { |r| r.active?(date) }
     return nil if active_rules.empty?
@@ -53,18 +53,19 @@ class PricingRuleService
       # A BOM-based rule matched but can't be priced — report which components
       # are missing a standard cost so the user can fix them.
       return nil unless best.pricing_basis == 'standard_calculated'
+
       missing = product.bom_components_missing_standard_cost(date)
       return nil if missing.empty?
+
       return { price: nil, rule: best, quote_product: nil, missing_components: missing }
     end
 
     { price: price, rule: best, quote_product: nil, missing_components: [] }
   end
 
-  private
-
-  def self.pick_best(rules)
+  private_class_method def self.pick_best(rules)
     return nil if rules.empty?
+
     rules.min_by { |r| [r.pricing_rule_products.size, -(r.effective_date&.to_time&.to_i || 0)] }
   end
 end

@@ -11,8 +11,12 @@ class BomImportsController < ApplicationController
 
   def preview
     file = params[:file]
-    return redirect_to new_bom_import_path, alert: "Please select a file." unless file
-    return redirect_to new_bom_import_path, alert: "File must be a CSV file." unless file.original_filename.downcase.end_with?('.csv')
+    return redirect_to new_bom_import_path, alert: 'Please select a file.' unless file
+
+    unless file.original_filename.downcase.end_with?('.csv')
+      return redirect_to new_bom_import_path,
+                         alert: 'File must be a CSV file.'
+    end
 
     tmp = Tempfile.new(['bom_import', '.csv'])
     tmp.binmode
@@ -32,7 +36,7 @@ class BomImportsController < ApplicationController
 
   def create
     unless session[:bom_import_tmp_path].present? && File.exist?(session[:bom_import_tmp_path].to_s)
-      return redirect_to new_bom_import_path, alert: "Import session expired. Please re-upload the file."
+      return redirect_to new_bom_import_path, alert: 'Import session expired. Please re-upload the file.'
     end
 
     file_path = session[:bom_import_tmp_path]
@@ -40,11 +44,11 @@ class BomImportsController < ApplicationController
 
     log = SyncLog.create!(
       process_name: PROCESS_NAME,
-      status:       'running',
-      file_name:    file_name,
+      status: 'running',
+      file_name: file_name,
       file_content: File.read(file_path),
-      file_binary:  false,
-      started_at:   Time.current
+      file_binary: false,
+      started_at: Time.current
     )
 
     overwrite = session[:bom_import_overwrite] || false
@@ -53,22 +57,22 @@ class BomImportsController < ApplicationController
       result = BomImportService.call(file_path, overwrite: overwrite)
 
       log.update!(
-        status:          'success',
-        completed_at:    Time.current,
+        status: 'success',
+        completed_at: Time.current,
         records_created: result.created,
         records_skipped: result.skipped_no_product + result.skipped_already_has_bom,
-        warnings:        result.errors.any? ? result.errors.join("\n") : nil
+        warnings: result.errors.any? ? result.errors.join("\n") : nil
       )
 
       summary = "Import complete — #{result.created} components created"
       summary += ", #{result.overwritten} BOMs overwritten" if result.overwritten > 0
       summary += ". #{result.skipped_no_product} products not found" if result.skipped_no_product > 0
       summary += ", #{result.skipped_already_has_bom} already had a BOM (skipped)" if result.skipped_already_has_bom > 0
-      summary += "."
+      summary += '.'
       summary += " #{result.errors.count} warnings." if result.errors.any?
 
       flash[:notice] = summary
-    rescue => e
+    rescue StandardError => e
       log.update!(status: 'failed', completed_at: Time.current, error_message: e.message)
       flash[:alert] = "Import failed: #{e.message}"
     ensure
@@ -82,10 +86,10 @@ class BomImportsController < ApplicationController
 
   def download
     log = SyncLog.find(params[:log_id])
-    return redirect_to new_bom_import_path, alert: "File not available." if log.file_content.blank?
+    return redirect_to new_bom_import_path, alert: 'File not available.' if log.file_content.blank?
 
     send_data log.file_content,
-              type:        'text/csv',
+              type: 'text/csv',
               disposition: "attachment; filename=\"#{log.file_name}\""
   end
 end

@@ -5,7 +5,7 @@ class InventoryIntelligenceMailer < ApplicationMailer
     @user   = user
     @report = report
     mail(
-      to:      user.email,
+      to: user.email,
       subject: daily_subject(report)
     )
   end
@@ -14,7 +14,7 @@ class InventoryIntelligenceMailer < ApplicationMailer
     @user   = user
     @report = report
     mail(
-      to:      user.email,
+      to: user.email,
       subject: "Weekly Inventory Intelligence Report — #{Date.today.strftime('%b %d, %Y')}"
     )
   end

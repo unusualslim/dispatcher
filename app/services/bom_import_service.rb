@@ -12,8 +12,9 @@ class BomImportService
   COL_COMPONENT_PKG = 7
   COL_QUANTITY      = 9
 
-  Result      = Struct.new(:created, :overwritten, :skipped_no_product, :skipped_already_has_bom, :errors, keyword_init: true)
-  PreviewRow  = Struct.new(:finished_id, :finished_name, :product, :action, :pkg_code, :components, keyword_init: true)
+  Result = Struct.new(:created, :overwritten, :skipped_no_product, :skipped_already_has_bom, :errors,
+                      keyword_init: true)
+  PreviewRow = Struct.new(:finished_id, :finished_name, :product, :action, :pkg_code, :components, keyword_init: true)
   ComponentPreview = Struct.new(:component_id, :component_name, :component_product, :quantity, :uom, keyword_init: true)
 
   def self.call(file_path, overwrite: false)
@@ -114,14 +115,14 @@ class BomImportService
         end
 
         ProductComponent.create!(
-          product:           product,
+          product: product,
           component_product: component,
           quantity_per_unit: quantity,
-          uom:               component_pkg.presence || 'EA'
+          uom: component_pkg.presence || 'EA'
         )
         result.created += 1
       end
-    rescue => e
+    rescue StandardError => e
       result.errors << "Product #{finished_id}: #{e.message}"
     end
 

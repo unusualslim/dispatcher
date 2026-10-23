@@ -1,13 +1,10 @@
 class InventoryImportsController < ApplicationController
   before_action :require_admin!
 
-  def new
-  end
+  def new; end
 
   def preview
-    unless params[:file].present?
-      redirect_to new_inventory_import_path, alert: "Please select a file." and return
-    end
+    redirect_to new_inventory_import_path, alert: 'Please select a file.' and return unless params[:file].present?
 
     service      = InventoryImportService.new(params[:file])
     @rows        = service.preview
@@ -23,12 +20,12 @@ class InventoryImportsController < ApplicationController
     tmp.flush
     session[:import_tmp_path]  = tmp.path
     session[:import_sites]     = @sites.map { |s| [s[:code], s[:name]] }
-    ObjectSpace.undefine_finalizer(tmp)  # prevent auto-deletion before confirm
+    ObjectSpace.undefine_finalizer(tmp) # prevent auto-deletion before confirm
   end
 
   def create
     unless session[:import_tmp_path].present? && File.exist?(session[:import_tmp_path].to_s)
-      redirect_to new_inventory_import_path, alert: "Import session expired. Please re-upload the file." and return
+      redirect_to new_inventory_import_path, alert: 'Import session expired. Please re-upload the file.' and return
     end
 
     file     = File.open(session[:import_tmp_path])
@@ -38,20 +35,21 @@ class InventoryImportsController < ApplicationController
     site_location_map = {}
     (params[:site_locations] || {}).each do |site_code, location_id|
       next if location_id.blank?
+
       loc = Location.find_by(id: location_id)
       site_location_map[site_code] = loc if loc
     end
 
     counts = InventoryImportService.new(file).import(
       selected_part_numbers: selected,
-      site_location_map:     site_location_map
+      site_location_map: site_location_map
     )
     file.close
     File.delete(session[:import_tmp_path]) rescue nil
     session.delete(:import_tmp_path)
     session.delete(:import_sites)
 
-    mapped_labels = site_location_map.map { |code, loc| "#{code} → #{loc.company_name}" }.join(", ")
+    mapped_labels = site_location_map.map { |code, loc| "#{code} → #{loc.company_name}" }.join(', ')
     notice = "Import complete: #{counts[:updated]} updated, #{counts[:created]} created, #{counts[:skipped]} skipped."
     notice += " Warehouses: #{mapped_labels}." if mapped_labels.present?
 

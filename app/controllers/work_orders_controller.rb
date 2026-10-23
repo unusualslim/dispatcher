@@ -1,6 +1,6 @@
 class WorkOrdersController < ApplicationController
   before_action :require_admin!
-  before_action :set_work_order, only: [:show, :edit, :update, :destroy, :change_status]
+  before_action :set_work_order, only: %i[show edit update destroy change_status]
 
   def index
     @work_orders = WorkOrder.all
@@ -18,10 +18,8 @@ class WorkOrdersController < ApplicationController
     @work_order = WorkOrder.new(work_order_params)
     if @work_order.save
       # Send email to the assigned user
-      if @work_order.assigned_to.present?
-        DispatchMailer.send_work_order_email(@work_order).deliver_later
-      end
-  
+      DispatchMailer.send_work_order_email(@work_order).deliver_later if @work_order.assigned_to.present?
+
       redirect_to @work_order, notice: 'Work order was successfully created.'
     else
       render :new
@@ -33,10 +31,8 @@ class WorkOrdersController < ApplicationController
   def update
     if @work_order.update(work_order_params)
       # Send email to the assigned user
-      if @work_order.assigned_to.present?
-        DispatchMailer.send_work_order_email(@work_order).deliver_later
-      end
-  
+      DispatchMailer.send_work_order_email(@work_order).deliver_later if @work_order.assigned_to.present?
+
       redirect_to @work_order, notice: 'Work order was successfully updated.'
     else
       render :edit, status: :unprocessable_entity
@@ -49,9 +45,9 @@ class WorkOrdersController < ApplicationController
   end
 
   def workables
-    locations = Location.select(:id, :company_name).map { |l| { id: l.id, name: l.company_name, type: "Location" } }
-    things = Thing.select(:id, :name).map { |t| { id: t.id, name: t.name, type: "Thing" } }
-  
+    locations = Location.select(:id, :company_name).map { |l| { id: l.id, name: l.company_name, type: 'Location' } }
+    things = Thing.select(:id, :name).map { |t| { id: t.id, name: t.name, type: 'Thing' } }
+
     if params[:query].present?
       query = params[:query].downcase
       locations = locations.select { |l| l[:name].downcase.include?(query) }
@@ -61,7 +57,7 @@ class WorkOrdersController < ApplicationController
       locations = locations.first(4)
       things = things.first(4)
     end
-  
+
     workables = locations + things
     render json: workables
   end
@@ -70,7 +66,7 @@ class WorkOrdersController < ApplicationController
     if @work_order.update(status: params[:status])
       redirect_to @work_order, notice: "Work order status was successfully updated to #{params[:status]}."
     else
-      redirect_to @work_order, alert: "Failed to update work order status."
+      redirect_to @work_order, alert: 'Failed to update work order status.'
     end
   end
 
@@ -81,6 +77,7 @@ class WorkOrdersController < ApplicationController
   end
 
   def work_order_params
-    params.require(:work_order).permit(:subject, :location_id, :assigned_to, :attachments, :vendor_id, :status, :description, :asset_id, :workable_id, :workable_type)
+    params.require(:work_order).permit(:subject, :location_id, :assigned_to, :attachments, :vendor_id, :status,
+                                       :description, :asset_id, :workable_id, :workable_type)
   end
 end

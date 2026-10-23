@@ -1,23 +1,21 @@
 class VendorsController < ApplicationController
   include CsvRoundTrip
   before_action :require_admin!
-  before_action :set_vendor, only: [:show, :edit, :update, :destroy]
+  before_action :set_vendor, only: %i[show edit update destroy]
 
   def index
     @vendors = Vendor.includes(:vendor_freight_terms).order(:name)
-    @vendor = Vendor.new  # For the form
+    @vendor = Vendor.new # For the form
   end
 
-  def show
-  end
+  def show; end
 
-  def edit
-  end
+  def edit; end
 
   def update
     if @vendor.update(vendor_params)
       @vendor.sync_freight_terms!(params.dig(:vendor, :freight_term_names))
-      redirect_to @vendor, notice: "Vendor updated."
+      redirect_to @vendor, notice: 'Vendor updated.'
     else
       render :edit, status: :unprocessable_entity
     end
@@ -26,7 +24,7 @@ class VendorsController < ApplicationController
   def create
     @vendor = Vendor.new(vendor_params)
     if @vendor.save
-      redirect_to vendors_path, notice: "Vendor successfully added."
+      redirect_to vendors_path, notice: 'Vendor successfully added.'
     else
       @vendors = Vendor.includes(:vendor_freight_terms).order(:name)
       render :index, status: :unprocessable_entity
@@ -35,64 +33,73 @@ class VendorsController < ApplicationController
 
   def destroy
     @vendor.destroy
-    redirect_to vendors_path, notice: "Vendor successfully deleted."
+    redirect_to vendors_path, notice: 'Vendor successfully deleted.'
   end
 
   def import_preferred_vendors
     vendor_map = {
-      'American Mfg'        => '6050',
-      'Atlantia Snapseal'   => '6060',
+      'American Mfg' => '6050',
+      'Atlantia Snapseal' => '6060',
       'Atlantic Tape & Pkg' => '109',
-      'BASF'                => '24',
-      'Bericap'             => '6110',
-      'Better Label'        => '6130',
-      'Blue 1 Energy'       => '389',
-      'Bomag'               => '2610',
-      'Bucket Innovations'  => '6150',
-      'CCI'                 => '32',
-      'CKS'                 => '337',
-      'COMPLEX SALES'       => '39',
-      'CUMMINS'             => '51',
-      'Cary Company'        => '6680',
-      'Centurion'           => '6200',
-      'Con-Tech'            => '6280',
-      'Crucible Chemical'   => '6830',
-      'Dober'               => '6290',
+      'BASF' => '24',
+      'Bericap' => '6110',
+      'Better Label' => '6130',
+      'Blue 1 Energy' => '389',
+      'Bomag' => '2610',
+      'Bucket Innovations' => '6150',
+      'CCI' => '32',
+      'CKS' => '337',
+      'COMPLEX SALES' => '39',
+      'CUMMINS' => '51',
+      'Cary Company' => '6680',
+      'Centurion' => '6200',
+      'Con-Tech' => '6280',
+      'Crucible Chemical' => '6830',
+      'Dober' => '6290',
       'Five Points Service' => '1512',
-      'Greif'               => '6360',
-      'Ideas'               => '6380',
+      'Greif' => '6360',
+      'Ideas' => '6380',
       'International Paper' => '162',
-      'Koch Methanol'       => '2813',
-      'MKS'                 => '6510',
-      'Mauser'              => '1634',
-      'Perry Brothers Oil'  => '315',
-      'Phoenix Closures'    => '6780',
-      'Q8'                  => '6155',
-      'Robert Koch Color'   => '6430',
-      'TK Supply'           => '6670',
-      'TSG'                 => '3831',
-      'Weba'                => '6720',
-      'Whitaker'            => '6730',
-      'Wincom'              => '6740',
+      'Koch Methanol' => '2813',
+      'MKS' => '6510',
+      'Mauser' => '1634',
+      'Perry Brothers Oil' => '315',
+      'Phoenix Closures' => '6780',
+      'Q8' => '6155',
+      'Robert Koch Color' => '6430',
+      'TK Supply' => '6670',
+      'TSG' => '3831',
+      'Weba' => '6720',
+      'Whitaker' => '6730',
+      'Wincom' => '6740'
     }
 
     # [product_id, description, uom, cost, primary_vendor_name, secondary_vendor_name]
     rows = [
-      ['AA2ECTAY',      'BOX-6/1qt BLANK KRAFT',                  'EA', 1,     'International Paper', 'Atlantic Tape & Pkg'],
+      ['AA2ECTAY',      'BOX-6/1qt BLANK KRAFT',                  'EA', 1,     'International Paper',
+       'Atlantic Tape & Pkg'],
       ['AF2FCTBJ-40',   'BOX-2.5 BADASS DEF SQUAT 40ect',         'EA', 1,     'Atlantic Tape & Pkg', nil],
       ['AA3ECTBH',      'BLANK KRAFT ROUND 6/1g BOX',              'EA', 1,     'Atlantic Tape & Pkg', nil],
       ['AA2ECTBH',      'BLANK KRAFT F-STYLE 6/1g BOX',            'EA', 1,     'Atlantic Tape & Pkg', nil],
-      ['AA2ECTBF',      'BLANK KRAFT F-STYLE 4/1g BOX',            'EA', 1,     'International Paper', 'Atlantic Tape & Pkg'],
+      ['AA2ECTBF',      'BLANK KRAFT F-STYLE 4/1g BOX',            'EA', 1,     'International Paper',
+       'Atlantic Tape & Pkg'],
       ['AA2ECTBQ',      'BLANK KRAFT 9/64oz BOX',                  'EA', 0.5,   'Atlantic Tape & Pkg', nil],
       ['AA2ACTAV',      'BLANK KRAFT 24/6.4 (8oz) BOX',            'EA', 0.5,   'Atlantic Tape & Pkg', nil],
       ['AA2ACTAJ',      'BLANK KRAFT 24/2.6 (3oz) BOX',            'EA', 0.5,   'Atlantic Tape & Pkg', nil],
-      ['AD2ECTBL',      '2/2.5g ULTRAPURE DEF BOX',                'EA', 1,     'International Paper', 'Atlantic Tape & Pkg'],
-      ['AD2ECTBH',      '4/1g BLANK BOX',                          'EA', 1,     'International Paper', 'Atlantic Tape & Pkg'],
-      ['AD2ECTBF',      '4/1g BLANK KRAFT BOX',                    'EA', 1,     'International Paper', 'Atlantic Tape & Pkg'],
-      ['AD3ECTBH',      '3/1g BLANK BOX',                          'EA', 1,     'International Paper', 'Atlantic Tape & Pkg'],
-      ['AD3ECTBF',      '3/1g BLANK KRAFT BOX',                    'EA', 1,     'International Paper', 'Atlantic Tape & Pkg'],
-      ['AD3ECTAY',      '3/1QT BOX BLANK',                         'EA', 1,     'International Paper', 'Atlantic Tape & Pkg'],
-      ['AA2ECTBL',      'BLANK KRAFT 2/2.5g BOX',                  'EA', 1,     'International Paper', 'Atlantic Tape & Pkg'],
+      ['AD2ECTBL',      '2/2.5g ULTRAPURE DEF BOX',                'EA', 1,     'International Paper',
+       'Atlantic Tape & Pkg'],
+      ['AD2ECTBH',      '4/1g BLANK BOX',                          'EA', 1,     'International Paper',
+       'Atlantic Tape & Pkg'],
+      ['AD2ECTBF',      '4/1g BLANK KRAFT BOX',                    'EA', 1,     'International Paper',
+       'Atlantic Tape & Pkg'],
+      ['AD3ECTBH',      '3/1g BLANK BOX',                          'EA', 1,     'International Paper',
+       'Atlantic Tape & Pkg'],
+      ['AD3ECTBF',      '3/1g BLANK KRAFT BOX',                    'EA', 1,     'International Paper',
+       'Atlantic Tape & Pkg'],
+      ['AD3ECTAY',      '3/1QT BOX BLANK',                         'EA', 1,     'International Paper',
+       'Atlantic Tape & Pkg'],
+      ['AA2ECTBL',      'BLANK KRAFT 2/2.5g BOX',                  'EA', 1,     'International Paper',
+       'Atlantic Tape & Pkg'],
       ['AD4ECTBH',      'BLANK KRAFT 4/1g HANDLE BOX',             'EA', 1,     'International Paper', nil],
       ['AD2ECTBQ',      'BLANK KRAFT 2/64oz BOX',                  'EA', 0.5,   'Atlantic Tape & Pkg', nil],
       ['AA4ECTBH',      'BLANK KRAFT 24/8oz BOX',                  'EA', 0.5,   'Atlantic Tape & Pkg', nil],
@@ -110,7 +117,7 @@ class VendorsController < ApplicationController
       ['BLUEDRUM',      'DRUM - CHV BLU STEEL RECON LINED',        'EA', 50,    'Mauser',              nil],
       ['33001',         '330 GAL IBC TOTE w/ CAGE',                'EA', 160,   'Centurion',           'Mauser'],
       ['27501',         'New Def 275g Tote',                       'EA', 130,   'Centurion',           'Mauser'],
-      ['BUCKETBLACK5GA','BUCKET-BLACK BUCKET 5GA',                 'EA', 3,     'Bucket Innovations',  nil],
+      ['BUCKETBLACK5GA', 'BUCKET-BLACK BUCKET 5GA', 'EA', 3, 'Bucket Innovations', nil],
       ['LID BLACK 5GA', 'LID-BLACK 5ga PAIL LID',                  'EA', 0.5,   'Bucket Innovations',  nil],
       ['BLKPOLYDR55',   'New Black Poly 55g Drum',                 'EA', 25,    'Greif',               nil],
       ['BLKPOLYDR30',   'New Black Poly 30g Drum',                 'EA', 20,    'Greif',               nil],
@@ -128,7 +135,7 @@ class VendorsController < ApplicationController
       ['DIWATER',       'DEIONIZED WATER',                         'GA', nil,   'Five Points Service', nil],
       ['1014111',       '275g Tote Suction Tube',                  'EA', 5,     'Blue 1 Energy',       nil],
       ['1014112',       '330g Tote Suction Tube',                  'EA', 5,     'Blue 1 Energy',       nil],
-      ['1014113',       '55g Drum Suction Tube',                   'EA', 3,     'Blue 1 Energy',       nil],
+      ['1014113',       '55g Drum Suction Tube',                   'EA', 3,     'Blue 1 Energy',       nil]
     ]
 
     created = 0
@@ -149,7 +156,8 @@ class VendorsController < ApplicationController
       created += 1
     end
 
-    redirect_to vendors_path, notice: "Vendor assignment complete — #{created} products updated. You can now remove this button."
+    redirect_to vendors_path,
+                notice: "Vendor assignment complete — #{created} products updated. You can now remove this button."
   end
 
   private
@@ -181,7 +189,7 @@ class VendorsController < ApplicationController
       { attr: :state,          header: 'State',          readonly: false },
       { attr: :zip,            header: 'Zip',            readonly: false },
       { attr: :payment_terms,  header: 'Payment Terms',  readonly: false },
-      { attr: :payment_method, header: 'Payment Method', readonly: false },
+      { attr: :payment_method, header: 'Payment Method', readonly: false }
     ]
   end
 end

@@ -6,7 +6,7 @@ class PriceExceptionsController < ApplicationController
   FILTERS = {
     'lock' => %w[lock_mismatch],
     'rule' => %w[rule_mismatch],
-    'all'  => CustomerOrderProduct::PRICE_MISMATCHES,
+    'all' => CustomerOrderProduct::PRICE_MISMATCHES
   }.freeze
 
   def index
@@ -23,6 +23,7 @@ class PriceExceptionsController < ApplicationController
 
   def recheck
     count = PriceCheckService.recheck_open_orders!
-    redirect_to price_exceptions_path(filter: params[:filter]), notice: "Re-checked prices on #{count} open imported order(s)."
+    redirect_to price_exceptions_path(filter: params[:filter]),
+                notice: "Re-checked prices on #{count} open imported order(s)."
   end
 end

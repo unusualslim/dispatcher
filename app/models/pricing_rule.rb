@@ -34,8 +34,8 @@ class PricingRule < ApplicationRecord
     return nil if basis.nil? || basis == 0
 
     case pricing_method
-    when 'markup' then (basis * (1 + value / 100)).round(4)
-    when 'margin' then value >= 100 ? nil : (basis / (1 - value / 100)).round(4)
+    when 'markup' then (basis * (1 + (value / 100))).round(4)
+    when 'margin' then value >= 100 ? nil : (basis / (1 - (value / 100))).round(4)
     when 'flat'   then value.to_d
     end
   end

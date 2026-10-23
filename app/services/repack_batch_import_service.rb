@@ -89,18 +89,18 @@ class RepackBatchImportService
       comp_count = rows.map { |r| null_safe(r[COL_COMP_KEY]) }.compact.uniq.size
 
       PreviewRow.new(
-        batch_key:       batch_key,
-        description:     null_safe(first[COL_BATCH_DESC]),
-        business_date:   parse_date(first[COL_BUSINESS_DATE]),
-        status:          status,
-        source:          null_safe(first[COL_BATCH_SOURCE]),
-        product_id:      product_id,
-        product_name:    null_safe(first[COL_REPACK_DESC]) || product&.name,
-        product:         product,
-        qty:             null_safe_decimal(first[COL_REPACK_QTY]),
-        warehouse_name:  null_safe(first[COL_WAREHOUSE_NAME]),
+        batch_key: batch_key,
+        description: null_safe(first[COL_BATCH_DESC]),
+        business_date: parse_date(first[COL_BUSINESS_DATE]),
+        status: status,
+        source: null_safe(first[COL_BATCH_SOURCE]),
+        product_id: product_id,
+        product_name: null_safe(first[COL_REPACK_DESC]) || product&.name,
+        product: product,
+        qty: null_safe_decimal(first[COL_REPACK_QTY]),
+        warehouse_name: null_safe(first[COL_WAREHOUSE_NAME]),
         component_count: comp_count,
-        action:          action
+        action: action
       )
     end
   end
@@ -147,28 +147,28 @@ class RepackBatchImportService
 
       notes = "[PDI Historical Import] #{null_safe(first[COL_BATCH_DESC])}"
       notes += " | Source: #{batch_source}" if batch_source
-      notes += " | Credit batch" if credit == 'Yes'
+      notes += ' | Credit batch' if credit == 'Yes'
 
       po = ProductionOrder.new(
-        number:           number,
-        product:          product,
-        item:             product.name,
-        status:           po_status,
-        qty_to_make:      qty,
+        number: number,
+        product: product,
+        item: product.name,
+        status: po_status,
+        qty_to_make: qty,
         total_qty_produced: po_status == 'completed' ? qty : nil,
-        due_date:         business_date,
-        production_date:  business_date,
-        date_started:     business_date,
-        date_completed:   po_status == 'completed' ? (posted_at&.to_date || business_date) : nil,
-        location:         location,
-        location_name:    wh_name,
-        notes:            notes
+        due_date: business_date,
+        production_date: business_date,
+        date_started: business_date,
+        date_completed: po_status == 'completed' ? (posted_at&.to_date || business_date) : nil,
+        location: location,
+        location_name: wh_name,
+        notes: notes
       )
 
       # Build components from component rows
       comp_rows = rows
-        .select { |r| null_safe(r[COL_COMP_KEY]).present? }
-        .uniq { |r| r[COL_COMP_KEY] }
+                  .select { |r| null_safe(r[COL_COMP_KEY]).present? }
+                  .uniq { |r| r[COL_COMP_KEY] }
 
       comp_rows.each_with_index do |row, idx|
         comp_prod_id = null_safe(row[COL_COMP_PROD_ID])
@@ -176,13 +176,13 @@ class RepackBatchImportService
         total_qty    = null_safe_decimal(row[COL_COMP_TOTAL_QTY]) || 0
 
         po.production_order_components.build(
-          position:        idx + 1,
-          product_id:      comp_product&.id,
-          part_number:     comp_prod_id,
-          description:     null_safe(row[COL_COMP_DESC]),
-          uom:             null_safe(row[COL_COMP_PKG_CODE]) || 'EA',
-          quantity:         total_qty,
-          quantity_actual:  total_qty
+          position: idx + 1,
+          product_id: comp_product&.id,
+          part_number: comp_prod_id,
+          description: null_safe(row[COL_COMP_DESC]),
+          uom: null_safe(row[COL_COMP_PKG_CODE]) || 'EA',
+          quantity: total_qty,
+          quantity_actual: total_qty
         )
       end
 
@@ -190,7 +190,7 @@ class RepackBatchImportService
       # Override created_at to entry datetime if available
       po.update_column(:created_at, entry_at) if entry_at
       result.created += 1
-    rescue => e
+    rescue StandardError => e
       result.errors << "Batch #{batch_key}: #{e.message}"
     end
 
@@ -202,9 +202,7 @@ class RepackBatchImportService
   def parse_batches
     rows = CSV.read(@file_path, headers: false, encoding: 'bom|utf-8')
     # Skip header row if present
-    if rows.first&.first.to_s.strip.downcase.include?('batch_key')
-      rows = rows[1..]
-    end
+    rows = rows[1..] if rows.first&.first.to_s.strip.downcase.include?('batch_key')
     rows.group_by { |r| r[COL_BATCH_KEY].to_s.strip }
   end
 
@@ -221,12 +219,14 @@ class RepackBatchImportService
   def parse_date(value)
     v = null_safe(value)
     return nil unless v
+
     Date.parse(v) rescue nil
   end
 
   def parse_datetime(value)
     v = null_safe(value)
     return nil unless v
+
     Time.parse(v) rescue nil
   end
 end

@@ -27,21 +27,21 @@ class PdiOrderSyncJob < ApplicationJob
     result = CustomerOrderImportService.call(tempfile.path)
 
     log.update!(
-      file_name:       filename,
-      status:          'success',
-      completed_at:    Time.current,
+      file_name: filename,
+      status: 'success',
+      completed_at: Time.current,
       records_created: result.created,
       records_updated: result.updated,
       records_skipped: result.skipped,
-      warnings:        result.errors.any? ? result.errors.join("\n") : nil
+      warnings: result.errors.any? ? result.errors.join("\n") : nil
     )
 
     Rails.logger.info "[PdiOrderSyncJob] Sync complete (#{filename}) — " \
-      "created: #{result.created}, updated: #{result.updated}, skipped: #{result.skipped}"
+                      "created: #{result.created}, updated: #{result.updated}, skipped: #{result.skipped}"
   rescue PdiFtpConcern::NoFileFound => e
     log&.update!(status: 'skipped', completed_at: Time.current, error_message: e.message)
-    Rails.logger.info "[PdiOrderSyncJob] No file found — skipping"
-  rescue => e
+    Rails.logger.info '[PdiOrderSyncJob] No file found — skipping'
+  rescue StandardError => e
     log&.update!(status: 'failed', completed_at: Time.current, error_message: e.message)
     Rails.logger.error "[PdiOrderSyncJob] Failed: #{e.message}"
     raise

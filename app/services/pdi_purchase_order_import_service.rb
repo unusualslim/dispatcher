@@ -29,15 +29,15 @@ class PdiPurchaseOrderImportService
   COL_FREIGHT_ACCRUAL  = 24
   COL_FREIGHT_VEND_ID  = 25
   COL_FREIGHT_VEND_NAME = 26
-  COL_FREIGHT_INVC_NO  = 27
+  COL_FREIGHT_INVC_NO = 27
   COL_FREIGHT_INVC_DATE = 28
   COL_FREIGHT_INVC_TOT = 29
   COL_FREIGHT_TERMS_ID = 30
   COL_FREIGHT_TERMS_DESC = 31
-  COL_HEADER_COMMENTS  = 32
+  COL_HEADER_COMMENTS = 32
 
   # Line columns
-  COL_LINE_KEY         = 33
+  COL_LINE_KEY = 33
   COL_WH_SITE_ID      = 34
   COL_WH_SITE_NAME    = 35
   COL_PROD_ID          = 36
@@ -63,10 +63,10 @@ class PdiPurchaseOrderImportService
 
   # PDI status → our PO status
   STATUS_MAP = {
-    'Entered'      => 'draft',
-    'Ordered'      => 'submitted',
-    'Invoiced'     => 'received',
-    'Inventoried'  => 'received',
+    'Entered' => 'draft',
+    'Ordered' => 'submitted',
+    'Invoiced' => 'received',
+    'Inventoried' => 'received'
   }.freeze
 
   Result = Struct.new(:created, :skipped_exists, :skipped_no_vendor, :errors, keyword_init: true)
@@ -102,16 +102,16 @@ class PdiPurchaseOrderImportService
                end
 
       PreviewRow.new(
-        po_key:        po_key,
-        po_no:         po_no,
-        vendor_name:   vendor_name,
-        status:        null_safe(first[COL_STATUS]),
-        order_date:    parse_date(first[COL_ORDER_DATE]),
+        po_key: po_key,
+        po_no: po_no,
+        vendor_name: vendor_name,
+        status: null_safe(first[COL_STATUS]),
+        order_date: parse_date(first[COL_ORDER_DATE]),
         delivery_date: parse_date(first[COL_DELIVERY_DATE]),
         business_date: parse_date(first[COL_BUSINESS_DATE]),
-        line_count:    rows.map { |r| r[COL_LINE_KEY] }.uniq.size,
-        total_cost:    null_safe_decimal(first[COL_INVOICE_TOTAL]),
-        action:        action
+        line_count: rows.map { |r| r[COL_LINE_KEY] }.uniq.size,
+        total_cost: null_safe_decimal(first[COL_INVOICE_TOTAL]),
+        action: action
       )
     end
   end
@@ -154,7 +154,6 @@ class PdiPurchaseOrderImportService
       other_charges  = null_safe_decimal(first[COL_OTHER_CHARGES]) || 0
       po_no          = null_safe(first[COL_PO_NO])
       comments       = null_safe(first[COL_HEADER_COMMENTS])
-      freight_method = null_safe(first[COL_FREIGHT_METHOD])
       wh_site_id     = null_safe(first[COL_WH_SITE_ID])
       location       = locations_by_site[wh_site_id] if wh_site_id
 
@@ -163,18 +162,19 @@ class PdiPurchaseOrderImportService
       notes += " | #{comments}" if comments
 
       po = PurchaseOrder.new(
-        vendor:                 vendor,
-        location:               location,
-        pdi_reference:          po_no,
-        status:                 our_status,
-        trigger_type:           'pdi_import',
+        vendor: vendor,
+        location: location,
+        pdi_reference: po_no,
+        status: our_status,
+        trigger_type: 'pdi_import',
         expected_delivery_date: delivery_date,
-        submitted_at:           order_date ? order_date.to_time : nil,
-        received_at:            %w[received].include?(our_status) ? received_at : nil,
-        posted_at:              %w[Invoiced Inventoried].include?(pdi_status) ? (posted_inv_dt || received_at || business_date&.to_time) : nil,
-        freight_amount:         freight_amount,
-        other_charges:          other_charges,
-        notes:                  notes
+        submitted_at: order_date ? order_date.to_time : nil,
+        received_at: %w[received].include?(our_status) ? received_at : nil,
+        posted_at: %w[Invoiced
+                      Inventoried].include?(pdi_status) ? (posted_inv_dt || received_at || business_date&.to_time) : nil,
+        freight_amount: freight_amount,
+        other_charges: other_charges,
+        notes: notes
       )
 
       # Build line items — deduplicate by line key
@@ -187,10 +187,10 @@ class PdiPurchaseOrderImportService
         unit_cost = null_safe_decimal(row[COL_UNIT_COST]) || 0
 
         po.line_items.build(
-          product_id:   prod_id,
+          product_id: prod_id,
           product_name: prod_name,
-          quantity:     quantity,
-          unit_cost:    unit_cost,
+          quantity: quantity,
+          unit_cost: unit_cost,
           package_code: pkg_code
         )
       end
@@ -199,7 +199,7 @@ class PdiPurchaseOrderImportService
       # Override created_at to business date
       po.update_column(:created_at, business_date.to_time) if business_date
       result.created += 1
-    rescue => e
+    rescue StandardError => e
       result.errors << "PO #{po_key} (#{null_safe(rows.first[COL_PO_NO])}): #{e.message}"
     end
 
@@ -210,9 +210,7 @@ class PdiPurchaseOrderImportService
 
   def parse_batches
     rows = CSV.read(@file_path, headers: false, encoding: 'bom|utf-8')
-    if rows.first&.first.to_s.strip.downcase.include?('whprch_key')
-      rows = rows[1..]
-    end
+    rows = rows[1..] if rows.first&.first.to_s.strip.downcase.include?('whprch_key')
     rows.group_by { |r| r[COL_PO_KEY].to_s.strip }
   end
 
@@ -229,12 +227,14 @@ class PdiPurchaseOrderImportService
   def parse_date(value)
     v = null_safe(value)
     return nil unless v
+
     Date.parse(v) rescue nil
   end
 
   def parse_datetime(value)
     v = null_safe(value)
     return nil unless v
+
     Time.parse(v) rescue nil
   end
 end

@@ -23,9 +23,9 @@ module CsvRoundTrip
     end
 
     send_data csv_data,
-      filename: "#{csv_resource.table_name}_#{Date.today}.csv",
-      type: 'text/csv',
-      disposition: 'attachment'
+              filename: "#{csv_resource.table_name}_#{Date.today}.csv",
+              type: 'text/csv',
+              disposition: 'attachment'
   end
 
   # GET /resources/import_csv
@@ -40,9 +40,7 @@ module CsvRoundTrip
   # POST /resources/process_import
   def process_import
     file = params.dig(:csv_upload, :file)
-    unless file.present?
-      return redirect_to(url_for(action: :index), alert: 'Please select a CSV file.')
-    end
+    return redirect_to(url_for(action: :index), alert: 'Please select a CSV file.') unless file.present?
 
     tmp_path = Rails.root.join('tmp', "csv_import_#{SecureRandom.hex(8)}.csv")
     File.binwrite(tmp_path, file.read)
@@ -101,6 +99,7 @@ module CsvRoundTrip
     CSV.foreach(file_path, headers: true) do |row|
       raw_id = row[id_col[:header]]&.strip
       next if raw_id.blank?
+
       record = csv_resource.find_by(id: raw_id)
       next unless record
 

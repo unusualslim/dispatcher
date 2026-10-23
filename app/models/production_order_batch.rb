@@ -37,18 +37,19 @@ class ProductionOrderBatch < ApplicationRecord
       # Deduct all components consumed (regardless of is_raw_material flag)
       production_order.production_order_components.includes(:product).each do |comp|
         next unless comp.product.present?
+
         actual_qty = comp.quantity_actual.presence&.to_d || (comp.quantity.to_d * batch_ratio)
         next unless actual_qty.positive?
 
         InventoryTransaction.create!(
-          product:          comp.product,
-          quantity:         actual_qty,
-          direction:        'out',
-          transactable:     self,
+          product: comp.product,
+          quantity: actual_qty,
+          direction: 'out',
+          transactable: self,
           reference_number: production_order.number,
-          notes:            "Consumed in batch #{lot_number}",
-          created_by_id:    completed_by_user.id,
-          location_id:      location&.id
+          notes: "Consumed in batch #{lot_number}",
+          created_by_id: completed_by_user.id,
+          location_id: location&.id
         )
         if location.present?
           LocationProduct.adjust!(location, comp.product, -actual_qty)
@@ -62,14 +63,14 @@ class ProductionOrderBatch < ApplicationRecord
       if finished_product && !finished_product.is_raw_material?
         qty_produced = quantity || production_order.qty_to_make
         InventoryTransaction.create!(
-          product:          finished_product,
-          quantity:         qty_produced,
-          direction:        'in',
-          transactable:     self,
+          product: finished_product,
+          quantity: qty_produced,
+          direction: 'in',
+          transactable: self,
           reference_number: production_order.number,
-          notes:            "Produced in batch #{lot_number}",
-          created_by_id:    completed_by_user.id,
-          location_id:      location&.id
+          notes: "Produced in batch #{lot_number}",
+          created_by_id: completed_by_user.id,
+          location_id: location&.id
         )
         if location.present?
           LocationProduct.adjust!(location, finished_product, qty_produced)

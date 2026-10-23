@@ -1,4 +1,4 @@
-require "test_helper"
+require 'test_helper'
 
 class QuoteMarginReviewTest < ActiveSupport::TestCase
   include ActiveSupport::Testing::TimeHelpers
@@ -7,7 +7,7 @@ class QuoteMarginReviewTest < ActiveSupport::TestCase
   setup do
     @customer = customers(:acme)
     @user     = users(:admin_user)
-    @def      = products(:def_finished)     # BOM: 0.325 concentrate + 2.0 urea
+    @def      = products(:def_finished) # BOM: 0.325 concentrate + 2.0 urea
     @conc     = products(:def_concentrate)
     @urea     = products(:urea)
     @quoted_on = Date.today - 10
@@ -34,7 +34,7 @@ class QuoteMarginReviewTest < ActiveSupport::TestCase
 
   test "standard cost rise below the rule's target margin needs a re-price, with the dated change as the driver" do
     @def.standard_cost_histories.create!(amount: 4.00, effective_date: @quoted_on - 30)
-    quote = locked_quote(rule('standard_cost', 'margin', 20))      # price 4.00 / 0.8 = 5.00
+    quote = locked_quote(rule('standard_cost', 'margin', 20)) # price 4.00 / 0.8 = 5.00
     @def.standard_cost_histories.create!(amount: 4.40, effective_date: Date.today - 2, created_by: @user)
 
     line = review(quote)
@@ -42,7 +42,7 @@ class QuoteMarginReviewTest < ActiveSupport::TestCase
     assert_equal BigDecimal('4.40'), line.cost_now
     assert_equal BigDecimal('0.40'), line.cost_change
     assert_in_delta 10.0, line.cost_change_pct, 0.001
-    assert_in_delta 12.0, line.margin_pct_now, 0.001             # (5.00 - 4.40) / 5.00
+    assert_in_delta 12.0, line.margin_pct_now, 0.001 # (5.00 - 4.40) / 5.00
     assert_equal BigDecimal('20'), line.target_margin_pct
     assert_equal :reprice, line.status
     assert_equal BigDecimal('5.50'), line.rule_price_now          # 4.40 / 0.8
@@ -54,7 +54,7 @@ class QuoteMarginReviewTest < ActiveSupport::TestCase
     assert_equal BigDecimal('0.40'), driver.impact
   end
 
-  test "small cost rise that keeps margin above target is watch, not re-price" do
+  test 'small cost rise that keeps margin above target is watch, not re-price' do
     @def.standard_cost_histories.create!(amount: 4.00, effective_date: @quoted_on - 30)
     quote = locked_quote(rule('standard_cost', 'markup', 25))      # price 5.00, target GM 20%
     @def.standard_cost_histories.create!(amount: 4.00, effective_date: @quoted_on - 30)
@@ -66,14 +66,14 @@ class QuoteMarginReviewTest < ActiveSupport::TestCase
     assert_equal :watch, line.status
   end
 
-  test "flat or falling cost is ok" do
+  test 'flat or falling cost is ok' do
     @def.standard_cost_histories.create!(amount: 4.00, effective_date: @quoted_on - 30)
     quote = locked_quote(rule('standard_cost', 'margin', 20))
     @def.standard_cost_histories.create!(amount: 3.90, effective_date: Date.today - 1)
     assert_equal :ok, review(quote).status
   end
 
-  test "BOM drivers name each component that moved and its effect per unit" do
+  test 'BOM drivers name each component that moved and its effect per unit' do
     @conc.standard_cost_histories.create!(amount: 3.00, effective_date: @quoted_on - 30)
     @urea.standard_cost_histories.create!(amount: 0.50, effective_date: @quoted_on - 30)
     quote = locked_quote(rule('standard_calculated', 'margin', 30)) # cost 0.975 + 1.00 = 1.975
@@ -88,7 +88,7 @@ class QuoteMarginReviewTest < ActiveSupport::TestCase
     assert_equal Date.today - 3, line.drivers.first.date
   end
 
-  test "inventory cost changes are recorded and explain the movement" do
+  test 'inventory cost changes are recorded and explain the movement' do
     travel_to(@quoted_on - 1) { @def.update!(cost_per_unit: 4.00) }
     quote = locked_quote(rule('inventory_cost', 'markup', 10))     # price 4.40
     travel_to(Date.today - 4) { @def.update!(cost_per_unit: 4.30) }
@@ -103,7 +103,7 @@ class QuoteMarginReviewTest < ActiveSupport::TestCase
     assert_equal :reprice, line.status                              # GM 2.3% vs 9.1% target
   end
 
-  test "inventory cost as of a past date uses recorded history" do
+  test 'inventory cost as of a past date uses recorded history' do
     @def.update!(cost_per_unit: 4.00)
     travel_to(Date.today - 5) { @def.update!(cost_per_unit: 4.20) }
     travel_to(Date.today - 2) { @def.update!(cost_per_unit: 4.50) }
@@ -124,7 +124,7 @@ class QuoteMarginReviewTest < ActiveSupport::TestCase
     assert_equal BigDecimal('0.25'), line.drivers.first.impact
   end
 
-  test "open_locks lists active and scheduled locks, worst first" do
+  test 'open_locks lists active and scheduled locks, worst first' do
     @def.standard_cost_histories.create!(amount: 4.00, effective_date: @quoted_on - 30)
     ok_quote = locked_quote(rule('standard_cost', 'margin', 10), price: 6.00)
     @customer = customers(:river_transport)                         # separate customer, so no supersede
@@ -163,7 +163,7 @@ class QuoteMarginReviewTest < ActiveSupport::TestCase
 
   test "a price negotiated below target isn't flagged until cost rises" do
     @def.standard_cost_histories.create!(amount: 4.00, effective_date: @quoted_on - 30)
-    quote = locked_quote(rule('standard_cost', 'margin', 20), price: 4.80)   # GM 16.7% vs 20% target
+    quote = locked_quote(rule('standard_cost', 'margin', 20), price: 4.80) # GM 16.7% vs 20% target
 
     line = review(quote)
     assert_in_delta 16.67, line.margin_floor_pct, 0.01
@@ -175,16 +175,16 @@ class QuoteMarginReviewTest < ActiveSupport::TestCase
 
   test "the first inventory cost recorded isn't a driver, and same-day changes after pricing are" do
     @def.update_column(:cost_per_unit, nil)
-    travel_to(@quoted_on.to_time + 8.hours) { @def.update!(cost_per_unit: 4.00) }   # first cost: blank -> 4.00
-    quote = locked_quote(rule('inventory_cost', 'markup', 10))                       # priced 9:00
-    travel_to(@quoted_on.to_time + 15.hours) { @def.update!(cost_per_unit: 4.20) }  # same day, after pricing
+    travel_to(@quoted_on.to_time + 8.hours) { @def.update!(cost_per_unit: 4.00) } # first cost: blank -> 4.00
+    quote = locked_quote(rule('inventory_cost', 'markup', 10)) # priced 9:00
+    travel_to(@quoted_on.to_time + 15.hours) { @def.update!(cost_per_unit: 4.20) } # same day, after pricing
 
     line = review(quote)
     assert_equal [BigDecimal('0.20')], line.drivers.map(&:impact)
     assert_equal @quoted_on, line.drivers.first.date
   end
 
-  test "margin within 1 point of the floor is watch; more than 1 point below is re-price" do
+  test 'margin within 1 point of the floor is watch; more than 1 point below is re-price' do
     @def.standard_cost_histories.create!(amount: 4.00, effective_date: @quoted_on - 30)
     quote = locked_quote(rule('standard_cost', 'margin', 20))                # price 5.00, GM 20%
     @def.standard_cost_histories.create!(amount: 4.04, effective_date: Date.today - 2)

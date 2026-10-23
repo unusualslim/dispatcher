@@ -5,44 +5,44 @@ class CustomerOrdersController < ApplicationController
     today = Date.today
 
     @stats = {
-      new:                 CustomerOrder.where(order_status: CustomerOrder::ACTIVE_STATUSES).count,
-      due_this_week:       CustomerOrder.where(order_status: CustomerOrder::ACTIVE_STATUSES)
-                             .where(required_delivery_date: today..today + 7).count,
-      overdue:             CustomerOrder.where(order_status: CustomerOrder::ACTIVE_STATUSES)
-                             .where('required_delivery_date < ?', today).count,
+      new: CustomerOrder.where(order_status: CustomerOrder::ACTIVE_STATUSES).count,
+      due_this_week: CustomerOrder.where(order_status: CustomerOrder::ACTIVE_STATUSES)
+                                  .where(required_delivery_date: today..today + 7).count,
+      overdue: CustomerOrder.where(order_status: CustomerOrder::ACTIVE_STATUSES)
+                            .where('required_delivery_date < ?', today).count,
       complete_this_month: CustomerOrder.where(order_status: 'Billed')
-                             .where('created_at >= ?', today.beginning_of_month).count,
-      needs_billing:       CustomerOrder.where(order_status: ['Shipped', 'Released for Billing', 'Delivered']).count,
+                                        .where('created_at >= ?', today.beginning_of_month).count,
+      needs_billing: CustomerOrder.where(order_status: ['Shipped', 'Released for Billing', 'Delivered']).count
     }
 
     @upcoming = CustomerOrder
-      .where(order_status: CustomerOrder::ACTIVE_STATUSES)
-      .where('required_delivery_date >= ?', today)
-      .order(required_delivery_date: :asc)
-      .includes(:customer, :location)
-      .limit(20)
+                .where(order_status: CustomerOrder::ACTIVE_STATUSES)
+                .where('required_delivery_date >= ?', today)
+                .order(required_delivery_date: :asc)
+                .includes(:customer, :location)
+                .limit(20)
 
     @orders_needing_production = production_shortfalls
 
     @last_import = SyncLog.for_process('Customer Order Import').first
   end
 
-def index
-  @view = params[:view] || 'card'  # Default to card view
+  def index
+    @view = params[:view] || 'card' # Default to card view
 
-  # Load collections for the selects
-  @customers = Customer.order(:name)
-  @products  = Product.order(:name)
-  @locations = Location.order(:city)
+    # Load collections for the selects
+    @customers = Customer.order(:name)
+    @products  = Product.order(:name)
+    @locations = Location.order(:city)
 
-  # Start your query with the necessary includes
-  @customer_orders = CustomerOrder
+    # Start your query with the necessary includes
+    @customer_orders = CustomerOrder
                        .includes(:location, :customer, customer_order_products: :product)
 
-  # Text search: order no, invoice no, customer name, location name
-  if params[:q].present?
-    q = "%#{params[:q]}%"
-    @customer_orders = @customer_orders
+    # Text search: order no, invoice no, customer name, location name
+    if params[:q].present?
+      q = "%#{params[:q]}%"
+      @customer_orders = @customer_orders
                          .left_joins(:customer, :location)
                          .where(
                            'customer_orders.external_order_no ILIKE ? OR
@@ -52,192 +52,190 @@ def index
                            q, q, q, q
                          )
                          .references(:customer, :location)
-  end
+    end
 
-  # filter by customer
-  if params[:customer_id].present?
-    @customer_orders = @customer_orders.where(customer_id: params[:customer_id])
-  end
+    # filter by customer
+    @customer_orders = @customer_orders.where(customer_id: params[:customer_id]) if params[:customer_id].present?
 
-  # filter by product name (via join to products)
-  if params[:product].present?
-    @customer_orders = @customer_orders
+    # filter by product name (via join to products)
+    if params[:product].present?
+      @customer_orders = @customer_orders
                          .joins(customer_order_products: :product)
                          .where('products.name ILIKE ?', "%#{params[:product]}%")
-  end
+    end
 
-  # filter by location (ID or city name)
-  if params[:location].present?
-    if params[:location].to_i.to_s == params[:location]
-      @customer_orders = @customer_orders.where(location_id: params[:location])
-    else
+    # filter by location (ID or city name)
+    if params[:location].present?
+      @customer_orders = if params[:location].to_i.to_s == params[:location]
+                           @customer_orders.where(location_id: params[:location])
+                         else
+                           @customer_orders
+                             .joins(:location)
+                             .where('locations.city ILIKE ?', "%#{params[:location]}%")
+                         end
+    end
+
+    # freight-only flag
+    @customer_orders = @customer_orders.where(freight_only: true) if params[:freight_only].present?
+
+    # filter by order_status (supports multiple selections or a named preset)
+    today = Date.today
+    case params[:status_preset]
+    when 'active'
+      @customer_orders = @customer_orders.where(order_status: CustomerOrder::ACTIVE_STATUSES)
+    when 'due_this_week'
       @customer_orders = @customer_orders
-                           .joins(:location)
-                           .where('locations.city ILIKE ?', "%#{params[:location]}%")
+                         .where(order_status: CustomerOrder::ACTIVE_STATUSES)
+                         .where(required_delivery_date: today..today + 7)
+    when 'overdue'
+      @customer_orders = @customer_orders
+                         .where(order_status: CustomerOrder::ACTIVE_STATUSES)
+                         .where('required_delivery_date < ?', today)
+    when 'billed_this_month'
+      @customer_orders = @customer_orders
+                         .where(order_status: 'Billed')
+                         .where('created_at >= ?', today.beginning_of_month)
+    when 'needs_billing'
+      @customer_orders = @customer_orders.where(order_status: ['Shipped', 'Released for Billing', 'Delivered'])
+    else
+      statuses = Array(params[:order_statuses]).reject(&:blank?)
+      @customer_orders = @customer_orders.where(order_status: statuses) if statuses.any?
+    end
+
+    # Apply sorting
+    @customer_orders = case params[:sort_by]
+                       when 'newest'
+                         @customer_orders.order(created_at: :desc)
+                       when 'oldest'
+                         @customer_orders.order(created_at: :asc)
+                       when 'required_delivery_date'
+                         @customer_orders.order(required_delivery_date: :asc)
+                       else
+                         @customer_orders.order(required_delivery_date: :asc)
+                       end
+
+    @customer_orders = @customer_orders.paginate(page: params[:page], per_page: 25)
+  end
+
+  def show
+    @customer_order = CustomerOrder.find(params[:id])
+    @locations = Location.where(location_category_id: 2)
+  end
+
+  def new
+    # ?from_quote=ID pre-fills the order from an accepted quote at its locked prices.
+    quote = Quote.accepted.find_by(id: params[:from_quote]) if params[:from_quote].present?
+    quote = nil unless quote&.orderable?
+    @customer_order = quote ? quote.build_order : CustomerOrder.new
+  end
+
+  def edit
+    @customer_order = CustomerOrder.find(params[:id])
+  end
+
+  def create_dispatch
+    @customer_order = CustomerOrder.find(params[:id])
+
+    # Assign a user and create a dispatch for the order here.
+    # Adjust based on your app's logic; e.g., you might create a new Dispatch record.
+
+    if @customer_order.assign_user_and_create_dispatch
+      redirect_to @customer_order, notice: 'User assigned and dispatch created successfully.'
+    else
+      redirect_to @customer_order, alert: 'There was an error creating the dispatch.'
     end
   end
 
-  # freight-only flag
-  if params[:freight_only].present?
-    @customer_orders = @customer_orders.where(freight_only: true)
-  end
+  def create
+    @customer_order = CustomerOrder.new(customer_order_params)
 
-  # filter by order_status (supports multiple selections or a named preset)
-  today = Date.today
-  case params[:status_preset]
-  when 'active'
-    @customer_orders = @customer_orders.where(order_status: CustomerOrder::ACTIVE_STATUSES)
-  when 'due_this_week'
-    @customer_orders = @customer_orders
-      .where(order_status: CustomerOrder::ACTIVE_STATUSES)
-      .where(required_delivery_date: today..today + 7)
-  when 'overdue'
-    @customer_orders = @customer_orders
-      .where(order_status: CustomerOrder::ACTIVE_STATUSES)
-      .where('required_delivery_date < ?', today)
-  when 'billed_this_month'
-    @customer_orders = @customer_orders
-      .where(order_status: 'Billed')
-      .where('created_at >= ?', today.beginning_of_month)
-  when 'needs_billing'
-    @customer_orders = @customer_orders.where(order_status: ['Shipped', 'Released for Billing', 'Delivered'])
-  else
-    statuses = Array(params[:order_statuses]).reject(&:blank?)
-    @customer_orders = @customer_orders.where(order_status: statuses) if statuses.any?
-  end
-
-  # Apply sorting
-  case params[:sort_by]
-  when 'newest'
-    @customer_orders = @customer_orders.order(created_at: :desc)
-  when 'oldest'
-    @customer_orders = @customer_orders.order(created_at: :asc)
-  when 'required_delivery_date'
-    @customer_orders = @customer_orders.order(required_delivery_date: :asc)
-  else
-    @customer_orders = @customer_orders.order(required_delivery_date: :asc)
-  end
-
-  @customer_orders = @customer_orders.paginate(page: params[:page], per_page: 25)
-end
-  
-    def show
-        @customer_order = CustomerOrder.find(params[:id])
-        @locations = Location.where(location_category_id: 2)
+    # A missing location is caught by the model's belongs_to validation below;
+    # re-render (not redirect) so the user keeps what they entered.
+    if @customer_order.location&.disabled?
+      @customer_order.errors.add(:location, 'is currently disabled and cannot be used')
+      respond_to do |format|
+        format.html { render :new, status: :unprocessable_entity }
+        format.json { render json: @customer_order.errors, status: :unprocessable_entity }
+      end
+      return
     end
 
-    def new
-        # ?from_quote=ID pre-fills the order from an accepted quote at its locked prices.
-        quote = Quote.accepted.find_by(id: params[:from_quote]) if params[:from_quote].present?
-        quote = nil unless quote&.orderable?
-        @customer_order = quote ? quote.build_order : CustomerOrder.new
-    end
-
-    def edit
-        @customer_order = CustomerOrder.find(params[:id])
-    end
-
-    def create_dispatch
-      @customer_order = CustomerOrder.find(params[:id])
-    
-      # Assign a user and create a dispatch for the order here.
-      # Adjust based on your app's logic; e.g., you might create a new Dispatch record.
-    
-      if @customer_order.assign_user_and_create_dispatch
-        redirect_to @customer_order, notice: 'User assigned and dispatch created successfully.'
+    respond_to do |format|
+      if @customer_order.save
+        format.html { redirect_to customer_order_url(@customer_order), notice: 'Order was successfully created.' }
+        format.json { render :show, status: :created, location: @customer_order }
       else
-        redirect_to @customer_order, alert: 'There was an error creating the dispatch.'
+        format.html { render :new, status: :unprocessable_entity }
+        format.json { render json: @customer_order.errors, status: :unprocessable_entity }
       end
     end
+  end
 
-    def create
-      @customer_order = CustomerOrder.new(customer_order_params)
+  def update
+    @customer_order = CustomerOrder.find(params[:id])
 
-      # A missing location is caught by the model's belongs_to validation below;
-      # re-render (not redirect) so the user keeps what they entered.
-      if @customer_order.location&.disabled?
-        @customer_order.errors.add(:location, "is currently disabled and cannot be used")
-        respond_to do |format|
-          format.html { render :new, status: :unprocessable_entity }
-          format.json { render json: @customer_order.errors, status: :unprocessable_entity }
-        end
-        return
-      end
-
-      respond_to do |format|
-        if @customer_order.save
-          format.html { redirect_to customer_order_url(@customer_order), notice: "Order was successfully created." }
-          format.json { render :show, status: :created, location: @customer_order }
-        else
-          format.html { render :new, status: :unprocessable_entity }
-          format.json { render json: @customer_order.errors, status: :unprocessable_entity }
-        end
+    respond_to do |format|
+      if @customer_order.update(customer_order_params)
+        format.html { redirect_to @customer_order, notice: 'Customer Order was successfully updated.' }
+        format.json { render :show, status: :ok, location: @customer_order }
+      else
+        format.html { render :edit, status: :unprocessable_entity }
+        format.json { render json: @customer_order.errors, status: :unprocessable_entity }
       end
     end
+  end
 
-    def update
-      @customer_order = CustomerOrder.find(params[:id])
-    
-      respond_to do |format|
-        if @customer_order.update(customer_order_params)
-          format.html { redirect_to @customer_order, notice: 'Customer Order was successfully updated.' }
-          format.json { render :show, status: :ok, location: @customer_order }
-        else
-          format.html { render :edit, status: :unprocessable_entity }
-          format.json { render json: @customer_order.errors, status: :unprocessable_entity }
-        end
-      end
+  def bulk_close
+    ids = Array(params[:order_ids]).map(&:to_i).select(&:positive?)
+    return redirect_to dashboard_production_orders_path, alert: 'No orders selected.' if ids.empty?
+
+    count = CustomerOrder.where(id: ids).update_all(order_status: 'Delivered')
+    redirect_to dashboard_production_orders_path(tab: params[:tab].presence || 'buy'),
+                notice: "#{count} order(s) marked as Delivered."
+  end
+
+  def destroy
+    @customer_order = CustomerOrder.find(params[:id])
+    @customer_order.destroy
+    redirect_to dispatches_path, notice: 'Order was successfully deleted.'
+  end
+
+  private
+
+  def production_shortfalls
+    cops = CustomerOrderProduct
+           .joins(:customer_order)
+           .where(item_type: 'production')
+           .where.not(product_id: nil)
+           .where(customer_orders: { order_status: CustomerOrder::ACTIVE_STATUSES })
+           .includes(:product, customer_order: %i[customer location])
+
+    result = {}
+    cops.each do |cop|
+      next unless cop.product
+
+      needed    = (cop.quantity || 0).to_f
+      in_stock  = cop.product.current_stock.to_f
+      shortfall = needed - in_stock
+      next unless shortfall > 0
+
+      order = cop.customer_order
+      next if ['Cancelled as Order', 'Cancelled as Quote'].include?(order.order_status)
+
+      result[order.id] ||= { order: order, shortfalls: [] }
+      result[order.id][:shortfalls] << {
+        product: cop.product,
+        needed: needed,
+        in_stock: in_stock,
+        shortfall: shortfall
+      }
     end
 
-    def bulk_close
-      ids = Array(params[:order_ids]).map(&:to_i).select(&:positive?)
-      return redirect_to dashboard_production_orders_path, alert: "No orders selected." if ids.empty?
+    result.values.sort_by { |r| r[:order].required_delivery_date || Date.new(9999) }
+  end
 
-      count = CustomerOrder.where(id: ids).update_all(order_status: "Delivered")
-      redirect_to dashboard_production_orders_path(tab: params[:tab].presence || 'buy'),
-                  notice: "#{count} order(s) marked as Delivered."
-    end
-
-    def destroy
-      @customer_order = CustomerOrder.find(params[:id])
-      @customer_order.destroy
-      redirect_to dispatches_path, notice: 'Order was successfully deleted.'
-    end
-
-    private
-
-    def production_shortfalls
-      cops = CustomerOrderProduct
-        .joins(:customer_order)
-        .where(item_type: 'production')
-        .where.not(product_id: nil)
-        .where(customer_orders: { order_status: CustomerOrder::ACTIVE_STATUSES })
-        .includes(:product, customer_order: [:customer, :location])
-
-      result = {}
-      cops.each do |cop|
-        next unless cop.product
-        needed    = (cop.quantity || 0).to_f
-        in_stock  = cop.product.current_stock.to_f
-        shortfall = needed - in_stock
-        next unless shortfall > 0
-
-        order = cop.customer_order
-        next if ["Cancelled as Order", "Cancelled as Quote"].include?(order.order_status)
-
-        result[order.id] ||= { order: order, shortfalls: [] }
-        result[order.id][:shortfalls] << {
-          product:   cop.product,
-          needed:    needed,
-          in_stock:  in_stock,
-          shortfall: shortfall,
-        }
-      end
-
-      result.values.sort_by { |r| r[:order].required_delivery_date || Date.new(9999) }
-    end
-
-    def customer_order_params
-      params.require(:customer_order).permit(:required_delivery_date, :product, :freight_only, :customer_id, :location_id, :approximate_product_amount, :notes, :order_status, customer_order_products_attributes: [:id, :product_id, :quantity, :price, :quote_product_id, :pricing_rule_id, :_destroy], thing_ids: [])
-    end
+  def customer_order_params
+    params.require(:customer_order).permit(:required_delivery_date, :product, :freight_only, :customer_id,
+                                           :location_id, :approximate_product_amount, :notes, :order_status, customer_order_products_attributes: %i[id product_id quantity price quote_product_id pricing_rule_id _destroy], thing_ids: [])
+  end
 end

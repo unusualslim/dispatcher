@@ -13,7 +13,7 @@ class Product < ApplicationRecord
   has_many :inventory_transactions
   has_many :standard_cost_histories, -> { order(effective_date: :desc, created_at: :desc) }, dependent: :destroy
   has_many :inventory_cost_histories, -> { order(created_at: :desc) }, dependent: :destroy
-  has_many :purchase_order_line_items, foreign_key: :product_id, primary_key: :id
+  has_many :purchase_order_line_items, primary_key: :id
   has_many :purchase_orders, through: :purchase_order_line_items
 
   has_many :product_vendors, -> { order(:priority) }, dependent: :destroy
@@ -34,6 +34,7 @@ class Product < ApplicationRecord
   # Returns 0 if no location_product row exists for this location yet.
   def stock_at(location)
     return current_stock if location.nil?
+
     location_products.find_by(location_id: location.is_a?(Location) ? location.id : location)&.quantity.to_d
   end
 
@@ -82,6 +83,7 @@ class Product < ApplicationRecord
   # Uses preloaded value if set by controller bulk query.
   def on_order_qty
     return @on_order_qty if defined?(@on_order_qty)
+
     purchase_order_line_items
       .joins(:purchase_order)
       .where(purchase_orders: { status: %w[draft pending_approval approved submitted] })
@@ -92,6 +94,7 @@ class Product < ApplicationRecord
   # Uses preloaded value if set by controller bulk query.
   def committed_qty
     return @committed_qty if defined?(@committed_qty)
+
     ProductionOrderComponent
       .joins(:production_order)
       .where(product_id: id)
@@ -111,6 +114,7 @@ class Product < ApplicationRecord
 
   def stock_status
     return :unknown if reorder_point.nil?
+
     if projected_stock < committed_qty
       :critical
     elsif (current_stock || 0) <= reorder_point

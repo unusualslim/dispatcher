@@ -10,7 +10,7 @@ class PdiPurchaseOrderSyncJob < ApplicationJob
   FILE_PATTERNS = [
     /warehouse.?transaction/i,
     /wh.?trans/i,
-    /purchase/i,
+    /purchase/i
   ].freeze
 
   def perform
@@ -32,23 +32,23 @@ class PdiPurchaseOrderSyncJob < ApplicationJob
     ftp_connect { |ftp| ftp_delete(ftp, filename) }
 
     log.update!(
-      file_name:       filename,
-      file_content:    Base64.strict_encode64(raw_bytes),
-      file_binary:     true,
-      status:          'success',
-      completed_at:    Time.current,
+      file_name: filename,
+      file_content: Base64.strict_encode64(raw_bytes),
+      file_binary: true,
+      status: 'success',
+      completed_at: Time.current,
       records_created: result[:created],
       records_updated: 0,
       records_skipped: result[:skipped],
-      warnings:        result[:warnings].presence&.join("\n")
+      warnings: result[:warnings].presence&.join("\n")
     )
 
     Rails.logger.info "[PdiPurchaseOrderSyncJob] Sync complete (#{filename}) — " \
-      "created: #{result[:created]}, skipped: #{result[:skipped]}, errors: #{result[:errors]}"
+                      "created: #{result[:created]}, skipped: #{result[:skipped]}, errors: #{result[:errors]}"
   rescue PdiFtpConcern::NoFileFound => e
     log&.update!(status: 'skipped', completed_at: Time.current, error_message: e.message)
-    Rails.logger.info "[PdiPurchaseOrderSyncJob] No file found — skipping"
-  rescue => e
+    Rails.logger.info '[PdiPurchaseOrderSyncJob] No file found — skipping'
+  rescue StandardError => e
     log&.update!(status: 'failed', completed_at: Time.current, error_message: e.message)
     Rails.logger.error "[PdiPurchaseOrderSyncJob] Failed: #{e.message}"
     raise

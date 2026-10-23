@@ -36,15 +36,15 @@ class PdiVendorImportService
       next if pdi_id.blank? || name.blank?
 
       attrs = {
-        name:           name,
-        address_1:      row[COL_ADDRESS_1].to_s.strip.presence,
-        address_2:      row[COL_ADDRESS_2].to_s.strip.presence,
-        city:           row[COL_CITY].to_s.strip.presence,
-        state:          row[COL_STATE].to_s.strip.presence,
-        zip:            row[COL_ZIP].to_s.strip.presence,
-        payment_terms:  row[COL_TERMS].to_s.strip.presence,
+        name: name,
+        address_1: row[COL_ADDRESS_1].to_s.strip.presence,
+        address_2: row[COL_ADDRESS_2].to_s.strip.presence,
+        city: row[COL_CITY].to_s.strip.presence,
+        state: row[COL_STATE].to_s.strip.presence,
+        zip: row[COL_ZIP].to_s.strip.presence,
+        payment_terms: row[COL_TERMS].to_s.strip.presence,
         payment_method: row[COL_PAY_METHOD].to_s.strip.presence,
-        phone:          row[COL_PHONE].to_s.strip.presence,
+        phone: row[COL_PHONE].to_s.strip.presence
       }.compact
 
       vendor = Vendor.find_by(id: pdi_id)
@@ -56,7 +56,7 @@ class PdiVendorImportService
         Vendor.create!(attrs.merge(id: pdi_id))
         result.created += 1
       end
-    rescue => e
+    rescue StandardError => e
       result.errors << "Vend_ID #{pdi_id}: #{e.message}"
       result.skipped += 1
     end

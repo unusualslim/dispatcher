@@ -1,13 +1,12 @@
 class ThingsController < ApplicationController
   before_action :require_admin!
-  before_action :set_thing, only: [:show, :edit, :update, :destroy]
+  before_action :set_thing, only: %i[show edit update destroy]
 
   def index
     @things = Thing.all
   end
 
-  def show
-  end
+  def show; end
 
   def new
     @thing = Thing.new
@@ -21,8 +20,7 @@ class ThingsController < ApplicationController
     end
   end
 
-  def edit
-  end
+  def edit; end
 
   def update
     if @thing.update(thing_params)

@@ -14,10 +14,10 @@ class WarehouseLocationsController < ApplicationController
     Location.where(location_category_id: 1).find_each do |loc|
       loc.update_columns(
         show_in_warehouse_dropdown: enabled_ids.include?(loc.id),
-        pdi_site_code:              site_codes[loc.id.to_s].to_s.strip.presence
+        pdi_site_code: site_codes[loc.id.to_s].to_s.strip.presence
       )
     end
 
-    redirect_to edit_warehouse_locations_path, notice: "Warehouse dropdown locations updated."
+    redirect_to edit_warehouse_locations_path, notice: 'Warehouse dropdown locations updated.'
   end
 end

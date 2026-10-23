@@ -45,19 +45,19 @@ class InventoryImportService
         next if left.blank? || right.blank?
 
         total_cost    = parse_quantity(raw[COL_TOTAL_COST])
-        cost_per_unit = (total_cost && qty > 0) ? (total_cost / qty).round(4) : nil
+        cost_per_unit = total_cost && qty > 0 ? (total_cost / qty).round(4) : nil
         product       = Product.find_by(id: left)
 
         rows << ImportRow.new(
-          part_number:   left,
-          description:   right,
-          category:      current_category.to_s,
-          quantity:      qty,
+          part_number: left,
+          description: right,
+          category: current_category.to_s,
+          quantity: qty,
           cost_per_unit: cost_per_unit,
-          product:       product,
-          action:        product ? :update : :create,
-          site_code:     current_site_code,
-          site_name:     current_site_name
+          product: product,
+          action: product ? :update : :create,
+          site_code: current_site_code,
+          site_name: current_site_name
         )
       else
         # Category/group header (no ' / ')
@@ -87,7 +87,7 @@ class InventoryImportService
 
     # A product can appear multiple times within the same site (across reporting groups).
     # Aggregate quantities by part_number+site_code before upserting so we sum, not overwrite.
-    site_qty_totals = Hash.new(0)  # [part_number, site_code] => total_qty
+    site_qty_totals = Hash.new(0) # [part_number, site_code] => total_qty
 
     # First pass: update/create product records and accumulate site quantities
     seen_parts = Set.new
@@ -102,28 +102,28 @@ class InventoryImportService
       site_qty_totals[[row.part_number, row.site_code]] += row.quantity
 
       # Only update product attrs once per part number
-      unless seen_parts.include?(row.part_number)
-        seen_parts << row.part_number
+      next if seen_parts.include?(row.part_number)
 
-        attrs = { category: row.category, cost_per_unit: row.cost_per_unit }.compact
+      seen_parts << row.part_number
 
-        case row.action
-        when :update
-          row.product.update!(attrs)
+      attrs = { category: row.category, cost_per_unit: row.cost_per_unit }.compact
+
+      case row.action
+      when :update
+        row.product.update!(attrs)
+        counts[:updated] += 1
+      when :create
+        existing = Product.find_by(id: row.part_number)
+        if existing
+          existing.update!(attrs)
           counts[:updated] += 1
-        when :create
-          existing = Product.find_by(id: row.part_number)
-          if existing
-            existing.update!(attrs)
-            counts[:updated] += 1
-          else
-            Product.create!(attrs.merge(
-              id:              row.part_number,
-              name:            row.description,
-              is_raw_material: raw_material_category?(row.category)
-            ))
-            counts[:created] += 1
-          end
+        else
+          Product.create!(attrs.merge(
+                            id: row.part_number,
+                            name: row.description,
+                            is_raw_material: raw_material_category?(row.category)
+                          ))
+          counts[:created] += 1
         end
       end
     end
@@ -158,10 +158,10 @@ class InventoryImportService
     ext  = File.extname(path).downcase
 
     spreadsheet = if ext == '.xls'
-      Roo::Spreadsheet.open(path, extension: :xls)
-    else
-      Roo::Spreadsheet.open(path, extension: :xlsx)
-    end
+                    Roo::Spreadsheet.open(path, extension: :xls)
+                  else
+                    Roo::Spreadsheet.open(path, extension: :xlsx)
+                  end
 
     sheet = spreadsheet.sheet(0)
     rows  = []
@@ -175,6 +175,7 @@ class InventoryImportService
 
   def parse_quantity(val)
     return nil if val.blank?
-    Float(val.to_s.gsub(/,/, '')) rescue nil
+
+    Float(val.to_s.gsub(',', '')) rescue nil
   end
 end

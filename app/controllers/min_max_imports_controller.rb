@@ -10,8 +10,12 @@ class MinMaxImportsController < ApplicationController
 
   def preview
     file = params[:file]
-    return redirect_to new_min_max_import_path, alert: "Please select a file." unless file
-    return redirect_to new_min_max_import_path, alert: "File must be an XLSX file." unless file.original_filename.downcase.end_with?('.xlsx')
+    return redirect_to new_min_max_import_path, alert: 'Please select a file.' unless file
+
+    unless file.original_filename.downcase.end_with?('.xlsx')
+      return redirect_to new_min_max_import_path,
+                         alert: 'File must be an XLSX file.'
+    end
 
     tmp = Tempfile.new(['min_max_import', '.xlsx'], binmode: true)
     tmp.write(file.read)
@@ -27,29 +31,29 @@ class MinMaxImportsController < ApplicationController
 
   def create
     unless session[:min_max_import_tmp_path].present? && File.exist?(session[:min_max_import_tmp_path].to_s)
-      return redirect_to new_min_max_import_path, alert: "Import session expired. Please re-upload the file."
+      return redirect_to new_min_max_import_path, alert: 'Import session expired. Please re-upload the file.'
     end
 
     file_path = session[:min_max_import_tmp_path]
 
     log = SyncLog.create!(
       process_name: PROCESS_NAME,
-      status:       'running',
-      file_name:    File.basename(file_path),
+      status: 'running',
+      file_name: File.basename(file_path),
       file_content: Base64.strict_encode64(File.binread(file_path)),
-      file_binary:  true,
-      started_at:   Time.current
+      file_binary: true,
+      started_at: Time.current
     )
 
     begin
       result = MinMaxImportService.call(file_path)
 
       log.update!(
-        status:          'success',
-        completed_at:    Time.current,
+        status: 'success',
+        completed_at: Time.current,
         records_updated: result.updated,
         records_skipped: result.skipped_no_product + result.skipped_no_values,
-        warnings:        result.errors.any? ? result.errors.join("\n") : nil
+        warnings: result.errors.any? ? result.errors.join("\n") : nil
       )
 
       summary = "Import complete — #{result.updated} products updated with min/max values. " \
@@ -58,7 +62,7 @@ class MinMaxImportsController < ApplicationController
       summary += " #{result.errors.count} errors." if result.errors.any?
 
       flash[:notice] = summary
-    rescue => e
+    rescue StandardError => e
       log.update!(status: 'failed', completed_at: Time.current, error_message: e.message)
       flash[:alert] = "Import failed: #{e.message}"
     ensure
@@ -71,10 +75,10 @@ class MinMaxImportsController < ApplicationController
 
   def download
     log = SyncLog.find(params[:log_id])
-    return redirect_to new_min_max_import_path, alert: "File not available." if log.file_content.blank?
+    return redirect_to new_min_max_import_path, alert: 'File not available.' if log.file_content.blank?
 
     send_data Base64.strict_decode64(log.file_content),
-              type:        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+              type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
               disposition: "attachment; filename=\"#{log.file_name}\""
   end
 end

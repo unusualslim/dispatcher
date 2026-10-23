@@ -1,7 +1,8 @@
 class QuotesController < ApplicationController
   before_action :require_admin!
-  before_action :set_quote, only: [:show, :edit, :update, :destroy, :send_quote, :accept, :reject, :end_lock, :margin_review, :requote]
-  before_action :require_editable, only: [:edit, :update]
+  before_action :set_quote,
+                only: %i[show edit update destroy send_quote accept reject end_lock margin_review requote]
+  before_action :require_editable, only: %i[edit update]
 
   def index
     @quotes = Quote.includes(:customer, :location, :quote_products)
@@ -10,15 +11,14 @@ class QuotesController < ApplicationController
     @quotes = @quotes.paginate(page: params[:page], per_page: 25)
   end
 
-  def show
-  end
+  def show; end
 
   def new
     @quote = Quote.new(
-      customer_id:   params[:customer_id],
+      customer_id: params[:customer_id],
       locks_pricing: true,
-      valid_from:    Date.today,
-      expiry_date:   Date.today.end_of_month
+      valid_from: Date.today,
+      expiry_date: Date.today.end_of_month
     )
     @quote.quote_products.build
     load_form_data
@@ -40,7 +40,7 @@ class QuotesController < ApplicationController
 
   def update
     if @quote.update(quote_params)
-      redirect_to @quote, notice: "Quote updated."
+      redirect_to @quote, notice: 'Quote updated.'
     else
       load_form_data
       render :edit, status: :unprocessable_entity
@@ -49,13 +49,12 @@ class QuotesController < ApplicationController
 
   def destroy
     @quote.destroy
-    redirect_to quotes_path, notice: "Quote deleted."
+    redirect_to quotes_path, notice: 'Quote deleted.'
   end
 
   def send_quote
-    if @quote.customer.email.blank?
-      return redirect_to @quote, alert: "Customer has no email address on file."
-    end
+    return redirect_to @quote, alert: 'Customer has no email address on file.' if @quote.customer.email.blank?
+
     QuoteMailer.send_quote(@quote).deliver_now
     @quote.update!(status: 'sent', sent_at: Time.current)
     redirect_to @quote, notice: "Quote #{@quote.quote_number} sent to #{@quote.customer.email}."
@@ -63,6 +62,7 @@ class QuotesController < ApplicationController
 
   def accept
     return redirect_to(@quote, alert: "This quote has already been #{@quote.status}.") unless @quote.editable?
+
     begin
       @quote.accept!(current_user)
     rescue ActiveRecord::RecordInvalid => e
@@ -71,16 +71,14 @@ class QuotesController < ApplicationController
     notice = if @quote.locks_pricing?
                "Quote accepted — prices locked #{@quote.valid_from.strftime('%b %-d')} through #{@quote.expiry_date.strftime('%b %-d, %Y')}."
              else
-               "Quote accepted."
+               'Quote accepted.'
              end
     redirect_to @quote, notice: notice
   end
 
   # End an accepted quote's price lock early (today or a later date).
   def end_lock
-    unless @quote.lock_endable?
-      return redirect_to @quote, alert: "This quote's prices aren't currently locked."
-    end
+    return redirect_to @quote, alert: "This quote's prices aren't currently locked." unless @quote.lock_endable?
 
     on = Date.parse(params[:lock_ended_on].to_s) rescue nil
     @quote.end_lock!(current_user, on: on, reason: params[:lock_end_reason])
@@ -105,13 +103,13 @@ class QuotesController < ApplicationController
 
   def reject
     @quote.update!(status: 'rejected')
-    redirect_to @quote, notice: "Quote marked as rejected."
+    redirect_to @quote, notice: 'Quote marked as rejected.'
   end
 
   private
 
   def set_quote
-    @quote = Quote.includes(:customer, :location, quote_products: [:product, :pricing_rule]).find(params[:id])
+    @quote = Quote.includes(:customer, :location, quote_products: %i[product pricing_rule]).find(params[:id])
   end
 
   def require_editable
@@ -130,7 +128,7 @@ class QuotesController < ApplicationController
   def quote_params
     params.require(:quote).permit(
       :customer_id, :location_id, :valid_from, :expiry_date, :notes, :locks_pricing,
-      quote_products_attributes: [:id, :product_id, :quantity, :price, :pricing_rule_id, :_destroy]
+      quote_products_attributes: %i[id product_id quantity price pricing_rule_id _destroy]
     )
   end
 end

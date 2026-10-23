@@ -9,8 +9,10 @@ class AutomatedProcessConfig < ApplicationRecord
 
   def due?
     return false if schedule.blank?
+
     cron = Fugit.parse_cron(schedule)
     return false unless cron
+
     next_time = cron.next_time(last_triggered_at || 1.year.ago)
     next_time <= Time.current
   end

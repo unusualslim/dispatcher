@@ -1,12 +1,12 @@
 namespace :pdi do
-  desc "Sync vendors from PDI FTP (AP Vendor List.csv)"
+  desc 'Sync vendors from PDI FTP (AP Vendor List.csv)'
   task sync_vendors: :environment do
-    puts "Starting PDI vendor sync..."
+    puts 'Starting PDI vendor sync...'
     PdiVendorSyncJob.perform_now
-    puts "Done."
+    puts 'Done.'
   end
 
-  desc "List FTP directory structure (for debugging path issues)"
+  desc 'List FTP directory structure (for debugging path issues)'
   task ftp_ls: :environment do
     require 'net/ftp'
     host     = ENV.fetch('PDI_FTP_HOST')
@@ -22,7 +22,7 @@ namespace :pdi do
         ftp.chdir('Imports')
         puts "pwd: #{ftp.pwd}"
         puts ftp.list.join("\n")
-      rescue => e
+      rescue StandardError => e
         puts "Imports failed: #{e.message}"
       end
     end

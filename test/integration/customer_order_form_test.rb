@@ -1,4 +1,4 @@
-require "test_helper"
+require 'test_helper'
 
 class CustomerOrderFormTest < ActionDispatch::IntegrationTest
   include Devise::Test::IntegrationHelpers
@@ -14,7 +14,7 @@ class CustomerOrderFormTest < ActionDispatch::IntegrationTest
     @line = @quote.quote_products.first
   end
 
-  test "creating an order without a location re-renders the form with an error" do
+  test 'creating an order without a location re-renders the form with an error' do
     assert_no_difference -> { CustomerOrder.count } do
       post customer_orders_path, params: { customer_order: {
         customer_id: @customer.id, location_id: '',
@@ -27,7 +27,7 @@ class CustomerOrderFormTest < ActionDispatch::IntegrationTest
     assert_includes response.body, %(value="#{@line.id}" class="price-source-quote"), 'quote link is kept'
   end
 
-  test "creating an order at a disabled location re-renders the form with an error" do
+  test 'creating an order at a disabled location re-renders the form with an error' do
     location = locations(:terminal)
     location.update_column(:disabled, true)
 
@@ -38,7 +38,7 @@ class CustomerOrderFormTest < ActionDispatch::IntegrationTest
     assert_includes response.body, 'currently disabled'
   end
 
-  test "a failed order update re-renders the edit form" do
+  test 'a failed order update re-renders the edit form' do
     order = CustomerOrder.create!(customer: @customer, location: locations(:terminal), order_status: 'Open Order')
 
     patch customer_order_path(order), params: { customer_order: { location_id: '' } }
@@ -75,26 +75,26 @@ class CustomerOrderFormTest < ActionDispatch::IntegrationTest
     data = search(customer_id: @customer.id)
     assert_equal 1, data['results'].size
     assert_equal "Locations for #{@customer.name}", data['results'][0]['text']
-    assert_equal [own.id, shared.id], data['results'][0]['children'].map { |c| c['id'] }
+    assert_equal([own.id, shared.id], data['results'][0]['children'].map { |c| c['id'] })
     assert_equal [own.id, shared.id].sort, data['customer_location_ids'].sort
 
     # Typing: customer's matches grouped first, then other matches (no duplicates)
     data = search(customer_id: @customer.id, query: 'americus')
-    assert_equal ["Locations for #{@customer.name}", 'All locations'], data['results'].map { |g| g['text'] }
-    assert_equal [own.id, shared.id], data['results'][0]['children'].map { |c| c['id'] }
+    assert_equal(["Locations for #{@customer.name}", 'All locations'], data['results'].map { |g| g['text'] })
+    assert_equal([own.id, shared.id], data['results'][0]['children'].map { |c| c['id'] })
     assert_includes data['results'][1]['children'].map { |c| c['id'] }, other.id
     assert_not_includes data['results'][1]['children'].map { |c| c['id'] }, shared.id
 
     # A shared location shows up for the other customer too
     data = search(customer_id: river.id)
-    assert_equal [shared.id], data['results'][0]['children'].map { |c| c['id'] }
+    assert_equal([shared.id], data['results'][0]['children'].map { |c| c['id'] })
 
     # No customer: flat search results, nothing before typing
     assert_empty search({})['results']
     assert_includes search(query: 'americus')['results'].map { |r| r['id'] }, other.id
   end
 
-  test "saving an order links its customer to the location, without duplicates" do
+  test 'saving an order links its customer to the location, without duplicates' do
     site  = make_destination('Acme Leesburg', 'Leesburg')
     other = make_destination('Acme Dawson', 'Dawson')
 
@@ -113,7 +113,7 @@ class CustomerOrderFormTest < ActionDispatch::IntegrationTest
     assert_equal [@customer.id, river.id].sort, site.reload.customers.pluck(:id).sort
   end
 
-  test "a destination created from the order form is linked to the customer" do
+  test 'a destination created from the order form is linked to the customer' do
     destination_category
     post locations_path, params: { location: { company_name: 'New Site', city: 'Leslie', location_category_id: 2 },
                                    customer_id: @customer.id }, as: :json

@@ -18,11 +18,12 @@ class WarehouseController < ApplicationController
     end
 
     @dispatches = dispatches_scope
-      .includes(:driver, :truck, customer_orders: [:customer, :location, { customer_order_products: :product }])
-      .where.not(status: :deleted)
-      .where(dispatch_date: yesterday..tomorrow)
-      .order(:dispatch_date, :position)
-      .group_by(&:dispatch_date)
+                  .includes(:driver, :truck, customer_orders: [:customer, :location,
+                                                               { customer_order_products: :product }])
+                  .where.not(status: :deleted)
+                  .where(dispatch_date: yesterday..tomorrow)
+                  .order(:dispatch_date, :position)
+                  .group_by(&:dispatch_date)
 
     @today     = Date.today
     @yesterday = yesterday

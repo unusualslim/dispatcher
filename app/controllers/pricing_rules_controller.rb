@@ -1,6 +1,6 @@
 class PricingRulesController < ApplicationController
   before_action :require_admin!
-  before_action :set_rule, only: [:show, :edit, :update, :destroy]
+  before_action :set_rule, only: %i[show edit update destroy]
 
   def index
     @rules = PricingRule.includes(
@@ -41,7 +41,7 @@ class PricingRulesController < ApplicationController
 
   def destroy
     @rule.destroy
-    redirect_to pricing_rules_path, notice: "Pricing rule deleted."
+    redirect_to pricing_rules_path, notice: 'Pricing rule deleted.'
   end
 
   # GET /pricing_rules/lookup?customer_id=X&product_id=Y
@@ -63,27 +63,27 @@ class PricingRulesController < ApplicationController
 
     json = {
       price: result[:price]&.to_f&.round(4),
-      missing_components: result[:missing_components].map { |c|
+      missing_components: result[:missing_components].map do |c|
         { id: c.id, name: c.name, url: product_path(c) }
-      }
+      end
     }
 
     if (qp = result[:quote_product])
       json.merge!(
-        source:           'quote',
+        source: 'quote',
         quote_product_id: qp.id,
-        quote_number:     qp.quote.quote_number,
-        quote_url:        quote_path(qp.quote),
-        locked_through:   qp.locked_through&.strftime('%b %-d, %Y')
+        quote_number: qp.quote.quote_number,
+        quote_url: quote_path(qp.quote),
+        locked_through: qp.locked_through&.strftime('%b %-d, %Y')
       )
     else
       rule = result[:rule]
       json.merge!(
-        source:    'rule',
-        rule_id:   rule.id,
+        source: 'rule',
+        rule_id: rule.id,
         rule_name: rule.name,
-        method:    rule.pricing_method,
-        basis:     rule.pricing_basis_label
+        method: rule.pricing_method,
+        basis: rule.pricing_basis_label
       )
     end
 
@@ -94,9 +94,11 @@ class PricingRulesController < ApplicationController
 
   def specific_rule_result(rule, product)
     return nil unless rule && product
+
     price   = rule.calculated_price(product)
     missing = rule.pricing_basis == 'standard_calculated' && price.nil? ? product.bom_components_missing_standard_cost : []
     return nil if price.nil? && missing.empty?
+
     { price: price, rule: rule, quote_product: nil, missing_components: missing }
   end
 

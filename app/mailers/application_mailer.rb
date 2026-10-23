@@ -1,9 +1,9 @@
 class ApplicationMailer < ActionMailer::Base
-  default from: "from@example.com"
-  layout "mailer"
+  default from: 'from@example.com'
+  layout 'mailer'
 
   # Log email after sending
-  #after_action :log_email
+  # after_action :log_email
 
   private
 
@@ -14,8 +14,8 @@ class ApplicationMailer < ActionMailer::Base
     MessageLogger.log(
       @dispatch,
       mail.body.encoded,
-      "email",
-      "sent",
+      'email',
+      'sent',
       mail.message_id
     )
   end

@@ -8,7 +8,7 @@ class CreateProductVendors < ActiveRecord::Migration[7.0]
     end
     add_foreign_key :product_vendors, :products
     add_foreign_key :product_vendors, :vendors
-    add_index :product_vendors, [:product_id, :vendor_id], unique: true
-    add_index :product_vendors, [:product_id, :priority]
+    add_index :product_vendors, %i[product_id vendor_id], unique: true
+    add_index :product_vendors, %i[product_id priority]
   end
 end

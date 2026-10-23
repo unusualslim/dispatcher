@@ -6,7 +6,7 @@ class CleanupProductsBeforePkSwap < ActiveRecord::Migration[7.0]
   TRASH_IDS = [22, 23, 26, 29, 32, 35, 36, 42, 46, 47].freeze
 
   def up
-    ids = TRASH_IDS.join(", ")
+    ids = TRASH_IDS.join(', ')
 
     # ── Step 1: Add product_name to historical tables ─────────────────────────
     # Denormalize the name now so rows that lose their FK still show what the
@@ -63,7 +63,7 @@ class CleanupProductsBeforePkSwap < ActiveRecord::Migration[7.0]
     # ── Step 4: Delete the trashed products ───────────────────────────────────
     execute "DELETE FROM products WHERE id IN (#{ids})"
 
-    remaining = execute("SELECT COUNT(*) AS n FROM products").first["n"].to_i
+    remaining = execute('SELECT COUNT(*) AS n FROM products').first['n'].to_i
     say "Cleanup complete — #{remaining} products remain."
   end
 

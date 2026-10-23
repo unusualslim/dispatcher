@@ -18,11 +18,11 @@ class PurchaseOrder < ApplicationRecord
 
   def freight_term_allowed_for_vendor
     return if freight_terms.blank? || vendor_id.blank?
+
     allowed = vendor&.freight_term_names || []
     return if allowed.empty?
-    unless allowed.include?(freight_terms)
-      errors.add(:freight_terms, "is not an allowed freight term for this vendor")
-    end
+
+    errors.add(:freight_terms, 'is not an allowed freight term for this vendor') unless allowed.include?(freight_terms)
   end
 
   after_update_commit :enqueue_pdi_export, if: :submitted?
@@ -67,18 +67,20 @@ class PurchaseOrder < ApplicationRecord
 
   def post_to_inventory!(user)
     return false if posted?
+
     transaction do
       line_items.includes(:product).each do |line|
         next unless line.product.present? && line.quantity.to_d > 0
+
         InventoryTransaction.create!(
-          product:          line.product,
-          quantity:         line.quantity,
-          direction:        'in',
-          transactable:     self,
+          product: line.product,
+          quantity: line.quantity,
+          direction: 'in',
+          transactable: self,
           reference_number: pdi_reference || id.to_s,
-          notes:            "PO received from #{vendor.name}",
-          created_by_id:    user.id,
-          location_id:      location_id
+          notes: "PO received from #{vendor.name}",
+          created_by_id: user.id,
+          location_id: location_id
         )
         if location.present?
           LocationProduct.adjust!(location, line.product, line.quantity)

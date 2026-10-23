@@ -23,43 +23,47 @@ class CustomerOrder < ApplicationRecord
   # lists the location first next time. Locations can be shared by customers.
   def link_customer_location
     return unless customer_id && location_id
+
     CustomerLocation.insert_all(
       [{ customer_id: customer_id, location_id: location_id, created_at: Time.current, updated_at: Time.current }],
-      unique_by: [:customer_id, :location_id]
+      unique_by: %i[customer_id location_id]
     )
   end
 
   attribute :freight_only, :boolean, default: false
 
-  enum order_status: {
-    open_order:            "Open Order",
-    quote:                 "Quote",
-    pending:               "Pending",
-    released_for_dispatch: "Released for Dispatch",
-    dispatched:            "Dispatched",
-    released_for_picking:  "Released for Picking",
-    picking_in_progress:   "Picking in Progress",
-    shipped:               "Shipped",
-    released_for_billing:  "Released for Billing",
-    billed:                "Billed",
-    delivered:             "Delivered",
-    accepted_by_site:      "Accepted by Site",
-    rejected_by_site:      "Rejected by Site",
-    expired:               "Expired",
-    expired_quote:         "Expired Quote",
-    cancelled_as_order:    "Cancelled as Order",
-    cancelled_as_quote:    "Cancelled as Quote",
-    quarantine:            "Quarantine",
+  enum :order_status, {
+    open_order: 'Open Order',
+    quote: 'Quote',
+    pending: 'Pending',
+    released_for_dispatch: 'Released for Dispatch',
+    dispatched: 'Dispatched',
+    released_for_picking: 'Released for Picking',
+    picking_in_progress: 'Picking in Progress',
+    shipped: 'Shipped',
+    released_for_billing: 'Released for Billing',
+    billed: 'Billed',
+    delivered: 'Delivered',
+    accepted_by_site: 'Accepted by Site',
+    rejected_by_site: 'Rejected by Site',
+    expired: 'Expired',
+    expired_quote: 'Expired Quote',
+    cancelled_as_order: 'Cancelled as Order',
+    cancelled_as_quote: 'Cancelled as Quote',
+    quarantine: 'Quarantine'
   }
 
   # Statuses that represent active/open work (equivalent to the old "New")
   ACTIVE_STATUSES = [
-    "Open Order", "Quote", "Pending", "Released for Dispatch", "Dispatched",
-    "Released for Picking", "Picking in Progress", "Released for Billing"
+    'Open Order', 'Quote', 'Pending', 'Released for Dispatch', 'Dispatched',
+    'Released for Picking', 'Picking in Progress', 'Released for Billing'
   ].freeze
 
-  PRODUCTS = [ "DEF", "Regular", "Plus", "Super", "Eth-Regular", "Eth-Plus", "Eth-Super", "Reg-E10", "Plus-E10", "Super-E10", "ULS", "Dyed ULS" ]
-  scope :unassigned_open_orders, -> { where(order_status: ACTIVE_STATUSES).where.not(id: joins(:dispatch_customer_orders).select(:id)) }
+  PRODUCTS = ['DEF', 'Regular', 'Plus', 'Super', 'Eth-Regular', 'Eth-Plus', 'Eth-Super', 'Reg-E10', 'Plus-E10',
+              'Super-E10', 'ULS', 'Dyed ULS']
+  scope :unassigned_open_orders, lambda {
+    where(order_status: ACTIVE_STATUSES).where.not(id: joins(:dispatch_customer_orders).select(:id))
+  }
 
   def assign_user_and_create_dispatch
     Dispatch.create(customer_order: self, assigned_user: User.first) # Adjust assignment logic as needed
@@ -72,6 +76,4 @@ class CustomerOrder < ApplicationRecord
   def total_weight
     products.sum(&:weight)
   end
-
-
 end

@@ -26,6 +26,7 @@ module PdiFtpConcern
     end.first
 
     raise NoFileFound, "No matching file found in #{dir} (files: #{files.join(', ')})" unless match
+
     match
   end
 
@@ -47,7 +48,7 @@ module PdiFtpConcern
   def ftp_delete(ftp, filename)
     ftp.delete(filename)
     Rails.logger.info "[PdiFtp] Deleted #{filename} from FTP"
-  rescue => e
+  rescue StandardError => e
     Rails.logger.warn "[PdiFtp] Could not delete #{filename}: #{e.message}"
   end
 end

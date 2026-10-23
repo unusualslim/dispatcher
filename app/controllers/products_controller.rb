@@ -1,295 +1,292 @@
 class ProductsController < ApplicationController
   include CsvRoundTrip
   before_action :require_admin!
-    before_action :set_product, only: %i[show edit update destroy components]
-  
-    def index
-      @products = Product.all
-      @categories = Product.where.not(category: [nil, '']).distinct.order(:category).pluck(:category)
+  before_action :set_product, only: %i[show edit update destroy components]
 
-      if params[:query].present?
-        @products = @products.where("name ILIKE ? OR id ILIKE ?", "%#{params[:query]}%", "%#{params[:query]}%")
-      end
+  def index
+    @products = Product.all
+    @categories = Product.where.not(category: [nil, '']).distinct.order(:category).pluck(:category)
 
-      case params[:type].presence || 'finished'
-      when 'raw'      then @products = @products.where(is_raw_material: true)
-      when 'finished' then @products = @products.where(is_raw_material: false)
+    if params[:query].present?
+      @products = @products.where('name ILIKE ? OR id ILIKE ?', "%#{params[:query]}%", "%#{params[:query]}%")
+    end
+
+    case params[:type].presence || 'finished'
+    when 'raw'      then @products = @products.where(is_raw_material: true)
+    when 'finished' then @products = @products.where(is_raw_material: false)
       # 'all' — no filter
-      end
-
-      if params[:category].present?
-        @products = @products.where(category: params[:category])
-      end
-
-      on_order_sql = <<~SQL.squish
-        COALESCE((
-          SELECT SUM(poli.quantity)
-          FROM purchase_order_line_items poli
-          JOIN purchase_orders po ON po.id = poli.purchase_order_id
-          WHERE poli.product_id = products.id
-            AND po.status IN ('draft','pending_approval','approved','submitted')
-        ), 0)
-      SQL
-
-      committed_sql = <<~SQL.squish
-        COALESCE((
-          SELECT SUM(poc.quantity)
-          FROM production_order_components poc
-          JOIN production_orders pro ON pro.id = poc.production_order_id
-          WHERE poc.product_id = products.id
-            AND pro.status IN ('pending','in_progress')
-        ), 0)
-      SQL
-
-      # When a warehouse is selected, use location-specific stock; otherwise global current_stock
-      stock_sql = if current_warehouse
-        "COALESCE((SELECT quantity FROM location_products WHERE location_id = #{current_warehouse.id.to_i} AND product_id = products.id), 0)"
-      else
-        "products.current_stock"
-      end
-
-      if params[:in_stock] == '1'
-        @products = @products.where("(#{stock_sql}) > 0")
-      end
-
-      case params[:status]
-      when 'critical'
-        # projected (on hand + on order) can't cover committed demand
-        @products = @products.where(
-          "reorder_point IS NOT NULL AND ((#{stock_sql}) + #{on_order_sql}) < (#{committed_sql})"
-        )
-      when 'low'
-        # can cover committed but on hand is at or below reorder point
-        @products = @products.where(
-          "reorder_point IS NOT NULL AND ((#{stock_sql}) + #{on_order_sql}) >= (#{committed_sql}) AND (#{stock_sql}) <= reorder_point"
-        )
-      when 'ok'
-        @products = @products.where(
-          "reorder_point IS NOT NULL AND ((#{stock_sql}) + #{on_order_sql}) >= (#{committed_sql}) AND (#{stock_sql}) > reorder_point"
-        )
-      end
-
-      @products = case params[:sort]
-                  when 'stock_asc'      then @products.order(Arel.sql("(#{stock_sql}) ASC"))
-                  when 'stock_desc'     then @products.order(Arel.sql("(#{stock_sql}) DESC"))
-                  when 'cost'           then @products.order(cost_per_unit: :desc)
-                  when 'category_asc'   then @products.order(Arel.sql("COALESCE(category, '') ASC, name ASC"))
-                  when 'category_desc'  then @products.order(Arel.sql("COALESCE(category, '') DESC, name ASC"))
-                  else @products.order(:name)
-                  end
-
-      # Attach warehouse_on_hand as a computed column so the view can use it without N+1
-      @products = @products.select("products.*, (#{stock_sql}) AS warehouse_on_hand")
-      @products = @products.paginate(page: params[:page], per_page: 50)
-
-      # Preload on_order and committed aggregates in two bulk queries to avoid N+1
-      product_ids = @products.map(&:id)
-
-      on_order_map = PurchaseOrderLineItem
-        .joins(:purchase_order)
-        .where(product_id: product_ids)
-        .where(purchase_orders: { status: %w[draft pending_approval approved submitted] })
-        .group(:product_id)
-        .sum(:quantity)
-
-      committed_map = ProductionOrderComponent
-        .joins(:production_order)
-        .where(product_id: product_ids)
-        .where(production_orders: { status: %w[pending in_progress] })
-        .group(:product_id)
-        .sum(:quantity)
-
-      bom_map = ProductComponent
-        .where(product_id: product_ids)
-        .includes(component_product: :standard_cost_histories)
-        .group_by(&:product_id)
-
-      @products.each do |p|
-        p.instance_variable_set(:@on_order_qty,  on_order_map[p.id]  || 0)
-        p.instance_variable_set(:@committed_qty, committed_map[p.id] || 0)
-        p.instance_variable_set(:@bom_lines,     bom_map[p.id]       || [])
-      end
     end
-  
-    def new
-      @product = Product.new(unit_of_measurement: 'Each')
+
+    @products = @products.where(category: params[:category]) if params[:category].present?
+
+    on_order_sql = <<~SQL.squish
+      COALESCE((
+        SELECT SUM(poli.quantity)
+        FROM purchase_order_line_items poli
+        JOIN purchase_orders po ON po.id = poli.purchase_order_id
+        WHERE poli.product_id = products.id
+          AND po.status IN ('draft','pending_approval','approved','submitted')
+      ), 0)
+    SQL
+
+    committed_sql = <<~SQL.squish
+      COALESCE((
+        SELECT SUM(poc.quantity)
+        FROM production_order_components poc
+        JOIN production_orders pro ON pro.id = poc.production_order_id
+        WHERE poc.product_id = products.id
+          AND pro.status IN ('pending','in_progress')
+      ), 0)
+    SQL
+
+    # When a warehouse is selected, use location-specific stock; otherwise global current_stock
+    stock_sql = if current_warehouse
+                  "COALESCE((SELECT quantity FROM location_products WHERE location_id = #{current_warehouse.id.to_i} AND product_id = products.id), 0)"
+                else
+                  'products.current_stock'
+                end
+
+    @products = @products.where("(#{stock_sql}) > 0") if params[:in_stock] == '1'
+
+    case params[:status]
+    when 'critical'
+      # projected (on hand + on order) can't cover committed demand
+      @products = @products.where(
+        "reorder_point IS NOT NULL AND ((#{stock_sql}) + #{on_order_sql}) < (#{committed_sql})"
+      )
+    when 'low'
+      # can cover committed but on hand is at or below reorder point
+      @products = @products.where(
+        "reorder_point IS NOT NULL AND ((#{stock_sql}) + #{on_order_sql}) >= (#{committed_sql}) AND (#{stock_sql}) <= reorder_point"
+      )
+    when 'ok'
+      @products = @products.where(
+        "reorder_point IS NOT NULL AND ((#{stock_sql}) + #{on_order_sql}) >= (#{committed_sql}) AND (#{stock_sql}) > reorder_point"
+      )
+    end
+
+    @products = case params[:sort]
+                when 'stock_asc'      then @products.order(Arel.sql("(#{stock_sql}) ASC"))
+                when 'stock_desc'     then @products.order(Arel.sql("(#{stock_sql}) DESC"))
+                when 'cost'           then @products.order(cost_per_unit: :desc)
+                when 'category_asc'   then @products.order(Arel.sql("COALESCE(category, '') ASC, name ASC"))
+                when 'category_desc'  then @products.order(Arel.sql("COALESCE(category, '') DESC, name ASC"))
+                else @products.order(:name)
+                end
+
+    # Attach warehouse_on_hand as a computed column so the view can use it without N+1
+    @products = @products.select("products.*, (#{stock_sql}) AS warehouse_on_hand")
+    @products = @products.paginate(page: params[:page], per_page: 50)
+
+    # Preload on_order and committed aggregates in two bulk queries to avoid N+1
+    product_ids = @products.map(&:id)
+
+    on_order_map = PurchaseOrderLineItem
+                   .joins(:purchase_order)
+                   .where(product_id: product_ids)
+                   .where(purchase_orders: { status: %w[draft pending_approval approved submitted] })
+                   .group(:product_id)
+                   .sum(:quantity)
+
+    committed_map = ProductionOrderComponent
+                    .joins(:production_order)
+                    .where(product_id: product_ids)
+                    .where(production_orders: { status: %w[pending in_progress] })
+                    .group(:product_id)
+                    .sum(:quantity)
+
+    bom_map = ProductComponent
+              .where(product_id: product_ids)
+              .includes(component_product: :standard_cost_histories)
+              .group_by(&:product_id)
+
+    @products.each do |p|
+      p.instance_variable_set(:@on_order_qty,  on_order_map[p.id]  || 0)
+      p.instance_variable_set(:@committed_qty, committed_map[p.id] || 0)
+      p.instance_variable_set(:@bom_lines,     bom_map[p.id]       || [])
+    end
+  end
+
+  def new
+    @product = Product.new(unit_of_measurement: 'Each')
+    @vendors = Vendor.order(:name)
+  end
+
+  def create
+    @product = Product.new(product_params)
+    if @product.save
+      @product.set_vendors_in_order(params[:product][:vendor_ids])
+      redirect_to products_path, notice: 'Product was successfully added.'
+    else
       @vendors = Vendor.order(:name)
+      render :new
     end
+  end
 
-    def create
-      @product = Product.new(product_params)
-      if @product.save
-        @product.set_vendors_in_order(params[:product][:vendor_ids])
-        redirect_to products_path, notice: 'Product was successfully added.'
-      else
-        @vendors = Vendor.order(:name)
-        render :new
-      end
-    end
+  def edit
+    @vendors = Vendor.order(:name)
+  end
 
-    def edit
+  def update
+    if @product.update(product_params)
+      @product.set_vendors_in_order(params[:product][:vendor_ids])
+      redirect_to product_path(@product), notice: 'Product was successfully updated.'
+    else
       @vendors = Vendor.order(:name)
+      @product.product_components.build if @product.product_components.empty?
+      load_show_data
+      render :show, status: :unprocessable_entity
     end
+  end
 
-    def update
-      if @product.update(product_params)
-        @product.set_vendors_in_order(params[:product][:vendor_ids])
-        redirect_to product_path(@product), notice: 'Product was successfully updated.'
+  def destroy
+    @product.destroy
+    redirect_to products_path, notice: 'Product was successfully deleted.'
+  end
+
+  def search
+    q = params[:q].to_s.strip
+    products =
+      if q.blank?
+        Product.order(:name).limit(25)
       else
-        @vendors = Vendor.order(:name)
-        @product.product_components.build if @product.product_components.empty?
-        load_show_data
-        render :show, status: :unprocessable_entity
+        Product.where('name ILIKE ? OR id ILIKE ?', "%#{q}%", "%#{q}%")
+               .order(Arel.sql(<<~SQL.squish))
+                 CASE
+                   WHEN name ILIKE #{ActiveRecord::Base.connection.quote(q)}        THEN 0
+                   WHEN id   ILIKE #{ActiveRecord::Base.connection.quote(q)}        THEN 0
+                   WHEN name ILIKE #{ActiveRecord::Base.connection.quote("#{q}%")}  THEN 1
+                   ELSE 2
+                 END, name
+               SQL
+               .limit(25)
+      end
+
+    render json: products.map { |p|
+      { id: p.id, text: "#{p.name} (#{p.id})" }
+    }
+  end
+
+  def show
+    @product.product_components.build if @product.product_components.empty?
+    load_show_data
+
+    respond_to do |format|
+      format.html
+      format.json do
+        render json: {
+          id: @product.id,
+          name: @product.name,
+          sku: (@product.respond_to?(:sku) ? @product.sku : nil)
+        }
       end
     end
-  
-    def destroy
-      @product.destroy
-      redirect_to products_path, notice: 'Product was successfully deleted.'
-    end
+  end
 
-    def search
-      q = params[:q].to_s.strip
-      products =
-        if q.blank?
-          Product.order(:name).limit(25)
-        else
-          Product.where("name ILIKE ? OR id ILIKE ?", "%#{q}%", "%#{q}%")
-                .order(Arel.sql(<<~SQL.squish))
-                    CASE
-                      WHEN name ILIKE #{ActiveRecord::Base.connection.quote(q)}        THEN 0
-                      WHEN id   ILIKE #{ActiveRecord::Base.connection.quote(q)}        THEN 0
-                      WHEN name ILIKE #{ActiveRecord::Base.connection.quote("#{q}%")}  THEN 1
-                      ELSE 2
-                    END, name
-                SQL
-                .limit(25)
-        end
-
-      render json: products.map { |p|
-        { id: p.id, text: "#{p.name} (#{p.id})" }
+  def components
+    rows = @product.product_components.includes(:component_product).map do |pc|
+      {
+        id: pc.id,
+        component_product_id: pc.component_product_id,
+        component_name: pc.component_product&.name,
+        quantity_per_unit: pc.quantity_per_unit&.to_f,
+        uom: pc.uom
       }
     end
 
-    def show
-      @product.product_components.build if @product.product_components.empty?
-      load_show_data
-
-      respond_to do |format|
-        format.html
-        format.json do
-          render json: {
-            id: @product.id,
-            name: @product.name,
-            sku: (@product.respond_to?(:sku) ? @product.sku : nil)
-          }
-        end
-      end
-    end
-
-    def components
-      rows = @product.product_components.includes(:component_product).map do |pc|
-        {
-          id: pc.id,
-          component_product_id: pc.component_product_id,
-          component_name: pc.component_product&.name,
-          quantity_per_unit: pc.quantity_per_unit&.to_f,
-          uom: pc.uom
-        }
-      end
-
-      render json: { product_id: @product.id, components: rows }
-    end
-
-    def bom
-      product = Product.includes(product_components: :component_product).find(params[:id])
-
-      components = product.product_components.map do |pc|
-        cp = pc.component_product
-        {
-          id: cp.id,
-          name: cp.name,
-          part_number: cp.id,
-          quantity_per_unit: pc.quantity_per_unit,
-          uom: pc.uom
-        }
-      end
-
-      render json: { components: components }
-    end
-  
-    private
-  
-    def set_product
-      @product = Product.find(params[:id])
-    end
-
-    def load_show_data
-      @product_vendors = @product.product_vendors.includes(:vendor)
-      @recent_transactions = @product.inventory_transactions
-                                     .order(created_at: :desc)
-                                     .includes(:created_by)
-                                     .limit(10)
-      @open_purchase_orders = @product.purchase_orders
-                                      .where(status: PurchaseOrder::STATUSES - %w[received cancelled])
-                                      .includes(:vendor, :line_items)
-                                      .order(created_at: :desc)
-      @standard_cost_histories = @product.standard_cost_histories.includes(:created_by)
-    end
-  
-    def product_params
-      params.require(:product).permit(
-        :id,
-        :name,
-        :description,
-        :price,
-        :unit_of_measurement,
-        :weight,
-        :is_raw_material,
-        :current_stock,
-        :reorder_point,
-        :safety_stock,
-        :max_stock,
-        :cost_per_unit,
-        :standard_cost,
-        :pdi_package_code,
-        :pdi_tank_id,
-        :category,
-        product_components_attributes: [
-          :id,
-          :component_product_id,
-          :quantity_per_unit,
-          :uom,
-          :_destroy
-        ]
-      )
-    end
-
-    def csv_resource
-      Product
-    end
-
-    def csv_after_update(record, attrs)
-      return unless attrs.key?(:standard_cost)
-      record.standard_cost_histories.create!(
-        amount:         attrs[:standard_cost],
-        effective_date: Date.today,
-        created_by:     current_user
-      )
-    end
-
-    def csv_columns
-      [
-        { attr: :id,                  header: 'ID',               readonly: true  },
-        { attr: :name,                header: 'Name',             readonly: true  },
-        { attr: :unit_of_measurement, header: 'Unit',             readonly: false },
-        { attr: :cost_per_unit,       header: 'Cost/Unit',        readonly: false },
-        { attr: :standard_cost,       header: 'Standard Cost',    readonly: false },
-        { attr: :reorder_point,       header: 'Reorder Point',    readonly: false },
-        { attr: :safety_stock,        header: 'Safety Stock',     readonly: false },
-        { attr: :max_stock,           header: 'Max Stock',        readonly: false },
-        { attr: :pdi_package_code,    header: 'PDI Package Code', readonly: false },
-        { attr: :pdi_tank_id,         header: 'PDI Tank ID',      readonly: false },
-      ]
-    end
+    render json: { product_id: @product.id, components: rows }
   end
+
+  def bom
+    product = Product.includes(product_components: :component_product).find(params[:id])
+
+    components = product.product_components.map do |pc|
+      cp = pc.component_product
+      {
+        id: cp.id,
+        name: cp.name,
+        part_number: cp.id,
+        quantity_per_unit: pc.quantity_per_unit,
+        uom: pc.uom
+      }
+    end
+
+    render json: { components: components }
+  end
+
+  private
+
+  def set_product
+    @product = Product.find(params[:id])
+  end
+
+  def load_show_data
+    @product_vendors = @product.product_vendors.includes(:vendor)
+    @recent_transactions = @product.inventory_transactions
+                                   .order(created_at: :desc)
+                                   .includes(:created_by)
+                                   .limit(10)
+    @open_purchase_orders = @product.purchase_orders
+                                    .where(status: PurchaseOrder::STATUSES - %w[received cancelled])
+                                    .includes(:vendor, :line_items)
+                                    .order(created_at: :desc)
+    @standard_cost_histories = @product.standard_cost_histories.includes(:created_by)
+  end
+
+  def product_params
+    params.require(:product).permit(
+      :id,
+      :name,
+      :description,
+      :price,
+      :unit_of_measurement,
+      :weight,
+      :is_raw_material,
+      :current_stock,
+      :reorder_point,
+      :safety_stock,
+      :max_stock,
+      :cost_per_unit,
+      :standard_cost,
+      :pdi_package_code,
+      :pdi_tank_id,
+      :category,
+      product_components_attributes: %i[
+        id
+        component_product_id
+        quantity_per_unit
+        uom
+        _destroy
+      ]
+    )
+  end
+
+  def csv_resource
+    Product
+  end
+
+  def csv_after_update(record, attrs)
+    return unless attrs.key?(:standard_cost)
+
+    record.standard_cost_histories.create!(
+      amount: attrs[:standard_cost],
+      effective_date: Date.today,
+      created_by: current_user
+    )
+  end
+
+  def csv_columns
+    [
+      { attr: :id,                  header: 'ID',               readonly: true  },
+      { attr: :name,                header: 'Name',             readonly: true  },
+      { attr: :unit_of_measurement, header: 'Unit',             readonly: false },
+      { attr: :cost_per_unit,       header: 'Cost/Unit',        readonly: false },
+      { attr: :standard_cost,       header: 'Standard Cost',    readonly: false },
+      { attr: :reorder_point,       header: 'Reorder Point',    readonly: false },
+      { attr: :safety_stock,        header: 'Safety Stock',     readonly: false },
+      { attr: :max_stock,           header: 'Max Stock',        readonly: false },
+      { attr: :pdi_package_code,    header: 'PDI Package Code', readonly: false },
+      { attr: :pdi_tank_id,         header: 'PDI Tank ID',      readonly: false }
+    ]
+  end
+end

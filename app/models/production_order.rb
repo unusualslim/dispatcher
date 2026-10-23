@@ -5,15 +5,14 @@ class ProductionOrder < ApplicationRecord
   belongs_to :customer, optional: true
   belongs_to :location, optional: true
 
-
   has_many :production_order_components, -> { order(:position, :id) }, dependent: :destroy
   accepts_nested_attributes_for :production_order_components, allow_destroy: true, reject_if: :all_blank
 
   has_many :production_order_batches, dependent: :destroy
   has_many :jobs, dependent: :destroy
   accepts_nested_attributes_for :production_order_batches,
-                              allow_destroy: true,
-                              reject_if: :all_blank
+                                allow_destroy: true,
+                                reject_if: :all_blank
 
   validates :status, inclusion: { in: STATUSES }, allow_blank: true
   validates :number, presence: true, uniqueness: true
@@ -22,37 +21,41 @@ class ProductionOrder < ApplicationRecord
   before_validation :generate_number, on: :create
   before_validation :sync_customer_location_names
 
-  scope :search, ->(term) {
+  scope :search, lambda { |term|
     return all if term.blank?
+
     pattern = "%#{term.strip.downcase}%"
     where(
-      "LOWER(item) LIKE :p OR LOWER(batch_number) LIKE :p OR LOWER(customer_name) LIKE :p OR LOWER(location_name) LIKE :p OR LOWER(number) LIKE :p",
+      'LOWER(item) LIKE :p OR LOWER(batch_number) LIKE :p OR LOWER(customer_name) LIKE :p OR LOWER(location_name) LIKE :p OR LOWER(number) LIKE :p',
       p: pattern
     )
   }
 
-  scope :by_location, ->(location_name) {
+  scope :by_location, lambda { |location_name|
     return all if location_name.blank?
-    where("LOWER(location_name) LIKE ?", "%#{location_name.strip.downcase}%")
+
+    where('LOWER(location_name) LIKE ?', "%#{location_name.strip.downcase}%")
   }
 
-  scope :due_between, ->(from_str, to_str) {
+  scope :due_between, lambda { |from_str, to_str|
     from = from_str.present? ? (Date.parse(from_str) rescue nil) : nil
     to   = to_str.present?   ? (Date.parse(to_str)   rescue nil) : nil
 
     return all if from.nil? && to.nil?
-    return where("due_date >= ?", from) if to.nil?
-    return where("due_date <= ?", to)   if from.nil?
+    return where('due_date >= ?', from) if to.nil?
+    return where('due_date <= ?', to)   if from.nil?
+
     where(due_date: from..to)
   }
 
   scope :ordered_default, -> { order(due_date: :desc, id: :desc) }
 
-    scope :by_status, ->(status) {
+  scope :by_status, lambda { |status|
     s = status.to_s.strip.downcase
-    return all if s.blank? || s == "all"
+    return all if s.blank? || s == 'all'
+
     where(status: s)
-    }
+  }
 
   def build_components_from_bom!
     return if product.blank? || qty_to_make.blank?
@@ -61,12 +64,12 @@ class ProductionOrder < ApplicationRecord
 
     product.product_components.includes(:component_product).each_with_index do |pc, idx|
       production_order_components.build(
-        position:   idx + 1,
-        quantity:   (pc.quantity_per_unit.to_d * qty_to_make.to_d),
-        uom:        pc.uom.presence || "",
+        position: idx + 1,
+        quantity: (pc.quantity_per_unit.to_d * qty_to_make.to_d),
+        uom: pc.uom.presence || '',
         part_number: pc.component_product&.id,
         description: pc.component_product&.name,
-        product_id:  pc.component_product&.id
+        product_id: pc.component_product&.id
       )
     end
   end
@@ -79,7 +82,7 @@ class ProductionOrder < ApplicationRecord
   end
 
   def set_default_status
-    self.status ||= "pending"
+    self.status ||= 'pending'
   end
 
   def generate_number

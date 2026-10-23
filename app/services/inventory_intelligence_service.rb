@@ -59,14 +59,14 @@ class InventoryIntelligenceService
     preload_bulk_data(products)
 
     Report.new(
-      generated_at:       Time.current,
-      stock_summary:      build_stock_summary(products),
-      critical_items:     build_item_snapshots(products, :critical),
-      low_items:          build_item_snapshots(products, :low),
-      demand_outlook:     build_demand_outlook,
-      supply_pipeline:    build_supply_pipeline,
+      generated_at: Time.current,
+      stock_summary: build_stock_summary(products),
+      critical_items: build_item_snapshots(products, :critical),
+      low_items: build_item_snapshots(products, :low),
+      demand_outlook: build_demand_outlook,
+      supply_pipeline: build_supply_pipeline,
       consumption_trends: build_consumption_trends(products),
-      recommendations:    build_recommendations(products)
+      recommendations: build_recommendations(products)
     )
   end
 
@@ -77,16 +77,16 @@ class InventoryIntelligenceService
     product_ids = products.map(&:id)
 
     on_order = PurchaseOrderLineItem
-      .joins(:purchase_order)
-      .where(product_id: product_ids)
-      .where(purchase_orders: { status: %w[draft pending_approval approved submitted] })
-      .group(:product_id).sum(:quantity)
+               .joins(:purchase_order)
+               .where(product_id: product_ids)
+               .where(purchase_orders: { status: %w[draft pending_approval approved submitted] })
+               .group(:product_id).sum(:quantity)
 
     committed = ProductionOrderComponent
-      .joins(:production_order)
-      .where(product_id: product_ids)
-      .where(production_orders: { status: %w[pending in_progress] })
-      .group(:product_id).sum(:quantity)
+                .joins(:production_order)
+                .where(product_id: product_ids)
+                .where(production_orders: { status: %w[pending in_progress] })
+                .group(:product_id).sum(:quantity)
 
     products.each do |p|
       p.instance_variable_set(:@on_order_qty, on_order[p.id] || 0)
@@ -104,11 +104,11 @@ class InventoryIntelligenceService
     on_order_value = products.sum { |p| p.on_order_qty * (p.standard_cost || p.cost_per_unit || 0) }
 
     StockSummary.new(
-      total_products:      products.size,
-      critical_count:      critical,
-      low_count:           low,
-      ok_count:            ok,
-      total_stock_value:   total_value,
+      total_products: products.size,
+      critical_count: critical,
+      low_count: low,
+      ok_count: ok,
+      total_stock_value: total_value,
       total_on_order_value: on_order_value
     )
   end
@@ -123,14 +123,14 @@ class InventoryIntelligenceService
   def item_snapshot(product)
     vendor = product.primary_vendor
     ItemSnapshot.new(
-      product:        product,
-      current_stock:  product.current_stock || 0,
-      on_order:       product.on_order_qty,
-      committed:      product.committed_qty,
-      available:      product.available_stock,
-      reorder_point:  product.reorder_point,
-      safety_stock:   product.safety_stock,
-      stock_status:   product.stock_status,
+      product: product,
+      current_stock: product.current_stock || 0,
+      on_order: product.on_order_qty,
+      committed: product.committed_qty,
+      available: product.available_stock,
+      reorder_point: product.reorder_point,
+      safety_stock: product.safety_stock,
+      stock_status: product.stock_status,
       days_of_supply: days_of_supply(product),
       primary_vendor: vendor,
       lead_time_days: vendor&.lead_time_days
@@ -140,16 +140,16 @@ class InventoryIntelligenceService
   # Aggregate active customer order demand by product
   def build_demand_outlook
     rows = CustomerOrderProduct
-      .joins(:customer_order)
-      .where(customer_orders: { order_status: CustomerOrder::ACTIVE_STATUSES })
-      .where.not(product_id: nil)
-      .group(:product_id)
-      .select(
-        'product_id',
-        'SUM(customer_order_products.quantity) AS total_qty',
-        'COUNT(DISTINCT customer_order_id) AS order_count',
-        'MIN(customer_orders.required_delivery_date) AS earliest_date'
-      )
+           .joins(:customer_order)
+           .where(customer_orders: { order_status: CustomerOrder::ACTIVE_STATUSES })
+           .where.not(product_id: nil)
+           .group(:product_id)
+           .select(
+             'product_id',
+             'SUM(customer_order_products.quantity) AS total_qty',
+             'COUNT(DISTINCT customer_order_id) AS order_count',
+             'MIN(customer_orders.required_delivery_date) AS earliest_date'
+           )
 
     product_ids = rows.map(&:product_id)
     products_by_id = Product.where(id: product_ids).index_by(&:id)
@@ -161,12 +161,12 @@ class InventoryIntelligenceService
       total   = row.total_qty.to_d
       avail   = product.available_stock
       DemandLine.new(
-        product:                product,
-        total_qty_needed:       total,
-        order_count:            row.order_count,
+        product: product,
+        total_qty_needed: total,
+        order_count: row.order_count,
         earliest_delivery_date: row.earliest_date,
-        available_stock:        avail,
-        shortfall:              [total - avail, 0].max
+        available_stock: avail,
+        shortfall: [total - avail, 0].max
       )
     end.sort_by { |d| d.shortfall > 0 ? 0 : 1 }
   end
@@ -179,17 +179,15 @@ class InventoryIntelligenceService
       .includes(purchase_order: :vendor, product: [])
       .map do |li|
         po = li.purchase_order
-        days = if po.expected_delivery_date
-                 (po.expected_delivery_date - Date.today).to_i
-               end
+        days = ((po.expected_delivery_date - Date.today).to_i if po.expected_delivery_date)
         SupplyLine.new(
-          purchase_order:         po,
-          vendor:                 po.vendor,
-          product:                li.product,
-          quantity:               li.quantity,
-          status:                 po.status,
+          purchase_order: po,
+          vendor: po.vendor,
+          product: li.product,
+          quantity: li.quantity,
+          status: po.status,
           expected_delivery_date: po.expected_delivery_date,
-          days_until_arrival:     days
+          days_until_arrival: days
         )
       end
       .sort_by { |s| s.days_until_arrival || Float::INFINITY }
@@ -199,12 +197,12 @@ class InventoryIntelligenceService
   def build_consumption_trends(products)
     now = Time.current
     outbound_30d = InventoryTransaction.outbound
-      .where('created_at >= ?', now - 30.days)
-      .group(:product_id).sum(:quantity)
+                                       .where('created_at >= ?', now - 30.days)
+                                       .group(:product_id).sum(:quantity)
 
     outbound_7d = InventoryTransaction.outbound
-      .where('created_at >= ?', now - 7.days)
-      .group(:product_id).sum(:quantity)
+                                      .where('created_at >= ?', now - 7.days)
+                                      .group(:product_id).sum(:quantity)
 
     products.filter_map do |p|
       usage_30 = outbound_30d[p.id]
@@ -226,11 +224,11 @@ class InventoryIntelligenceService
       est_days = avg_30 > 0 ? (stock / avg_30).round(1) : nil
 
       ConsumptionTrend.new(
-        product:                p,
-        avg_daily_usage_30d:    avg_30.round(2),
-        avg_daily_usage_7d:     avg_7.round(2),
-        trend_direction:        trend,
-        current_stock:          stock,
+        product: p,
+        avg_daily_usage_30d: avg_30.round(2),
+        avg_daily_usage_7d: avg_7.round(2),
+        trend_direction: trend,
+        current_stock: stock,
         estimated_days_remaining: est_days
       )
     end.sort_by { |t| t.estimated_days_remaining || Float::INFINITY }
@@ -262,18 +260,19 @@ class InventoryIntelligenceService
       end
 
       # Overstock warning
-      if p.max_stock && p.max_stock > 0 && (p.current_stock || 0) > p.max_stock
-        recs << Recommendation.new(
-          priority: :info, category: :overstock,
-          message: "#{p.name} exceeds max stock (#{fmt(p.current_stock)} vs #{fmt(p.max_stock)} max).",
-          product: p
-        )
-      end
+      next unless p.max_stock && p.max_stock > 0 && (p.current_stock || 0) > p.max_stock
+
+      recs << Recommendation.new(
+        priority: :info, category: :overstock,
+        message: "#{p.name} exceeds max stock (#{fmt(p.current_stock)} vs #{fmt(p.max_stock)} max).",
+        product: p
+      )
     end
 
     # Demand with no supply coverage
     build_demand_outlook.each do |d|
       next unless d.shortfall > 0
+
       recs << Recommendation.new(
         priority: :high, category: :demand_gap,
         message: "#{d.product.name}: #{fmt(d.shortfall)} short for #{d.order_count} active order(s). Earliest delivery needed #{d.earliest_delivery_date&.strftime('%b %d')}.",
@@ -299,9 +298,9 @@ class InventoryIntelligenceService
 
   def days_of_supply(product)
     usage_30d = InventoryTransaction.outbound
-      .where(product_id: product.id)
-      .where('created_at >= ?', 30.days.ago)
-      .sum(:quantity)
+                                    .where(product_id: product.id)
+                                    .where('created_at >= ?', 30.days.ago)
+                                    .sum(:quantity)
     return nil if usage_30d <= 0
 
     avg_daily = usage_30d / 30.0
@@ -310,6 +309,7 @@ class InventoryIntelligenceService
 
   def fmt(val)
     return '0' if val.nil?
+
     val == val.to_i ? val.to_i.to_s : sprintf('%.1f', val)
   end
 end

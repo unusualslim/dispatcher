@@ -9,26 +9,26 @@ class PurchasingReportController < ApplicationController
 
   def index
     products = Product
-      .where('is_raw_material = ? OR EXISTS (SELECT 1 FROM product_vendors WHERE product_vendors.product_id = products.id)', true)
-      .includes(product_vendors: :vendor)
-      .order(:name)
+               .where('is_raw_material = ? OR EXISTS (SELECT 1 FROM product_vendors WHERE product_vendors.product_id = products.id)', true)
+               .includes(product_vendors: :vendor)
+               .order(:name)
 
     # Bulk-load on_order and committed quantities to avoid N+1
     product_ids = products.map(&:id)
 
     on_order_map = PurchaseOrderLineItem
-      .joins(:purchase_order)
-      .where(product_id: product_ids)
-      .where(purchase_orders: { status: %w[draft pending_approval approved submitted] })
-      .group(:product_id)
-      .sum(:quantity)
+                   .joins(:purchase_order)
+                   .where(product_id: product_ids)
+                   .where(purchase_orders: { status: %w[draft pending_approval approved submitted] })
+                   .group(:product_id)
+                   .sum(:quantity)
 
     committed_map = ProductionOrderComponent
-      .joins(:production_order)
-      .where(product_id: product_ids)
-      .where(production_orders: { status: %w[pending in_progress] })
-      .group(:product_id)
-      .sum(:quantity)
+                    .joins(:production_order)
+                    .where(product_id: product_ids)
+                    .where(production_orders: { status: %w[pending in_progress] })
+                    .group(:product_id)
+                    .sum(:quantity)
 
     products.each do |p|
       p.instance_variable_set(:@on_order_qty,  on_order_map[p.id]  || 0)
@@ -47,14 +47,14 @@ class PurchasingReportController < ApplicationController
       qty_to_purchase = [committed.to_f - available.to_f, inv_min.to_f - available.to_f, 0].max.ceil
 
       Row.new(
-        product:          product,
-        on_hand:          on_hand,
-        on_order:         on_order,
-        committed:        committed,
-        available:        available,
-        inv_min:          inv_min,
-        inv_max:          inv_max,
-        qty_to_purchase:  qty_to_purchase
+        product: product,
+        on_hand: on_hand,
+        on_order: on_order,
+        committed: committed,
+        available: available,
+        inv_min: inv_min,
+        inv_max: inv_max,
+        qty_to_purchase: qty_to_purchase
       )
     end
 

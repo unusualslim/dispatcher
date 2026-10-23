@@ -11,12 +11,12 @@ class VendorFreightTermImportsController < ApplicationController
 
   def preview
     file = params[:file]
-    return redirect_to new_vendor_freight_term_import_path, alert: "Please select a file." unless file
+    return redirect_to new_vendor_freight_term_import_path, alert: 'Please select a file.' unless file
 
     begin
       csv = CSV.parse(file.read.encode('UTF-8', invalid: :replace, undef: :replace),
                       headers: true, header_converters: :symbol)
-    rescue => e
+    rescue StandardError => e
       return redirect_to new_vendor_freight_term_import_path, alert: "Could not parse file: #{e.message}"
     end
 
@@ -32,9 +32,9 @@ class VendorFreightTermImportsController < ApplicationController
       already_exists = vendor && VendorFreightTerm.exists?(vendor_id: vendor_id, freight_term: freight_term)
 
       @rows << {
-        vendor_id:      vendor_id,
-        freight_term:   freight_term,
-        vendor:         vendor,
+        vendor_id: vendor_id,
+        freight_term: freight_term,
+        vendor: vendor,
         already_exists: already_exists
       }
     end
@@ -50,9 +50,9 @@ class VendorFreightTermImportsController < ApplicationController
 
     log = SyncLog.create!(
       process_name: PROCESS_NAME,
-      status:       'running',
-      file_name:    params[:file_name].presence || 'unknown',
-      started_at:   Time.current
+      status: 'running',
+      file_name: params[:file_name].presence || 'unknown',
+      started_at: Time.current
     )
 
     begin
@@ -71,13 +71,13 @@ class VendorFreightTermImportsController < ApplicationController
       end
 
       log.update!(
-        status:          'success',
-        completed_at:    Time.current,
+        status: 'success',
+        completed_at: Time.current,
         records_created: created,
         records_skipped: skipped,
-        warnings:        warnings.any? ? warnings.join("\n") : nil
+        warnings: warnings.any? ? warnings.join("\n") : nil
       )
-    rescue => e
+    rescue StandardError => e
       log.update!(status: 'failed', completed_at: Time.current, error_message: e.message)
       return redirect_to new_vendor_freight_term_import_path, alert: "Import failed: #{e.message}"
     end

@@ -31,20 +31,20 @@ class PdiWarehouseTransactionImportService
     rows.group_by(&:vendor_id).map do |vendor_id, lines|
       pos = lines.group_by(&:pdi_reference).map do |reference, po_lines|
         PoPreview.new(
-          pdi_reference:    reference,
-          line_count:       po_lines.size,
-          total_cost:       po_lines.sum { |l| (l.quantity || 0) * (l.unit_cost || 0) },
-          business_date:    po_lines.first.business_date,
+          pdi_reference: reference,
+          line_count: po_lines.size,
+          total_cost: po_lines.sum { |l| (l.quantity || 0) * (l.unit_cost || 0) },
+          business_date: po_lines.first.business_date,
           already_imported: existing_refs.include?(reference),
-          lines:            po_lines
+          lines: po_lines
         )
       end
 
       VendorGroup.new(
-        vendor_id:   vendor_id,
+        vendor_id: vendor_id,
         vendor_name: lines.first.vendor_name,
-        vendor:      Vendor.find_by(id: vendor_id),
-        pos:         pos
+        vendor: Vendor.find_by(id: vendor_id),
+        pos: pos
       )
     end
   end
@@ -56,11 +56,13 @@ class PdiWarehouseTransactionImportService
 
     # Resolve vendor actions: create new ones, build override map for matched ones
     # vendor_actions: { pdi_id => "create" | "skip" | existing_vendor_id }
-    vendor_overrides = {}  # pdi_id => Vendor record
+    vendor_overrides = {} # pdi_id => Vendor record
     vendor_actions.each do |pdi_id, action|
       next if action.blank? || action == 'skip'
+
       if action == 'create'
         next if Vendor.exists?(id: pdi_id)
+
         vendor_name = rows.find { |r| r.vendor_id == pdi_id }&.vendor_name.to_s
         unique_name = Vendor.exists?(name: vendor_name) ? "#{vendor_name} (#{pdi_id})" : vendor_name
         vendor_overrides[pdi_id] = Vendor.create!(id: pdi_id, name: unique_name)
@@ -69,7 +71,7 @@ class PdiWarehouseTransactionImportService
         v = Vendor.find_by(id: action)
         vendor_overrides[pdi_id] = v if v
       end
-    rescue => e
+    rescue StandardError => e
       warnings << "Could not resolve vendor #{pdi_id}: #{e.message}"
     end
 
@@ -93,27 +95,27 @@ class PdiWarehouseTransactionImportService
       begin
         ActiveRecord::Base.transaction do
           po = PurchaseOrder.create!(
-            vendor:        vendor,
-            status:        import_status,
-            trigger_type:  'pdi_import',
+            vendor: vendor,
+            status: import_status,
+            trigger_type: 'pdi_import',
             pdi_reference: reference,
-            received_at:   (import_status == 'received' ? first.business_date&.to_time : nil),
-            notes:         'Imported from PDI warehouse transaction report'
+            received_at: (import_status == 'received' ? first.business_date&.to_time : nil),
+            notes: 'Imported from PDI warehouse transaction report'
           )
           lines.each do |line|
             product = Product.find_by(id: line.product_id)
             po.line_items.create!(
-              product:      product,
-              product_id:   line.product_id,
+              product: product,
+              product_id: line.product_id,
               product_name: line.product_name,
-              quantity:     line.quantity,
-              unit_cost:    line.unit_cost,
+              quantity: line.quantity,
+              unit_cost: line.unit_cost,
               package_code: line.package_code
             )
           end
         end
         counts[:created] += 1
-      rescue => e
+      rescue StandardError => e
         warnings << "Error creating PO #{reference}: #{e.message}"
         counts[:errors] += 1
       end
@@ -150,14 +152,14 @@ class PdiWarehouseTransactionImportService
       product_id, product_name = raw[COL_PRODUCT].to_s.strip.split(' / ', 2)
 
       rows << ParsedRow.new(
-        vendor_id:     current_vendor_id,
-        vendor_name:   current_vendor_name,
+        vendor_id: current_vendor_id,
+        vendor_name: current_vendor_name,
         pdi_reference: reference,
-        product_id:    product_id.to_s.strip,
-        product_name:  product_name.to_s.strip,
-        quantity:      raw[COL_QUANTITY].to_f,
-        unit_cost:     raw[COL_UNIT_COST].to_f,
-        package_code:  raw[COL_PACKAGE].to_s.strip,
+        product_id: product_id.to_s.strip,
+        product_name: product_name.to_s.strip,
+        quantity: raw[COL_QUANTITY].to_f,
+        unit_cost: raw[COL_UNIT_COST].to_f,
+        package_code: raw[COL_PACKAGE].to_s.strip,
         business_date: col0
       )
     end
@@ -170,10 +172,10 @@ class PdiWarehouseTransactionImportService
     ext  = File.extname(path).downcase
 
     spreadsheet = if ext == '.xls'
-      Roo::Spreadsheet.open(path, extension: :xls)
-    else
-      Roo::Spreadsheet.open(path, extension: :xlsx)
-    end
+                    Roo::Spreadsheet.open(path, extension: :xls)
+                  else
+                    Roo::Spreadsheet.open(path, extension: :xlsx)
+                  end
 
     sheet = spreadsheet.sheet(0)
     (1..sheet.last_row).each { |i| yield sheet.row(i) }
@@ -181,8 +183,9 @@ class PdiWarehouseTransactionImportService
 
   def excel_date(serial)
     return nil unless serial.is_a?(Numeric)
+
     EXCEL_EPOCH + serial.to_i
-  rescue
+  rescue StandardError
     nil
   end
 end

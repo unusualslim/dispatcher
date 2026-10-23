@@ -5,6 +5,6 @@ class CreateVendorFreightTerms < ActiveRecord::Migration[7.0]
       t.string :freight_term, null: false
       t.timestamps
     end
-    add_index :vendor_freight_terms, [:vendor_id, :freight_term], unique: true
+    add_index :vendor_freight_terms, %i[vendor_id freight_term], unique: true
   end
 end

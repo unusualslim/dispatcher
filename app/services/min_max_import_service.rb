@@ -88,10 +88,10 @@ class MinMaxImportService
 
       product.update!(
         reorder_point: min_val.present? ? min_val.to_f : product.reorder_point,
-        max_stock:     max_val.present? ? max_val.to_f : product.max_stock
+        max_stock: max_val.present? ? max_val.to_f : product.max_stock
       )
       result.updated += 1
-    rescue => e
+    rescue StandardError => e
       result.errors << "Row #{i} (#{part_id}): #{e.message}"
     end
 

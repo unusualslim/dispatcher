@@ -5,32 +5,32 @@
 # and maximum; this matches the default thread size of Active Record.
 #
 # Use a single thread on Windows to avoid Sprockets atomic_write rename errors
-max_threads_count = Gem.win_platform? ? 1 : ENV.fetch("RAILS_MAX_THREADS") { 5 }
-min_threads_count = ENV.fetch("RAILS_MIN_THREADS") { max_threads_count }
+max_threads_count = Gem.win_platform? ? 1 : ENV.fetch('RAILS_MAX_THREADS') { 5 }
+min_threads_count = ENV.fetch('RAILS_MIN_THREADS') { max_threads_count }
 threads min_threads_count, max_threads_count
 
 # Specifies the `worker_timeout` threshold that Puma will use to wait before
 # terminating a worker in development environments.
 #
-worker_timeout 3600 if ENV.fetch("RAILS_ENV", "development") == "development"
+worker_timeout 3600 if ENV.fetch('RAILS_ENV', 'development') == 'development'
 
 # Specifies the `port` that Puma will listen on to receive requests; default is 3000.
 #
-port ENV.fetch("PORT") { 3000 }
+port ENV.fetch('PORT') { 3000 }
 
 # Specifies the `environment` that Puma will run in.
 #
-environment ENV.fetch("RAILS_ENV") { "development" }
+environment ENV.fetch('RAILS_ENV') { 'development' }
 
 # Specifies the `pidfile` that Puma will use.
-pidfile ENV.fetch("PIDFILE") { "tmp/pids/server.pid" }
+pidfile ENV.fetch('PIDFILE') { 'tmp/pids/server.pid' }
 
 # Workers do not work on Windows. Use single-mode (0 workers) on Windows.
 # Development also defaults to single mode: forked workers crash on macOS
 # (Objective-C fork safety) and add nothing locally.
 unless Gem.win_platform?
-  development = ENV.fetch("RAILS_ENV", "development") == "development"
-  workers ENV.fetch("WEB_CONCURRENCY") { development ? 0 : 2 }
+  development = ENV.fetch('RAILS_ENV', 'development') == 'development'
+  workers ENV.fetch('WEB_CONCURRENCY') { development ? 0 : 2 }
   preload_app! unless development
 end
 

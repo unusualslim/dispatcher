@@ -12,7 +12,8 @@ class PdiProductImportService
   COL_RAW_WEIGHT = 4
   COL_SHIP_WEIGHT = 5
 
-  RAW_MATERIAL_CATEGORIES = %w[COMPONENTS COMPONENTS-LABELS COMPONENTS-BOXES COMPONENTS-BOTTLES COMPONENTS-BUCKETS].freeze
+  RAW_MATERIAL_CATEGORIES = %w[COMPONENTS COMPONENTS-LABELS COMPONENTS-BOXES COMPONENTS-BOTTLES
+                               COMPONENTS-BUCKETS].freeze
 
   Result = Struct.new(:created, :updated, :unchanged, :errors, keyword_init: true)
 
@@ -86,18 +87,18 @@ class PdiProductImportService
         end
       else
         Product.create!(
-          id:                  product_id,
-          name:                name,
-          category:            category,
-          pdi_package_code:    pkg_code,
+          id: product_id,
+          name: name,
+          category: category,
+          pdi_package_code: pkg_code,
           unit_of_measurement: pkg_code,
-          weight:              weight,
-          is_raw_material:     raw_material?(category)
+          weight: weight,
+          is_raw_material: raw_material?(category)
         )
         existing_ids.add(product_id)
         result.created += 1
       end
-    rescue => e
+    rescue StandardError => e
       result.errors << "#{product_id}: #{e.message}"
     end
 
@@ -109,9 +110,7 @@ class PdiProductImportService
   def parse_rows
     rows = CSV.read(@file_path, headers: false, encoding: 'bom|utf-8')
     # Skip header if present
-    if rows.first&.first.to_s.strip.downcase.include?('prod_id')
-      rows = rows[1..]
-    end
+    rows = rows[1..] if rows.first&.first.to_s.strip.downcase.include?('prod_id')
     # Deduplicate by product ID (keep first occurrence)
     rows.uniq { |r| r[COL_ID].to_s.strip }
   end

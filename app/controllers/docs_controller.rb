@@ -1,32 +1,32 @@
-require "redcarpet"
+require 'redcarpet'
 
 class DocsController < ApplicationController
   before_action :require_admin!
 
   GUIDES = [
     {
-      slug:        'dispatch',
-      title:       'Dispatch & Orders',
+      slug: 'dispatch',
+      title: 'Dispatch & Orders',
       description: 'Customer orders, dispatch assignments, drivers, calendar, and map.',
-      icon:        'bi-truck',
-      color:       'primary',
-      path:        '/docs/dispatch-guide'
+      icon: 'bi-truck',
+      color: 'primary',
+      path: '/docs/dispatch-guide'
     },
     {
-      slug:        'manufacturing',
-      title:       'Manufacturing',
+      slug: 'manufacturing',
+      title: 'Manufacturing',
       description: 'Production orders, batch management, QC workflow, and lot traceability.',
-      icon:        'bi-gear',
-      color:       'success',
-      path:        '/docs/manufacturing'
+      icon: 'bi-gear',
+      color: 'success',
+      path: '/docs/manufacturing'
     },
     {
-      slug:        'mrp',
-      title:       'Inventory & MRP',
+      slug: 'mrp',
+      title: 'Inventory & MRP',
       description: 'Products, BOM, purchase orders, stock adjustments, and MRP planning.',
-      icon:        'bi-graph-up-arrow',
-      color:       'warning',
-      path:        '/docs/mrp-guide'
+      icon: 'bi-graph-up-arrow',
+      color: 'warning',
+      path: '/docs/mrp-guide'
     }
   ].freeze
 
@@ -46,8 +46,7 @@ class DocsController < ApplicationController
     render_guide('mrp_user_guide.md')
   end
 
-  def changelog
-  end
+  def changelog; end
 
   private
 

@@ -12,7 +12,7 @@ class CreateInventoryTransactions < ActiveRecord::Migration[7.0]
       t.timestamps
     end
 
-    add_index :inventory_transactions, [:transactable_type, :transactable_id], name: 'idx_inv_trans_on_transactable'
+    add_index :inventory_transactions, %i[transactable_type transactable_id], name: 'idx_inv_trans_on_transactable'
     add_index :inventory_transactions, :created_by_id
   end
 end

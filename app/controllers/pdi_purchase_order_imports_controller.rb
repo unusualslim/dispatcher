@@ -11,8 +11,12 @@ class PdiPurchaseOrderImportsController < ApplicationController
 
   def preview
     file = params[:file]
-    return redirect_to new_pdi_purchase_order_import_path, alert: "Please select a file." unless file
-    return redirect_to new_pdi_purchase_order_import_path, alert: "File must be a CSV file." unless file.original_filename.downcase.end_with?('.csv')
+    return redirect_to new_pdi_purchase_order_import_path, alert: 'Please select a file.' unless file
+
+    unless file.original_filename.downcase.end_with?('.csv')
+      return redirect_to new_pdi_purchase_order_import_path,
+                         alert: 'File must be a CSV file.'
+    end
 
     tmp = Tempfile.new(['pdi_po_import', '.csv'])
     tmp.binmode
@@ -29,7 +33,7 @@ class PdiPurchaseOrderImportsController < ApplicationController
 
   def create
     unless session[:pdi_po_import_tmp_path].present? && File.exist?(session[:pdi_po_import_tmp_path].to_s)
-      return redirect_to new_pdi_purchase_order_import_path, alert: "Import session expired. Please re-upload the file."
+      return redirect_to new_pdi_purchase_order_import_path, alert: 'Import session expired. Please re-upload the file.'
     end
 
     file_path = session[:pdi_po_import_tmp_path]
@@ -37,21 +41,21 @@ class PdiPurchaseOrderImportsController < ApplicationController
 
     log = SyncLog.create!(
       process_name: PROCESS_NAME,
-      status:       'running',
-      file_name:    file_name,
-      file_binary:  false,
-      started_at:   Time.current
+      status: 'running',
+      file_name: file_name,
+      file_binary: false,
+      started_at: Time.current
     )
 
     begin
       result = PdiPurchaseOrderImportService.call(file_path)
 
       log.update!(
-        status:          'success',
-        completed_at:    Time.current,
+        status: 'success',
+        completed_at: Time.current,
         records_created: result.created,
         records_skipped: result.skipped_exists + result.skipped_no_vendor,
-        warnings:        result.errors.any? ? result.errors.join("\n") : nil
+        warnings: result.errors.any? ? result.errors.join("\n") : nil
       )
 
       summary = "Import complete — #{result.created} purchase orders created."
@@ -59,7 +63,7 @@ class PdiPurchaseOrderImportsController < ApplicationController
       summary += " #{result.errors.count} warnings." if result.errors.any?
 
       flash[:notice] = summary
-    rescue => e
+    rescue StandardError => e
       log.update!(status: 'failed', completed_at: Time.current, error_message: e.message)
       flash[:alert] = "Import failed: #{e.message}"
     ensure
@@ -73,10 +77,10 @@ class PdiPurchaseOrderImportsController < ApplicationController
 
   def download
     log = SyncLog.find(params[:log_id])
-    return redirect_to new_pdi_purchase_order_import_path, alert: "File not available." if log.file_content.blank?
+    return redirect_to new_pdi_purchase_order_import_path, alert: 'File not available.' if log.file_content.blank?
 
     send_data log.file_content,
-              type:        'text/csv',
+              type: 'text/csv',
               disposition: "attachment; filename=\"#{log.file_name}\""
   end
 end

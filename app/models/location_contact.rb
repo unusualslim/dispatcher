@@ -1,3 +1,2 @@
 class LocationContact < ApplicationRecord
-  
 end

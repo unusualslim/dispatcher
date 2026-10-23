@@ -6,10 +6,10 @@ class ProductionOrdersController < ApplicationController
   # GET /production_orders
   # Table view
   def index
-    @view = "table"
+    @view = 'table'
 
     @statuses        = ProductionOrder::STATUSES
-    @selected_status = params[:status].presence || "all"
+    @selected_status = params[:status].presence || 'all'
 
     @search_term = params[:q]
     @location    = params[:location]
@@ -17,11 +17,11 @@ class ProductionOrdersController < ApplicationController
     @due_to      = params[:due_to]
 
     @production_orders = ProductionOrder
-      .search(@search_term)
-      .by_status(@selected_status)
-      .by_location(@location)
-      .due_between(@due_from, @due_to)
-      .ordered_default
+                         .search(@search_term)
+                         .by_status(@selected_status)
+                         .by_location(@location)
+                         .due_between(@due_from, @due_to)
+                         .ordered_default
     @production_orders = @production_orders.where(location_id: current_warehouse.id) if current_warehouse
     @production_orders = @production_orders.paginate(page: params[:page], per_page: 50)
   end
@@ -29,48 +29,48 @@ class ProductionOrdersController < ApplicationController
   # GET /production_orders/dashboard
   def dashboard
     base = CustomerOrderProduct
-      .joins(:customer_order)
-      .where(customer_orders: { order_status: CustomerOrder::ACTIVE_STATUSES })
-      .where.not(product_id: nil)
-      .where("customer_order_products.product_name IS NULL OR customer_order_products.product_name NOT ILIKE '%bulk%'")
-      .includes(:product, customer_order: [:customer, :dispatches])
-      .order('customer_orders.required_delivery_date ASC NULLS LAST')
+           .joins(:customer_order)
+           .where(customer_orders: { order_status: CustomerOrder::ACTIVE_STATUSES })
+           .where.not(product_id: nil)
+           .where("customer_order_products.product_name IS NULL OR customer_order_products.product_name NOT ILIKE '%bulk%'")
+           .includes(:product, customer_order: %i[customer dispatches])
+           .order('customer_orders.required_delivery_date ASC NULLS LAST')
 
     all_lines = base.to_a
 
     @production_lines = all_lines
-      .select { |cop| cop.item_type == 'production' }
+                        .select { |cop| cop.item_type == 'production' }
 
     @buy_lines = all_lines
-      .select { |cop| cop.item_type != 'production' }
-      .select { |cop| cop.product.nil? || cop.product.current_stock.to_f < cop.quantity.to_f }
+                 .select { |cop| cop.item_type != 'production' }
+                 .select { |cop| cop.product.nil? || cop.product.current_stock.to_f < cop.quantity.to_f }
 
     @allocated_lines = all_lines
-      .select { |cop| cop.product && cop.product.current_stock.to_f >= cop.quantity.to_f }
+                       .select { |cop| cop.product && cop.product.current_stock.to_f >= cop.quantity.to_f }
 
     @tab = params[:tab] || 'production'
 
     @in_progress = ProductionOrder
-      .includes(:product)
-      .where(status: 'in_progress')
-      .order(due_date: :asc)
+                   .includes(:product)
+                   .where(status: 'in_progress')
+                   .order(due_date: :asc)
 
     @qc_holds = ProductionOrderBatch
-      .includes(production_order: :product)
-      .where(qc_status: %w[hold rejected])
-      .order(updated_at: :desc)
+                .includes(production_order: :product)
+                .where(qc_status: %w[hold rejected])
+                .order(updated_at: :desc)
 
     @recently_completed = ProductionOrder
-      .includes(:product)
-      .where(status: 'completed')
-      .where('date_completed >= ?', 30.days.ago)
-      .order(date_completed: :desc)
-      .limit(10)
+                          .includes(:product)
+                          .where(status: 'completed')
+                          .where('date_completed >= ?', 30.days.ago)
+                          .order(date_completed: :desc)
+                          .limit(10)
 
     @low_stock_materials = Product
-      .raw_materials
-      .below_reorder_point
-      .order(:name)
+                           .raw_materials
+                           .below_reorder_point
+                           .order(:name)
   end
 
   # GET /production_orders/bom_cost_report
@@ -80,26 +80,26 @@ class ProductionOrdersController < ApplicationController
     require 'csv'
 
     orders = ProductionOrder
-      .includes(
-        :product,
-        production_order_components: :product,
-        production_order_batches: [],
-        jobs: :job_workers
-      )
-      .order(:date_started, :number)
+             .includes(
+               :product,
+               production_order_components: :product,
+               production_order_batches: [],
+               jobs: :job_workers
+             )
+             .order(:date_started, :number)
 
-    orders = orders.where("date_started >= ?", params[:from]) if params[:from].present?
-    orders = orders.where("date_started <= ?", params[:to])   if params[:to].present?
-    orders = orders.where(status: params[:status])            if params[:status].present? && params[:status] != "all"
+    orders = orders.where('date_started >= ?', params[:from]) if params[:from].present?
+    orders = orders.where('date_started <= ?', params[:to])   if params[:to].present?
+    orders = orders.where(status: params[:status])            if params[:status].present? && params[:status] != 'all'
 
     headers = [
-      "PO Number", "PO Status", "Product ID", "Product Name",
-      "Qty Planned", "Qty Produced (Batches)", "Date Started", "Date Completed",
-      "Component #", "Component Product ID", "Component Name", "Component UOM",
-      "Std Qty Per Unit", "Std Total Qty", "Std Unit Cost ($)",
-      "Std Total Material Cost ($)", "Actual Qty Used",
-      "Actual Total Material Cost ($)", "Usage Variance (Qty)", "Cost Variance ($)",
-      "Completed Labor Jobs", "Total Labor Hours", "Total Worker-Hours"
+      'PO Number', 'PO Status', 'Product ID', 'Product Name',
+      'Qty Planned', 'Qty Produced (Batches)', 'Date Started', 'Date Completed',
+      'Component #', 'Component Product ID', 'Component Name', 'Component UOM',
+      'Std Qty Per Unit', 'Std Total Qty', 'Std Unit Cost ($)',
+      'Std Total Material Cost ($)', 'Actual Qty Used',
+      'Actual Total Material Cost ($)', 'Usage Variance (Qty)', 'Cost Variance ($)',
+      'Completed Labor Jobs', 'Total Labor Hours', 'Total Worker-Hours'
     ]
 
     csv = CSV.generate(headers: true) do |out|
@@ -120,7 +120,7 @@ class ProductionOrdersController < ApplicationController
         ]
 
         if components.empty?
-          out << row_base + [nil] * 12 + [completed_jobs.count, labor_hrs, worker_hrs]
+          out << (row_base + ([nil] * 12) + [completed_jobs.count, labor_hrs, worker_hrs])
           next
         end
 
@@ -136,7 +136,7 @@ class ProductionOrdersController < ApplicationController
           qty_var     = actual_qty.nil? ? nil : (actual_qty.to_d - std_total_qty).round(4)
           cost_var    = actual_qty.nil? ? nil : (actual_cost - std_cost).round(4)
 
-          out << row_base + [
+          out << (row_base + [
             poc.position || (i + 1),
             poc.product_id,
             poc.description || cp&.name,
@@ -150,18 +150,18 @@ class ProductionOrdersController < ApplicationController
             qty_var,
             cost_var,
             completed_jobs.count, labor_hrs, worker_hrs
-          ]
+          ])
         end
       end
     end
 
     send_data csv,
-              type:        'text/csv; charset=utf-8',
+              type: 'text/csv; charset=utf-8',
               disposition: "attachment; filename=\"BOM_Cost_Report_#{Date.today}.csv\""
   end
 
   # GET /production_orders/kanban
-    def kanban
+  def kanban
     @search_term     = params[:search]
     @selected_status = params[:status]
     @location        = params[:location]
@@ -169,31 +169,29 @@ class ProductionOrdersController < ApplicationController
     @due_to          = params[:due_to]
 
     @production_orders =
-        ProductionOrder
-        .includes(:product)
-        .search(@search_term)
-        .by_status(@selected_status)
-        .by_location(@location)
-        .due_between(@due_from, @due_to)
-        .ordered_default
+      ProductionOrder
+      .includes(:product)
+      .search(@search_term)
+      .by_status(@selected_status)
+      .by_location(@location)
+      .due_between(@due_from, @due_to)
+      .ordered_default
 
     # Use the filter dates to drive the columns (fallback to your default range)
     @start_date = safe_date(@due_from) || Date.yesterday
     @end_date   = safe_date(@due_to)   || (Date.today + 6.days)
 
     # Safety: don’t allow inverted ranges
-    if @start_date > @end_date
-        @start_date, @end_date = @end_date, @start_date
-    end
-    end
+    @start_date, @end_date = @end_date, @start_date if @start_date > @end_date
+  end
 
   # GET /production_orders/new
   def new
     @production_order = ProductionOrder.new(
-      due_date:    params[:due_date].present? ? (Date.parse(params[:due_date]) rescue Date.today) : Date.today,
-      status:      "pending",
-      product_id:  params[:product_id],
-      item:        params[:item],
+      due_date: params[:due_date].present? ? (Date.parse(params[:due_date]) rescue Date.today) : Date.today,
+      status: 'pending',
+      product_id: params[:product_id],
+      item: params[:item],
       qty_to_make: params[:qty_to_make]
     )
     5.times { |i| @production_order.production_order_components.build(position: i + 1) }
@@ -201,7 +199,6 @@ class ProductionOrdersController < ApplicationController
     # ✅ ensure the form renders one blank batch row
     @production_order.production_order_batches.build
   end
-
 
   # POST /production_orders
   def create
@@ -213,7 +210,7 @@ class ProductionOrdersController < ApplicationController
         @production_order.build_components_from_bom!
         @production_order.save
       end
-      redirect_to kanban_production_orders_path, notice: "Production order created."
+      redirect_to kanban_production_orders_path, notice: 'Production order created.'
     else
       render :new, status: :unprocessable_entity
     end
@@ -222,23 +219,25 @@ class ProductionOrdersController < ApplicationController
   # GET /production_orders/:id/edit
   def edit
     missing = 5 - @production_order.production_order_components.size
-    missing.times do |i|
-      @production_order.production_order_components.build(
-        position: @production_order.production_order_components.size + i + 1
-      )
-    end if missing.positive?
+    if missing.positive?
+      missing.times do |i|
+        @production_order.production_order_components.build(
+          position: @production_order.production_order_components.size + i + 1
+        )
+      end
+    end
 
     # ✅ if there are no batches yet, show one blank row
     @production_order.production_order_batches.build if @production_order.production_order_batches.empty?
   end
 
   def update
-    params[:production_order][:location_id] = nil if params[:production_order][:location_id].to_s == "0"
-    params[:production_order][:customer_id] = nil if params[:production_order][:customer_id].to_s == "0"
+    params[:production_order][:location_id] = nil if params[:production_order][:location_id].to_s == '0'
+    params[:production_order][:customer_id] = nil if params[:production_order][:customer_id].to_s == '0'
     if @production_order.update(production_order_params)
       respond_to do |format|
-        format.html { redirect_to @production_order, notice: "Production order updated." }
-        format.turbo_stream { redirect_to @production_order, notice: "Production order updated." }
+        format.html { redirect_to @production_order, notice: 'Production order updated.' }
+        format.turbo_stream { redirect_to @production_order, notice: 'Production order updated.' }
       end
     else
       render :edit, status: :unprocessable_entity
@@ -249,23 +248,23 @@ class ProductionOrdersController < ApplicationController
   def show; end
 
   # DELETE /production_orders/:id
-    def destroy
+  def destroy
     @production_order.destroy
-    redirect_to kanban_production_orders_path, notice: "Production order deleted."
-    end
-
+    redirect_to kanban_production_orders_path, notice: 'Production order deleted.'
+  end
 
   private
 
   def production_demand_from_customer_orders
     cops = CustomerOrderProduct
-      .where(item_type: 'production')
-      .where.not(product_id: nil)
-      .includes(:product, customer_order: [:customer, :location])
+           .where(item_type: 'production')
+           .where.not(product_id: nil)
+           .includes(:product, customer_order: %i[customer location])
 
     result = {}
     cops.each do |cop|
       next unless cop.product
+
       needed    = (cop.quantity || 0).to_f
       in_stock  = cop.product.current_stock.to_f
       shortfall = needed - in_stock
@@ -276,10 +275,10 @@ class ProductionOrdersController < ApplicationController
 
       result[order.id] ||= { order: order, shortfalls: [] }
       result[order.id][:shortfalls] << {
-        product:   cop.product,
-        needed:    needed,
-        in_stock:  in_stock,
-        shortfall: shortfall,
+        product: cop.product,
+        needed: needed,
+        in_stock: in_stock,
+        shortfall: shortfall
       }
     end
 
@@ -288,13 +287,14 @@ class ProductionOrdersController < ApplicationController
 
   def safe_date(str)
     return nil if str.blank?
+
     Date.parse(str) rescue nil
-    end
+  end
 
   def set_production_order
     @production_order = ProductionOrder
-      .includes(production_order_components: :product)
-      .find(params[:id])
+                        .includes(production_order_components: :product)
+                        .find(params[:id])
   end
 
   def production_order_params
@@ -313,14 +313,13 @@ class ProductionOrdersController < ApplicationController
       :total_qty_produced,
       :filled_by,
       :approved_by,
-
-      production_order_batches_attributes: [
-        :id, :batch_number, :quantity, :qc_status, :qc_notes, :qc_by, :_destroy
+      production_order_batches_attributes: %i[
+        id batch_number quantity qc_status qc_notes qc_by _destroy
       ],
 
       # ✅ IMPORTANT: this must be EXACTLY this key name
-      production_order_components_attributes: [
-        :id, :position, :description, :quantity, :uom, :_destroy
+      production_order_components_attributes: %i[
+        id position description quantity uom _destroy
       ]
     )
   end

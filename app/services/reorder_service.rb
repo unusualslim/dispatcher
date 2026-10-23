@@ -15,15 +15,15 @@ class ReorderService
       qty_to_order = calculate_order_quantity(product)
 
       po = PurchaseOrder.create!(
-        vendor:         vendor,
-        status:         'draft',
-        trigger_type:   'auto_reorder',
+        vendor: vendor,
+        status: 'draft',
+        trigger_type: 'auto_reorder',
         trigger_reason: "Stock (#{product.current_stock} #{product.unit_of_measurement}) " \
                         "at or below reorder point (#{product.reorder_point} #{product.unit_of_measurement})"
       )
       po.line_items.create!(
-        product:   product,
-        quantity:  qty_to_order,
+        product: product,
+        quantity: qty_to_order,
         unit_cost: product.cost_per_unit
       )
       created << po

@@ -6,6 +6,7 @@ class PurchaseOrderLineItem < ApplicationRecord
 
   def total_cost
     return nil if quantity.nil? || unit_cost.nil?
+
     quantity * unit_cost
   end
 

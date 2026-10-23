@@ -21,7 +21,7 @@ class VendorFreightTerm < ApplicationRecord
     ['15/31st',    '15/31st — Due 15th and 31st'],
     ['20NM',       '20NM — 20th of Following Month'],
     ['CIA',        'CIA — Cash in Advance'],
-    ['DUR',        'DUR — Due Upon Receipt'],
+    ['DUR',        'DUR — Due Upon Receipt']
   ].freeze
 
   CODES = TERMS.map(&:first).freeze
@@ -29,5 +29,5 @@ class VendorFreightTerm < ApplicationRecord
   belongs_to :vendor
 
   validates :freight_term, presence: true
-  validates :freight_term, uniqueness: { scope: :vendor_id, message: "already assigned to this vendor" }
+  validates :freight_term, uniqueness: { scope: :vendor_id, message: 'already assigned to this vendor' }
 end

@@ -44,6 +44,7 @@ class PriceCheckService
 
   def self.status_for(actual, result)
     return 'match' if actual && (actual.to_d - result[:price]).abs < TOLERANCE
+
     result[:quote_product] ? 'lock_mismatch' : 'rule_mismatch'
   end
 end

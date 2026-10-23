@@ -4,14 +4,20 @@ class WarehouseTransactionImportsController < ApplicationController
   PROCESS_NAME = 'Warehouse Transaction Import'.freeze
 
   def new
-    @existing_count = InventoryTransaction.where("notes LIKE ?", "[PDI Historical Import]%").count
+    @existing_count = InventoryTransaction.where('notes LIKE ?', '[PDI Historical Import]%').count
     @logs = SyncLog.for_process(PROCESS_NAME).limit(20)
   end
 
   def preview
     file = params[:file]
-    return redirect_to new_warehouse_transaction_import_path, alert: "Please select a file." unless file
-    return redirect_to new_warehouse_transaction_import_path, alert: "File must be an XLS or XLSX file." unless file.original_filename.downcase.end_with?('.xls', '.xlsx')
+    return redirect_to new_warehouse_transaction_import_path, alert: 'Please select a file.' unless file
+
+    unless file.original_filename.downcase.end_with?(
+      '.xls', '.xlsx'
+    )
+      return redirect_to new_warehouse_transaction_import_path,
+                         alert: 'File must be an XLS or XLSX file.'
+    end
 
     ext = File.extname(file.original_filename).downcase
     tmp = Tempfile.new(['wt_import', ext], binmode: true)
@@ -32,7 +38,8 @@ class WarehouseTransactionImportsController < ApplicationController
 
   def create
     unless session[:wt_import_tmp_path].present? && File.exist?(session[:wt_import_tmp_path].to_s)
-      return redirect_to new_warehouse_transaction_import_path, alert: "Import session expired. Please re-upload the file."
+      return redirect_to new_warehouse_transaction_import_path,
+                         alert: 'Import session expired. Please re-upload the file.'
     end
 
     file_path = session[:wt_import_tmp_path]
@@ -40,11 +47,11 @@ class WarehouseTransactionImportsController < ApplicationController
 
     log = SyncLog.create!(
       process_name: PROCESS_NAME,
-      status:       'running',
-      file_name:    file_name,
+      status: 'running',
+      file_name: file_name,
       file_content: Base64.strict_encode64(File.binread(file_path)),
-      file_binary:  true,
-      started_at:   Time.current
+      file_binary: true,
+      started_at: Time.current
     )
 
     begin
@@ -52,22 +59,22 @@ class WarehouseTransactionImportsController < ApplicationController
       result = WarehouseTransactionImportService.call(file_path, posted: posted)
 
       log.update!(
-        status:          'success',
-        completed_at:    Time.current,
+        status: 'success',
+        completed_at: Time.current,
         records_created: result.imported,
         records_skipped: result.skipped_no_product + result.skipped_unknown_type + result.skipped_duplicate,
-        warnings:        result.errors.any? ? result.errors.join("\n") : nil
+        warnings: result.errors.any? ? result.errors.join("\n") : nil
       )
 
       summary = "Import complete — #{result.imported} imported"
       summary += ", #{result.retagged} re-tagged" if result.retagged > 0
       summary += ", #{result.skipped_no_product} skipped (product not found)" if result.skipped_no_product > 0
       summary += ", #{result.skipped_duplicate} duplicates skipped" if result.skipped_duplicate > 0
-      summary += "."
+      summary += '.'
       summary += " #{result.errors.count} rows had errors." if result.errors.any?
 
       flash[:notice] = summary
-    rescue => e
+    rescue StandardError => e
       log.update!(status: 'failed', completed_at: Time.current, error_message: e.message)
       flash[:alert] = "Import failed: #{e.message}"
     ensure
@@ -82,10 +89,10 @@ class WarehouseTransactionImportsController < ApplicationController
 
   def download
     log = SyncLog.find(params[:log_id])
-    return redirect_to new_warehouse_transaction_import_path, alert: "File not available." if log.file_content.blank?
+    return redirect_to new_warehouse_transaction_import_path, alert: 'File not available.' if log.file_content.blank?
 
     send_data Base64.strict_decode64(log.file_content),
-              type:        'application/vnd.ms-excel',
+              type: 'application/vnd.ms-excel',
               disposition: "attachment; filename=\"#{log.file_name}\""
   end
 end

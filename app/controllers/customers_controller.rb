@@ -1,110 +1,110 @@
 class CustomersController < ApplicationController
   include CsvRoundTrip
   before_action :require_admin!
-    before_action :set_customer, only: [:edit, :update, :destroy]
-  
-    # GET /customers
-    def index
-      if params[:search].present?
-        @customers = Customer.where("name LIKE ?", "%#{params[:search]}%")
-      elsif params[:sort] == 'name'
-        @customers = Customer.order(:name)
+  before_action :set_customer, only: %i[edit update destroy]
+
+  # GET /customers
+  def index
+    @customers = if params[:search].present?
+                   Customer.where('name LIKE ?', "%#{params[:search]}%")
+                 elsif params[:sort] == 'name'
+                   Customer.order(:name)
+                 else
+                   Customer.all
+                 end
+  end
+
+  def show
+    @customer = Customer.find(params[:id])
+  end
+
+  # GET /customers/new
+  def new
+    @customer = Customer.new
+  end
+
+  # POST /customers
+  def create
+    @customer = Customer.new(customer_params)
+    if @customer.save
+      redirect_to @customer, notice: 'Customer was successfully created.'
+    else
+      render :new
+    end
+  end
+
+  # GET /customers/:id/edit
+  def edit
+    @customer = Customer.find(params[:id])
+    @customer.phone_numbers.build if @customer.phone_numbers.empty? # Initialize phone numbers if none exist
+  end
+
+  # PATCH/PUT /customers/:id
+  def update
+    Rails.logger.debug { "Updating customer with params: #{params.inspect}" }
+    @customer = Customer.find(params[:id])
+
+    if @customer.update(customer_params)
+      Rails.logger.debug('Successfully updated customer')
+      redirect_to @customer, notice: 'Customer was successfully updated.'
+    else
+      Rails.logger.debug('Failed to update customer')
+      render :edit
+    end
+  end
+
+  # DELETE /customers/:id
+  def destroy
+    @customer.destroy
+    redirect_to customers_path, notice: 'Customer was successfully deleted.'
+  end
+
+  def search
+    @customers = if params[:query].present?
+                   Customer.joins(:phone_numbers)
+                           .where('phone_numbers.number LIKE ?', "%#{params[:query]}%")
+                           .distinct
+                 else
+                   Customer.none
+                 end
+    render :search # Or a specific view for search results
+  end
+
+  def select2
+    term = params[:q].to_s.strip
+
+    customers =
+      if term.present?
+        Customer.where('LOWER(name) LIKE ?', "%#{term.downcase}%").order(:name).limit(25)
       else
-        @customers = Customer.all
+        Customer.order(:name).limit(25)
       end
-    end    
 
-    def show
-        @customer = Customer.find(params[:id])
-    end
-  
-    # GET /customers/new
-    def new
-      @customer = Customer.new
-    end
-  
-    # POST /customers
-    def create
-        @customer = Customer.new(customer_params)
-        if @customer.save
-          redirect_to @customer, notice: 'Customer was successfully created.'
-        else
-          render :new
-        end
-      end
-  
-    # GET /customers/:id/edit
-    def edit
-      @customer = Customer.find(params[:id])
-      @customer.phone_numbers.build if @customer.phone_numbers.empty?  # Initialize phone numbers if none exist
-    end
-  
-    # PATCH/PUT /customers/:id
-    def update
-      Rails.logger.debug("Updating customer with params: #{params.inspect}")
-      @customer = Customer.find(params[:id])
-      
-      if @customer.update(customer_params)
-        Rails.logger.debug("Successfully updated customer")
-        redirect_to @customer, notice: 'Customer was successfully updated.'
-      else
-        Rails.logger.debug("Failed to update customer")
-        render :edit
-      end
-    end    
-  
-    # DELETE /customers/:id
-    def destroy
-      @customer.destroy
-      redirect_to customers_path, notice: 'Customer was successfully deleted.'
-    end
+    render json: customers.map { |c| { id: c.id, text: c.name } }
+  end
 
-    def search
-      if params[:query].present?
-        @customers = Customer.joins(:phone_numbers)
-                             .where('phone_numbers.number LIKE ?', "%#{params[:query]}%")
-                             .distinct
-      else
-        @customers = Customer.none
-      end
-      render :search # Or a specific view for search results
-    end
+  private
 
-    def select2
-      term = params[:q].to_s.strip
+  def set_customer
+    @customer = Customer.find(params[:id])
+  end
 
-      customers =
-        if term.present?
-          Customer.where("LOWER(name) LIKE ?", "%#{term.downcase}%").order(:name).limit(25)
-        else
-          Customer.order(:name).limit(25)
-        end
+  def customer_params
+    params.require(:customer).permit(:name, :email, :phone, :preferred_contact_method, location_ids: [],
+                                                                                       phone_numbers_attributes: %i[id number _destroy])
+  end
 
-      render json: customers.map { |c| { id: c.id, text: c.name } }
-    end
+  def csv_resource
+    Customer
+  end
 
-  
-    private
-  
-    def set_customer
-      @customer = Customer.find(params[:id])
-    end
-  
-    def customer_params
-      params.require(:customer).permit(:name, :email, :phone, :preferred_contact_method, location_ids: [], phone_numbers_attributes: [:id, :number, :_destroy])
-    end
-
-    def csv_resource
-      Customer
-    end
-
-    def csv_columns
-      [
-        { attr: :id,                       header: 'ID',                       readonly: true  },
-        { attr: :name,                     header: 'Name',                     readonly: false },
-        { attr: :email,                    header: 'Email',                    readonly: false },
-        { attr: :phone,                    header: 'Phone',                    readonly: false },
-        { attr: :preferred_contact_method, header: 'Preferred Contact Method', readonly: false },
-      ]
-    end
-end  
+  def csv_columns
+    [
+      { attr: :id,                       header: 'ID',                       readonly: true  },
+      { attr: :name,                     header: 'Name',                     readonly: false },
+      { attr: :email,                    header: 'Email',                    readonly: false },
+      { attr: :phone,                    header: 'Phone',                    readonly: false },
+      { attr: :preferred_contact_method, header: 'Preferred Contact Method', readonly: false }
+    ]
+  end
+end

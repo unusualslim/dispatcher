@@ -34,6 +34,7 @@ class QuoteMarginReview
     # flagged until rising cost eats into it further).
     def margin_floor_pct
       return target_margin_pct unless target_margin_pct && margin_pct_then
+
       # Prices are rounded to 4 decimals, so a rule-priced line can sit a hair
       # under its target; only a real discount lowers the floor.
       quoted_below_target? ? margin_pct_then : target_margin_pct
@@ -52,6 +53,7 @@ class QuoteMarginReview
       return :reprice if margin_now.negative?
       return :reprice if margin_floor_pct && margin_pct_now < margin_floor_pct - REPRICE_ALLOWANCE_PCT
       return :watch   if cost_change && cost_change > BigDecimal('0.00005')
+
       :ok
     end
   end
@@ -64,7 +66,7 @@ class QuoteMarginReview
                         .where('quotes.expiry_date >= ?', Date.today)
                         .includes(:pricing_rule, product: [:standard_cost_histories, :inventory_cost_histories,
                                                            { product_components: { component_product: :standard_cost_histories } }],
-                                  quote: :customer)
+                                                 quote: :customer)
     scope = scope.where(quotes: { customer_id: customer_id }) if customer_id.present?
     lines = scope.select { |qp| qp.product && %i[active scheduled].include?(qp.lock_status) }.map { |qp| review(qp) }
     lines.sort_by { |l| [STATUS_ORDER[l.status], -(l.margin_erosion || 0)] }
@@ -84,14 +86,14 @@ class QuoteMarginReview
     cost_now  = cost_on(basis, product, Time.current)
 
     line = Line.new(
-      quote_product:     qp,
-      basis:             basis,
-      since:             since,
-      priced_time:       priced,
-      cost_then:         cost_then&.to_d,
-      cost_now:          cost_now&.to_d,
+      quote_product: qp,
+      basis: basis,
+      since: since,
+      priced_time: priced,
+      cost_then: cost_then&.to_d,
+      cost_now: cost_now&.to_d,
       target_margin_pct: target_margin_pct(qp),
-      rule_price_now:    PricingRuleService.rule_lookup(qp.quote.customer_id, product)&.dig(:price),
+      rule_price_now: PricingRuleService.rule_lookup(qp.quote.customer_id, product)&.dig(:price)
     )
     line.drivers = drivers_for(line)
     line
@@ -113,9 +115,11 @@ class QuoteMarginReview
   def self.inventory_cost_on(product, at)
     at = at.end_of_day if at.is_a?(Date)
     return product.cost_per_unit if at >= Time.current
+
     history = product.inventory_cost_histories.sort_by(&:created_at)
     last_before = history.select { |h| h.created_at <= at }.last
     return last_before.amount if last_before
+
     first_after = history.first
     first_after ? first_after.previous_amount : product.cost_per_unit
   end
@@ -124,6 +128,7 @@ class QuoteMarginReview
   def self.target_margin_pct(qp)
     value = qp.rule_value&.to_d
     return nil unless value
+
     case qp.pricing_method
     when 'margin' then value
     when 'markup' then (value / (100 + value) * 100).round(2)
@@ -181,12 +186,16 @@ class QuoteMarginReview
     product.product_components.filter_map do |pc|
       component = pc.component_product
       next unless component
+
       from = component.current_standard_cost(since)
       to   = component.current_standard_cost(Date.today)
       next if from.nil? || to.nil? || from == to
+
       qty = pc.quantity_per_unit.to_d
       Driver.new(label: "#{component.name} (#{number(qty)} #{pc.uom.presence || 'per unit'})",
-                 date: component.standard_cost_histories.find { |h| h.effective_date > since && h.effective_date <= Date.today }&.effective_date,
+                 date: component.standard_cost_histories.find do |h|
+                   h.effective_date > since && h.effective_date <= Date.today
+                 end&.effective_date,
                  from: from, to: to, impact: (to.to_d - from.to_d) * qty)
     end
   end

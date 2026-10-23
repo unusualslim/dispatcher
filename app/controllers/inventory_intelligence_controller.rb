@@ -16,12 +16,14 @@ class InventoryIntelligenceController < ApplicationController
       InventoryIntelligenceMailer.weekly_report(current_user, report).deliver_now
     end
 
-    redirect_to inventory_intelligence_path, notice: "#{report_type.to_s.titleize} report sent to #{current_user.email}."
+    redirect_to inventory_intelligence_path,
+                notice: "#{report_type.to_s.titleize} report sent to #{current_user.email}."
   end
 
   def send_all
     report_type = params[:report_type]&.to_sym || :daily
     InventoryIntelligenceJob.perform_later(report_type.to_s)
-    redirect_to inventory_intelligence_path, notice: "#{report_type.to_s.titleize} report queued for all opted-in recipients."
+    redirect_to inventory_intelligence_path,
+                notice: "#{report_type.to_s.titleize} report queued for all opted-in recipients."
   end
 end

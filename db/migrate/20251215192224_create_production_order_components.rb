@@ -15,8 +15,7 @@ class CreateProductionOrderComponents < ActiveRecord::Migration[7.0]
     end
 
     add_index :production_order_components,
-          [:production_order_id, :position],
-          name: "idx_poc_on_po_id_pos"
+              %i[production_order_id position],
+              name: 'idx_poc_on_po_id_pos'
   end
 end
-
