@@ -68,7 +68,7 @@ class MrpEngine
   def open_production_order_components
     scope = ProductionOrderComponent
             .joins(:production_order)
-            .where(production_orders: { status: %w[pending in_progress] })
+            .where(production_orders: { status: ProductionOrder::OPEN_STATUSES })
             .includes(:product)
     scope = scope.where(production_orders: { location_id: @location_id }) if @location_id
     scope

@@ -70,7 +70,7 @@
             <% if @production_orders.any? %>
               <% @production_orders.each do |po| %>
                 <% badge = case po.status
-                  when "pending" then "bg-secondary"
+                  when "created" then "bg-secondary"
                   when "in_progress" then "bg-warning text-dark"
                   when "completed" then "bg-success"
                   else "bg-secondary"

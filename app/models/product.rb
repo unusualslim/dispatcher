@@ -71,7 +71,7 @@ class Product < ApplicationRecord
       .sum(:quantity)
   end
 
-  # Quantity committed to open production orders (pending or in_progress).
+  # Quantity committed to open production orders (created or in_progress).
   # Uses preloaded value if set by controller bulk query.
   def committed_qty
     return @committed_qty if defined?(@committed_qty)
@@ -79,7 +79,7 @@ class Product < ApplicationRecord
     ProductionOrderComponent
       .joins(:production_order)
       .where(product_id: id)
-      .where(production_orders: { status: %w[pending in_progress] })
+      .where(production_orders: { status: ProductionOrder::OPEN_STATUSES })
       .sum(:quantity)
   end
 

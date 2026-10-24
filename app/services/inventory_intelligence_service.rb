@@ -85,7 +85,7 @@ class InventoryIntelligenceService
     committed = ProductionOrderComponent
                 .joins(:production_order)
                 .where(product_id: product_ids)
-                .where(production_orders: { status: %w[pending in_progress] })
+                .where(production_orders: { status: ProductionOrder::OPEN_STATUSES })
                 .group(:product_id).sum(:quantity)
 
     products.each do |p|

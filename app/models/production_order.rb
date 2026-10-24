@@ -1,5 +1,7 @@
 class ProductionOrder < ApplicationRecord
-  STATUSES = %w[pending in_progress completed].freeze
+  # created: planned, nothing done yet · in_progress: a crew has clocked in · completed: done
+  STATUSES = %w[created in_progress completed].freeze
+  OPEN_STATUSES = %w[created in_progress].freeze
 
   belongs_to :product, optional: true
   belongs_to :customer, optional: true
@@ -89,7 +91,7 @@ class ProductionOrder < ApplicationRecord
   end
 
   def set_default_status
-    self.status ||= 'pending'
+    self.status ||= 'created'
   end
 
   def generate_number

@@ -692,13 +692,13 @@ ProductionOrder.create!(
   production_notes: 'ISO 22241 compliance required. QC sample pulled.'
 )
 
-# Pending production orders
+# Created (not started) production orders
 ProductionOrder.create!(
   item: 'Plus Midgrade – 89 Oct',
   product: products[:plus],
   customer: customers[0], location: dest_locations[0][:location],
   qty_to_make: 4000.000,
-  status: 'pending',
+  status: 'created',
   due_date: today + 3, production_date: today + 2,
   notes: 'Customer requests early morning delivery window 6–8 AM.'
 )
@@ -708,7 +708,7 @@ ProductionOrder.create!(
   product: products[:uls],
   customer: customers[7], location: dest_locations[7][:location],
   qty_to_make: 14_000.000,
-  status: 'pending',
+  status: 'created',
   due_date: today + 3,
   notes: "Large run for Love's 542. Coordinate with dispatch for Trailer 201."
 )
@@ -718,7 +718,7 @@ ProductionOrder.create!(
   product: products[:reg_e10],
   customer: customers[3], location: dest_locations[3][:location],
   qty_to_make: 7000.000,
-  status: 'pending',
+  status: 'created',
   due_date: today + 4,
   notes: 'Verify ethanol blend ratio before loading. Target 10% ethanol.'
 )
@@ -727,7 +727,7 @@ ProductionOrder.create!(
   item: 'Dyed ULS Diesel – Farm Tax Exempt',
   product: products[:dyed_uls],
   qty_to_make: 5000.000,
-  status: 'pending',
+  status: 'created',
   due_date: today + 6,
   notes: 'Spec order – no customer assigned yet. Hold at terminal pending confirmation.'
 )
@@ -737,7 +737,7 @@ ProductionOrder.create!(
   product: products[:regular],
   customer: customers[2], location: dest_locations[2][:location],
   qty_to_make: 6000.000,
-  status: 'pending',
+  status: 'created',
   due_date: today + 5,
   notes: 'Murphy Express Albany – routine order.'
 )

@@ -14,17 +14,6 @@
     </div>
   </div>
   <div class="card-body">
-    <% category_group = journal.costing.product&.reporting_group %>
-    <% if journal.costing.product && !journal.posting_enabled? %>
-      <div class="alert alert-info py-2 small mb-3">
-        Production GL posting is off for
-        <strong><%= category_group&.name || 'products without a category' %></strong>, so PDI handles all
-        posting for this order and nothing will be exported.
-        <% if admin? && category_group %>
-          Turn it on in <%= link_to 'Reporting Groups', reporting_groups_path %>. The entry below is what would post.
-        <% end %>
-      </div>
-    <% end %>
     <% if journal.problems.any? %>
       <div class="alert alert-warning py-2 small">
         <div class="fw-semibold mb-1">Not ready to export:</div>
@@ -78,8 +67,12 @@
         </table>
       </div>
       <p class="small text-muted mb-3">
-        PDI's repack credited <%= number_to_currency(journal.costing.repack_fee_applied) %> to clearing
-        (<%= number_with_delimiter(journal.costing.qty_produced.round(3)) %> × <%= number_to_currency(journal.costing.product.pdi_repack_fee, precision: 4) %>).
+        <% if journal.costing.repack_fee_applied %>
+          PDI's repack credited <%= number_to_currency(journal.costing.repack_fee_applied) %> to clearing
+          (<%= number_with_delimiter(journal.costing.qty_produced.round(3)) %> × <%= number_to_currency(journal.costing.product.pdi_repack_fee, precision: 4) %>).
+        <% else %>
+          Showing absorbed costs only; the repack clearing and variance lines appear once the product has a PDI repack fee.
+        <% end %>
         Supplies and overhead are absorbed at standard, line labor at actual (<%= number_to_currency(journal.costing.labor_rate) %>/hr).
         Uses current standards until the entry is posted.
       </p>

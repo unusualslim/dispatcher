@@ -7,7 +7,7 @@ class GlLedgerTest < ActionDispatch::IntegrationTest
   setup do
     sign_in User.create!(email: 'admin-ledger@example.com', password: 'password123', role: 'admin')
     product = products(:def_finished)
-    ReportingGroup.create!(name: 'DEF', item_type: 'warehouse', post_production_gl: true)
+    ReportingGroup.create!(name: 'DEF', item_type: 'warehouse')
     product.update!(pdi_repack_fee: 0.75, category: 'DEF')
     overhead = ReportingGroup.create!(name: 'Overhead', item_type: 'non_inventory', gl_account: '8005-01')
     product.product_cost_lines.create!(description: 'Supervisor', reporting_group: overhead, unit_cost: 0.0914)

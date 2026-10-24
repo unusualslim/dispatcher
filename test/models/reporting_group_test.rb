@@ -22,11 +22,11 @@ class ReportingGroupTest < ActiveSupport::TestCase
     assert group.reload.update(item_type: 'fuel')
     assert_not group.update(item_type: 'non_inventory')
     assert_not group.reload.update(labor: true)
-    assert group.reload.update(post_production_gl: true)
+    assert group.reload.update(post_inventory_gl: true)
   end
 
-  test 'production GL switch is only for fuel and warehouse categories' do
-    assert_not ReportingGroup.new(name: 'Overhead', item_type: 'non_inventory', post_production_gl: true).valid?
+  test 'inventory GL switch is only for fuel and warehouse categories' do
+    assert_not ReportingGroup.new(name: 'Overhead', item_type: 'non_inventory', post_inventory_gl: true).valid?
   end
 
   test 'cost lines must use a non-inventory group' do

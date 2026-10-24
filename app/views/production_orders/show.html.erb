@@ -25,7 +25,7 @@
         data: { turbo: false } %>
 
   <%# Primary next-step status transition %>
-  <% if @production_order.status == "pending" %>
+  <% if @production_order.status == "created" %>
     <%= button_to "Start Production",
           production_order_path(@production_order, production_order: { status: "in_progress" }),
           method: :patch,
@@ -38,16 +38,16 @@
   <% end %>
 
   <%# Secondary: move back %>
-  <% if @production_order.status != "pending" %>
+  <% if @production_order.status != "created" %>
     <div class="dropstart">
       <button class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
         <i class="bi bi-arrow-counterclockwise"></i>
       </button>
       <ul class="dropdown-menu">
-        <% if @production_order.status != "pending" %>
+        <% if @production_order.status != "created" %>
           <li>
-            <%= button_to "Move to Pending",
-                  production_order_path(@production_order, production_order: { status: "pending" }),
+            <%= button_to "Move to Created",
+                  production_order_path(@production_order, production_order: { status: "created" }),
                   method: :patch,
                   class: "dropdown-item" %>
           </li>
@@ -80,7 +80,7 @@
 
   <%# Status badge %>
   <% status_class = case @production_order.status
-    when "pending"        then "bg-secondary"
+    when "created"        then "bg-secondary"
     when "scheduled"      then "bg-info"
     when "in_progress"    then "bg-warning text-dark"
     when "quality_check"  then "bg-primary"

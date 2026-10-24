@@ -36,7 +36,7 @@ class ReportingGroupsController < ApplicationController
 
   def reporting_group_params
     params.require(:reporting_group)
-          .permit(:name, :item_type, :gl_account, :temp_gl_account, :labor, :post_production_gl)
+          .permit(:name, :item_type, :gl_account, :temp_gl_account, :labor, :post_inventory_gl)
   end
 
   def save_and_redirect(group, notice)

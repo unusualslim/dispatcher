@@ -1,13 +1,13 @@
 def_batch_order:
   number: ABCDEF
-  status: pending
+  status: created
   due_date: <%= Date.today + 7 %>
   qty_to_make: 100.0
   product: def_finished
 
 small_order:
   number: GHIJKL
-  status: pending
+  status: created
   due_date: <%= Date.today + 14 %>
   qty_to_make: 40.0
   product: def_finished

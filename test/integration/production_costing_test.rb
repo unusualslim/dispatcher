@@ -72,8 +72,8 @@ class ProductionCostingTest < ActionDispatch::IntegrationTest
     assert_equal '5100-29', freight.reload.gl_account
 
     def_group = ReportingGroup.create!(name: 'DEF', item_type: 'warehouse')
-    patch reporting_group_path(def_group), params: { reporting_group: { post_production_gl: '1' } }
-    assert def_group.reload.post_production_gl?
+    patch reporting_group_path(def_group), params: { reporting_group: { post_inventory_gl: '1' } }
+    assert def_group.reload.post_inventory_gl?
 
     @product.product_cost_lines.create!(description: 'Pallet', reporting_group: @consumables, unit_cost: 13.40)
     delete reporting_group_path(@consumables)

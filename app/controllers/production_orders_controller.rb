@@ -2,6 +2,7 @@ class ProductionOrdersController < ApplicationController
   before_action :require_admin!
   before_action :authenticate_user!
   before_action :set_production_order, only: %i[show edit update destroy]
+  before_action :drop_placeholder_ids, only: %i[create update]
 
   # GET /production_orders
   # Table view
@@ -189,7 +190,7 @@ class ProductionOrdersController < ApplicationController
   def new
     @production_order = ProductionOrder.new(
       due_date: params[:due_date].present? ? (Date.parse(params[:due_date]) rescue Date.today) : Date.today,
-      status: 'pending',
+      status: 'created',
       product_id: params[:product_id],
       item: params[:item],
       qty_to_make: params[:qty_to_make]
@@ -257,6 +258,17 @@ class ProductionOrdersController < ApplicationController
   end
 
   private
+
+  # The searchable pickers can submit a placeholder (e.g. "#undefined") if a lookup fails;
+  # drop it so the order keeps its current product, customer or location.
+  def drop_placeholder_ids
+    attrs = params[:production_order]
+    return unless attrs
+
+    %i[product_id customer_id location_id].each do |key|
+      attrs.delete(key) if attrs.key?(key) && attrs[key].to_s.match?(/undefined|\A#/)
+    end
+  end
 
   def production_demand_from_customer_orders
     cops = CustomerOrderProduct

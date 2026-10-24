@@ -7,7 +7,7 @@ class LedgerEntryTest < ActiveSupport::TestCase
   setup do
     @user = users(:admin_user)
     @product = products(:def_finished)
-    ReportingGroup.create!(name: 'DEF', item_type: 'warehouse', post_production_gl: true)
+    ReportingGroup.create!(name: 'DEF', item_type: 'warehouse')
     @product.update!(pdi_repack_fee: 0.75, category: 'DEF')
     consumables = ReportingGroup.create!(name: 'Consumables', item_type: 'non_inventory', gl_account: '8002-01')
     labor = ReportingGroup.create!(name: 'Labor', item_type: 'non_inventory', labor: true, gl_account: '8003-01',

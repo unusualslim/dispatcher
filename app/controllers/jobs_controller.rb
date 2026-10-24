@@ -4,7 +4,7 @@ class JobsController < ApplicationController
 
   def line
     @line_workers = User.line_workers.order(:first_name, :last_name)
-    @production_orders = ProductionOrder.where(status: %w[pending in_progress]).order(:number)
+    @production_orders = ProductionOrder.where(status: ProductionOrder::OPEN_STATUSES).order(:number)
     @job_types = Job::JOB_TYPES
     @active_job = Job.active.order(started_at: :desc).first
   end

@@ -143,7 +143,7 @@ class RepackBatchImportService
       wh_name       = null_safe(first[COL_WAREHOUSE_NAME])
       location      = locations_by_name[wh_name.to_s.strip.downcase] if wh_name
 
-      po_status = status == 'Posted' ? 'completed' : 'pending'
+      po_status = status == 'Posted' ? 'completed' : 'created'
 
       notes = "[PDI Historical Import] #{null_safe(first[COL_BATCH_DESC])}"
       notes += " | Source: #{batch_source}" if batch_source

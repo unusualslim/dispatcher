@@ -100,7 +100,12 @@
                name="production_order[product_id]"
                value="<%= @production_order.product_id %>">
 
-        <select id="product_search" class="form-select"></select>
+        <%# Current value rendered server-side so the picker never depends on a lookup %>
+        <select id="product_search" class="form-select">
+          <% if (product = @production_order.product) %>
+            <option value="<%= product.id %>" selected><%= "#{product.name} (#{product.id})" %></option>
+          <% end %>
+        </select>
       </div>
 
       <div class="col-md-4">
@@ -111,7 +116,11 @@
                name="production_order[customer_id]"
                value="<%= @production_order.customer_id %>">
 
-        <select id="customer_search" class="form-select"></select>
+        <select id="customer_search" class="form-select">
+          <% if (customer = @production_order.customer) %>
+            <option value="<%= customer.id %>" selected><%= customer.name %></option>
+          <% end %>
+        </select>
       </div>
 
       <div class="col-md-4">
@@ -151,7 +160,11 @@
                name="production_order[location_id]"
                value="<%= @production_order.location_id %>">
 
-        <select id="location_search" class="form-select"></select>
+        <select id="location_search" class="form-select">
+          <% if (location = @production_order.location) %>
+            <option value="<%= location.id %>" selected><%= location.city_with_company %></option>
+          <% end %>
+        </select>
       </div>
 
       <div class="col-md-4">
@@ -302,7 +315,6 @@ document.addEventListener("turbo:load", function () {
     if ($select.data("select2")) {
       $select.select2("destroy");
       $select.off();
-      $select.empty();
     }
 
     $select.select2({
@@ -332,14 +344,16 @@ document.addEventListener("turbo:load", function () {
       hidden.value = this.value || "";
     });
 
-    // ✅ PREFILL: inject selected option so Select2 displays it
+    // PREFILL: the current option is normally rendered server-side; only look it up if it's missing,
+    // and never touch the hidden value unless the lookup returns that same record.
     var existingId = hidden.value;
-    if (existingId) {
+    var hasOption = Array.prototype.some.call($select[0].options, function (o) { return o.value === existingId; });
+    if (existingId && !hasOption) {
       fetch(prefillUrl(existingId), { headers: { "Accept": "application/json" } })
-        .then(function (r) { return r.json(); })
+        .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
         .then(function (obj) {
-          var text = textFromJson(obj) || ("#" + obj.id);
-          var option = new Option(text, obj.id, true, true);
+          if (!obj || String(obj.id) !== String(existingId)) return;
+          var option = new Option(textFromJson(obj) || ("#" + obj.id), obj.id, true, true);
           $select.append(option).trigger("change");
         })
         .catch(function (e) {

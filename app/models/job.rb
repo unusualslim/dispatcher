@@ -9,6 +9,9 @@ class Job < ApplicationRecord
   validates :job_type, inclusion: { in: JOB_TYPES }
   validates :started_at, presence: true
 
+  # The first clock-in starts a created production order.
+  after_create -> { production_order.update!(status: 'in_progress') if production_order.status == 'created' }
+
   scope :active, -> { where(ended_at: nil) }
   scope :completed, -> { where.not(ended_at: nil) }
 

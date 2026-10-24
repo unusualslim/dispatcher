@@ -8,8 +8,9 @@
   arrives with a new category, and their names can't change because products link to them by name.
   <strong>Non-inventory</strong> groups hold the BOM cost lines absorbed into production; Labor groups are
   absorbed at actual /line hours, with temp workers' hours posting to the temp account.
-  <strong>Post production GL</strong> on a fuel or warehouse category means production orders for its products get
-  the app's FPST journal; leave it off and PDI handles everything for that category.
+  <strong>Post inventory GL</strong> on a fuel or warehouse category will hand that category's inventory, COGS and
+  sales posting from PDI to the app. That isn't built yet, so it has no effect today: PDI posts the inventory side for
+  every category. Production costing (the FPST journal) posts for every production order regardless.
   Enter accounts as Major-Sub (e.g. <code>6110-01</code>); the production location adds the site.
 </p>
 
@@ -31,7 +32,7 @@
               <th>Name</th>
               <% unless non_inventory %>
                 <th style="width: 150px;">Item Type</th>
-                <th class="text-center" style="width: 110px;">Post production GL</th>
+                <th class="text-center" style="width: 110px;" title="App posts this category's inventory, COGS and sales instead of PDI (not built yet)">Post inventory GL</th>
               <% end %>
               <th style="width: 150px;">GL Account</th>
               <% if non_inventory %>
@@ -63,9 +64,9 @@
                                    form: form_id, class: 'form-select form-select-sm' %>
                   </td>
                   <td class="text-center">
-                    <%= hidden_field_tag 'reporting_group[post_production_gl]', '0', form: form_id, id: nil %>
-                    <%= check_box_tag 'reporting_group[post_production_gl]', '1', group.post_production_gl?, form: form_id,
-                                                                                                         class: 'form-check-input', id: "post_gl_#{group.id}" %>
+                    <%= hidden_field_tag 'reporting_group[post_inventory_gl]', '0', form: form_id, id: nil %>
+                    <%= check_box_tag 'reporting_group[post_inventory_gl]', '1', group.post_inventory_gl?, form: form_id,
+                                                                                                         class: 'form-check-input', id: "post_inventory_gl_#{group.id}" %>
                   </td>
                 <% end %>
                 <td><%= text_field_tag 'reporting_group[gl_account]', group.gl_account, form: form_id, class: 'form-control form-control-sm font-monospace', placeholder: 'Major-Sub' %></td>

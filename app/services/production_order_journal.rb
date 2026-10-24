@@ -50,12 +50,6 @@ class ProductionOrderJournal
     production_order.location&.pdi_site_code
   end
 
-  # The finished good's fuel/warehouse category must have production GL posting turned on;
-  # otherwise PDI handles everything for this order.
-  def posting_enabled?
-    costing.product&.reporting_group&.post_production_gl? || false
-  end
-
   def lines
     @lines ||= build_lines
   end
@@ -74,7 +68,7 @@ class ProductionOrderJournal
   end
 
   def ready?
-    posting_enabled? && problems.empty?
+    problems.empty?
   end
 
   def full_account(major_sub)
@@ -85,18 +79,22 @@ class ProductionOrderJournal
 
   private
 
+  # Cost lines always show (it's the order's costing); clearing and variance need the repack fee
+  # and a quantity produced.
   def build_lines
-    return [] unless costing.repack_fee_applied && costing.qty_produced.positive?
+    credits = (standard_credits + labor_credits).reject { |l| l.credit.zero? }
+    return credits unless costing.repack_fee_applied&.positive?
 
     clearing = role_line('repack_clearing', 'Clear PDI repack fee', debit: costing.repack_fee_applied)
-    credits = (standard_credits + labor_credits).reject { |l| l.credit.zero? }
     [clearing, *credits, variance_line(clearing, credits)].compact
   end
+
+  NO_QUANTITY = 'No quantity produced: enter Total Qty Produced on the order (Edit) or add a batch'.freeze
 
   def costing_problems
     return ['No product linked'] unless costing.product
 
-    [('No quantity produced' unless costing.qty_produced.positive?),
+    [(NO_QUANTITY unless costing.qty_produced.positive?),
      ('Product has no PDI repack fee' unless costing.repack_fee_applied)].compact
   end
 

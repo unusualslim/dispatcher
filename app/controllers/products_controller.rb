@@ -35,7 +35,7 @@ class ProductsController < ApplicationController
         FROM production_order_components poc
         JOIN production_orders pro ON pro.id = poc.production_order_id
         WHERE poc.product_id = products.id
-          AND pro.status IN ('pending','in_progress')
+          AND pro.status IN ('created','in_progress')
       ), 0)
     SQL
 
@@ -91,7 +91,7 @@ class ProductsController < ApplicationController
     committed_map = ProductionOrderComponent
                     .joins(:production_order)
                     .where(product_id: product_ids)
-                    .where(production_orders: { status: %w[pending in_progress] })
+                    .where(production_orders: { status: ProductionOrder::OPEN_STATUSES })
                     .group(:product_id)
                     .sum(:quantity)
 

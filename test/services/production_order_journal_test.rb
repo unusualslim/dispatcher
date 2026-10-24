@@ -6,7 +6,7 @@ class ProductionOrderJournalTest < ActiveSupport::TestCase
   setup do
     @user = users(:admin_user)
     @product = products(:def_finished)
-    @category = ReportingGroup.create!(name: 'DEF', item_type: 'warehouse', post_production_gl: true)
+    @category = ReportingGroup.create!(name: 'DEF', item_type: 'warehouse')
     @product.update!(pdi_repack_fee: 0.75, category: 'DEF')
     @consumables = ReportingGroup.create!(name: 'Consumables', item_type: 'non_inventory', gl_account: '6990-01')
     @labor = ReportingGroup.create!(name: 'Labor', item_type: 'non_inventory', labor: true, gl_account: '6100-12',
@@ -50,14 +50,12 @@ class ProductionOrderJournalTest < ActiveSupport::TestCase
     assert_equal 691.15, journal.lines.last.credit
   end
 
-  test 'categories with production GL off are left to PDI' do
-    @category.update!(post_production_gl: false)
+  test 'costing posts whether or not the category posts its inventory GL' do
     clock(20)
-    journal = ProductionOrderJournal.new(@po)
+    assert ProductionOrderJournal.new(@po).ready?
 
-    assert_not journal.posting_enabled?
-    assert_not journal.ready?
-    assert journal.lines.any?, 'still previews what would post'
+    @category.update!(post_inventory_gl: true)
+    assert ProductionOrderJournal.new(@po).ready?
   end
 
   test 'unfavorable variance is a debit' do
@@ -91,11 +89,23 @@ class ProductionOrderJournalTest < ActiveSupport::TestCase
     assert_includes problems, 'No GL account set for: Overhead, Production variance'
   end
 
-  test 'no lines without a repack fee' do
-    @product.update!(pdi_repack_fee: nil)
+  test 'without a quantity produced only actual labor shows' do
+    @po.update!(total_qty_produced: nil)
+    clock(20)
     journal = ProductionOrderJournal.new(@po)
 
-    assert_empty journal.lines
+    assert_equal ['Labor (Full-time)'], journal.lines.map(&:posting)
+    assert(journal.problems.any? { |p| p.start_with?('No quantity produced') })
+  end
+
+  test 'without a repack fee the costs still show but nothing is ready to post' do
+    @product.update!(pdi_repack_fee: nil)
+    clock(20)
+    journal = ProductionOrderJournal.new(@po)
+
+    assert_equal %w[Consumables Overhead], journal.lines.first(2).map(&:posting)
+    assert_not(journal.lines.any? { |l| l.posting == 'Repack fee clearing' })
     assert_includes journal.problems, 'Product has no PDI repack fee'
+    assert_not journal.ready?
   end
 end
