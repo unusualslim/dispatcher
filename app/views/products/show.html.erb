@@ -289,21 +289,37 @@
         <hr class="my-4">
         <h6 class="mb-1">Non-Inventory Costs</h6>
         <p class="small text-muted mb-2">
-          Consumables, labor and overhead absorbed per unit: qty × cost ÷ per. The reporting group decides the GL account.
-          Labor lines use the labor rate (<%= number_to_currency(AppSetting.labor_rate) %>/hr<%= link_to ' change', edit_costing_settings_path if admin? %>);
-          enter hours as qty and units per worker-hour as "per".
+          Costs absorbed into each unit of this product that aren't inventory items. Each line works out to
+          <strong>Qty × Unit Cost ÷ Per</strong> per unit, and its reporting group decides the GL account.
         </p>
+        <ul class="small text-muted mb-3">
+          <li><strong>Pallet</strong>: Qty 1 × Unit Cost $13.40 ÷ Per 80 (cases on a pallet) = $0.1675 per case</li>
+          <li><strong>Tape</strong>: Qty 30 (inches per case) × Unit Cost $21.09 (a roll) ÷ Per 35,984 (inches on a roll) = $0.0176</li>
+          <li><strong>Labor</strong> (Labor group): Qty 1 (hour) ÷ Per 134 (cases one worker fills per hour). Unit Cost comes from the
+            labor rate, <%= number_to_currency(AppSetting.labor_rate) %>/hr<%= link_to ' (change)', edit_costing_settings_path if admin? %>.</li>
+        </ul>
+
+        <div class="d-flex gap-2 align-items-end small text-muted fw-semibold mb-1" aria-hidden="true">
+          <div style="flex: 1; min-width: 160px;">Description</div>
+          <div style="width: 150px;">Reporting Group</div>
+          <div style="width: 110px;" title="How many of the item one unit uses (e.g. 30 inches of tape, 1 hour of labor)">Qty</div>
+          <div style="width: 120px;" title="Price of the item as bought (a pallet, a roll)">Unit Cost</div>
+          <div style="width: 110px;" title="How many units that cost covers (cases per pallet, inches per roll, cases per worker-hour)">Per</div>
+          <div style="width: 90px;" class="text-end">Cost / unit</div>
+          <div style="width: 80px;"></div>
+        </div>
 
         <div id="cost-line-rows" class="d-flex flex-column gap-2">
           <%= f.fields_for :product_cost_lines do |cl| %>
-            <div class="d-flex gap-2 align-items-center">
+            <div class="d-flex gap-2 align-items-center" data-cost-line-row="1">
               <%= cl.hidden_field :id if cl.object&.persisted? %>
-              <%= cl.text_field :description, class: "form-control", placeholder: "Description" %>
-              <%= cl.collection_select :reporting_group_id, ReportingGroup.non_inventory.ordered, :id, :name, {}, class: "form-select", style: "max-width: 150px;", title: "Reporting group" %>
-              <%= cl.number_field :quantity, step: "any", class: "form-control", style: "max-width: 110px;", placeholder: "Qty", title: "Qty" %>
-              <%= cl.number_field :unit_cost, step: "any", class: "form-control", style: "max-width: 120px;", placeholder: "Cost", title: "Unit cost" %>
-              <%= cl.number_field :per_quantity, step: "any", class: "form-control", style: "max-width: 110px;", placeholder: "Per", title: "Per (units covered)" %>
-              <div class="form-check ms-1">
+              <%= cl.text_field :description, class: "form-control", style: "flex: 1; min-width: 160px;", placeholder: "e.g. Pallet", "aria-label": "Description" %>
+              <%= cl.collection_select :reporting_group_id, ReportingGroup.non_inventory.ordered, :id, :name, {}, class: "form-select", style: "width: 150px;", "aria-label": "Reporting group" %>
+              <%= cl.number_field :quantity, step: "any", class: "form-control", style: "width: 110px;", placeholder: "Qty", "aria-label": "Qty" %>
+              <%= cl.number_field :unit_cost, step: "any", class: "form-control", style: "width: 120px;", placeholder: "Unit cost", "aria-label": "Unit cost" %>
+              <%= cl.number_field :per_quantity, step: "any", class: "form-control", style: "width: 110px;", placeholder: "Per", "aria-label": "Per" %>
+              <div style="width: 90px;" class="text-end small" data-cost-per-unit></div>
+              <div class="form-check ms-1" style="width: 80px;">
                 <%= cl.check_box :_destroy, class: "form-check-input" %>
                 <%= cl.label :_destroy, "Remove", class: "form-check-label small" %>
               </div>
@@ -330,7 +346,8 @@
 </div>
 
 <script>
-  window.costLineGroups = <%= ReportingGroup.non_inventory.ordered.map { |g| { id: g.id, name: g.name } }.to_json.html_safe %>;
+  window.costLineGroups = <%= ReportingGroup.non_inventory.ordered.map { |g| { id: g.id, name: g.name, labor: g.labor? } }.to_json.html_safe %>;
+  window.laborRate = <%= AppSetting.labor_rate.to_f %>;
 </script>
 
 <script>
@@ -418,18 +435,50 @@ document.addEventListener("turbo:load", function () {
       opt.textContent = g.name;
       return opt.outerHTML;
     }).join('');
-    var html = '<div class="d-flex gap-2 align-items-center">' +
-      '<input class="form-control" type="text" placeholder="Description" name="' + base + '[description]" />' +
-      '<select class="form-select" style="max-width: 150px;" title="Reporting group" name="' + base + '[reporting_group_id]">' + groups + '</select>' +
-      '<input class="form-control" style="max-width: 110px;" type="number" step="any" placeholder="Qty" value="1" name="' + base + '[quantity]" />' +
-      '<input class="form-control" style="max-width: 120px;" type="number" step="any" placeholder="Cost" name="' + base + '[unit_cost]" />' +
-      '<input class="form-control" style="max-width: 110px;" type="number" step="any" placeholder="Per" value="1" name="' + base + '[per_quantity]" />' +
-      '<div class="form-check ms-1">' +
+    var html = '<div class="d-flex gap-2 align-items-center" data-cost-line-row="1">' +
+      '<input class="form-control" style="flex: 1; min-width: 160px;" type="text" placeholder="e.g. Pallet" aria-label="Description" name="' + base + '[description]" />' +
+      '<select class="form-select" style="width: 150px;" aria-label="Reporting group" name="' + base + '[reporting_group_id]">' + groups + '</select>' +
+      '<input class="form-control" style="width: 110px;" type="number" step="any" placeholder="Qty" aria-label="Qty" value="1" name="' + base + '[quantity]" />' +
+      '<input class="form-control" style="width: 120px;" type="number" step="any" placeholder="Unit cost" aria-label="Unit cost" name="' + base + '[unit_cost]" />' +
+      '<input class="form-control" style="width: 110px;" type="number" step="any" placeholder="Per" aria-label="Per" value="1" name="' + base + '[per_quantity]" />' +
+      '<div style="width: 90px;" class="text-end small" data-cost-per-unit></div>' +
+      '<div class="form-check ms-1" style="width: 80px;">' +
         '<input class="form-check-input" type="checkbox" value="1" name="' + base + '[_destroy]" />' +
         '<label class="form-check-label small">Remove</label>' +
       '</div>' +
     '</div>';
     container.insertAdjacentHTML("beforeend", html);
+    refreshCostLine(container.lastElementChild);
+  });
+});
+
+// Live Cost / unit for each line; Labor-group lines take their unit cost from the labor rate.
+function refreshCostLine(row) {
+  var field = function (attr) { return row.querySelector('[name$="[' + attr + ']"]'); };
+  var group = window.costLineGroups.find(function (g) { return String(g.id) === field('reporting_group_id').value; });
+  var labor = group && group.labor;
+  var unitCost = field('unit_cost');
+  unitCost.disabled = !!labor;
+  unitCost.placeholder = labor ? '$' + window.laborRate.toFixed(2) + '/hr' : 'Unit cost';
+  if (labor) unitCost.value = '';
+
+  var qty = parseFloat(field('quantity').value), per = parseFloat(field('per_quantity').value);
+  var cost = labor ? window.laborRate : parseFloat(unitCost.value);
+  var out = row.querySelector('[data-cost-per-unit]');
+  out.textContent = (qty > 0 && per > 0 && cost >= 0) ? '$' + (qty * cost / per).toFixed(4) : '';
+}
+
+document.addEventListener("turbo:load", function () {
+  var container = document.getElementById("cost-line-rows");
+  if (!container) return;
+  container.querySelectorAll('[data-cost-line-row]').forEach(refreshCostLine);
+  if (container.dataset.calcBound) return;
+  container.dataset.calcBound = "1";
+  ['input', 'change'].forEach(function (evt) {
+    container.addEventListener(evt, function (e) {
+      var row = e.target.closest('[data-cost-line-row]');
+      if (row) refreshCostLine(row);
+    });
   });
 });
 </script>
