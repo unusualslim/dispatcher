@@ -31,6 +31,13 @@
 
 en:
   hello: "Hello world"
+  activerecord:
+    errors:
+      models:
+        quality_result:
+          attributes:
+            passed:
+              inclusion: "must be Pass or Fail"
   access:
     denied: "You don't have access to that page."
   costing_settings:
@@ -48,6 +55,11 @@ en:
       deleted: "Deleted %{name}."
   production_orders:
     voided_read_only: "This production order is voided and can't be changed."
+    record_quality:
+      not_in_qc: "Quality checks are recorded while the order is in Quality Check."
+      recorded:
+        one: "Recorded 1 quality check."
+        other: "Recorded %{count} quality checks."
     void:
       voided: "Production order %{number} voided; its inventory and any posted GL entry were reversed."
   purchase_orders:
@@ -65,6 +77,9 @@ en:
       self: "You can't deactivate yourself."
     reactivate:
       reactivated: "%{name} is active again."
+  quality_exceptions:
+    review:
+      reviewed: "Quality exception reviewed."
   jobs:
     update:
       updated: "Clock times updated; labor costing uses the new hours."

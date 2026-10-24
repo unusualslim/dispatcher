@@ -331,6 +331,59 @@
           + Add Cost
         </button>
 
+        <hr class="my-4">
+        <h6 class="mb-1">Quality Checks</h6>
+        <p class="small text-muted mb-2">
+          Tests recorded on every production order of this product before it can be completed. <strong>Numeric</strong>
+          checks have a target range (e.g. pH 9.5 to 10.5; leave min or max blank for a one-sided limit).
+          <strong>Pass/Fail</strong> checks compare against an expected description (e.g. Appearance: clear and free from
+          suspended matter).
+        </p>
+        <div class="d-flex gap-2 small text-muted fw-semibold mb-1" aria-hidden="true">
+          <div style="width: 130px;">Section</div>
+          <div style="flex: 1; min-width: 140px;">Check</div>
+          <div style="width: 120px;">Method</div>
+          <div style="width: 115px;">Type</div>
+          <div style="width: 90px;">Unit</div>
+          <div style="width: 95px;">Min</div>
+          <div style="width: 95px;">Max</div>
+          <div style="flex: 1; min-width: 140px;">Expected (Pass/Fail)</div>
+          <div style="width: 80px;"></div>
+        </div>
+        <div id="quality-spec-rows" class="d-flex flex-column gap-2">
+          <%= f.fields_for :quality_specs do |qs| %>
+            <div class="d-flex gap-2 align-items-center">
+              <%= qs.hidden_field :id if qs.object&.persisted? %>
+              <%= qs.text_field :section, class: "form-control", style: "width: 130px;", placeholder: "Optional", "aria-label": "Section",
+                                          list: "quality-sections" %>
+              <%= qs.text_field :name, class: "form-control", style: "flex: 1; min-width: 140px;", placeholder: "e.g. pH", "aria-label": "Check" %>
+              <%= qs.text_field :test_method, class: "form-control", style: "width: 120px;", placeholder: "e.g. ASTM D1293", "aria-label": "Method" %>
+              <%= qs.select :result_type, QualitySpec::RESULT_TYPES.invert, {}, class: "form-select", style: "width: 115px;", "aria-label": "Type" %>
+              <%= qs.text_field :unit, class: "form-control", style: "width: 90px;", placeholder: "e.g. cSt", "aria-label": "Unit" %>
+              <%= qs.number_field :target_min, step: "any", class: "form-control", style: "width: 95px;", "aria-label": "Target min" %>
+              <%= qs.number_field :target_max, step: "any", class: "form-control", style: "width: 95px;", "aria-label": "Target max" %>
+              <%= qs.text_field :expected, class: "form-control", style: "flex: 1; min-width: 140px;", placeholder: "e.g. Clear", "aria-label": "Expected" %>
+              <div class="form-check ms-1" style="width: 80px;">
+                <%= qs.check_box :_destroy, class: "form-check-input" %>
+                <%= qs.label :_destroy, "Remove", class: "form-check-label small" %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+        <datalist id="quality-sections">
+          <% (QualitySpec.distinct.where.not(section: [nil, '']).pluck(:section) | ['Chemical Properties', 'Elemental Analysis', 'Physical Properties']).sort.each do |section| %>
+            <option value="<%= section %>"></option>
+          <% end %>
+        </datalist>
+        <button type="button" class="btn btn-sm btn-outline-secondary mt-3" id="add-quality-spec-row">
+          + Add Check
+        </button>
+        <div class="mt-3" style="max-width: 520px;">
+          <%= f.label :coa_note, "Certificate note", class: "form-label small mb-1" %>
+          <%= f.text_field :coa_note, class: "form-control", placeholder: "e.g. Methods based on ISO 22241-2" %>
+          <div class="form-text">Printed under the results on this product's Certificate of Analysis.</div>
+        </div>
+
         <div class="mt-3" style="max-width: 260px;">
           <%= f.label :pdi_repack_fee, "PDI Repack Fee (per unit)", class: "form-label small mb-1" %>
           <%= f.number_field :pdi_repack_fee, step: "any", class: "form-control" %>
@@ -338,7 +391,7 @@
         </div>
 
         <div class="mt-3">
-          <%= f.submit "Save BOM & Costs", class: "btn btn-primary" %>
+          <%= f.submit "Save BOM, Costs & Checks", class: "btn btn-primary" %>
         </div>
       <% end %>
     </div>
@@ -449,6 +502,29 @@ document.addEventListener("turbo:load", function () {
     '</div>';
     container.insertAdjacentHTML("beforeend", html);
     refreshCostLine(container.lastElementChild);
+  });
+});
+
+document.addEventListener("turbo:load", function () {
+  var container = document.getElementById("quality-spec-rows");
+  var addBtn    = document.getElementById("add-quality-spec-row");
+  if (!container || !addBtn || addBtn.dataset.bound) return;
+  addBtn.dataset.bound = "1";
+  addBtn.addEventListener("click", function () {
+    var idx = container.querySelectorAll('[name$="[name]"]').length + Date.now();
+    var base = 'product[quality_specs_attributes][' + idx + ']';
+    container.insertAdjacentHTML("beforeend",
+      '<div class="d-flex gap-2 align-items-center">' +
+        '<input class="form-control" style="width: 130px;" type="text" placeholder="Optional" aria-label="Section" list="quality-sections" name="' + base + '[section]" />' +
+        '<input class="form-control" style="flex: 1; min-width: 140px;" type="text" placeholder="e.g. pH" aria-label="Check" name="' + base + '[name]" />' +
+        '<input class="form-control" style="width: 120px;" type="text" placeholder="e.g. ASTM D1293" aria-label="Method" name="' + base + '[test_method]" />' +
+        '<select class="form-select" style="width: 115px;" aria-label="Type" name="' + base + '[result_type]"><option value="numeric">Numeric</option><option value="pass_fail">Pass/Fail</option></select>' +
+        '<input class="form-control" style="width: 90px;" type="text" placeholder="e.g. cSt" aria-label="Unit" name="' + base + '[unit]" />' +
+        '<input class="form-control" style="width: 95px;" type="number" step="any" aria-label="Target min" name="' + base + '[target_min]" />' +
+        '<input class="form-control" style="width: 95px;" type="number" step="any" aria-label="Target max" name="' + base + '[target_max]" />' +
+        '<input class="form-control" style="flex: 1; min-width: 140px;" type="text" placeholder="e.g. Clear" aria-label="Expected" name="' + base + '[expected]" />' +
+        '<div style="width: 80px;"></div>' +
+      '</div>');
   });
 });
 

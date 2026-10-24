@@ -22,7 +22,7 @@ class ProductionOrderTest < ActiveSupport::TestCase
   end
 
   test 'completing stamps the completion date' do
-    po = ProductionOrder.create!
+    po = ProductionOrder.create!(status: 'quality_check', total_qty_produced: 10)
     po.update!(status: 'completed')
 
     assert_equal Time.zone.today, po.date_completed

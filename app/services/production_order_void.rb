@@ -12,17 +12,10 @@ class ProductionOrderVoid
     raise ArgumentError, 'Give a reason for voiding' if @reason.blank?
 
     @order.with_lock do
-      InventoryReversal.reverse!(batch_moves, source: @order, reference: @order.number, user: @user)
+      ProductionOrderInventory.reverse!(@order, @user)
       LedgerEntry.active_for(@order)&.reverse!(@user)
       @order.jobs.active.find_each(&:clock_out!)
       @order.update!(status: 'voided', voided_at: Time.current, voided_by: @user, void_reason: @reason)
     end
-  end
-
-  private
-
-  def batch_moves
-    InventoryTransaction.where(transactable_type: 'ProductionOrderBatch',
-                               transactable_id: @order.production_order_batches.ids)
   end
 end

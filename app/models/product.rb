@@ -11,6 +11,7 @@ class Product < ApplicationRecord
   has_many :component_products, through: :product_components, source: :component_product
   has_many :component_of, class_name: 'ProductComponent', foreign_key: :component_product_id
   has_many :product_cost_lines, -> { order(:position, :id) }, dependent: :destroy
+  has_many :quality_specs, -> { order(:position, :id) }, dependent: :destroy
   # PDI's reporting group for the product, matched by category name (fuel or warehouse).
   belongs_to :reporting_group, foreign_key: :category, primary_key: :name, optional: true, inverse_of: :products
 
@@ -26,6 +27,7 @@ class Product < ApplicationRecord
 
   accepts_nested_attributes_for :product_components, allow_destroy: true, reject_if: :all_blank
   accepts_nested_attributes_for :product_cost_lines, allow_destroy: true, reject_if: ->(a) { a['description'].blank? }
+  accepts_nested_attributes_for :quality_specs, allow_destroy: true, reject_if: ->(a) { a['name'].blank? }
 
   validates :name, presence: true
   validates :id, presence: true

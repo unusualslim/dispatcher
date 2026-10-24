@@ -1,0 +1,89 @@
+<%# Quality checks for this order against its product's specs. Locals: production_order %>
+<% specs = production_order.product&.quality_specs.to_a || [] %>
+<% results = production_order.quality_results.includes(:tested_by, :reviewed_by).index_by(&:quality_spec_id) %>
+<% editable = production_order.status == 'quality_check' && can?(:production, :edit) %>
+<div class="card shadow-sm mt-3" id="quality-check">
+  <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+    Quality Check
+    <span class="small fw-normal d-flex align-items-center gap-2">
+      <% if production_order.lot_number.present? %><span>Lot <strong><%= production_order.lot_number %></strong></span><% end %>
+      <% if results.any? %>
+        <%= link_to quality_certificate_production_order_path(production_order), class: 'btn btn-sm btn-outline-secondary', target: '_blank', rel: 'noopener' do %>
+          <i class="bi bi-printer"></i> Print
+        <% end %>
+      <% end %>
+    </span>
+  </div>
+  <div class="card-body">
+    <% if specs.empty? && results.empty? %>
+      <p class="text-muted small mb-0">
+        No quality checks are defined for this product.
+        <%= link_to 'Add them on the product page', product_path(production_order.product) if production_order.product %>
+      </p>
+    <% else %>
+      <% if production_order.status.in?(%w[created in_progress]) %>
+        <p class="small text-muted">Results are recorded once the order is sent to Quality Check.</p>
+      <% end %>
+      <%= form_with url: record_quality_production_order_path(production_order), method: :patch, local: true do %>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-2">
+            <thead class="table-light">
+              <tr><th>Check</th><th>Method</th><th>Target</th><th style="width: 150px;">Result</th><th>Notes</th><th></th></tr>
+            </thead>
+            <tbody>
+              <% specs.each_with_index do |spec, i| %>
+                <% if spec.section.present? && spec.section != specs[i - 1]&.section || (i.zero? && spec.section.present?) %>
+                  <tr class="table-light"><td colspan="6" class="small fw-semibold"><%= spec.section %></td></tr>
+                <% end %>
+                <% result = results[spec.id] %>
+                <tr class="<%= 'table-warning' if result && !result.in_range %>">
+                  <td><%= spec.name %></td>
+                  <td class="text-muted small"><%= spec.test_method %></td>
+                  <td class="text-muted small"><%= result&.target_label || spec.target_label %></td>
+                  <td>
+                    <% if editable && spec.pass_fail? %>
+                      <%= select_tag "results[#{spec.id}][value]",
+                                     options_for_select([['—', ''], %w[Pass pass], %w[Fail fail]], result && (result.passed ? 'pass' : 'fail')),
+                                     class: 'form-select form-select-sm', "aria-label": "#{spec.name} result" %>
+                    <% elsif editable %>
+                      <div class="input-group input-group-sm">
+                        <%= text_field_tag "results[#{spec.id}][value]", result && result.display_value.delete_suffix(" #{spec.unit}").strip,
+                                           class: 'form-control', inputmode: 'decimal', placeholder: 'e.g. 9.8 or < 0.5',
+                                           "aria-label": "#{spec.name} result" %>
+                        <% if spec.unit.present? %><span class="input-group-text"><%= spec.unit %></span><% end %>
+                      </div>
+                    <% else %>
+                      <%= result ? result.display_value : '—' %>
+                    <% end %>
+                  </td>
+                  <td>
+                    <% if editable %>
+                      <%= text_field_tag "results[#{spec.id}][notes]", result&.notes, class: 'form-control form-control-sm', placeholder: 'Optional' %>
+                    <% else %>
+                      <span class="small"><%= result&.notes %></span>
+                    <% end %>
+                  </td>
+                  <td class="small text-nowrap">
+                    <% if result %>
+                      <span class="badge bg-<%= result.in_range ? 'success' : 'danger' %>"><%= result.in_range ? 'In range' : 'Out of range' %></span>
+                      <% if !result.in_range %>
+                        <span class="badge <%= result.reviewed? ? 'bg-secondary' : 'bg-warning text-dark' %>"><%= result.reviewed? ? 'Reviewed' : 'Needs review' %></span>
+                      <% end %>
+                      <div class="text-muted"><%= result.tested_by&.full_name %> · <%= result.tested_at.strftime('%m/%d %I:%M %p') %></div>
+                    <% else %>
+                      <span class="text-muted">Not recorded</span>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+        <% if editable %>
+          <%= submit_tag 'Save Results', class: 'btn btn-primary btn-sm' %>
+          <span class="small text-muted ms-2">Out-of-range results can still be completed; they go to Quality Exceptions for review.</span>
+        <% end %>
+      <% end %>
+    <% end %>
+  </div>
+</div>

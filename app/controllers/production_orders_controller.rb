@@ -1,7 +1,7 @@
 class ProductionOrdersController < ApplicationController
   permission_area :production
   before_action :authenticate_user!
-  before_action :set_production_order, only: %i[show edit update destroy void]
+  before_action :set_production_order, only: %i[show edit update destroy void record_quality quality_certificate]
   before_action :require_admin!, only: :void
   before_action :keep_voided_read_only, only: %i[edit update]
   before_action :drop_placeholder_ids, only: %i[create update]
@@ -237,11 +237,15 @@ class ProductionOrdersController < ApplicationController
   def update
     params[:production_order][:location_id] = nil if params[:production_order][:location_id].to_s == '0'
     params[:production_order][:customer_id] = nil if params[:production_order][:customer_id].to_s == '0'
+    @production_order.acting_user = current_user
     if @production_order.update(production_order_params)
       respond_to do |format|
         format.html { redirect_to @production_order, notice: 'Production order updated.' }
         format.turbo_stream { redirect_to @production_order, notice: 'Production order updated.' }
       end
+    elsif status_only_change?
+      # The status buttons on the order page: say why instead of opening the edit form.
+      redirect_to @production_order, alert: @production_order.errors.full_messages.to_sentence
     else
       render :edit, status: :unprocessable_entity
     end
@@ -249,6 +253,23 @@ class ProductionOrdersController < ApplicationController
 
   # GET /production_orders/:id
   def show; end
+
+  # PATCH /production_orders/:id/record_quality — results: { spec_id => { value:, notes: } }
+  def record_quality
+    return redirect_to @production_order, alert: t('.not_in_qc') unless @production_order.status == 'quality_check'
+
+    saved = QualityCheckRecorder.new(@production_order, current_user).record!(quality_params)
+    redirect_to @production_order, notice: t('.recorded', count: saved)
+  rescue ActiveRecord::RecordInvalid => e
+    redirect_to @production_order, alert: e.record.errors.full_messages.to_sentence
+  end
+
+  # GET /production_orders/:id/quality_certificate — printable certificate of analysis
+  def quality_certificate
+    @results = @production_order.quality_results.includes(:tested_by, :quality_spec)
+                                .sort_by { |r| [r.quality_spec&.position || 0, r.quality_spec_id || 0, r.id] }
+    render layout: false
+  end
 
   # POST /production_orders/:id/void (admins)
   def void
@@ -268,6 +289,14 @@ class ProductionOrdersController < ApplicationController
   end
 
   private
+
+  def status_only_change?
+    params[:production_order].respond_to?(:keys) && params[:production_order].keys == ['status']
+  end
+
+  def quality_params
+    params.fetch(:results, {}).permit(@production_order.product&.quality_specs&.map { |s| { s.id.to_s => %i[value notes] } } || []).to_h
+  end
 
   def keep_voided_read_only
     redirect_to @production_order, alert: t('production_orders.voided_read_only') if @production_order.voided?

@@ -1,8 +1,11 @@
 class ProductionOrder < ApplicationRecord
-  # created: planned, nothing done yet · in_progress: a crew has clocked in · completed: done ·
+  include ProductionOrderWorkflow
+
+  # created: planned, nothing done yet · in_progress: a crew has clocked in · quality_check: waiting
+  # for its quality checks to be recorded · completed: done, inventory moved, exported ·
   # voided: cancelled by an admin (ProductionOrderVoid), kept read-only for history
-  STATUSES = %w[created in_progress completed voided].freeze
-  OPEN_STATUSES = %w[created in_progress].freeze
+  STATUSES = %w[created in_progress quality_check completed voided].freeze
+  OPEN_STATUSES = %w[created in_progress quality_check].freeze
 
   belongs_to :product, optional: true
   belongs_to :customer, optional: true
@@ -15,6 +18,7 @@ class ProductionOrder < ApplicationRecord
   has_many :production_order_batches, dependent: :destroy
   has_many :jobs, dependent: :destroy
   has_many :ledger_entries, dependent: :restrict_with_error
+  has_many :quality_results, dependent: :destroy
   accepts_nested_attributes_for :production_order_batches,
                                 allow_destroy: true,
                                 reject_if: :all_blank
@@ -25,8 +29,6 @@ class ProductionOrder < ApplicationRecord
   before_validation :set_default_status, on: :create
   before_validation :generate_number, on: :create
   before_validation :sync_customer_location_names
-  before_save :stamp_date_completed, if: -> { will_save_change_to_status? && status == 'completed' }
-  after_update_commit -> { ProductionGlPosting.status_changed(self) }, if: :saved_change_to_status?
 
   scope :search, lambda { |term|
     return all if term.blank?
@@ -64,15 +66,6 @@ class ProductionOrder < ApplicationRecord
     where(status: s)
   }
 
-  def voided?
-    voided_at.present?
-  end
-
-  # Voided orders are kept for history and can't be changed.
-  def readonly?
-    (persisted? && voided_at_in_database.present?) || super
-  end
-
   def build_components_from_bom!
     return if product.blank? || qty_to_make.blank?
 
@@ -95,10 +88,6 @@ class ProductionOrder < ApplicationRecord
   def sync_customer_location_names
     self.customer_name = customer&.name if customer_id.present?
     self.location_name = location&.company_name if location_id.present?
-  end
-
-  def stamp_date_completed
-    self.date_completed ||= Time.zone.today
   end
 
   def set_default_status

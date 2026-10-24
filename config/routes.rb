@@ -123,12 +123,20 @@ Rails.application.routes.draw do
   end
 
   resources :production_orders do
-    member { post :void }
+    member do
+      post  :void
+      patch :record_quality
+      get   :quality_certificate
+    end
     collection do
       get :kanban
       get :dashboard
       get :bom_cost_report
     end
+  end
+
+  resources :quality_exceptions, only: :index do
+    member { patch :review }
   end
 
   resources :ledger_entries, only: %i[index create] do
@@ -179,13 +187,6 @@ Rails.application.routes.draw do
   end
   get 'purchase_order_imports/download/:log_id', to: 'purchase_order_imports#download',
                                                  as: :download_purchase_order_import
-
-  resources :production_order_batches, only: [] do
-    member do
-      patch :update_qc
-      patch :complete
-    end
-  end
 
   get 'quote_margin_review', to: 'quote_margin_reviews#index', as: :quote_margin_review
   resources :price_exceptions, only: [:index] do

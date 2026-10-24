@@ -30,6 +30,7 @@ class LedgerEntryTest < ActiveSupport::TestCase
   end
 
   def complete!
+    @po.update!(status: 'quality_check') unless @po.status == 'quality_check'
     @po.update!(status: 'completed')
     @po.reload
   end

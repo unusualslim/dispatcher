@@ -85,7 +85,10 @@ below the floor (rule target, or the quoted margin if negotiated below target). 
 StandardCostHistory, `InventoryCostHistory` (recorded on every `cost_per_unit` change), and BOM
 component history. "Re-quote" (`Quote#create_requote!`) drafts a quote at today's rule prices.
 **ProductionOrder** = STATUSES: created (planned, nothing done) / in_progress (set automatically by the first /line
-clock-in) / completed (stamps `date_completed`) / voided (admin-only `ProductionOrderVoid`: reverses batch inventory
+clock-in) / quality_check (assigns `lot_number`; results recorded against the product's `QualitySpec`s — numeric
+min/max or pass/fail, method, "< 0.5" qualifiers; out-of-range allowed, reviewed at /quality_exceptions; printable
+certificate at /production_orders/:id/quality_certificate) / completed (needs all checks + total_qty_produced; stamps
+`date_completed`; `ProductionOrderInventory` consumes components and adds finished goods, reversed on reopen) / voided (admin-only `ProductionOrderVoid`: reverses batch inventory
 moves and any posted GL entry, clocks out crews; voided orders are read-only); `OPEN_STATUSES` = created + in_progress. The production order *is* the batch.
 **Production costing / GL**: BOM = inventory components (`ProductComponent`, moved by PDI repack) + non-inventory
 `ProductCostLine`s (qty × unit cost ÷ per; labor lines use the `AppSetting.labor_rate`, "per" = units per worker-hour).
@@ -156,7 +159,8 @@ download the file, delete it from FTP, run an import service, and record a `Sync
 - `*ImportService` — one per import type (see PDI section)
 
 ### Key workflows
-1. **Batch completion**: production order show page → QC panel → 'passed' → "Complete Batch & Update Inventory" → `batch.complete_and_deduct_inventory!(current_user)`
+1. **Production completion**: In Progress → Send to Quality Check → record results → Mark Completed (inventory moves at
+   completion). PDI batch numbers are still recorded on the order's edit form (the old per-batch QC/complete is retired).
 2. **Auto-reorder**: `ReorderCheckJob` → `ReorderService.run` → draft POs → emails admins with email_opt_in
 3. **PO receiving** is two steps: `mark_received!(user)` only sets status; `post_to_inventory!(user)`
    creates InventoryTransactions and adjusts stock (LocationProduct if the PO has a location,

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Certificate of Analysis <%= @production_order.lot_number || @production_order.number %></title>
+  <style>
+    :root { --ink: #1c1917; --muted: #6b7280; --rule: #d6d3d1; --accent: #f26722; --bad: #b91c1c; }
+    * { box-sizing: border-box; }
+    body { font: 13px/1.45 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: var(--ink); background: #fff;
+           margin: 0; padding: 32px 16px; }
+    .sheet { max-width: 820px; margin: 0 auto; }
+    .toolbar { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 16px; }
+    .toolbar button { font: inherit; padding: 6px 14px; border: 1px solid var(--rule); background: #fff; border-radius: 4px; cursor: pointer; }
+    header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid var(--accent);
+             padding-bottom: 10px; margin-bottom: 18px; }
+    header h1 { font-size: 22px; margin: 0; letter-spacing: .02em; }
+    header .company { text-align: right; color: var(--muted); font-size: 12px; }
+    header .company strong { color: var(--ink); font-size: 14px; display: block; }
+    dl { display: grid; grid-template-columns: max-content 1fr max-content 1fr; gap: 4px 16px; margin: 0 0 20px; }
+    dt { font-weight: 600; } dd { margin: 0; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted);
+         border-bottom: 1.5px solid var(--ink); padding: 6px 6px; }
+    td { border-bottom: 1px solid var(--rule); padding: 6px 6px; vertical-align: top; }
+    td.num { text-align: right; white-space: nowrap; }
+    .out { color: var(--bad); font-weight: 600; }
+    tr.section td { font-weight: 700; padding-top: 14px; border-bottom: 1px solid var(--ink); }
+    .remarks { font-size: 11px; color: var(--muted); }
+    .summary { margin-top: 14px; font-size: 12px; }
+    .sign { display: flex; gap: 48px; margin-top: 48px; }
+    .sign div { flex: 1; border-top: 1px solid var(--ink); padding-top: 4px; font-size: 12px; color: var(--muted); }
+    footer { margin-top: 32px; font-size: 11px; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 8px; }
+    @media (max-width: 600px) { dl { grid-template-columns: max-content 1fr; } .sign { flex-direction: column; gap: 32px; } }
+    @media print { body { padding: 0; } .toolbar { display: none; } @page { margin: 14mm; } }
+  </style>
+</head>
+<body>
+  <% order = @production_order %>
+  <% tested_dates = @results.map { |r| r.tested_at.to_date }.uniq.sort %>
+  <% testers = @results.filter_map { |r| r.tested_by&.full_name }.uniq %>
+  <div class="sheet">
+    <div class="toolbar"><button type="button" onclick="window.print()">Print</button></div>
+
+    <header>
+      <h1>Certificate of Analysis</h1>
+      <div class="company"><strong>Five Points Service, Inc.</strong>Perry Brothers Oil · Americus, GA</div>
+    </header>
+
+    <dl>
+      <dt>Product</dt><dd><%= order.product&.name || order.item %></dd>
+      <dt>Lot No.</dt><dd><%= order.lot_number.presence || '—' %></dd>
+      <dt>Product ID</dt><dd><%= order.product_id || '—' %></dd>
+      <dt>Production Order</dt><dd><%= order.number %></dd>
+      <dt>Date Tested</dt><dd><%= tested_dates.any? ? tested_dates.map { |d| d.strftime('%m/%d/%Y') }.join(', ') : '—' %></dd>
+      <dt>Date Produced</dt><dd><%= (order.date_completed || order.production_date)&.strftime('%m/%d/%Y') || '—' %></dd>
+      <dt>Quantity</dt><dd><%= order.total_qty_produced ? number_with_delimiter(order.total_qty_produced.to_d.to_s('F').sub(/\.0+\z/, '')) : '—' %></dd>
+      <dt>Status</dt><dd><%= order.status.titleize %></dd>
+      <% if order.customer %>
+        <dt>Customer</dt><dd><%= order.customer.name %></dd>
+        <dt>Ship To</dt><dd><%= order.location&.city_with_company || '—' %></dd>
+      <% end %>
+    </dl>
+
+    <table>
+      <thead>
+        <tr><th>Test</th><th>Method</th><th>Units</th><th>Specification</th><th>Result</th><th>Remarks</th></tr>
+      </thead>
+      <tbody>
+        <% if @results.empty? %>
+          <tr><td colspan="6">No quality checks recorded.</td></tr>
+        <% end %>
+        <% fmt = ->(v) { v && QualitySpec.format_number(v) } %>
+        <% @results.chunk_while { |a, b| a.section == b.section }.each do |group| %>
+          <% if group.first.section.present? %>
+            <tr class="section"><td colspan="6"><%= group.first.section %></td></tr>
+          <% end %>
+        <% group.each do |r| %>
+          <tr>
+            <td><%= r.name %></td>
+            <td><%= r.test_method %></td>
+            <td><%= r.unit.presence || (r.pass_fail? ? 'N/A' : '') %></td>
+            <td><%= r.pass_fail? ? (r.expected.presence || 'Pass') : QualitySpec.range_label(r.target_min, r.target_max) %></td>
+            <td class="<%= 'out' unless r.in_range %>">
+              <%= r.pass_fail? ? (r.passed ? (r.expected.presence || 'Pass') : 'Fail') : [r.qualifier, fmt[r.value]].compact.join(' ') %>
+            </td>
+            <td class="remarks"><%= 'Out of spec. ' unless r.in_range %><%= r.notes %></td>
+          </tr>
+        <% end %>
+        <% end %>
+      </tbody>
+    </table>
+
+    <% out_count = @results.count { |r| !r.in_range } %>
+    <p class="summary">
+      <% if @results.empty? %>
+      <% elsif out_count.zero? %>
+        All <%= pluralize(@results.size, 'test') %> within specification.
+      <% else %>
+        <span class="out"><%= pluralize(out_count, 'test') %> outside specification.</span>
+      <% end %>
+    </p>
+
+    <% if order.product&.coa_note.present? %>
+      <p class="summary"><%= order.product.coa_note %></p>
+    <% end %>
+
+    <div class="sign">
+      <div>Tested by: <%= testers.join(', ').presence || '__________________' %></div>
+      <div>Approved by: <%= order.approved_by.presence || '__________________' %></div>
+    </div>
+
+    <footer>
+      Results apply only to the lot identified above. Printed <%= Time.zone.now.strftime('%m/%d/%Y %I:%M %p') %>.
+    </footer>
+  </div>
+</body>
+</html>

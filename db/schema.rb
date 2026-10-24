@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_25_030000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_25_040000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -230,8 +230,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_25_030000) do
     t.datetime "updated_at", null: false
     t.string "product_id", null: false
     t.bigint "location_id"
+    t.bigint "reversal_of_id"
     t.index ["created_by_id"], name: "index_inventory_transactions_on_created_by_id"
     t.index ["product_id"], name: "index_inventory_transactions_on_product_id"
+    t.index ["reversal_of_id"], name: "index_inventory_transactions_on_reversal_of_id", unique: true
     t.index ["transactable_type", "transactable_id"], name: "idx_inv_trans_on_transactable"
   end
 
@@ -475,8 +477,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_25_030000) do
     t.datetime "voided_at"
     t.bigint "voided_by_id"
     t.text "void_reason"
+    t.string "lot_number"
     t.index ["customer_id"], name: "index_production_orders_on_customer_id"
     t.index ["location_id"], name: "index_production_orders_on_location_id"
+    t.index ["lot_number"], name: "index_production_orders_on_lot_number", unique: true
     t.index ["number"], name: "index_production_orders_on_number", unique: true
     t.index ["product_id"], name: "index_production_orders_on_product_id"
     t.index ["voided_by_id"], name: "index_production_orders_on_voided_by_id"
@@ -499,6 +503,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_25_030000) do
     t.string "pdi_tank_id"
     t.decimal "standard_cost", precision: 12, scale: 4
     t.decimal "pdi_repack_fee", precision: 12, scale: 4
+    t.string "coa_note"
   end
 
   create_table "purchase_order_line_items", force: :cascade do |t|
@@ -541,6 +546,52 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_25_030000) do
     t.index ["status"], name: "index_purchase_orders_on_status"
     t.index ["trigger_type"], name: "index_purchase_orders_on_trigger_type"
     t.index ["voided_by_id"], name: "index_purchase_orders_on_voided_by_id"
+  end
+
+  create_table "quality_results", force: :cascade do |t|
+    t.bigint "production_order_id", null: false
+    t.bigint "quality_spec_id"
+    t.string "section"
+    t.string "name", null: false
+    t.string "test_method"
+    t.string "result_type", default: "numeric", null: false
+    t.string "expected"
+    t.string "unit"
+    t.decimal "target_min", precision: 12, scale: 4
+    t.decimal "target_max", precision: 12, scale: 4
+    t.string "qualifier"
+    t.decimal "value", precision: 12, scale: 4
+    t.boolean "passed"
+    t.boolean "in_range", default: false, null: false
+    t.text "notes"
+    t.bigint "tested_by_id"
+    t.datetime "tested_at", null: false
+    t.bigint "reviewed_by_id"
+    t.datetime "reviewed_at"
+    t.text "resolution"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["production_order_id", "quality_spec_id"], name: "idx_on_production_order_id_quality_spec_id_43ef9b5c4b", unique: true
+    t.index ["production_order_id"], name: "index_quality_results_on_production_order_id"
+    t.index ["quality_spec_id"], name: "index_quality_results_on_quality_spec_id"
+    t.index ["reviewed_by_id"], name: "index_quality_results_on_reviewed_by_id"
+    t.index ["tested_by_id"], name: "index_quality_results_on_tested_by_id"
+  end
+
+  create_table "quality_specs", force: :cascade do |t|
+    t.string "product_id", null: false
+    t.string "section"
+    t.string "name", null: false
+    t.string "test_method"
+    t.string "result_type", default: "numeric", null: false
+    t.string "expected"
+    t.string "unit"
+    t.decimal "target_min", precision: 12, scale: 4
+    t.decimal "target_max", precision: 12, scale: 4
+    t.integer "position"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_id"], name: "index_quality_specs_on_product_id"
   end
 
   create_table "quote_products", force: :cascade do |t|
@@ -730,6 +781,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_25_030000) do
   add_foreign_key "dispatch_messages", "users"
   add_foreign_key "dispatches", "things", column: "asset_id"
   add_foreign_key "dispatches", "vendors"
+  add_foreign_key "inventory_transactions", "inventory_transactions", column: "reversal_of_id"
   add_foreign_key "inventory_transactions", "products"
   add_foreign_key "job_workers", "jobs"
   add_foreign_key "job_workers", "users"
@@ -761,6 +813,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_25_030000) do
   add_foreign_key "purchase_order_line_items", "purchase_orders"
   add_foreign_key "purchase_orders", "users", column: "voided_by_id"
   add_foreign_key "purchase_orders", "vendors"
+  add_foreign_key "quality_results", "production_orders"
+  add_foreign_key "quality_results", "quality_specs", on_delete: :nullify
+  add_foreign_key "quality_results", "users", column: "reviewed_by_id"
+  add_foreign_key "quality_results", "users", column: "tested_by_id"
   add_foreign_key "quote_products", "pricing_rules", on_delete: :nullify
   add_foreign_key "quote_products", "products"
   add_foreign_key "quote_products", "quotes"

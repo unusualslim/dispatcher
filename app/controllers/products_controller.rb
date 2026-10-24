@@ -255,6 +255,7 @@ class ProductsController < ApplicationController
       :pdi_tank_id,
       :category,
       :pdi_repack_fee,
+      :coa_note,
       product_components_attributes: %i[
         id
         component_product_id
@@ -262,6 +263,8 @@ class ProductsController < ApplicationController
         uom
         _destroy
       ],
+      quality_specs_attributes: %i[id section name test_method result_type expected unit target_min target_max position
+                                   _destroy],
       product_cost_lines_attributes: %i[
         id
         description

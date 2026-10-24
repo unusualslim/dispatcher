@@ -12,7 +12,7 @@ class PurchaseOrderVoid
     raise ArgumentError, 'Give a reason for voiding' if @reason.blank?
 
     @po.with_lock do
-      receipts = @po.inventory_transactions.where(direction: 'in')
+      receipts = @po.inventory_transactions.where(direction: 'in') # InventoryReversal skips any already reversed
       InventoryReversal.reverse!(receipts, source: @po, reference: @po.pdi_reference || @po.id.to_s, user: @user)
       @po.update!(status: 'voided', voided_at: Time.current, voided_by: @user, void_reason: @reason)
     end

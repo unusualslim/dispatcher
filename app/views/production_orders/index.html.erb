@@ -72,6 +72,7 @@
                 <% badge = case po.status
                   when "created" then "bg-secondary"
                   when "in_progress" then "bg-warning text-dark"
+                  when "quality_check" then "bg-primary"
                   when "voided" then "bg-dark"
                   when "completed" then "bg-success"
                   else "bg-secondary"
