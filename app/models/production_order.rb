@@ -10,6 +10,7 @@ class ProductionOrder < ApplicationRecord
 
   has_many :production_order_batches, dependent: :destroy
   has_many :jobs, dependent: :destroy
+  has_many :ledger_entries, dependent: :restrict_with_error
   accepts_nested_attributes_for :production_order_batches,
                                 allow_destroy: true,
                                 reject_if: :all_blank
@@ -20,6 +21,8 @@ class ProductionOrder < ApplicationRecord
   before_validation :set_default_status, on: :create
   before_validation :generate_number, on: :create
   before_validation :sync_customer_location_names
+  before_save :stamp_date_completed, if: -> { will_save_change_to_status? && status == 'completed' }
+  after_update_commit -> { ProductionGlPosting.status_changed(self) }, if: :saved_change_to_status?
 
   scope :search, lambda { |term|
     return all if term.blank?
@@ -79,6 +82,10 @@ class ProductionOrder < ApplicationRecord
   def sync_customer_location_names
     self.customer_name = customer&.name if customer_id.present?
     self.location_name = location&.company_name if location_id.present?
+  end
+
+  def stamp_date_completed
+    self.date_completed ||= Time.zone.today
   end
 
   def set_default_status

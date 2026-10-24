@@ -4,16 +4,18 @@ class CostingSettingsController < ApplicationController
   def edit
     @labor_rate = AppSetting.labor_rate
     @gl_accounts = ProductionOrderJournal::ACCOUNT_ROLES.keys.index_with { |r| ProductionOrderJournal.account_for(r) }
+    @gl_start_date = ProductionGlPosting.start_date
   end
 
   def update
     load_submitted_settings
-    if (error = validation_error(@labor_rate, @gl_accounts))
+    if (error = validation_error(@labor_rate, @gl_accounts) || start_date_error)
       flash.now[:alert] = error
       return render :edit, status: :unprocessable_entity
     end
 
     AppSetting.set('labor_rate', @labor_rate)
+    AppSetting.set('gl_posting_start_date', @gl_start_date)
     @gl_accounts.each { |role, account| AppSetting.set("gl_account.#{role}", account) }
     redirect_to edit_costing_settings_path, notice: t('.updated')
   end
@@ -23,6 +25,16 @@ class CostingSettingsController < ApplicationController
   def load_submitted_settings
     @labor_rate = params[:labor_rate].to_s.strip
     @gl_accounts = ProductionOrderJournal::ACCOUNT_ROLES.keys.index_with { |r| params.dig(:gl_accounts, r).to_s.strip }
+    @gl_start_date = params[:gl_posting_start_date].to_s.strip
+  end
+
+  def start_date_error
+    return if @gl_start_date.blank?
+
+    Date.iso8601(@gl_start_date)
+    nil
+  rescue Date::Error
+    t('.invalid_start_date')
   end
 
   def validation_error(rate, accounts)

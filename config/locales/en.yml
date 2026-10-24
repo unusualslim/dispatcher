@@ -36,6 +36,7 @@ en:
       invalid_rate: "Labor rate must be a positive number."
       updated: "Costing settings updated."
       invalid_accounts: "GL accounts must be Major-Sub, e.g. 1410-02: %{roles}"
+      invalid_start_date: "GL posting start date must be a date."
   reporting_groups:
     create:
       created: "Added reporting group %{name}."
@@ -43,3 +44,11 @@ en:
       updated: "Saved %{name}."
     destroy:
       deleted: "Deleted %{name}."
+  ledger_entries:
+    create:
+      posted: "Posted journal entry %{reference}."
+    reverse:
+      reversed: "Posted reversing entry %{reference}."
+    export:
+      exported: "Exported %{count} entries to PDI."
+      failed: "Export to PDI failed; nothing was marked exported. %{error}"

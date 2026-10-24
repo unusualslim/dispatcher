@@ -1,0 +1,86 @@
+<div class="container-fluid px-4 py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="mb-0">GL Ledger</h1>
+    <div class="d-flex gap-2 align-items-center">
+      <%= link_to download_ledger_entries_path, class: "btn btn-sm btn-outline-secondary #{'disabled' if @pending_count.zero?}" do %>
+        <i class="bi bi-download"></i> Download pending CSV
+      <% end %>
+      <%= button_to export_ledger_entries_path, class: 'btn btn-sm btn-primary', disabled: @pending_count.zero?,
+                                                form: { data: { turbo_confirm: "Send #{@pending_count} pending entries to PDI now?" } } do %>
+        <i class="bi bi-cloud-upload"></i> Export to PDI now (<%= @pending_count %>)
+      <% end %>
+    </div>
+  </div>
+
+  <p class="text-muted" style="max-width: 860px;">
+    Production orders post their FPST journal automatically when completed (on or after the GL posting start date
+    in <%= link_to 'Costing Settings', edit_costing_settings_path %>), and the scheduled
+    <%= link_to 'PDI GL Export', automated_processes_path %> sends pending entries to PDI. Posted figures are frozen;
+    corrections are reversing entries. <em>Download pending CSV</em> shows the next file without marking anything exported.
+  </p>
+
+  <ul class="nav nav-pills mb-3 small">
+    <li class="nav-item"><%= link_to 'All', ledger_entries_path, class: "nav-link #{'active' unless @status}" %></li>
+    <li class="nav-item"><%= link_to "Waiting for export (#{@pending_count})", ledger_entries_path(status: 'approved'), class: "nav-link #{'active' if @status == 'approved'}" %></li>
+    <li class="nav-item"><%= link_to 'Exported', ledger_entries_path(status: 'exported'), class: "nav-link #{'active' if @status == 'exported'}" %></li>
+  </ul>
+
+  <div class="card shadow-sm mb-4">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Reference</th>
+            <th>Date</th>
+            <th>Production Order</th>
+            <th>Description</th>
+            <th class="text-end">Amount</th>
+            <th>Status</th>
+            <th>Posted</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if @entries.empty? %>
+            <tr><td colspan="7" class="text-center text-muted py-4">No journal entries yet.</td></tr>
+          <% end %>
+          <% @entries.each do |entry| %>
+            <tr>
+              <td class="font-monospace">
+                <%= entry.production_order ? link_to(entry.reference_number, "#{production_order_path(entry.production_order)}#gl-posting") : entry.reference_number %>
+              </td>
+              <td><%= entry.reference_date.strftime('%m/%d/%Y') %></td>
+              <td><%= entry.production_order&.product&.name || '—' %></td>
+              <td><%= entry.description %></td>
+              <td class="text-end"><%= number_to_currency(entry.total_debits) %></td>
+              <td>
+                <% if entry.exported? %>
+                  <span class="badge bg-success">Exported</span>
+                <% else %>
+                  <span class="badge bg-warning text-dark">Waiting</span>
+                <% end %>
+                <% if entry.reversal_of %><span class="badge bg-secondary">Reversal</span><% end %>
+                <% if entry.reversed? %><span class="badge bg-danger-subtle text-danger-emphasis border">Reversed</span><% end %>
+              </td>
+              <td class="small text-muted"><%= entry.approved_at.strftime('%m/%d %H:%M') %> · <%= entry.approved_by&.full_name.presence || 'automatic' %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <% if @exports.any? %>
+    <div class="card shadow-sm" style="max-width: 860px;">
+      <div class="card-header fw-semibold">Recent exports to PDI</div>
+      <ul class="list-group list-group-flush small">
+        <% @exports.each do |log| %>
+          <li class="list-group-item">
+            <span class="badge bg-<%= log.status == 'success' ? 'success' : (log.status == 'failed' ? 'danger' : 'secondary') %>"><%= log.status %></span>
+            <%= log.started_at.strftime('%m/%d/%Y %H:%M') %> · <%= log.file_name %> · <%= pluralize(log.records_created.to_i, 'entry') %>
+            <% if log.error_message.present? %><div class="text-danger"><%= log.error_message %></div><% end %>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+</div>

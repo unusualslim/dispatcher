@@ -90,7 +90,11 @@ component history. "Re-quote" (`Quote#create_requote!`) drafts a quote at today'
 "Standard Calculated (BOM)" pricing uses this full cost. PDI's single per-product repack fee (`products.pdi_repack_fee`)
 goes to a clearing account; `ProductionOrderJournal` builds the FPST GL entry per production order (Dr clearing,
 Cr cost lines at standard, Cr /line labor at actual split by `users.employment_type`, variance plug), shown on the
-order's GL Posting tab (preview only; no ledger/export yet). `PdiGlImport` = PDI's 13-column GL import layout.
+order's GL Posting tab. **Ledger**: `LedgerEntry`/`LedgerLine` freeze posted entries (corrections = reversing
+entries, `<ref>-REV`, re-post `<PO#>-2`). `ProductionGlPosting` auto-posts on completion (only when the finished good's
+category has `post_production_gl` and the order completed on/after the `gl_posting_start_date` setting; reopening
+reverses); the scheduled `PdiGlExportJob` sweeps ready orders and `PdiGlExport` uploads pending entries as one FPST CSV
+(no header row) over FTP, marking them exported. Production → GL Ledger lists entries. `PdiGlImport` = PDI's 13-column GL import layout.
 Accounts post as Site-Major-Sub (site = `Location#pdi_site_code`, 4 digits). **ReportingGroup** uses PDI item types:
 fuel/warehouse groups = PDI product categories (linked by `products.category` name, auto-created); non_inventory
 groups (Consumables, Labor, Overhead) hold cost lines. Admin → Reporting Groups / Costing Settings.

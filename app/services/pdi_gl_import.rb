@@ -1,3 +1,5 @@
+require 'csv'
+
 # PDI's GL journal import layout, one row per journal line. Lines of one entry share the
 # reference number, date and description; each row has a debit or a credit, never both.
 module PdiGlImport
@@ -6,6 +8,11 @@ module PdiGlImport
              'Reverse Entry Period'].freeze
 
   module_function
+
+  # One file for several entries, no header row (PDI maps columns by position).
+  def csv(journals)
+    CSV.generate { |out| journals.each { |journal| rows(journal).each { |row| out << row } } }
+  end
 
   # journal responds to reference_number, reference_date, description, journal_id, lines and
   # full_account; lines respond to account, description, debit and credit.

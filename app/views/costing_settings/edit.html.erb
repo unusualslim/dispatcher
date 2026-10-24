@@ -16,6 +16,14 @@
             One blended rate for everyone who clocks in on /line. It prices the Line Labor standard on each
             product's BOM and the actual labor on production orders (crew-hours × rate).
           </div>
+
+          <label class="form-label fw-semibold mt-4" for="gl_posting_start_date">GL posting start date</label>
+          <%= date_field_tag :gl_posting_start_date, @gl_start_date, class: 'form-control', style: 'max-width: 220px;' %>
+          <div class="form-text">
+            Production orders completed on or after this date post their FPST journal automatically and go to PDI
+            with the scheduled <%= link_to 'PDI GL Export', automated_processes_path %>. Leave blank to turn
+            automatic posting off. Earlier orders are never posted automatically.
+          </div>
         </div>
       </div>
     </div>

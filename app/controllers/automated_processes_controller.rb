@@ -14,7 +14,9 @@ class AutomatedProcessesController < ApplicationController
       description: 'Imports purchase orders from PDI FTP (Warehouse Transaction Report.xls)' },
     { slug: 'pdi-fuel-inventory-sync', name: PdiFuelInventorySyncJob::PROCESS_NAME, job: 'PdiFuelInventorySyncJob',
       description: 'Syncs fuel tank stock by product and site from PDI FTP (FI Inventory Report.xls)',
-      default_schedule: '0 6 * * *' }
+      default_schedule: '0 6 * * *' },
+    { slug: 'pdi-gl-export', name: PdiGlExport::PROCESS_NAME, job: 'PdiGlExportJob',
+      description: 'Posts completed production orders\' FPST journals and uploads pending GL entries to PDI FTP' }
   ].freeze
 
   def index

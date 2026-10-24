@@ -1,0 +1,63 @@
+<%# A posted ledger entry with its frozen lines. Locals: entry, compact (optional: no card, no actions) %>
+<% compact = local_assigns.fetch(:compact, false) %>
+<% status_badge = capture do %>
+  <% if entry.exported? %>
+    <span class="badge bg-success">Exported <%= entry.exported_at.strftime('%m/%d %H:%M') %></span>
+  <% else %>
+    <span class="badge bg-warning text-dark">Posted, waiting for export</span>
+  <% end %>
+  <% if entry.reversal_of %><span class="badge bg-secondary">Reversal of <%= entry.reversal_of.reference_number %></span><% end %>
+  <% if entry.reversed? %><span class="badge bg-danger-subtle text-danger-emphasis border">Reversed by <%= entry.reversal.reference_number %></span><% end %>
+<% end %>
+
+<div class="<%= compact ? '' : 'card shadow-sm' %>">
+  <div class="<%= compact ? 'd-flex flex-wrap justify-content-between gap-2 small mb-1' : 'card-header d-flex flex-wrap justify-content-between align-items-center gap-2' %>">
+    <div>
+      <span class="fw-semibold">Journal Entry <%= entry.reference_number %></span>
+      <%= status_badge %>
+    </div>
+    <div class="small text-muted">
+      Journal <strong><%= entry.journal_id %></strong> ·
+      Date <strong><%= entry.reference_date.strftime('%m/%d/%Y') %></strong> ·
+      Period <strong><%= entry.reference_date.strftime('%m/%Y') %></strong> ·
+      Posted <%= entry.approved_at.strftime('%m/%d/%Y %H:%M') %> by <%= entry.approved_by&.full_name.presence || 'automatic posting' %>
+    </div>
+  </div>
+  <div class="<%= compact ? '' : 'card-body' %>">
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-2 <%= 'small' if compact %>">
+        <thead class="table-light">
+          <tr><th>Account</th><th>Posting</th><th>Line Description</th><th class="text-end">Debit</th><th class="text-end">Credit</th></tr>
+        </thead>
+        <tbody>
+          <% entry.ledger_lines.each do |line| %>
+            <tr>
+              <td class="font-monospace"><%= line.account %></td>
+              <td class="text-muted small"><%= line.posting %></td>
+              <td><%= line.line_description %></td>
+              <td class="text-end"><%= line.debit ? number_to_currency(line.debit) : '' %></td>
+              <td class="text-end"><%= line.credit ? number_to_currency(line.credit) : '' %></td>
+            </tr>
+          <% end %>
+        </tbody>
+        <tfoot>
+          <tr class="fw-semibold">
+            <td colspan="3" class="text-end">Totals</td>
+            <td class="text-end"><%= number_to_currency(entry.total_debits) %></td>
+            <td class="text-end"><%= number_to_currency(entry.total_credits) %></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    <% if !compact && entry.reversal_of_id.nil? && !entry.reversed? %>
+      <div class="d-flex align-items-center gap-3">
+        <%= button_to 'Reverse', reverse_ledger_entry_path(entry), class: 'btn btn-sm btn-outline-danger',
+                                                                    form: { data: { turbo_confirm: "Post a reversing entry for #{entry.reference_number}? The order can then be posted again." } } %>
+        <span class="small text-muted">
+          Corrections are reversing entries; the frozen figures above never change. Moving the order out of
+          Completed reverses it automatically.
+        </span>
+      </div>
+    <% end %>
+  </div>
+</div>

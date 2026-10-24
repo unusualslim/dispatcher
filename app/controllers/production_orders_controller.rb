@@ -249,8 +249,11 @@ class ProductionOrdersController < ApplicationController
 
   # DELETE /production_orders/:id
   def destroy
-    @production_order.destroy
-    redirect_to kanban_production_orders_path, notice: 'Production order deleted.'
+    if @production_order.destroy
+      redirect_to kanban_production_orders_path, notice: 'Production order deleted.'
+    else
+      redirect_to @production_order, alert: @production_order.errors.full_messages.to_sentence
+    end
   end
 
   private

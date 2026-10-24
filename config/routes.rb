@@ -126,6 +126,14 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :ledger_entries, only: %i[index create] do
+    member { post :reverse }
+    collection do
+      post :export
+      get  :download
+    end
+  end
+
   get 'line', to: 'jobs#line', as: :line
   resources :jobs, only: %i[create show] do
     member do

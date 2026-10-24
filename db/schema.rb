@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_24_210000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_24_220000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -256,6 +256,40 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_24_210000) do
     t.datetime "updated_at", null: false
     t.index ["created_by_id"], name: "index_jobs_on_created_by_id"
     t.index ["production_order_id"], name: "index_jobs_on_production_order_id"
+  end
+
+  create_table "ledger_entries", force: :cascade do |t|
+    t.string "reference_number", null: false
+    t.date "reference_date", null: false
+    t.string "description", null: false
+    t.string "journal_id", null: false
+    t.string "status", default: "approved", null: false
+    t.datetime "approved_at", null: false
+    t.datetime "exported_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "production_order_id"
+    t.bigint "reversal_of_id"
+    t.bigint "approved_by_id"
+    t.bigint "sync_log_id"
+    t.index ["approved_by_id"], name: "index_ledger_entries_on_approved_by_id"
+    t.index ["production_order_id"], name: "index_ledger_entries_on_production_order_id"
+    t.index ["reference_number"], name: "index_ledger_entries_on_reference_number", unique: true
+    t.index ["reversal_of_id"], name: "index_ledger_entries_on_reversal_of_id", unique: true
+    t.index ["sync_log_id"], name: "index_ledger_entries_on_sync_log_id"
+  end
+
+  create_table "ledger_lines", force: :cascade do |t|
+    t.bigint "ledger_entry_id", null: false
+    t.integer "position", null: false
+    t.string "posting"
+    t.string "account", null: false
+    t.string "line_description", null: false
+    t.decimal "debit", precision: 12, scale: 2
+    t.decimal "credit", precision: 12, scale: 2
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ledger_entry_id"], name: "index_ledger_lines_on_ledger_entry_id"
   end
 
   create_table "location_categories", force: :cascade do |t|
@@ -688,6 +722,11 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_24_210000) do
   add_foreign_key "job_workers", "users"
   add_foreign_key "jobs", "production_orders"
   add_foreign_key "jobs", "users", column: "created_by_id"
+  add_foreign_key "ledger_entries", "ledger_entries", column: "reversal_of_id"
+  add_foreign_key "ledger_entries", "production_orders"
+  add_foreign_key "ledger_entries", "sync_logs"
+  add_foreign_key "ledger_entries", "users", column: "approved_by_id"
+  add_foreign_key "ledger_lines", "ledger_entries"
   add_foreign_key "location_contacts", "locations"
   add_foreign_key "location_products", "locations", on_delete: :cascade
   add_foreign_key "location_products", "products"
