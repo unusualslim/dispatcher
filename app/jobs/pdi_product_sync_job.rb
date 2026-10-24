@@ -7,10 +7,11 @@ class PdiProductSyncJob < ApplicationJob
   PROCESS_NAME = 'PDI Product Sync'
   FTP_DIR      = ENV.fetch('PDI_FTP_PRODUCT_DIR', '/Imports')
 
+  # The last fallback skips PDI's FI (fuel) Inventory Report, which PdiFuelInventorySyncJob handles.
   FILE_PATTERNS = [
     /loadntrucks.?current.?inventory/i,
     /current.?inventory/i,
-    /inventory/i
+    /\A(?!.*\bfi.?inventory).*inventory/i
   ].freeze
 
   def perform

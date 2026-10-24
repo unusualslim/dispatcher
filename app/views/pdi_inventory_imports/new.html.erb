@@ -1,6 +1,9 @@
-<div class="container mt-4" style="max-width: 560px;">
+<div class="container mt-4" style="max-width: 640px;">
   <h2>PDI FI Inventory Import</h2>
-  <p class="text-muted">Upload the FI Inventory Report CSV exported from PDI to sync current stock levels.</p>
+  <p class="text-muted">
+    Upload PDI's FI (fuel) Inventory Report to sync tank stock. This also runs daily from the PDI FTP site
+    (<%= link_to 'Automated Processes', automated_processes_path %>).
+  </p>
 
   <% if notice.present? %>
     <div class="alert alert-success"><%= notice %></div>
@@ -13,11 +16,12 @@
     <div class="card shadow-sm mb-3">
       <div class="card-body">
         <div class="mb-3">
-          <%= f.label :file, "FI Inventory Report (.csv)", class: 'form-label fw-semibold' %>
-          <%= f.file_field :file, class: 'form-control', accept: '.csv' %>
+          <%= f.label :file, "FI Inventory Report (.xls, .xlsx or .csv)", class: 'form-label fw-semibold' %>
+          <%= f.file_field :file, class: 'form-control', accept: '.xls,.xlsx,.csv' %>
           <div class="form-text">
-            In PDI: Reports → FI Inventory Report → export as CSV.
-            Products must have a <strong>PDI Tank ID</strong> set to match.
+            Rows match products by <strong>Product ID</strong> and sites by each location's
+            <strong>PDI Site Number</strong> (e.g. <code>0002</code>). Ending units from every tank are summed per
+            product and site; cost per unit becomes PDI's average.
           </div>
         </div>
         <%= f.submit "Import & Update Stock", class: 'btn btn-primary' %>
@@ -25,11 +29,20 @@
     </div>
   <% end %>
 
-  <div class="card shadow-sm mt-3">
-    <div class="card-header fw-semibold">Setup</div>
-    <div class="card-body small text-muted">
-      <p class="mb-1">For each product you want synced, open the product and set its <strong>PDI Tank ID</strong> to match the tank number in the PDI report (e.g. <code>901</code> for DEF).</p>
-      <%= link_to "Manage Products →", products_path, class: 'btn btn-sm btn-outline-secondary' %>
+  <% if @logs.any? %>
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold">Recent imports</div>
+      <ul class="list-group list-group-flush small">
+        <% @logs.each do |log| %>
+          <li class="list-group-item">
+            <span class="badge bg-<%= log.status == 'success' ? 'success' : (log.status == 'failed' ? 'danger' : 'secondary') %>"><%= log.status %></span>
+            <%= log.started_at.strftime('%b %-d %H:%M') %> · <%= log.file_name %> ·
+            <%= log.records_updated.to_i %> updated, <%= log.records_skipped.to_i %> skipped
+            <% if log.warnings.present? %><div class="text-warning-emphasis mt-1"><%= simple_format(log.warnings, {}, wrapper_tag: 'span') %></div><% end %>
+            <% if log.error_message.present? %><div class="text-danger mt-1"><%= log.error_message %></div><% end %>
+          </li>
+        <% end %>
+      </ul>
     </div>
-  </div>
+  <% end %>
 </div>

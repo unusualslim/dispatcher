@@ -11,7 +11,10 @@ class AutomatedProcessesController < ApplicationController
     { slug: 'pdi-product-sync', name: 'PDI Product Sync', job: 'PdiProductSyncJob',
       description: 'Syncs product inventory from PDI FTP (LoadNTrucks-CurrentInventory.xls)' },
     { slug: 'pdi-po-sync',      name: 'PDI Purchase Order Sync', job: 'PdiPurchaseOrderSyncJob',
-      description: 'Imports purchase orders from PDI FTP (Warehouse Transaction Report.xls)' }
+      description: 'Imports purchase orders from PDI FTP (Warehouse Transaction Report.xls)' },
+    { slug: 'pdi-fuel-inventory-sync', name: PdiFuelInventorySyncJob::PROCESS_NAME, job: 'PdiFuelInventorySyncJob',
+      description: 'Syncs fuel tank stock by product and site from PDI FTP (FI Inventory Report.xls)',
+      default_schedule: '0 6 * * *' }
   ].freeze
 
   def index

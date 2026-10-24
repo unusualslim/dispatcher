@@ -273,7 +273,6 @@ Metrics/MethodLength:
     - 'app/services/message_logger.rb'
     - 'app/services/min_max_import_service.rb'
     - 'app/services/mrp_engine.rb'
-    - 'app/services/pdi_inventory_import_service.rb'
     - 'app/services/pdi_product_import_service.rb'
     - 'app/services/pdi_purchase_order_import_service.rb'
     - 'app/services/pdi_vendor_import_service.rb'
@@ -495,7 +494,6 @@ Rails/Date:
     - 'app/models/quote_product.rb'
     - 'app/services/inventory_intelligence_service.rb'
     - 'app/services/mrp_engine.rb'
-    - 'app/services/pdi_inventory_import_service.rb'
     - 'app/services/pricing_rule_service.rb'
     - 'app/services/quote_margin_review.rb'
     - 'db/seeds.rb'
@@ -855,7 +853,6 @@ Style/NumericPredicate:
     - 'app/services/inventory_import_service.rb'
     - 'app/services/inventory_intelligence_service.rb'
     - 'app/services/mrp_engine.rb'
-    - 'app/services/pdi_inventory_import_service.rb'
     - 'db/migrate/20260507100003_swap_products_primary_key_to_string.rb'
     - 'lib/tasks/import_warehouse_transactions.rake'
 

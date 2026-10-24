@@ -1,76 +1,134 @@
 require 'csv'
 
-# Parses a PDI FI Inventory Report CSV and updates current_stock on matching products.
-# Matches rows by Product.pdi_tank_id == Tank column (col 0).
-# Sets current_stock to the Ending inventory value (col 14) and logs an InventoryTransaction.
+# Parses PDI's FI (fuel) Inventory Report — XLS, XLSX or CSV — and syncs fuel stock.
+#
+# The report lists tank readings grouped under "Site 0002 - FPS-Main" headers, one row per tank:
+# col 0 tank, col 1 product ID, col 14 ending units, col 18 extended value. Ending units are
+# summed per product and site into location_products (sites matched by Location#pdi_site_code),
+# current_stock becomes the total across sites, and cost_per_unit PDI's weighted average.
 class PdiInventoryImportService
-  ENDING_COL = 14
+  COL_TANK     = 0
+  COL_PRODUCT  = 1
+  COL_ENDING   = 14
+  COL_EXTENDED = 18
+  SITE_HEADER  = /\ASite\s+(\d+)\s*-\s*(.+)\z/
 
-  def initialize(file, user)
+  Row = Struct.new(:site_code, :site_name, :tank, :product_id, :ending, :extended, keyword_init: true)
+
+  def initialize(file, user = nil)
     @file = file
     @user = user
   end
 
+  # Returns { updated:, skipped:, unmatched_products: [...], unmatched_sites: [...], errors: [...] }
   def import
-    updated = 0
-    skipped = 0
-    errors  = []
-
-    parse_data_rows.each do |row|
-      tank_id = row[0].to_s.strip
-      ending  = parse_number(row[ENDING_COL])
-
-      product = Product.find_by(pdi_tank_id: tank_id)
-      unless product
-        skipped += 1
-        next
-      end
-
-      begin
-        set_stock!(product, ending)
-        updated += 1
-      rescue StandardError => e
-        errors << "#{product.name}: #{e.message}"
-      end
+    result = { updated: 0, skipped: 0, unmatched_products: [], unmatched_sites: [], errors: [] }
+    rows = parse_rows
+    products = Product.where(id: rows.map(&:product_id).uniq).index_by(&:id)
+    rows.group_by(&:product_id).each do |product_id, product_rows|
+      import_product(products[product_id], product_id, product_rows, result)
     end
-
-    { updated: updated, skipped: skipped, errors: errors }
+    result[:unmatched_sites].uniq!
+    result
   end
 
   private
 
-  def parse_data_rows
-    content = @file.respond_to?(:read) ? @file.read : File.read(@file)
-    content = content.force_encoding('UTF-8').scrub
-
-    CSV.parse(content).select do |row|
-      row[0].to_s.strip =~ /^\d+$/ && row[ENDING_COL].to_s.strip.present?
-    end
-  end
-
-  def parse_number(val)
-    val.to_s.gsub(',', '').to_d
-  end
-
-  def set_stock!(product, ending)
-    old_stock = product.current_stock || 0
-    delta     = ending - old_stock
-    return if delta == 0
-
-    direction = delta > 0 ? 'in' : 'out'
-    quantity  = delta.abs
+  def import_product(product, product_id, product_rows, result)
+    return skip_product(product_id, result) unless product
 
     ActiveRecord::Base.transaction do
-      InventoryTransaction.create!(
-        product: product,
-        quantity: quantity,
-        direction: direction,
-        reference_number: "PDI-#{Date.today.strftime('%Y%m%d')}",
-        notes: "PDI FI Inventory Report sync — ending #{ending}",
-        created_by_id: @user.id
-      )
-
-      product.update!(current_stock: ending)
+      matched = sync_sites!(product, product_rows, result)
+      update_totals!(product, product_rows, matched)
     end
+    result[:updated] += 1
+  rescue StandardError => e
+    result[:errors] << "#{product_id}: #{e.message}"
+  end
+
+  def skip_product(product_id, result)
+    result[:skipped] += 1
+    result[:unmatched_products] << product_id
+  end
+
+  # Returns true when at least one of the product's sites maps to a location.
+  def sync_sites!(product, product_rows, result)
+    product_rows.group_by(&:site_code).map do |site_code, site_rows|
+      location = locations_by_site[site_code]
+      result[:unmatched_sites] << "#{site_code} #{site_rows.first.site_name}" unless location
+      location && set_location_stock!(product, location, site_rows.sum(&:ending))
+    end.any?
+  end
+
+  # current_stock is the total across mapped sites (the report total when none map).
+  def update_totals!(product, product_rows, matched)
+    ending = product_rows.sum(&:ending)
+    stock = matched ? LocationProduct.where(product_id: product.id).sum(:quantity) : ending
+    attrs = { current_stock: stock }
+    attrs[:cost_per_unit] = (product_rows.sum(&:extended) / ending).round(4) if ending.positive?
+    product.update!(attrs)
+  end
+
+  # Sets the site's quantity and records the change as an inventory transaction.
+  def set_location_stock!(product, location, ending)
+    lp = LocationProduct.find_or_initialize_by(location_id: location.id, product_id: product.id)
+    delta = ending - lp.quantity.to_d
+    lp.update!(quantity: ending)
+    return lp if delta.zero?
+
+    InventoryTransaction.create!(
+      product: product, location_id: location.id, quantity: delta.abs, direction: delta.positive? ? 'in' : 'out',
+      reference_number: "PDI-FI-#{Time.zone.today.strftime('%Y%m%d')}",
+      notes: "PDI FI Inventory Report sync — ending #{ending}", created_by_id: @user&.id
+    )
+    lp
+  end
+
+  def locations_by_site
+    @locations_by_site ||= Location.where.not(pdi_site_code: [nil, '']).index_by(&:pdi_site_code)
+  end
+
+  def parse_rows
+    site = nil
+    raw_rows.filter_map do |raw|
+      if (m = raw[COL_TANK].to_s.strip.match(SITE_HEADER))
+        site = m.captures
+        next
+      end
+      tank_row(raw, *site) if site
+    end
+  end
+
+  # A tank line: numeric tank, a product ID and an ending quantity (skips totals and headings).
+  def tank_row(raw, site_code, site_name)
+    tank = tank_number(raw[COL_TANK])
+    product_id = raw[COL_PRODUCT].to_s.strip
+    ending = number(raw[COL_ENDING])
+    return if tank.nil? || product_id.blank? || ending.nil?
+
+    Row.new(site_code: site_code, site_name: site_name.strip, tank: tank, product_id: product_id,
+            ending: ending, extended: number(raw[COL_EXTENDED]) || 0.to_d)
+  end
+
+  # Tank numbers arrive as "1.0" from XLS; anything non-numeric is a heading or total.
+  def tank_number(value)
+    tank = value.to_s.strip
+    tank.sub(/\.0+\z/, '') if tank.match?(/\A\d+(\.0+)?\z/)
+  end
+
+  def raw_rows
+    path = @file.respond_to?(:path) ? @file.path : @file.to_s
+    name = @file.respond_to?(:original_filename) ? @file.original_filename : path
+    ext = File.extname(name).downcase
+    return CSV.read(path, encoding: 'bom|utf-8') if ext == '.csv'
+
+    sheet = Roo::Spreadsheet.open(path, extension: ext == '.xlsx' ? :xlsx : :xls).sheet(0)
+    (1..sheet.last_row).map { |i| sheet.row(i) }
+  end
+
+  def number(value)
+    BigDecimal(value.to_s.delete(',')) if value.present?
+  rescue ArgumentError
+    nil
   end
 end
