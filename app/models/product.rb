@@ -1,4 +1,6 @@
 class Product < ApplicationRecord
+  include ProductCosting
+
   has_many :location_products
   has_many :locations, through: :location_products
 
@@ -8,6 +10,9 @@ class Product < ApplicationRecord
   has_many :product_components, dependent: :destroy
   has_many :component_products, through: :product_components, source: :component_product
   has_many :component_of, class_name: 'ProductComponent', foreign_key: :component_product_id
+  has_many :product_cost_lines, -> { order(:position, :id) }, dependent: :destroy
+  # PDI's reporting group for the product, matched by category name (fuel or warehouse).
+  belongs_to :reporting_group, foreign_key: :category, primary_key: :name, optional: true, inverse_of: :products
 
   has_many :production_order_components
   has_many :inventory_transactions
@@ -20,11 +25,14 @@ class Product < ApplicationRecord
   has_many :vendors, through: :product_vendors
 
   accepts_nested_attributes_for :product_components, allow_destroy: true, reject_if: :all_blank
+  accepts_nested_attributes_for :product_cost_lines, allow_destroy: true, reject_if: ->(a) { a['description'].blank? }
 
   validates :name, presence: true
   validates :id, presence: true
 
   after_save :record_inventory_cost_change, if: :saved_change_to_cost_per_unit?
+  after_save -> { ReportingGroup.ensure_for_category!(category) },
+             if: -> { saved_change_to_category? && category.present? }
 
   scope :raw_materials,       -> { where(is_raw_material: true) }
   scope :finished_goods,      -> { where(is_raw_material: false) }
@@ -40,33 +48,6 @@ class Product < ApplicationRecord
 
   def primary_vendor
     product_vendors.first&.vendor
-  end
-
-  # Most recent standard cost in effect on the given date (ignores future-dated entries).
-  # Falls back to the standard_cost column for products with no history rows.
-  def current_standard_cost(date = Date.today)
-    history = standard_cost_histories.find { |h| h.effective_date <= date }
-    history ? history.amount : standard_cost
-  end
-
-  # Sum of each BOM component's standard cost × quantity per unit.
-  # Returns nil if there is no BOM or any component is missing a standard cost,
-  # so a price is never quoted off a partial cost.
-  def bom_standard_cost(date = Date.today)
-    return nil if product_components.empty?
-    return nil if bom_components_missing_standard_cost(date).any?
-
-    product_components.sum do |pc|
-      pc.component_product.current_standard_cost(date).to_d * pc.quantity_per_unit.to_d
-    end
-  end
-
-  # BOM component products with no standard cost in effect on the given date.
-  def bom_components_missing_standard_cost(date = Date.today)
-    product_components.filter_map do |pc|
-      component = pc.component_product
-      component if component && component.current_standard_cost(date).nil?
-    end
   end
 
   def set_vendors_in_order(vendor_ids)

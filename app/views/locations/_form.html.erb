@@ -32,6 +32,11 @@
         <%= f.label :longitude, style: "display: block" %>
         <%= f.text_field :longitude %>
     </div>
+    <div>
+        <%= f.label :pdi_site_code, "PDI Site Number", style: "display: block" %>
+        <%= f.text_field :pdi_site_code, maxlength: 4, inputmode: "numeric", pattern: "[0-9]{4}", placeholder: "4 digits" %>
+        <small class="text-muted d-block">Used for inventory sync and GL posting</small>
+    </div>
     <div class="field">
         <%= f.label "Category", style: "display: block" %>
         <%= f.collection_select :location_category_id, LocationCategory.all, :id, :name, prompt: "Select Location Category" %>

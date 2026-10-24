@@ -99,11 +99,14 @@ class ProductsController < ApplicationController
               .where(product_id: product_ids)
               .includes(component_product: :standard_cost_histories)
               .group_by(&:product_id)
+    cost_line_map = ProductCostLine.where(product_id: product_ids).includes(:reporting_group)
+                                   .order(:position, :id).group_by(&:product_id)
 
     @products.each do |p|
       p.instance_variable_set(:@on_order_qty,  on_order_map[p.id]  || 0)
       p.instance_variable_set(:@committed_qty, committed_map[p.id] || 0)
       p.instance_variable_set(:@bom_lines,     bom_map[p.id]       || [])
+      p.instance_variable_set(:@cost_lines,    cost_line_map[p.id] || [])
     end
   end
 
@@ -251,11 +254,22 @@ class ProductsController < ApplicationController
       :pdi_package_code,
       :pdi_tank_id,
       :category,
+      :pdi_repack_fee,
       product_components_attributes: %i[
         id
         component_product_id
         quantity_per_unit
         uom
+        _destroy
+      ],
+      product_cost_lines_attributes: %i[
+        id
+        description
+        reporting_group_id
+        quantity
+        unit_cost
+        per_quantity
+        position
         _destroy
       ]
     )
@@ -282,6 +296,7 @@ class ProductsController < ApplicationController
       { attr: :unit_of_measurement, header: 'Unit',             readonly: false },
       { attr: :cost_per_unit,       header: 'Cost/Unit',        readonly: false },
       { attr: :standard_cost,       header: 'Standard Cost',    readonly: false },
+      { attr: :pdi_repack_fee,      header: 'PDI Repack Fee',   readonly: false },
       { attr: :reorder_point,       header: 'Reorder Point',    readonly: false },
       { attr: :safety_stock,        header: 'Safety Stock',     readonly: false },
       { attr: :max_stock,           header: 'Max Stock',        readonly: false },

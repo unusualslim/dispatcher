@@ -11,6 +11,8 @@ Rails.application.routes.draw do
   get 'warehouse/kanban', to: 'warehouse#kanban', as: :warehouse_kanban
   get 'set_warehouse', to: 'warehouses#set', as: :set_warehouse
   resource :warehouse_locations, only: %i[edit update]
+  resource :costing_settings, only: %i[edit update]
+  resources :reporting_groups, only: %i[index create update destroy]
   get 'calendar', to: 'calendar#index'
   get 'calendar/events', to: 'calendar#events'
   get 'vendors/index'

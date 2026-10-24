@@ -18,6 +18,10 @@ class Location < ApplicationRecord
 
   validate :ensure_not_disabled, on: :use
 
+  normalizes :pdi_site_code, with: ->(code) { code.strip.presence }
+  validates :pdi_site_code, format: { with: /\A\d{4}\z/ }, allow_nil: true,
+                            if: :pdi_site_code_changed?
+
   def city_with_company
     "#{company_name} - #{city}"
   end

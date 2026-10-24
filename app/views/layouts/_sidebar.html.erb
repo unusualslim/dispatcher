@@ -13,7 +13,7 @@
                           bom_imports min_max_imports vendor_freight_term_imports pdi_product_imports
                           repack_batch_imports pdi_purchase_order_imports purchase_order_imports].include?(current) ||
                        (current == 'customer_order_products' && request.path == product_code_links_path) %>
-<% admin_active      = imports_active || %w[users things warehouse_locations automated_processes announcements].include?(current) %>
+<% admin_active      = imports_active || %w[users things warehouse_locations costing_settings reporting_groups automated_processes announcements].include?(current) %>
 
 <nav id="sidebar" class="sidebar d-flex flex-column">
   <!-- Brand -->
@@ -132,6 +132,8 @@
           <%= nav_item 'Equipment & Assets',  things_path,              'bi-tools',        active: current == 'things', keywords: 'things' %>
           <% if admin? %>
             <%= nav_item 'Warehouse Locations', edit_warehouse_locations_path, 'bi-building-gear', active: current == 'warehouse_locations' %>
+            <%= nav_item 'Costing Settings',    edit_costing_settings_path,    'bi-calculator',    active: current == 'costing_settings', keywords: 'labor rate cost' %>
+            <%= nav_item 'Reporting Groups',    reporting_groups_path,         'bi-diagram-2',     active: current == 'reporting_groups', keywords: 'gl account posting cost' %>
           <% end %>
           <%= nav_item 'Automated Processes', automated_processes_path, 'bi-arrow-repeat', active: current == 'automated_processes', keywords: 'pdi sync schedule cron ftp' %>
           <%= nav_item 'Announcements',       announcements_path,       'bi-megaphone',    active: current == 'announcements' %>

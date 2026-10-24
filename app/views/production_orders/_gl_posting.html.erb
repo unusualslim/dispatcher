@@ -1,0 +1,95 @@
+<%# FPST journal entry preview for this production order. Locals: journal (ProductionOrderJournal) %>
+<div class="card shadow-sm">
+  <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+      <span class="fw-semibold">Journal Entry</span>
+      <span class="badge bg-secondary ms-2">Preview, not posted</span>
+    </div>
+    <div class="small text-muted">
+      Ref <strong><%= journal.reference_number %></strong> ·
+      Journal <strong><%= ProductionOrderJournal::JOURNAL_ID %></strong> ·
+      Date <strong><%= journal.reference_date&.strftime('%m/%d/%Y') || '—' %></strong> ·
+      Period <strong><%= journal.reference_date ? journal.reference_date.strftime('%m/%Y') : '—' %></strong> ·
+      Site <strong><%= journal.site_code || '—' %></strong>
+    </div>
+  </div>
+  <div class="card-body">
+    <% if journal.problems.any? %>
+      <div class="alert alert-warning py-2 small">
+        <div class="fw-semibold mb-1">Not ready to export:</div>
+        <ul class="mb-0">
+          <% journal.problems.each do |problem| %>
+            <li><%= problem %></li>
+          <% end %>
+        </ul>
+        <% if admin? %>
+          <div class="mt-1">
+            GL accounts are set on <%= link_to 'Reporting Groups', reporting_groups_path %> and
+            <%= link_to 'Costing Settings', edit_costing_settings_path %>;
+            site numbers on each <%= link_to 'location', journal.production_order.location || locations_path %>.
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <% if journal.lines.any? %>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-2">
+          <thead class="table-light">
+            <tr>
+              <th>Account</th>
+              <th>Posting</th>
+              <th>Line Description</th>
+              <th class="text-end">Debit</th>
+              <th class="text-end">Credit</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% journal.lines.each do |line| %>
+              <tr>
+                <td class="font-monospace">
+                  <%= journal.full_account(line.account) || content_tag(:span, line.account ? "????-#{line.account}" : 'Not mapped', class: 'text-warning-emphasis') %>
+                </td>
+                <td class="text-muted small"><%= line.posting %></td>
+                <td><%= line.description %></td>
+                <td class="text-end"><%= line.debit ? number_to_currency(line.debit) : '' %></td>
+                <td class="text-end"><%= line.credit ? number_to_currency(line.credit) : '' %></td>
+              </tr>
+            <% end %>
+          </tbody>
+          <tfoot>
+            <tr class="fw-semibold">
+              <td colspan="3" class="text-end">Totals</td>
+              <td class="text-end"><%= number_to_currency(journal.total_debits) %></td>
+              <td class="text-end"><%= number_to_currency(journal.total_credits) %></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <p class="small text-muted mb-3">
+        PDI's repack credited <%= number_to_currency(journal.costing.repack_fee_applied) %> to clearing
+        (<%= number_with_delimiter(journal.costing.qty_produced.round(3)) %> × <%= number_to_currency(journal.costing.product.pdi_repack_fee, precision: 4) %>).
+        Supplies and overhead are absorbed at standard, line labor at actual (<%= number_to_currency(journal.costing.labor_rate) %>/hr).
+        Uses current standards until the entry is posted.
+      </p>
+
+      <details>
+        <summary class="small fw-semibold">PDI import rows</summary>
+        <div class="table-responsive mt-2">
+          <table class="table table-sm table-bordered font-monospace mb-0" style="font-size:.75rem;">
+            <thead class="table-light">
+              <tr><% PdiGlImport::HEADERS.each do |h| %><th class="text-nowrap"><%= h %></th><% end %></tr>
+            </thead>
+            <tbody>
+              <% PdiGlImport.rows(journal).each do |row| %>
+                <tr><% row.each do |v| %><td class="text-nowrap"><%= v %></td><% end %></tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </details>
+    <% elsif journal.problems.empty? %>
+      <p class="text-muted mb-0">Nothing to post.</p>
+    <% end %>
+  </div>
+</div>

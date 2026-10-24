@@ -35,6 +35,7 @@ Customer.destroy_all
 Location.destroy_all
 LocationCategory.destroy_all
 ProductComponent.destroy_all
+ProductCostLine.destroy_all
 Product.destroy_all
 Thing.destroy_all
 Vendor.destroy_all
@@ -48,6 +49,13 @@ destination_cat = LocationCategory.create!(id: 2, name: 'Destination')  # and 2 
 # ---------------------------------------------------------------------------
 # PRODUCTS
 # ---------------------------------------------------------------------------
+puts 'Seeding reporting groups...'
+[['Consumables', false], ['Labor', true], ['Overhead', false]].each_with_index do |(name, labor), i|
+  ReportingGroup.find_or_create_by!(name: name) do |g|
+    g.assign_attributes(item_type: 'non_inventory', labor: labor, position: i + 1)
+  end
+end
+
 puts 'Seeding products...'
 products = {
   regular: Product.create!(id: 'REG001', name: 'Regular', unit_of_measurement: 'gallons', weight: 6.073),

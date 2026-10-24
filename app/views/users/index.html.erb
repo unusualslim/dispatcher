@@ -7,6 +7,7 @@
       <%= form_with url: create_line_worker_users_path, method: :post, class: "d-flex gap-2 align-items-center" do |f| %>
         <%= f.text_field :first_name, placeholder: "First name", class: "form-control form-control-sm", style: "width:120px", required: true %>
         <%= f.text_field :last_name,  placeholder: "Last name",  class: "form-control form-control-sm", style: "width:120px", required: true %>
+        <%= f.select :employment_type, User::EMPLOYMENT_TYPES.invert, {}, class: "form-select form-select-sm", style: "width:auto" %>
         <%= f.submit "Add Line Worker", class: "btn btn-outline-secondary btn-sm text-nowrap" %>
       <% end %>
       <%= link_to new_user_registration_path, class: "btn btn-primary btn-sm text-nowrap" do %>
@@ -45,7 +46,10 @@
                 <% group.each do |user| %>
                   <tr style="cursor:pointer;" onclick="window.location='<%= user_path(user) %>'">
                     <td>
-                      <div class="fw-semibold"><%= user.full_name.presence || "—" %></div>
+                      <div class="fw-semibold">
+                        <%= user.full_name.presence || "—" %>
+                        <% if user.employment_type == 'temp' %><span class="badge bg-info-subtle text-info-emphasis border ms-1">Temp</span><% end %>
+                      </div>
                     </td>
                     <td><%= user.email.end_with?("@nologin.internal") ? content_tag(:span, "N/A", class: "text-muted") : user.email %></td>
                     <td><%= user.phone_number.presence || "—" %></td>

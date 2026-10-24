@@ -84,7 +84,16 @@ price vs today's cost on the line's basis since `quote_products.priced_at`; Re-p
 below the floor (rule target, or the quoted margin if negotiated below target). Drivers come from
 StandardCostHistory, `InventoryCostHistory` (recorded on every `cost_per_unit` change), and BOM
 component history. "Re-quote" (`Quote#create_requote!`) drafts a quote at today's rule prices.
-**ProductionOrder** = STATUSES: pending / in_progress / completed
+**ProductionOrder** = STATUSES: pending / in_progress / completed. The production order *is* the batch.
+**Production costing / GL**: BOM = inventory components (`ProductComponent`, moved by PDI repack) + non-inventory
+`ProductCostLine`s (qty × unit cost ÷ per; labor lines use the `AppSetting.labor_rate`, "per" = units per worker-hour).
+"Standard Calculated (BOM)" pricing uses this full cost. PDI's single per-product repack fee (`products.pdi_repack_fee`)
+goes to a clearing account; `ProductionOrderJournal` builds the FPST GL entry per production order (Dr clearing,
+Cr cost lines at standard, Cr /line labor at actual split by `users.employment_type`, variance plug), shown on the
+order's GL Posting tab (preview only; no ledger/export yet). `PdiGlImport` = PDI's 13-column GL import layout.
+Accounts post as Site-Major-Sub (site = `Location#pdi_site_code`, 4 digits). **ReportingGroup** uses PDI item types:
+fuel/warehouse groups = PDI product categories (linked by `products.category` name, auto-created); non_inventory
+groups (Consumables, Labor, Overhead) hold cost lines. Admin → Reporting Groups / Costing Settings.
 **WorkOrders / Jobs** = shop work orders with comments; Jobs + JobWorkers are line-worker clock-in/out (`/line`)
 **User roles**: admin, worker (drivers), line_worker
 

@@ -35,6 +35,7 @@
           <tr>
             <th style="width:32px;"><input type="checkbox" class="form-check-input location-select-all"></th>
             <th>Name</th>
+            <th>Site #</th>
             <th>Address</th>
             <th>City</th>
             <th>State</th>
@@ -49,6 +50,7 @@
             <tr class="<%= 'table-danger' if location.disabled? %>">
               <td onclick="event.stopPropagation();"><input type="checkbox" class="form-check-input bulk-row-select" value="<%= location.id %>"></td>
               <td style="cursor:pointer;" onclick="window.location='/locations/<%= location.id %>';"><%= location.company_name %></td>
+              <td><%= location.pdi_site_code %></td>
               <td><%= location.address %></td>
               <td><%= location.city %></td>
               <td><%= location.state %></td>
@@ -74,6 +76,7 @@
           <tr>
             <th style="width:32px;"><input type="checkbox" class="form-check-input location-select-all"></th>
             <th>Name</th>
+            <th>Site #</th>
             <th>Address</th>
             <th>City</th>
             <th>State</th>
@@ -88,6 +91,7 @@
             <tr class="<%= 'table-danger' if location.disabled? %>">
               <td onclick="event.stopPropagation();"><input type="checkbox" class="form-check-input bulk-row-select" value="<%= location.id %>"></td>
               <td style="cursor:pointer;" onclick="window.location='/locations/<%= location.id %>';"><%= location.company_name %></td>
+              <td><%= location.pdi_site_code %></td>
               <td><%= location.address %></td>
               <td><%= location.city %></td>
               <td><%= location.state %></td>

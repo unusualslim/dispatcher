@@ -1,0 +1,95 @@
+<%# Standard vs actual cost panel. Locals: costing (ProductionOrderCosting) %>
+<div class="card shadow-sm mt-4">
+  <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+    Costing
+    <span class="text-muted small">
+      <%= number_with_delimiter(costing.qty_produced.round(3)) %> produced ·
+      labor <%= number_to_currency(costing.labor_rate) %>/hr · current standards
+    </span>
+  </div>
+  <div class="card-body">
+    <% if costing.product.nil? %>
+      <p class="text-muted mb-0">Link a product to this production order to see costing.</p>
+    <% else %>
+      <div class="row g-4">
+        <div class="col-lg-5">
+          <h6 class="text-muted text-uppercase small">Line Labor</h6>
+          <table class="table table-sm mb-2">
+            <tbody>
+              <tr><td>Standard hours earned</td><td class="text-end"><%= number_with_precision(costing.standard_labor_hours, precision: 2) %></td></tr>
+              <tr><td>Actual hours (/line)</td><td class="text-end"><%= number_with_precision(costing.actual_labor_hours, precision: 2) %></td></tr>
+              <% if costing.actual_labor_hours_by_type.size > 1 || costing.actual_labor_hours_by_type.key?('temp') %>
+                <% costing.actual_labor_hours_by_type.sort.each do |type, hours| %>
+                  <tr class="text-muted small"><td class="ps-4"><%= User::EMPLOYMENT_TYPES[type] %></td><td class="text-end"><%= number_with_precision(hours, precision: 2) %></td></tr>
+                <% end %>
+              <% end %>
+              <tr class="fw-semibold">
+                <td>Efficiency</td>
+                <td class="text-end">
+                  <% if (eff = costing.labor_efficiency) %>
+                    <span class="badge bg-<%= eff >= 1 ? 'success' : (eff >= 0.9 ? 'warning text-dark' : 'danger') %>"><%= number_to_percentage(eff * 100, precision: 0) %></span>
+                  <% else %>
+                    —
+                  <% end %>
+                </td>
+              </tr>
+              <tr><td>Standard labor cost</td><td class="text-end"><%= number_to_currency(costing.standard_labor_cost) %></td></tr>
+              <tr><td>Actual labor cost</td><td class="text-end"><%= number_to_currency(costing.actual_labor_cost) %></td></tr>
+            </tbody>
+          </table>
+          <% if costing.standard_labor_hours.zero? %>
+            <div class="small text-muted">No Line Labor standard on this product's BOM.</div>
+          <% end %>
+        </div>
+
+        <div class="col-lg-7">
+          <h6 class="text-muted text-uppercase small">Repack Fee Clearing</h6>
+          <table class="table table-sm mb-2">
+            <thead class="table-light">
+              <tr><th>Cost</th><th>Reporting Group</th><th class="text-end">Per unit</th><th class="text-end">Absorbed</th></tr>
+            </thead>
+            <tbody>
+              <% costing.non_labor_lines.each do |line| %>
+                <tr>
+                  <td><%= line.description %></td>
+                  <td class="text-muted"><%= line.reporting_group.name %></td>
+                  <td class="text-end"><%= number_to_currency(line.cost_per_unit, precision: 4) %></td>
+                  <td class="text-end"><%= number_to_currency(line.standard) %></td>
+                </tr>
+              <% end %>
+              <tr>
+                <td>Line labor (actual)</td>
+                <td class="text-muted"><%= costing.labor_group&.name || 'Labor' %></td>
+                <td class="text-end"><%= costing.qty_produced.positive? ? number_to_currency(costing.actual_labor_cost / costing.qty_produced, precision: 4) : '—' %></td>
+                <td class="text-end"><%= number_to_currency(costing.actual_labor_cost) %></td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr class="fw-semibold">
+                <td colspan="2">Absorbed cost</td>
+                <td class="text-end"><%= costing.actual_cost_per_unit ? number_to_currency(costing.actual_cost_per_unit, precision: 4) : '—' %></td>
+                <td class="text-end"><%= number_to_currency(costing.absorbed_cost) %></td>
+              </tr>
+              <tr>
+                <td colspan="2">PDI repack fee capitalized</td>
+                <td class="text-end"><%= costing.product.pdi_repack_fee ? number_to_currency(costing.product.pdi_repack_fee, precision: 4) : '—' %></td>
+                <td class="text-end"><%= costing.repack_fee_applied ? number_to_currency(costing.repack_fee_applied) : 'not set' %></td>
+              </tr>
+              <tr class="fw-semibold">
+                <td colspan="3">Variance <span class="fw-normal text-muted small">(fee − absorbed; positive is favorable)</span></td>
+                <td class="text-end <%= costing.variance.to_d.negative? ? 'text-danger' : 'text-success' if costing.variance %>">
+                  <%= costing.variance ? number_to_currency(costing.variance) : '—' %>
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+          <% if (material = costing.material_standard) %>
+            <div class="small text-muted">
+              Inventory materials at standard: <%= number_to_currency(material) %> (moved by PDI repack, not in clearing).
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

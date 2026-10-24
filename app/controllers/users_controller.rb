@@ -54,7 +54,8 @@ class UsersController < ApplicationController
       last_name: last,
       email: placeholder_email,
       password: SecureRandom.hex(16),
-      role: 'line_worker'
+      role: 'line_worker',
+      employment_type: params[:employment_type].presence || 'full_time'
     )
 
     if user.save
@@ -95,7 +96,7 @@ class UsersController < ApplicationController
 
   def user_params
     permitted = params.require(:user).permit(
-      :email, :first_name, :last_name, :phone_number, :role,
+      :email, :first_name, :last_name, :phone_number, :role, :employment_type,
       :sms_opt_in, :email_opt_in, :password, :password_confirmation
     )
     # Don't touch the password if the field was left blank

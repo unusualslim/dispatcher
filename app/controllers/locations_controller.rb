@@ -13,8 +13,8 @@ class LocationsController < ApplicationController
 
     search_term = "%#{params[:query]}%"
     @locations = @locations.where(
-      'company_name ILIKE ? OR city ILIKE ? OR state ILIKE ? OR address ILIKE ? OR zip ILIKE ? OR phone_number ILIKE ?',
-      search_term, search_term, search_term, search_term, search_term, search_term
+      'company_name ILIKE ? OR city ILIKE ? OR state ILIKE ? OR address ILIKE ? OR zip ILIKE ? OR phone_number ILIKE ? OR pdi_site_code ILIKE ?',
+      search_term, search_term, search_term, search_term, search_term, search_term, search_term
     )
   end
 
@@ -253,7 +253,7 @@ class LocationsController < ApplicationController
 
   def location_params
     params.require(:location).permit(:city, :address, :location_category_id, :company_name, :phone_number, :state,
-                                     :notes, :zip, :max_capacity, :uleage_90, :latitude, :longitude, :cutoff_percent, :marker_color, product_ids: [], methods: [:has_active_order?])
+                                     :notes, :zip, :max_capacity, :uleage_90, :latitude, :longitude, :cutoff_percent, :marker_color, :pdi_site_code, product_ids: [], methods: [:has_active_order?])
   end
 
   def set_products

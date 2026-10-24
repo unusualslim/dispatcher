@@ -57,6 +57,11 @@
                   { include_blank: "— select —" },
                   class: "form-select" %>
           </div>
+          <div class="col-sm-6">
+            <%= form.label :employment_type, "Employment", class: "form-label mb-1" %>
+            <%= form.select :employment_type, User::EMPLOYMENT_TYPES.invert, {}, class: "form-select" %>
+            <div class="form-text">Sets which wage account /line labor posts to.</div>
+          </div>
         </div>
       </div>
 

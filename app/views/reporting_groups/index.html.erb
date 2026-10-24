@@ -1,0 +1,105 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="mb-0">Reporting Groups</h1>
+</div>
+
+<p class="text-muted" style="max-width: 820px;">
+  Reporting groups decide where costs post in the GL, using PDI's item types. <strong>Fuel</strong> and
+  <strong>Warehouse</strong> groups are PDI product categories: they're created automatically when a product
+  arrives with a new category, and their names can't change because products link to them by name.
+  <strong>Non-inventory</strong> groups hold the BOM cost lines absorbed into production; Labor groups are
+  absorbed at actual /line hours, with temp workers' hours posting to the temp account.
+  Enter accounts as Major-Sub (e.g. <code>6110-01</code>); the production location adds the site.
+</p>
+
+<% ReportingGroup::ITEM_TYPES.each do |type, label| %>
+  <% groups = @groups_by_type[type] %>
+  <% non_inventory = type == 'non_inventory' %>
+  <div class="card shadow-sm mb-4" style="max-width: 1040px;">
+    <div class="card-header fw-semibold d-flex justify-content-between">
+      <%= label %>
+      <span class="text-muted small fw-normal"><%= pluralize(groups.size, 'group') %></span>
+    </div>
+    <% if groups.empty? && !non_inventory %>
+      <div class="card-body text-muted small">None yet. They'll appear as PDI imports bring in products with this item type.</div>
+    <% else %>
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Name</th>
+              <% unless non_inventory %><th style="width: 150px;">Item Type</th><% end %>
+              <th style="width: 150px;">GL Account</th>
+              <% if non_inventory %>
+                <th style="width: 150px;">Temp Labor Account</th>
+                <th class="text-center" style="width: 70px;">Labor</th>
+                <th class="text-end" style="width: 90px;">Cost Lines</th>
+              <% else %>
+                <th class="text-end" style="width: 90px;">Products</th>
+              <% end %>
+              <th style="width: 150px;"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% groups.each do |group| %>
+              <% form_id = "reporting_group_#{group.id}" %>
+              <% in_use = non_inventory ? group.product_cost_lines.size : @product_counts[group.name].to_i %>
+              <tr>
+                <td>
+                  <% if non_inventory %>
+                    <%= text_field_tag 'reporting_group[name]', group.name, form: form_id, class: 'form-control form-control-sm', required: true %>
+                  <% else %>
+                    <%= link_to group.name, products_path(type: 'all', category: group.name) %>
+                  <% end %>
+                </td>
+                <% unless non_inventory %>
+                  <td>
+                    <%= select_tag 'reporting_group[item_type]',
+                                   options_for_select(ReportingGroup::ITEM_TYPES.except('non_inventory').invert, group.item_type),
+                                   form: form_id, class: 'form-select form-select-sm' %>
+                  </td>
+                <% end %>
+                <td><%= text_field_tag 'reporting_group[gl_account]', group.gl_account, form: form_id, class: 'form-control form-control-sm font-monospace', placeholder: 'Major-Sub' %></td>
+                <% if non_inventory %>
+                  <td>
+                    <%= text_field_tag 'reporting_group[temp_gl_account]', group.temp_gl_account, form: form_id,
+                                       class: 'form-control form-control-sm font-monospace', placeholder: 'Labor only' %>
+                  </td>
+                  <td class="text-center">
+                    <%= hidden_field_tag 'reporting_group[labor]', '0', form: form_id, id: nil %>
+                    <%= check_box_tag 'reporting_group[labor]', '1', group.labor?, form: form_id, class: 'form-check-input', id: "labor_#{group.id}" %>
+                  </td>
+                <% end %>
+                <td class="text-end"><%= in_use %></td>
+                <td class="text-end text-nowrap">
+                  <%= form_with model: group, id: form_id, method: :patch, class: 'd-inline' do %>
+                    <button type="submit" class="btn btn-sm btn-primary">Save</button>
+                  <% end %>
+                  <% if in_use.zero? %>
+                    <%= button_to 'Delete', reporting_group_path(group), method: :delete, class: 'btn btn-sm btn-outline-danger',
+                                                                         form: { class: 'd-inline', data: { turbo_confirm: "Delete #{group.name}?" } } %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+          <% if non_inventory %>
+            <tfoot>
+              <tr class="table-light">
+                <td><%= text_field_tag 'reporting_group[name]', nil, form: 'new_reporting_group', class: 'form-control form-control-sm', placeholder: 'New non-inventory group', required: true %></td>
+                <td><%= text_field_tag 'reporting_group[gl_account]', nil, form: 'new_reporting_group', class: 'form-control form-control-sm font-monospace', placeholder: 'Major-Sub' %></td>
+                <td><%= text_field_tag 'reporting_group[temp_gl_account]', nil, form: 'new_reporting_group', class: 'form-control form-control-sm font-monospace', placeholder: 'Labor only' %></td>
+                <td class="text-center"><%= check_box_tag 'reporting_group[labor]', '1', false, form: 'new_reporting_group', class: 'form-check-input', id: 'labor_new' %></td>
+                <td></td>
+                <td class="text-end">
+                  <%= form_with model: ReportingGroup.new, id: 'new_reporting_group', class: 'd-inline' do %>
+                    <button type="submit" class="btn btn-sm btn-outline-primary">Add</button>
+                  <% end %>
+                </td>
+              </tr>
+            </tfoot>
+          <% end %>
+        </table>
+      </div>
+    <% end %>
+  </div>
+<% end %>

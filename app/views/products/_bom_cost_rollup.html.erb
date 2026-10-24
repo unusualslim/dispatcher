@@ -1,5 +1,9 @@
 <%# BOM standard cost rollup — same math as Product#bom_standard_cost.
-    Locals: components (saved ProductComponent records) %>
+    Locals: components (saved ProductComponent records),
+            cost_lines (saved ProductCostLine records, optional),
+            repack_fee (product's PDI repack fee, optional) %>
+<% cost_lines = local_assigns.fetch(:cost_lines, []) %>
+<% repack_fee = local_assigns[:repack_fee] %>
 <% total = 0.to_d %>
 <% missing = [] %>
 <table class="table table-sm table-bordered mb-1" style="font-size:.82rem;">
@@ -40,6 +44,30 @@
     <% end %>
   </tbody>
   <tfoot>
+    <% if cost_lines.any? %>
+      <% non_inventory = cost_lines.sum(0.to_d, &:cost_per_unit) %>
+      <tr>
+        <td colspan="4" class="text-end">Inventory Materials</td>
+        <td class="text-end <%= 'text-muted' if missing.any? %>"><%= number_to_currency(total, precision: 4) %></td>
+      </tr>
+      <% cost_lines.each do |cl| %>
+        <tr class="text-muted">
+          <td colspan="2"><%= cl.description %></td>
+          <td><%= cl.reporting_group.name %></td>
+          <td class="text-end small">
+            <%= number_with_precision(cl.quantity, precision: 4, strip_insignificant_zeros: true) %> ×
+            <%= number_to_currency(cl.effective_unit_cost, precision: 4, strip_insignificant_zeros: true) %>
+            <% if cl.per_quantity.to_d != 1 %>÷ <%= number_with_precision(cl.per_quantity, precision: 4, strip_insignificant_zeros: true, delimiter: ',') %><% end %>
+          </td>
+          <td class="text-end"><%= number_to_currency(cl.cost_per_unit, precision: 4) %></td>
+        </tr>
+      <% end %>
+      <tr>
+        <td colspan="4" class="text-end">Non-Inventory Costs</td>
+        <td class="text-end"><%= number_to_currency(non_inventory, precision: 4) %></td>
+      </tr>
+      <% total += non_inventory %>
+    <% end %>
     <tr class="fw-semibold">
       <td colspan="4" class="text-end">BOM Standard Cost</td>
       <td class="text-end <%= 'text-muted' if missing.any? %>"><%= number_to_currency(total, precision: 4) %></td>
@@ -54,4 +82,14 @@
   </div>
 <% else %>
   <div class="small text-muted">This is the cost used by pricing rules with the Standard Calculated (BOM) basis.</div>
+<% end %>
+<% if cost_lines.any? %>
+  <div class="small mt-1 <%= repack_fee && (repack_fee.to_d - non_inventory).abs >= 0.0001 ? 'text-warning-emphasis' : 'text-muted' %>">
+    PDI repack fee:
+    <% if repack_fee %>
+      <%= number_to_currency(repack_fee, precision: 4) %> vs non-inventory standard <%= number_to_currency(non_inventory, precision: 4) %>
+    <% else %>
+      not set
+    <% end %>
+  </div>
 <% end %>

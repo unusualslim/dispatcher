@@ -488,6 +488,7 @@ Rails/Date:
     - 'app/jobs/pdi_export_job.rb'
     - 'app/mailers/inventory_intelligence_mailer.rb'
     - 'app/models/pricing_rule.rb'
+    - 'app/models/concerns/product_costing.rb'
     - 'app/models/product.rb'
     - 'app/models/purchase_order.rb'
     - 'app/models/quote.rb'

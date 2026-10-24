@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_23_200000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_24_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -58,6 +58,14 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_23_200000) do
     t.string "status"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "app_settings", force: :cascade do |t|
+    t.string "key", null: false
+    t.string "value"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["key"], name: "index_app_settings_on_key", unique: true
   end
 
   create_table "automated_process_configs", force: :cascade do |t|
@@ -347,6 +355,20 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_23_200000) do
     t.index ["product_id"], name: "index_product_components_on_product_id"
   end
 
+  create_table "product_cost_lines", force: :cascade do |t|
+    t.string "product_id", null: false
+    t.bigint "reporting_group_id", null: false
+    t.string "description", null: false
+    t.decimal "quantity", precision: 12, scale: 4, default: "1.0", null: false
+    t.decimal "unit_cost", precision: 12, scale: 4
+    t.decimal "per_quantity", precision: 12, scale: 4, default: "1.0", null: false
+    t.integer "position"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_id"], name: "index_product_cost_lines_on_product_id"
+    t.index ["reporting_group_id"], name: "index_product_cost_lines_on_reporting_group_id"
+  end
+
   create_table "product_vendors", force: :cascade do |t|
     t.string "product_id", null: false
     t.string "vendor_id", null: false
@@ -435,6 +457,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_23_200000) do
     t.decimal "max_stock"
     t.string "pdi_tank_id"
     t.decimal "standard_cost", precision: 12, scale: 4
+    t.decimal "pdi_repack_fee", precision: 12, scale: 4
   end
 
   create_table "purchase_order_line_items", force: :cascade do |t|
@@ -523,6 +546,18 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_23_200000) do
     t.index ["quote_number"], name: "index_quotes_on_quote_number", unique: true
   end
 
+  create_table "reporting_groups", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "item_type", null: false
+    t.string "gl_account"
+    t.string "temp_gl_account"
+    t.boolean "labor", default: false, null: false
+    t.integer "position"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_reporting_groups_on_name", unique: true
+  end
+
   create_table "standard_cost_histories", force: :cascade do |t|
     t.string "product_id"
     t.decimal "amount", precision: 12, scale: 4
@@ -584,6 +619,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_23_200000) do
     t.datetime "updated_at", null: false
     t.boolean "email_opt_in"
     t.boolean "sms_opt_in"
+    t.string "employment_type", default: "full_time", null: false
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
@@ -658,6 +694,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_23_200000) do
   add_foreign_key "phone_numbers", "customers"
   add_foreign_key "product_components", "products"
   add_foreign_key "product_components", "products", column: "component_product_id"
+  add_foreign_key "product_cost_lines", "reporting_groups"
   add_foreign_key "product_vendors", "products"
   add_foreign_key "product_vendors", "vendors"
   add_foreign_key "production_order_batches", "production_orders"

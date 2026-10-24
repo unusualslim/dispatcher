@@ -231,10 +231,12 @@
       <h5 class="mb-3">Components (BOM)</h5>
 
       <% saved_components = @product.product_components.select(&:persisted?) %>
-      <% if saved_components.any? %>
+      <% saved_cost_lines = @product.product_cost_lines.select(&:persisted?) %>
+      <% if saved_components.any? || saved_cost_lines.any? %>
         <div class="mb-4">
           <div class="fw-semibold mb-2">Standard Cost Rollup</div>
-          <%= render 'bom_cost_rollup', components: saved_components %>
+          <%= render 'bom_cost_rollup', components: saved_components, cost_lines: saved_cost_lines,
+                                        repack_fee: @product.pdi_repack_fee %>
         </div>
       <% end %>
 
@@ -255,12 +257,13 @@
             <div class="d-flex gap-2 align-items-center" data-bom-row="1">
               <%= pc.hidden_field :id if pc.object&.persisted? %>
 
-              <%= pc.collection_select :component_product_id,
-                    Product.order(:name),
-                    :id,
-                    :name,
-                    { include_blank: "Select component..." },
-                    class: "form-select" %>
+              <% component = pc.object&.component_product %>
+              <div style="flex: 2; min-width: 280px;">
+                <%= pc.select :component_product_id,
+                      options_for_select(component ? [["#{component.name} (#{component.id})", component.id]] : [], component&.id),
+                      { include_blank: true },
+                      class: "form-select bom-product-select" %>
+              </div>
 
               <%= pc.number_field :quantity_per_unit,
                     step: 0.0001,
@@ -283,8 +286,43 @@
           + Add Component
         </button>
 
+        <hr class="my-4">
+        <h6 class="mb-1">Non-Inventory Costs</h6>
+        <p class="small text-muted mb-2">
+          Consumables, labor and overhead absorbed per unit: qty × cost ÷ per. The reporting group decides the GL account.
+          Labor lines use the labor rate (<%= number_to_currency(AppSetting.labor_rate) %>/hr<%= link_to ' change', edit_costing_settings_path if admin? %>);
+          enter hours as qty and units per worker-hour as "per".
+        </p>
+
+        <div id="cost-line-rows" class="d-flex flex-column gap-2">
+          <%= f.fields_for :product_cost_lines do |cl| %>
+            <div class="d-flex gap-2 align-items-center">
+              <%= cl.hidden_field :id if cl.object&.persisted? %>
+              <%= cl.text_field :description, class: "form-control", placeholder: "Description" %>
+              <%= cl.collection_select :reporting_group_id, ReportingGroup.non_inventory.ordered, :id, :name, {}, class: "form-select", style: "max-width: 150px;", title: "Reporting group" %>
+              <%= cl.number_field :quantity, step: "any", class: "form-control", style: "max-width: 110px;", placeholder: "Qty", title: "Qty" %>
+              <%= cl.number_field :unit_cost, step: "any", class: "form-control", style: "max-width: 120px;", placeholder: "Cost", title: "Unit cost" %>
+              <%= cl.number_field :per_quantity, step: "any", class: "form-control", style: "max-width: 110px;", placeholder: "Per", title: "Per (units covered)" %>
+              <div class="form-check ms-1">
+                <%= cl.check_box :_destroy, class: "form-check-input" %>
+                <%= cl.label :_destroy, "Remove", class: "form-check-label small" %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+
+        <button type="button" class="btn btn-sm btn-outline-secondary mt-3" id="add-cost-line-row">
+          + Add Cost
+        </button>
+
+        <div class="mt-3" style="max-width: 260px;">
+          <%= f.label :pdi_repack_fee, "PDI Repack Fee (per unit)", class: "form-label small mb-1" %>
+          <%= f.number_field :pdi_repack_fee, step: "any", class: "form-control" %>
+          <div class="form-text">What PDI capitalizes per unit on repack; cleared by the GL export.</div>
+        </div>
+
         <div class="mt-3">
-          <%= f.submit "Save BOM", class: "btn btn-primary" %>
+          <%= f.submit "Save BOM & Costs", class: "btn btn-primary" %>
         </div>
       <% end %>
     </div>
@@ -292,14 +330,36 @@
 </div>
 
 <script>
-  window.bomProducts = <%= Product.order(:name).map { |p| { id: p.id, name: p.name } }.to_json.html_safe %>;
+  window.costLineGroups = <%= ReportingGroup.non_inventory.ordered.map { |g| { id: g.id, name: g.name } }.to_json.html_safe %>;
 </script>
 
 <script>
+// Searchable component picker backed by /products/search (name or part number).
+function initProductSearch(select) {
+  if (!window.jQuery || !jQuery.fn.select2) return;
+  var $select = jQuery(select);
+  if ($select.data("select2")) return;
+  $select.select2({
+    theme: "bootstrap-5",
+    placeholder: "Search components...",
+    allowClear: true,
+    width: "100%",
+    ajax: {
+      url: "<%= search_products_path %>",
+      dataType: "json",
+      delay: 200,
+      data: function (params) { return { q: params.term || "" }; },
+      processResults: function (data) { return { results: data }; }
+    }
+  });
+}
+
 document.addEventListener("turbo:load", function () {
   var container = document.getElementById("bom-rows");
   var addBtn    = document.getElementById("add-bom-row");
-  if (!container || !addBtn || addBtn.dataset.bound) return;
+  if (!container || !addBtn) return;
+  container.querySelectorAll(".bom-product-select").forEach(initProductSearch);
+  if (addBtn.dataset.bound) return;
   addBtn.dataset.bound = "1";
 
   function nextIndex() {
@@ -311,19 +371,13 @@ document.addEventListener("turbo:load", function () {
     return max + 1;
   }
 
-  function productOptions() {
-    return window.bomProducts.map(function (p) {
-      return '<option value="' + p.id + '">' + p.name + '</option>';
-    }).join('');
-  }
-
   addBtn.addEventListener("click", function () {
     var idx  = nextIndex();
     var base = 'product[product_components_attributes][' + idx + ']';
     var html = '<div class="d-flex gap-2 align-items-center" data-bom-row="1">' +
-      '<select class="form-select" name="' + base + '[component_product_id]">' +
-        '<option value="">Select component...</option>' + productOptions() +
-      '</select>' +
+      '<div style="flex: 2; min-width: 280px;">' +
+        '<select class="form-select bom-product-select" name="' + base + '[component_product_id]"><option value=""></option></select>' +
+      '</div>' +
       '<input class="form-control" type="number" step="0.0001" placeholder="Qty / unit" name="' + base + '[quantity_per_unit]" />' +
       '<input class="form-control" type="text" placeholder="UOM (e.g. GAL)" name="' + base + '[uom]" />' +
       '<div class="form-check ms-1">' +
@@ -332,6 +386,49 @@ document.addEventListener("turbo:load", function () {
       '</div>' +
     '</div>';
 
+    container.insertAdjacentHTML("beforeend", html);
+    initProductSearch(container.lastElementChild.querySelector(".bom-product-select"));
+  });
+});
+
+// Turbo cache safety: snapshot the plain selects, not the Select2 widgets.
+document.addEventListener("turbo:before-cache", function () {
+  if (!window.jQuery || !jQuery.fn.select2) return;
+  jQuery(".bom-product-select").each(function () {
+    if (jQuery(this).data("select2")) jQuery(this).select2("destroy");
+  });
+});
+
+document.addEventListener("turbo:load", function () {
+  var container = document.getElementById("cost-line-rows");
+  var addBtn    = document.getElementById("add-cost-line-row");
+  if (!container || !addBtn || addBtn.dataset.bound) return;
+  addBtn.dataset.bound = "1";
+
+  addBtn.addEventListener("click", function () {
+    var max = -1;
+    container.querySelectorAll('input, select').forEach(function (el) {
+      var m = el.name && el.name.match(/\[product_cost_lines_attributes\]\[(\d+)\]/);
+      if (m) max = Math.max(max, parseInt(m[1], 10));
+    });
+    var base = 'product[product_cost_lines_attributes][' + (max + 1) + ']';
+    var groups = window.costLineGroups.map(function (g) {
+      var opt = document.createElement('option');
+      opt.value = g.id;
+      opt.textContent = g.name;
+      return opt.outerHTML;
+    }).join('');
+    var html = '<div class="d-flex gap-2 align-items-center">' +
+      '<input class="form-control" type="text" placeholder="Description" name="' + base + '[description]" />' +
+      '<select class="form-select" style="max-width: 150px;" title="Reporting group" name="' + base + '[reporting_group_id]">' + groups + '</select>' +
+      '<input class="form-control" style="max-width: 110px;" type="number" step="any" placeholder="Qty" value="1" name="' + base + '[quantity]" />' +
+      '<input class="form-control" style="max-width: 120px;" type="number" step="any" placeholder="Cost" name="' + base + '[unit_cost]" />' +
+      '<input class="form-control" style="max-width: 110px;" type="number" step="any" placeholder="Per" value="1" name="' + base + '[per_quantity]" />' +
+      '<div class="form-check ms-1">' +
+        '<input class="form-check-input" type="checkbox" value="1" name="' + base + '[_destroy]" />' +
+        '<label class="form-check-label small">Remove</label>' +
+      '</div>' +
+    '</div>';
     container.insertAdjacentHTML("beforeend", html);
   });
 });

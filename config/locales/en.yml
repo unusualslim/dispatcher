@@ -31,3 +31,15 @@
 
 en:
   hello: "Hello world"
+  costing_settings:
+    update:
+      invalid_rate: "Labor rate must be a positive number."
+      updated: "Costing settings updated."
+      invalid_accounts: "GL accounts must be Major-Sub, e.g. 1410-02: %{roles}"
+  reporting_groups:
+    create:
+      created: "Added reporting group %{name}."
+    update:
+      updated: "Saved %{name}."
+    destroy:
+      deleted: "Deleted %{name}."

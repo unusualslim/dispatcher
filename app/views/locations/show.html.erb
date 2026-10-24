@@ -10,6 +10,7 @@
       <div class="row">
         <div class="col-md-6">
           <p><strong>ID:</strong> <%= @location.id %></p>
+          <p><strong>PDI Site Number:</strong> <%= @location.pdi_site_code.presence || "N/A" %></p>
           <p><strong>City:</strong> <%= @location.city.presence || "N/A" %></p>
           <p><strong>Address:</strong> <%= @location.address.presence || "N/A" %></p>
           <p><strong>State:</strong> <%= @location.state.presence || "N/A" %></p>
