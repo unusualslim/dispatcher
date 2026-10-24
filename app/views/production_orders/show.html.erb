@@ -302,7 +302,16 @@
 
             <div class="col-md-4">
               <div class="small text-muted">Total Qty Produced</div>
-              <div><%= @production_order.total_qty_produced.present? ? @production_order.total_qty_produced : "—" %></div>
+              <% if !%w[completed voided].include?(@production_order.status) && can?(:production, :edit) %>
+                <%# Editable until the order is completed (completion moves this quantity into inventory) %>
+                <%= form_with model: @production_order, method: :patch, local: true, class: "d-flex gap-1", id: "qty-produced-form" do |f| %>
+                  <%= f.number_field :total_qty_produced, step: "any", min: 0, class: "form-control form-control-sm",
+                                                          style: "max-width: 120px;", placeholder: "Qty", "aria-label": "Total qty produced" %>
+                  <%= f.submit "Save", class: "btn btn-sm btn-outline-primary" %>
+                <% end %>
+              <% else %>
+                <div><%= @production_order.total_qty_produced.present? ? number_with_delimiter(@production_order.total_qty_produced.to_d.to_s('F').sub(/\.0+\z/, '')) : "—" %></div>
+              <% end %>
             </div>
 
             <div class="col-md-6">

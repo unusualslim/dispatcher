@@ -100,4 +100,17 @@ class QualityCheckTest < ActionDispatch::IntegrationTest
     } } }
     assert_equal 'Viscosity', @product.quality_specs.reload.last.name
   end
+
+  test 'quantity produced is editable on the order page until completion' do
+    get production_order_path(@po)
+    assert_select '#qty-produced-form input[name="production_order[total_qty_produced]"]'
+
+    patch production_order_path(@po), params: { production_order: { total_qty_produced: '98' } }
+    assert_redirected_to production_order_path(@po)
+    assert_equal 98, @po.reload.total_qty_produced
+
+    done = ProductionOrder.create!(product: @product, status: 'completed', total_qty_produced: 50)
+    get production_order_path(done)
+    assert_select '#qty-produced-form', 0
+  end
 end
