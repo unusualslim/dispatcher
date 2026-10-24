@@ -65,6 +65,11 @@
 
             <dt class="col-5 text-muted">Created By</dt>
             <dd class="col-7"><%= @job.created_by.full_name %></dd>
+
+            <% if @job.edited_at %>
+              <dt class="col-5 text-muted">Times Edited</dt>
+              <dd class="col-7"><%= @job.edited_at.strftime("%m/%d/%Y %I:%M %p") %> by <%= @job.edited_by&.full_name %></dd>
+            <% end %>
           </dl>
         </div>
       </div>
@@ -100,6 +105,36 @@
           </tbody>
         </table>
       </div>
+
+      <% if admin? && !@job.active? %>
+        <div class="card mt-3">
+          <div class="card-header fw-semibold">Edit Clock Times</div>
+          <div class="card-body">
+            <p class="small text-muted">
+              Correct each worker's clock-in and clock-out. The job's start and end follow, and labor costing on
+              <%= link_to @job.production_order.number, "#{production_order_path(@job.production_order)}#gl-posting" %>
+              uses the new hours. Edits are recorded with your name.
+            </p>
+            <%= form_with url: job_path(@job), method: :patch, local: true do %>
+              <table class="table table-sm align-middle mb-3">
+                <thead class="table-light">
+                  <tr><th>Name</th><th>Clocked In</th><th>Clocked Out</th></tr>
+                </thead>
+                <tbody>
+                  <% @job.job_workers.includes(:user).each do |jw| %>
+                    <tr>
+                      <td><%= jw.user.full_name %></td>
+                      <td><%= datetime_local_field_tag "job_workers[#{jw.id}][clocked_in_at]", jw.clocked_in_at&.strftime('%Y-%m-%dT%H:%M'), class: 'form-control form-control-sm', required: true %></td>
+                      <td><%= datetime_local_field_tag "job_workers[#{jw.id}][clocked_out_at]", jw.clocked_out_at&.strftime('%Y-%m-%dT%H:%M'), class: 'form-control form-control-sm', required: true %></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+              <%= submit_tag 'Save Times', class: 'btn btn-primary btn-sm', data: { turbo_confirm: 'Save the corrected clock times?' } %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
     </div>
   </div>
 </div>

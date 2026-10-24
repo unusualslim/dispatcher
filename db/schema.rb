@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_24_240000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_24_250000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -254,7 +254,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_24_240000) do
     t.datetime "ended_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "edited_by_id"
+    t.datetime "edited_at"
     t.index ["created_by_id"], name: "index_jobs_on_created_by_id"
+    t.index ["edited_by_id"], name: "index_jobs_on_edited_by_id"
     t.index ["production_order_id"], name: "index_jobs_on_production_order_id"
   end
 
@@ -722,6 +725,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_24_240000) do
   add_foreign_key "job_workers", "users"
   add_foreign_key "jobs", "production_orders"
   add_foreign_key "jobs", "users", column: "created_by_id"
+  add_foreign_key "jobs", "users", column: "edited_by_id"
   add_foreign_key "ledger_entries", "ledger_entries", column: "reversal_of_id"
   add_foreign_key "ledger_entries", "production_orders"
   add_foreign_key "ledger_entries", "sync_logs"

@@ -3,6 +3,7 @@ class Job < ApplicationRecord
 
   belongs_to :production_order
   belongs_to :created_by, class_name: 'User'
+  belongs_to :edited_by, class_name: 'User', optional: true
   has_many :job_workers, dependent: :destroy
   has_many :users, through: :job_workers
 
@@ -29,6 +30,19 @@ class Job < ApplicationRecord
     minutes = (total % 3600) / 60
     seconds = total % 60
     format('%02d:%02d:%02d', hours, minutes, seconds)
+  end
+
+  # Admin correction of clock times: { job_worker_id => { clocked_in_at:, clocked_out_at: } }.
+  # The job's span follows its workers. Raises ActiveRecord::RecordInvalid on bad times.
+  def correct_times!(times, user)
+    transaction do
+      job_workers.each do |jw|
+        attrs = times[jw.id.to_s]
+        jw.update!(clocked_in_at: attrs[:clocked_in_at], clocked_out_at: attrs[:clocked_out_at]) if attrs
+      end
+      update!(started_at: job_workers.minimum(:clocked_in_at), ended_at: job_workers.maximum(:clocked_out_at),
+              edited_by: user, edited_at: Time.current)
+    end
   end
 
   def clock_out!

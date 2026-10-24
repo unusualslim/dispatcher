@@ -44,6 +44,12 @@ en:
       updated: "Saved %{name}."
     destroy:
       deleted: "Deleted %{name}."
+  jobs:
+    update:
+      updated: "Clock times updated; labor costing uses the new hours."
+      posted_entry: "This order's journal entry is already posted with the old hours; reverse it on the GL Posting tab to repost."
+      still_running: "Clock the crew out before editing times."
+      invalid: "Times not saved: %{error}"
   ledger_entries:
     create:
       posted: "Posted journal entry %{reference}."

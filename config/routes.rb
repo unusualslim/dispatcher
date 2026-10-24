@@ -135,7 +135,7 @@ Rails.application.routes.draw do
   end
 
   get 'line', to: 'jobs#line', as: :line
-  resources :jobs, only: %i[create show] do
+  resources :jobs, only: %i[create show update] do
     member do
       patch :clock_out
     end

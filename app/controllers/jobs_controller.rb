@@ -1,6 +1,7 @@
 class JobsController < ApplicationController
   before_action :require_admin_or_line_lead!
-  before_action :set_job, only: %i[show clock_out]
+  before_action :require_admin!, only: :update
+  before_action :set_job, only: %i[show update clock_out]
 
   def line
     @line_workers = User.line_workers.order(:first_name, :last_name)
@@ -37,6 +38,18 @@ class JobsController < ApplicationController
 
   def show; end
 
+  # Admin correction of a finished job's clock times.
+  def update
+    return redirect_to @job, alert: t('.still_running') if @job.active?
+
+    @job.correct_times!(worker_times_params, current_user)
+    notice = t('.updated')
+    notice += " #{t('.posted_entry')}" if LedgerEntry.active_for(@job.production_order)
+    redirect_to @job, notice: notice
+  rescue ActiveRecord::RecordInvalid => e
+    redirect_to @job, alert: t('.invalid', error: e.record.errors.full_messages.to_sentence)
+  end
+
   def clock_out
     @job.clock_out!
     redirect_to line_path, notice: "Clocked out. Job duration: #{@job.duration_formatted}."
@@ -45,6 +58,11 @@ class JobsController < ApplicationController
   end
 
   private
+
+  def worker_times_params
+    params.require(:job_workers)
+          .permit(@job.job_worker_ids.map { |id| { id.to_s => %i[clocked_in_at clocked_out_at] } }).to_h
+  end
 
   def set_job
     @job = Job.find(params[:id])

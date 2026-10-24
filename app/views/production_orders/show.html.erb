@@ -365,7 +365,7 @@
             <tbody>
               <% @production_order.jobs.order(started_at: :desc).each do |job| %>
                 <tr>
-                  <td><%= job.job_type %></td>
+                  <td><%= link_to job.job_type, job_path(job) %></td>
                   <td><%= job.started_at.strftime("%m/%d/%Y %I:%M %p") %></td>
                   <td><%= job.ended_at ? job.ended_at.strftime("%m/%d/%Y %I:%M %p") : content_tag(:span, "In Progress", class: "badge bg-success") %></td>
                   <td><%= job.duration_formatted %></td>
