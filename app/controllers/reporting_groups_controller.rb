@@ -1,5 +1,5 @@
 class ReportingGroupsController < ApplicationController
-  before_action :require_admin!
+  permission_area :accounting
   before_action :set_reporting_group, only: %i[update destroy]
 
   def index

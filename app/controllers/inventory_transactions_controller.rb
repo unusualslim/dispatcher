@@ -1,5 +1,5 @@
 class InventoryTransactionsController < ApplicationController
-  before_action :require_admin!
+  permission_area :inventory
   def index
     @transactions = InventoryTransaction.includes(:product, :created_by)
     @transactions = @transactions.where(location_id: current_warehouse.id) if current_warehouse

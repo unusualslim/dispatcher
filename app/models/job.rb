@@ -9,6 +9,7 @@ class Job < ApplicationRecord
 
   validates :job_type, inclusion: { in: JOB_TYPES }
   validates :started_at, presence: true
+  validate :order_not_voided, on: :create
 
   # The first clock-in starts a created production order.
   after_create -> { production_order.update!(status: 'in_progress') if production_order.status == 'created' }
@@ -51,5 +52,11 @@ class Job < ApplicationRecord
       update!(ended_at: now)
       job_workers.update_all(clocked_out_at: now)
     end
+  end
+
+  private
+
+  def order_not_voided
+    errors.add(:production_order, 'is voided') if production_order&.voided?
   end
 end

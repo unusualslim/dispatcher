@@ -1,11 +1,13 @@
 class ProductionOrder < ApplicationRecord
-  # created: planned, nothing done yet · in_progress: a crew has clocked in · completed: done
-  STATUSES = %w[created in_progress completed].freeze
+  # created: planned, nothing done yet · in_progress: a crew has clocked in · completed: done ·
+  # voided: cancelled by an admin (ProductionOrderVoid), kept read-only for history
+  STATUSES = %w[created in_progress completed voided].freeze
   OPEN_STATUSES = %w[created in_progress].freeze
 
   belongs_to :product, optional: true
   belongs_to :customer, optional: true
   belongs_to :location, optional: true
+  belongs_to :voided_by, class_name: 'User', optional: true
 
   has_many :production_order_components, -> { order(:position, :id) }, dependent: :destroy
   accepts_nested_attributes_for :production_order_components, allow_destroy: true, reject_if: :all_blank
@@ -57,10 +59,19 @@ class ProductionOrder < ApplicationRecord
 
   scope :by_status, lambda { |status|
     s = status.to_s.strip.downcase
-    return all if s.blank? || s == 'all'
+    return where.not(status: 'voided') if s.blank? || s == 'all'
 
     where(status: s)
   }
+
+  def voided?
+    voided_at.present?
+  end
+
+  # Voided orders are kept for history and can't be changed.
+  def readonly?
+    (persisted? && voided_at_in_database.present?) || super
+  end
 
   def build_components_from_bom!
     return if product.blank? || qty_to_make.blank?

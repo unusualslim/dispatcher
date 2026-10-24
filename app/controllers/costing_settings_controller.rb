@@ -1,5 +1,5 @@
 class CostingSettingsController < ApplicationController
-  before_action :require_admin!
+  permission_area :accounting
 
   def edit
     @labor_rate = AppSetting.labor_rate

@@ -1,7 +1,9 @@
 class ProductionOrdersController < ApplicationController
-  before_action :require_admin!
+  permission_area :production
   before_action :authenticate_user!
-  before_action :set_production_order, only: %i[show edit update destroy]
+  before_action :set_production_order, only: %i[show edit update destroy void]
+  before_action :require_admin!, only: :void
+  before_action :keep_voided_read_only, only: %i[edit update]
   before_action :drop_placeholder_ids, only: %i[create update]
 
   # GET /production_orders
@@ -248,6 +250,14 @@ class ProductionOrdersController < ApplicationController
   # GET /production_orders/:id
   def show; end
 
+  # POST /production_orders/:id/void (admins)
+  def void
+    ProductionOrderVoid.new(@production_order, current_user, params[:void_reason]).call!
+    redirect_to @production_order, notice: t('.voided', number: @production_order.number)
+  rescue ArgumentError, ActiveRecord::RecordInvalid => e
+    redirect_to @production_order, alert: e.message
+  end
+
   # DELETE /production_orders/:id
   def destroy
     if @production_order.destroy
@@ -258,6 +268,10 @@ class ProductionOrdersController < ApplicationController
   end
 
   private
+
+  def keep_voided_read_only
+    redirect_to @production_order, alert: t('production_orders.voided_read_only') if @production_order.voided?
+  end
 
   # The searchable pickers can submit a placeholder (e.g. "#undefined") if a lookup fails;
   # drop it so the order keeps its current product, customer or location.

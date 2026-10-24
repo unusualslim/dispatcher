@@ -296,7 +296,7 @@
           <li><strong>Pallet</strong>: Qty 1 × Unit Cost $13.40 ÷ Per 80 (cases on a pallet) = $0.1675 per case</li>
           <li><strong>Tape</strong>: Qty 30 (inches per case) × Unit Cost $21.09 (a roll) ÷ Per 35,984 (inches on a roll) = $0.0176</li>
           <li><strong>Labor</strong> (Labor group): Qty 1 (hour) ÷ Per 134 (cases one worker fills per hour). Unit Cost comes from the
-            labor rate, <%= number_to_currency(AppSetting.labor_rate) %>/hr<%= link_to ' (change)', edit_costing_settings_path if admin? %>.</li>
+            labor rate, <%= number_to_currency(AppSetting.labor_rate) %>/hr<%= link_to ' (change)', edit_costing_settings_path if can?(:accounting, :edit) %>.</li>
         </ul>
 
         <div class="d-flex gap-2 align-items-end small text-muted fw-semibold mb-1" aria-hidden="true">

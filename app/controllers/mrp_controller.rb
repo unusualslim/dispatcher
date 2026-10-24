@@ -1,5 +1,5 @@
 class MrpController < ApplicationController
-  before_action :require_admin!
+  permission_area :purchasing
   def index
     @requirements = MrpEngine.new(horizon_days: 30, location_id: current_warehouse&.id).run
     @low_stock    = Product.raw_materials.where.not(reorder_point: nil).order(:current_stock)

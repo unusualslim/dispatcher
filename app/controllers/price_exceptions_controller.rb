@@ -1,7 +1,7 @@
 # Imported (PDI) order lines whose price differs from the customer's locked
 # quote price or pricing rule price, on orders that haven't been billed yet.
 class PriceExceptionsController < ApplicationController
-  before_action :require_admin!
+  permission_area :sales
 
   FILTERS = {
     'lock' => %w[lock_mismatch],

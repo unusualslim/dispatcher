@@ -99,7 +99,8 @@ class ProductionOrderJournal
   end
 
   def posting_problems
-    [('Not completed (no completion date)' unless reference_date),
+    [('Production order is voided' if production_order.voided?),
+     ('Not completed (no completion date)' unless reference_date),
      ('Production location has no PDI site number' unless site_code)].compact
   end
 

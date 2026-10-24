@@ -6,19 +6,20 @@
                        (current == 'locations' && action != 'map') %>
 <% dispatch_active   = %w[dispatches calendar dispatch_messages].include?(current) ||
                        (current == 'locations' && action == 'map') %>
-<% production_active = %w[production_orders jobs warehouse work_orders ledger_entries].include?(current) %>
+<% production_active = %w[production_orders jobs warehouse work_orders].include?(current) %>
 <% purchasing_active = %w[purchase_orders purchasing_report mrp vendors].include?(current) %>
 <% inventory_active  = %w[inventory_intelligence products inventory_adjustments inventory_transactions].include?(current) %>
 <% imports_active    = %w[imports customer_order_imports inventory_imports pdi_inventory_imports warehouse_transaction_imports
                           bom_imports min_max_imports vendor_freight_term_imports pdi_product_imports
                           repack_batch_imports pdi_purchase_order_imports purchase_order_imports].include?(current) ||
                        (current == 'customer_order_products' && request.path == product_code_links_path) %>
-<% admin_active      = imports_active || %w[users things warehouse_locations costing_settings reporting_groups automated_processes announcements].include?(current) %>
+<% accounting_active = %w[ledger_entries reporting_groups costing_settings].include?(current) %>
+<% admin_active      = imports_active || %w[users things warehouse_locations automated_processes announcements].include?(current) %>
 
 <nav id="sidebar" class="sidebar d-flex flex-column">
   <!-- Brand -->
   <div class="sidebar-brand">
-    <%= link_to dispatches_path, class: 'sidebar-brand-link' do %>
+    <%= link_to home_path, class: 'sidebar-brand-link' do %>
       <%= image_tag 'fps-logo.png', alt: 'FPS', class: 'sidebar-brand-logo' %>
       <span class="sidebar-brand-text">Team</span>
     <% end %>
@@ -74,6 +75,7 @@
 
         <div id="sidebarAccordion">
 
+        <% if can?(:sales) %>
         <!-- SALES -->
         <%= render 'layouts/sidebar_section', label: 'Sales', icon: 'bi-cart3', id: 'salesCollapse', active: sales_active do %>
           <%= nav_item 'Order Dashboard',     dashboard_customer_orders_path, 'bi-speedometer2',        active: current == 'customer_orders' && action == 'dashboard' %>
@@ -85,7 +87,9 @@
           <%= nav_item 'Price Exceptions',    price_exceptions_path,          'bi-exclamation-diamond', active: current == 'price_exceptions', keywords: 'price check mismatch' %>
           <%= nav_item 'Quote Margin Review', quote_margin_review_path,       'bi-graph-down-arrow',    active: current == 'quote_margin_reviews', keywords: 're-price requote' %>
         <% end %>
+        <% end %>
 
+        <% if can?(:dispatch) %>
         <!-- DISPATCH -->
         <%= render 'layouts/sidebar_section', label: 'Dispatch', icon: 'bi-truck', id: 'dispatchCollapse', active: dispatch_active do %>
           <%= nav_item 'Dispatch Board',  kanban_dispatches_path, 'bi-kanban',    active: current == 'dispatches' && action == 'kanban', keywords: 'kanban' %>
@@ -94,7 +98,9 @@
           <%= nav_item 'Map',             locations_map_path,     'bi-map',       active: current == 'locations' && action == 'map', keywords: 'gps trucks samsara routes' %>
           <%= nav_item 'Driver Messages', dispatch_messages_path, 'bi-chat-dots', active: current == 'dispatch_messages', keywords: 'sms twilio' %>
         <% end %>
+        <% end %>
 
+        <% if can?(:production) %>
         <!-- PRODUCTION -->
         <%= render 'layouts/sidebar_section', label: 'Production', icon: 'bi-gear', id: 'productionCollapse', active: production_active do %>
           <%= nav_item 'Production Dashboard', dashboard_production_orders_path, 'bi-speedometer2',          active: current == 'production_orders' && action == 'dashboard' %>
@@ -103,9 +109,10 @@
           <%= nav_item 'Line Production',      line_path,                        'bi-stopwatch',             active: current == 'jobs', keywords: 'clock in jobs' %>
           <%= nav_item 'Warehouse Board',      warehouse_kanban_path,            'bi-tv',                    active: current == 'warehouse' %>
           <%= nav_item 'Work Orders',          work_orders_path,                 'bi-wrench-adjustable',     active: current == 'work_orders', keywords: 'shop' %>
-          <%= nav_item 'GL Ledger',            ledger_entries_path,              'bi-journal-text',          active: current == 'ledger_entries', keywords: 'journal fpst gl export accounting' %>
+        <% end %>
         <% end %>
 
+        <% if can?(:purchasing) %>
         <!-- PURCHASING -->
         <%= render 'layouts/sidebar_section', label: 'Purchasing', icon: 'bi-bag-check', id: 'purchasingCollapse', active: purchasing_active do %>
           <%= nav_item 'PO Dashboard',      dashboard_purchase_orders_path, 'bi-speedometer2',    active: current == 'purchase_orders' && action == 'dashboard' %>
@@ -114,7 +121,9 @@
           <%= nav_item 'MRP',               mrp_path,                       'bi-graph-up-arrow',  active: current == 'mrp', keywords: 'requirements raw materials' %>
           <%= nav_item 'Vendors',           vendors_path,                   'bi-building',        active: current == 'vendors' %>
         <% end %>
+        <% end %>
 
+        <% if can?(:inventory) %>
         <!-- INVENTORY -->
         <%= render 'layouts/sidebar_section', label: 'Inventory', icon: 'bi-box-seam', id: 'inventoryCollapse', active: inventory_active do %>
           <%= nav_item 'Inventory Insights', inventory_intelligence_path,  'bi-lightbulb',     active: current == 'inventory_intelligence', keywords: 'intelligence report' %>
@@ -122,7 +131,18 @@
           <%= nav_item 'Adjust Inventory',   new_inventory_adjustment_path, 'bi-sliders',      active: current == 'inventory_adjustments', keywords: 'adjustment stock count' %>
           <%= nav_item 'Inventory History',  inventory_transactions_path,  'bi-clock-history', active: current == 'inventory_transactions', keywords: 'transactions' %>
         <% end %>
+        <% end %>
 
+        <% if can?(:accounting) %>
+        <!-- ACCOUNTING -->
+        <%= render 'layouts/sidebar_section', label: 'Accounting', icon: 'bi-journal-text', id: 'accountingCollapse', active: accounting_active do %>
+          <%= nav_item 'GL Ledger',        ledger_entries_path,        'bi-journal-text', active: current == 'ledger_entries', keywords: 'journal fpst gl export posting' %>
+          <%= nav_item 'Reporting Groups', reporting_groups_path,      'bi-diagram-2',    active: current == 'reporting_groups', keywords: 'gl account posting cost' %>
+          <%= nav_item 'Costing Settings', edit_costing_settings_path, 'bi-calculator',   active: current == 'costing_settings', keywords: 'labor rate cost gl start date' %>
+        <% end %>
+        <% end %>
+
+        <% if admin? %>
         <!-- ADMIN -->
         <%= render 'layouts/sidebar_section', label: 'Admin', icon: 'bi-gear-wide-connected', id: 'adminCollapse', active: admin_active do %>
           <%= nav_item 'Data Imports',        imports_path,             'bi-file-earmark-arrow-up', active: imports_active, keywords: 'upload file' %>
@@ -131,13 +151,10 @@
           <% end %>
           <%= nav_item 'Users',               users_path,               'bi-person-badge', active: current == 'users' %>
           <%= nav_item 'Equipment & Assets',  things_path,              'bi-tools',        active: current == 'things', keywords: 'things' %>
-          <% if admin? %>
-            <%= nav_item 'Warehouse Locations', edit_warehouse_locations_path, 'bi-building-gear', active: current == 'warehouse_locations' %>
-            <%= nav_item 'Costing Settings',    edit_costing_settings_path,    'bi-calculator',    active: current == 'costing_settings', keywords: 'labor rate cost' %>
-            <%= nav_item 'Reporting Groups',    reporting_groups_path,         'bi-diagram-2',     active: current == 'reporting_groups', keywords: 'gl account posting cost' %>
-          <% end %>
+          <%= nav_item 'Warehouse Locations', edit_warehouse_locations_path, 'bi-building-gear', active: current == 'warehouse_locations' %>
           <%= nav_item 'Automated Processes', automated_processes_path, 'bi-arrow-repeat', active: current == 'automated_processes', keywords: 'pdi sync schedule cron ftp' %>
           <%= nav_item 'Announcements',       announcements_path,       'bi-megaphone',    active: current == 'announcements' %>
+        <% end %>
         <% end %>
 
         </div><%# /sidebarAccordion %>
@@ -267,7 +284,7 @@
   <!-- Bottom: Help, Profile & Logout -->
   <% if user_signed_in? %>
     <div class="sidebar-footer">
-      <% if admin? %>
+      <% if admin? || current_user.viewable_areas.any? %>
         <%= link_to docs_path, class: "sidebar-footer-link #{'active' if current == 'docs'}" do %>
           <i class="bi bi-journal-text"></i>
           <span>Help &amp; Guides</span>

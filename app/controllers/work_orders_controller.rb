@@ -1,5 +1,5 @@
 class WorkOrdersController < ApplicationController
-  before_action :require_admin!
+  permission_area :production
   before_action :set_work_order, only: %i[show edit update destroy change_status]
 
   def index

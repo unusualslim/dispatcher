@@ -1,6 +1,6 @@
 class CustomersController < ApplicationController
   include CsvRoundTrip
-  before_action :require_admin!
+  permission_area :sales, lookups: %i[search select2]
   before_action :set_customer, only: %i[edit update destroy]
 
   # GET /customers

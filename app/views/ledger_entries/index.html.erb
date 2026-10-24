@@ -5,9 +5,11 @@
       <%= link_to download_ledger_entries_path, class: "btn btn-sm btn-outline-secondary #{'disabled' if @pending_count.zero?}" do %>
         <i class="bi bi-download"></i> Download pending CSV
       <% end %>
-      <%= button_to export_ledger_entries_path, class: 'btn btn-sm btn-primary', disabled: @pending_count.zero?,
-                                                form: { data: { turbo_confirm: "Send #{@pending_count} pending entries to PDI now?" } } do %>
-        <i class="bi bi-cloud-upload"></i> Export to PDI now (<%= @pending_count %>)
+      <% if can?(:accounting, :approve) %>
+        <%= button_to export_ledger_entries_path, class: 'btn btn-sm btn-primary', disabled: @pending_count.zero?,
+                                                  form: { data: { turbo_confirm: "Send #{@pending_count} pending entries to PDI now?" } } do %>
+          <i class="bi bi-cloud-upload"></i> Export to PDI now (<%= @pending_count %>)
+        <% end %>
       <% end %>
     </div>
   </div>

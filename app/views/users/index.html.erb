@@ -18,10 +18,11 @@
 
   <%# ── User sections ──────────────────────────────────────────────────────────── %>
   <% admins       = @users.select { |u| u.role == 'admin' } %>
+  <% staff        = @users.select { |u| u.role == 'staff' } %>
   <% drivers      = @users.select { |u| u.role == 'worker' } %>
   <% line_workers = @users.select { |u| u.role == 'line_worker' } %>
 
-  <% [["Admins", admins], ["Drivers", drivers], ["Line Workers", line_workers]].each do |section_title, group| %>
+  <% [["Admins", admins], ["Staff", staff], ["Drivers", drivers], ["Line Workers", line_workers]].each do |section_title, group| %>
     <div class="mb-4">
       <h6 class="text-muted text-uppercase fw-semibold mb-2" style="font-size:.75rem; letter-spacing:.05em;">
         <%= section_title %> (<%= group.size %>)
@@ -48,6 +49,14 @@
                     <td>
                       <div class="fw-semibold">
                         <%= user.full_name.presence || "—" %>
+                        <% if user.staff? %>
+                          <div class="fw-normal small">
+                            <% user.permissions.each do |area, level| %>
+                              <span class="badge bg-light text-dark border"><%= User::AREAS[area] %>: <%= level.capitalize %></span>
+                            <% end %>
+                            <% if user.permissions.empty? %><span class="text-muted">No area access yet</span><% end %>
+                          </div>
+                        <% end %>
                         <% if user.employment_type == 'temp' %><span class="badge bg-info-subtle text-info-emphasis border ms-1">Temp</span><% end %>
                       </div>
                     </td>
@@ -56,7 +65,7 @@
                     <td onclick="event.stopPropagation()">
                       <%= form_with model: user, url: user_path(user), method: :patch, data: { turbo: false } do |f| %>
                         <%= f.select :role,
-                              [["Driver", "worker"], ["Line Worker", "line_worker"], ["Admin", "admin"]],
+                              User::ROLES.invert,
                               { selected: user.role },
                               class: "form-select form-select-sm",
                               style: "min-width:100px",

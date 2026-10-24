@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_24_250000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_25_010000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -472,10 +472,14 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_24_250000) do
     t.bigint "location_id"
     t.date "production_date"
     t.string "product_id"
+    t.datetime "voided_at"
+    t.bigint "voided_by_id"
+    t.text "void_reason"
     t.index ["customer_id"], name: "index_production_orders_on_customer_id"
     t.index ["location_id"], name: "index_production_orders_on_location_id"
     t.index ["number"], name: "index_production_orders_on_number", unique: true
     t.index ["product_id"], name: "index_production_orders_on_product_id"
+    t.index ["voided_by_id"], name: "index_production_orders_on_voided_by_id"
   end
 
   create_table "products", id: :string, force: :cascade do |t|
@@ -658,6 +662,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_24_250000) do
     t.boolean "email_opt_in"
     t.boolean "sms_opt_in"
     t.string "employment_type", default: "full_time", null: false
+    t.jsonb "permissions", default: {}, null: false
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
@@ -747,6 +752,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_24_250000) do
   add_foreign_key "production_orders", "customers"
   add_foreign_key "production_orders", "locations"
   add_foreign_key "production_orders", "products"
+  add_foreign_key "production_orders", "users", column: "voided_by_id"
   add_foreign_key "purchase_order_line_items", "purchase_orders"
   add_foreign_key "purchase_orders", "vendors"
   add_foreign_key "quote_products", "pricing_rules", on_delete: :nullify

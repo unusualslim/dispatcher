@@ -1,6 +1,6 @@
 class ProductsController < ApplicationController
   include CsvRoundTrip
-  before_action :require_admin!
+  permission_area :inventory, lookups: %i[search bom]
   before_action :set_product, only: %i[show edit update destroy components]
 
   def index

@@ -1,5 +1,5 @@
 class DispatchMessagesController < ApplicationController
-  before_action :require_admin!
+  permission_area :dispatch
 
   def index
     @dispatch_messages = DispatchMessage.all

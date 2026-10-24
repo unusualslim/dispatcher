@@ -1,5 +1,5 @@
 class ProductionOrderBatchesController < ApplicationController
-  before_action :require_admin!
+  permission_area :production
   before_action :set_batch
 
   def update_qc

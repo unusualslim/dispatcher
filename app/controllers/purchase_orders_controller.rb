@@ -1,7 +1,7 @@
 require 'csv'
 
 class PurchaseOrdersController < ApplicationController
-  before_action :require_admin!
+  permission_area :purchasing, approve: %i[approve submit post_to_inventory]
   before_action :set_purchase_order, only: %i[show edit update approve submit receive post_to_inventory]
 
   def dashboard

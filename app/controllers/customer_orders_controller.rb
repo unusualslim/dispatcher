@@ -1,5 +1,5 @@
 class CustomerOrdersController < ApplicationController
-  before_action :require_admin!
+  permission_area :sales, lookups: %i[search]
 
   def dashboard
     today = Date.today

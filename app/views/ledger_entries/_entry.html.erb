@@ -49,7 +49,7 @@
         </tfoot>
       </table>
     </div>
-    <% if !compact && entry.reversal_of_id.nil? && !entry.reversed? %>
+    <% if !compact && entry.reversal_of_id.nil? && !entry.reversed? && can?(:accounting, :approve) %>
       <div class="d-flex align-items-center gap-3">
         <%= button_to 'Reverse', reverse_ledger_entry_path(entry), class: 'btn btn-sm btn-outline-danger',
                                                                     form: { data: { turbo_confirm: "Post a reversing entry for #{entry.reference_number}? The order can then be posted again." } } %>

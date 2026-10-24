@@ -1,7 +1,7 @@
 # Every active/scheduled locked quote line, comparing the fixed quoted price
 # with today's cost and rule price. Internal only — shows costs and margins.
 class QuoteMarginReviewsController < ApplicationController
-  before_action :require_admin!
+  permission_area :sales
 
   STATUSES = %w[reprice watch ok unknown].freeze
 

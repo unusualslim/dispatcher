@@ -1,7 +1,7 @@
 require 'redcarpet'
 
 class DocsController < ApplicationController
-  before_action :require_admin!
+  before_action :require_any_access!
 
   GUIDES = [
     {

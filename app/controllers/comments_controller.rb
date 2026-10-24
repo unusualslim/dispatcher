@@ -1,4 +1,5 @@
 class CommentsController < ApplicationController
+  permission_area :production # comments on work orders
   def create
     @work_order = WorkOrder.find(params[:work_order_id])
     @comment = @work_order.comments.build(comment_params)

@@ -1,5 +1,5 @@
 class PurchasingReportController < ApplicationController
-  before_action :require_admin!
+  permission_area :purchasing
 
   Row = Struct.new(
     :product, :on_hand, :on_order, :committed, :available,

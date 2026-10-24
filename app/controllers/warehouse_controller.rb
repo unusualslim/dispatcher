@@ -1,5 +1,5 @@
 class WarehouseController < ApplicationController
-  before_action :require_admin!
+  permission_area :production
 
   def kanban
     yesterday = Date.today - 1

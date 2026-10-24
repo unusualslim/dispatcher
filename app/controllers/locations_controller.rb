@@ -2,7 +2,8 @@ require 'net/http'
 
 class LocationsController < ApplicationController
   include CsvRoundTrip
-  before_action :require_admin!
+  permission_area :sales, lookups: %i[search select2],
+                          areas: { map: :dispatch, vehicles: :dispatch, dispatch_routes: :dispatch }
   before_action :set_products, only: %i[new edit create update]
   before_action :set_location, only: %i[show edit update destroy]
 

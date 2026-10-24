@@ -43,7 +43,7 @@
             <div class="mb-3">
               <%= form.label :role, class: "form-label" %>
               <%= form.select :role,
-                    [['Worker (Driver)', 'worker'], ['Line Worker', 'line_worker'], ['Admin', 'admin']],
+                    User::ROLES.invert,
                     { prompt: 'Select role...' },
                     class: "form-select", required: true %>
             </div>

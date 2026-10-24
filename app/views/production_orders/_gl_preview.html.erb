@@ -22,7 +22,7 @@
             <li><%= problem %></li>
           <% end %>
         </ul>
-        <% if admin? %>
+        <% if can?(:accounting, :edit) %>
           <div class="mt-1">
             GL accounts are set on <%= link_to 'Reporting Groups', reporting_groups_path %> and
             <%= link_to 'Costing Settings', edit_costing_settings_path %>;
@@ -96,7 +96,7 @@
       <p class="text-muted mb-0">Nothing to post.</p>
     <% end %>
 
-    <% if journal.ready? %>
+    <% if journal.ready? && can?(:accounting, :approve) %>
       <div class="d-flex align-items-center gap-3 mt-3 pt-3 border-top">
         <%= button_to 'Post now', ledger_entries_path(production_order_id: journal.production_order.id), class: 'btn btn-sm btn-primary',
                                                                                                             form: { data: { turbo_confirm: 'Post this journal entry? It goes to PDI with the next GL export.' } } %>

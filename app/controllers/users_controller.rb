@@ -97,7 +97,7 @@ class UsersController < ApplicationController
   def user_params
     permitted = params.require(:user).permit(
       :email, :first_name, :last_name, :phone_number, :role, :employment_type,
-      :sms_opt_in, :email_opt_in, :password, :password_confirmation
+      :sms_opt_in, :email_opt_in, :password, :password_confirmation, permissions: User::AREAS.keys
     )
     # Don't touch the password if the field was left blank
     if permitted[:password].blank?

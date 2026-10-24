@@ -119,6 +119,7 @@ Rails.application.routes.draw do
   end
 
   resources :production_orders do
+    member { post :void }
     collection do
       get :kanban
       get :dashboard

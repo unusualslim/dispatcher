@@ -5,7 +5,7 @@
       &larr; Users
     <% end %>
     <h1 class="mb-0"><%= @user.full_name %></h1>
-    <span class="badge bg-secondary"><%= @user.role&.capitalize %></span>
+    <span class="badge bg-secondary"><%= User::ROLES[@user.role] || @user.role&.capitalize %></span>
     <%= link_to 'Edit', edit_user_path(@user), class: 'btn btn-sm btn-outline-primary ms-auto' %>
   </div>
 

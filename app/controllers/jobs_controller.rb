@@ -1,6 +1,6 @@
 class JobsController < ApplicationController
-  before_action :require_admin_or_line_lead!
-  before_action :require_admin!, only: :update
+  # Line workers keep /line; staff need Production (Edit to clock crews in/out, Approve to correct times).
+  permission_area :production, approve: %i[update], unless: -> { line_worker? && action_name != 'update' }
   before_action :set_job, only: %i[show update clock_out]
 
   def line
@@ -66,9 +66,5 @@ class JobsController < ApplicationController
 
   def set_job
     @job = Job.find(params[:id])
-  end
-
-  def require_admin_or_line_lead!
-    redirect_to dispatches_path, alert: 'Access denied.' unless admin? || current_user.role == 'line_worker'
   end
 end

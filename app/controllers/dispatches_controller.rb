@@ -4,9 +4,11 @@ require 'net/http'
 class DispatchesController < ApplicationController
   before_action :set_dispatch,
                 only: %i[show edit update destroy mark_as_complete mark_as_billed send_notification upload_files]
-  before_action :require_admin!,
-                only: %i[new create edit update destroy view_dispatches kanban export_csv send_notification mark_as_complete
-                         mark_as_billed mark_as_sent_to_driver destroy_file search]
+  # Drivers only see and upload to their own dispatches (checked in those actions); everything else is the
+  # Dispatch area.
+  DRIVER_ACTIONS = %w[index show upload_files].freeze
+  permission_area :dispatch, approve: %i[mark_as_billed],
+                             unless: -> { driver? && DRIVER_ACTIONS.include?(action_name) }
 
   # GET / (dashboard)
   def index

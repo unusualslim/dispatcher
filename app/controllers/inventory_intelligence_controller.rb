@@ -1,5 +1,5 @@
 class InventoryIntelligenceController < ApplicationController
-  before_action :require_admin!
+  permission_area :inventory
 
   def show
     @report = InventoryIntelligenceService.new(report_type: :daily).run

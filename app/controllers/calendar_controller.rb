@@ -1,5 +1,5 @@
 class CalendarController < ApplicationController
-  before_action :require_admin!
+  permission_area :dispatch
   def index; end
 
   def events

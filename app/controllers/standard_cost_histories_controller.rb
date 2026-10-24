@@ -1,5 +1,5 @@
 class StandardCostHistoriesController < ApplicationController
-  before_action :require_admin!
+  permission_area :inventory
 
   def create
     @product = Product.find(params[:product_id])

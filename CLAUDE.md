@@ -47,8 +47,8 @@ Primary contact: John (admin@perrybrothersoil.com)
 ---
 
 ## Navigation (sidebar)
-- `app/views/layouts/_sidebar.html.erb`: admins get collapsible groups Sales / Dispatch / Production /
-  Purchasing / Inventory / Admin (each group's dashboard is its first link); drivers and line workers
+- `app/views/layouts/_sidebar.html.erb`: collapsible groups Sales / Dispatch / Production /
+  Purchasing / Inventory / Accounting / Admin (staff see the areas they can view; Admin group is admin-only) (each group's dashboard is its first link); drivers and line workers
   get short navs. Open/closed state is remembered per browser (localStorage).
 - Links use the `nav_item(label, path, icon, active:, keywords:)` helper; `keywords` feed the quick-jump
   search box (press `/`). `nav_search_item` adds search-only entries (used for each importer).
@@ -85,7 +85,8 @@ below the floor (rule target, or the quoted margin if negotiated below target). 
 StandardCostHistory, `InventoryCostHistory` (recorded on every `cost_per_unit` change), and BOM
 component history. "Re-quote" (`Quote#create_requote!`) drafts a quote at today's rule prices.
 **ProductionOrder** = STATUSES: created (planned, nothing done) / in_progress (set automatically by the first /line
-clock-in) / completed (stamps `date_completed`); `OPEN_STATUSES` = created + in_progress. The production order *is* the batch.
+clock-in) / completed (stamps `date_completed`) / voided (admin-only `ProductionOrderVoid`: reverses batch inventory
+moves and any posted GL entry, clocks out crews; voided orders are read-only); `OPEN_STATUSES` = created + in_progress. The production order *is* the batch.
 **Production costing / GL**: BOM = inventory components (`ProductComponent`, moved by PDI repack) + non-inventory
 `ProductCostLine`s (qty × unit cost ÷ per; labor lines use the `AppSetting.labor_rate`, "per" = units per worker-hour).
 "Standard Calculated (BOM)" pricing uses this full cost. PDI's single per-product repack fee (`products.pdi_repack_fee`)
@@ -100,7 +101,10 @@ Accounts post as Site-Major-Sub (site = `Location#pdi_site_code`, 4 digits). **R
 fuel/warehouse groups = PDI product categories (linked by `products.category` name, auto-created); non_inventory
 groups (Consumables, Labor, Overhead) hold cost lines. Admin → Reporting Groups / Costing Settings.
 **WorkOrders / Jobs** = shop work orders with comments; Jobs + JobWorkers are line-worker clock-in/out (`/line`)
-**User roles**: admin, worker (drivers), line_worker
+**User roles**: admin (everything), staff (per-area levels), worker (drivers), line_worker. Staff `users.permissions`
+jsonb = { area => view|edit|approve } for sales/dispatch/production/purchasing/inventory/accounting (`UserPermissions`).
+Controllers declare `permission_area :x, approve: [...], lookups: [...]`: GET needs view, writes edit, listed actions
+approve, destroy* always admin. Views use `can?(:area, :level)`. Admin-only pages keep `require_admin!`.
 
 ---
 

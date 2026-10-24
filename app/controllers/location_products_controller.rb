@@ -1,5 +1,5 @@
 class LocationProductsController < ApplicationController
-  before_action :require_admin!
+  permission_area :sales
   before_action :set_location
   before_action :set_location_product, only: %i[edit update destroy]
   before_action :set_products, only: %i[new edit]

@@ -1,5 +1,5 @@
 class PricingRulesController < ApplicationController
-  before_action :require_admin!
+  permission_area :sales, lookups: %i[lookup]
   before_action :set_rule, only: %i[show edit update destroy]
 
   def index

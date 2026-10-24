@@ -52,16 +52,50 @@
           </div>
           <div class="col-sm-6">
             <%= form.label :role, class: "form-label mb-1" %>
-            <%= form.select :role,
-                  [["Driver", "worker"], ["Line Worker", "line_worker"], ["Admin", "admin"]],
-                  { include_blank: "— select —" },
-                  class: "form-select" %>
+            <%= form.select :role, User::ROLES.invert, { include_blank: "— select —" }, class: "form-select", id: "user_role_select" %>
+            <div class="form-text">Admin has full access. Staff get the area access below.</div>
           </div>
           <div class="col-sm-6">
             <%= form.label :employment_type, "Employment", class: "form-label mb-1" %>
             <%= form.select :employment_type, User::EMPLOYMENT_TYPES.invert, {}, class: "form-select" %>
             <div class="form-text">Sets which wage account /line labor posts to.</div>
           </div>
+        </div>
+      </div>
+
+      <%# ── Area access (staff) ──────────────────────────────── %>
+      <div class="card-body border-bottom" id="area-access">
+        <h6 class="text-muted text-uppercase fw-semibold mb-1" style="font-size:.72rem;letter-spacing:.06em;">Area Access</h6>
+        <p class="text-muted small mb-3">
+          For <strong>Staff</strong> users. Each level includes the ones before it: <strong>View</strong> looks,
+          <strong>Edit</strong> creates and changes, <strong>Approve</strong> also signs off (approve/submit POs, accept quotes,
+          post and export GL, mark dispatches billed, correct line clock times). Only Admins can delete.
+        </p>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0" style="max-width: 560px;">
+            <thead class="table-light">
+              <tr>
+                <th>Area</th>
+                <th class="text-center">None</th>
+                <% User::LEVELS.each do |level| %><th class="text-center"><%= level.capitalize %></th><% end %>
+              </tr>
+            </thead>
+            <tbody>
+              <% User::AREAS.each do |area, label| %>
+                <% current_level = user.permissions[area].to_s %>
+                <tr>
+                  <td><%= label %></td>
+                  <% (['', *User::LEVELS]).each do |level| %>
+                    <td class="text-center">
+                      <%= radio_button_tag "user[permissions][#{area}]", level, current_level == level,
+                                           class: 'form-check-input', id: "perm_#{area}_#{level.presence || 'none'}",
+                                           "aria-label": "#{label}: #{level.presence || 'none'}" %>
+                    </td>
+                  <% end %>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
         </div>
       </div>
 

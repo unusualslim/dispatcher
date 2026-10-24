@@ -106,7 +106,7 @@
         </table>
       </div>
 
-      <% if admin? && !@job.active? %>
+      <% if can?(:production, :approve) && !@job.active? %>
         <div class="card mt-3">
           <div class="card-header fw-semibold">Edit Clock Times</div>
           <div class="card-body">

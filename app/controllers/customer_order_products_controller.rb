@@ -1,5 +1,5 @@
 class CustomerOrderProductsController < ApplicationController
-  before_action :require_admin!
+  permission_area :sales
   before_action :set_customer_order, except: %i[unlinked link_codes]
 
   def create

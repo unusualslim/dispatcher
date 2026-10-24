@@ -19,13 +19,17 @@
         request.referer.presence || kanban_production_orders_path,
         class: "btn btn-outline-secondary btn-sm" %>
 
+  <% unless @production_order.voided? %>
   <%= link_to "Edit",
         edit_production_order_path(@production_order),
         class: "btn btn-primary btn-sm",
         data: { turbo: false } %>
+  <% end %>
 
   <%# Primary next-step status transition %>
-  <% if @production_order.status == "created" %>
+  <% if @production_order.voided? %>
+    <%# voided orders are read-only %>
+  <% elsif @production_order.status == "created" %>
     <%= button_to "Start Production",
           production_order_path(@production_order, production_order: { status: "in_progress" }),
           method: :patch,
@@ -38,7 +42,7 @@
   <% end %>
 
   <%# Secondary: move back %>
-  <% if @production_order.status != "created" %>
+  <% if !@production_order.voided? && @production_order.status != "created" %>
     <div class="dropstart">
       <button class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
         <i class="bi bi-arrow-counterclockwise"></i>
@@ -64,7 +68,14 @@
     </div>
   <% end %>
 
-  <%# Delete %>
+  <% if admin? && !@production_order.voided? %>
+    <button class="btn btn-outline-dark btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#void-form">
+      Void
+    </button>
+  <% end %>
+
+  <%# Delete (admins) %>
+  <% if admin? %>
   <%= button_to "Delete",
             production_order_path(@production_order),
             method: :delete,
@@ -74,9 +85,36 @@
               }
             },
             class: "btn btn-danger btn-sm ms-auto" %>
+  <% end %>
 
     </div>
   </div>
+
+  <% if @production_order.voided? %>
+    <div class="alert alert-dark">
+      <strong>Voided</strong> <%= @production_order.voided_at.strftime("%m/%d/%Y %I:%M %p") %>
+      by <%= @production_order.voided_by&.full_name.presence || 'an admin' %>: <%= @production_order.void_reason %>
+      <div class="small">Its inventory moves and any posted GL entry were reversed. The order is read-only.</div>
+    </div>
+  <% elsif admin? %>
+    <div class="collapse mb-3" id="void-form">
+      <div class="card border-dark">
+        <div class="card-body">
+          <div class="fw-semibold mb-1">Void production order <%= @production_order.number %></div>
+          <p class="small text-muted mb-2">
+            Reverses the inventory its completed batches moved and any posted GL entry, clocks out anyone still on it,
+            and takes it out of open work. The order stays for history but can't be changed.
+          </p>
+          <%= form_with url: void_production_order_path(@production_order), method: :post, local: true, class: "d-flex gap-2 flex-wrap" do %>
+            <%= text_field_tag :void_reason, nil, class: "form-control form-control-sm", style: "max-width: 420px;",
+                                                  placeholder: "Reason (required)", required: true %>
+            <%= submit_tag "Void order", class: "btn btn-dark btn-sm",
+                                         data: { turbo_confirm: "Void #{@production_order.number}? This can't be undone." } %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
 
   <%# Status badge %>
   <% status_class = case @production_order.status
@@ -85,16 +123,20 @@
     when "in_progress"    then "bg-warning text-dark"
     when "quality_check"  then "bg-primary"
     when "completed"      then "bg-success"
+    when "voided"         then "bg-dark"
     else "bg-secondary"
   end %>
 
+  <% show_accounting = can?(:accounting) %>
   <ul class="nav nav-tabs mb-3" role="tablist">
     <li class="nav-item" role="presentation">
       <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#po-production" type="button" role="tab">Production</button>
     </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#po-gl" type="button" role="tab" id="po-gl-tab">GL Posting</button>
-    </li>
+    <% if show_accounting %>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#po-gl" type="button" role="tab" id="po-gl-tab">GL Posting</button>
+      </li>
+    <% end %>
   </ul>
 
   <div class="tab-content">
@@ -343,7 +385,9 @@
     </div>
   </div>
 
-<%= render 'costing', costing: ProductionOrderCosting.new(@production_order) %>
+<% if show_accounting %>
+  <%= render 'costing', costing: ProductionOrderCosting.new(@production_order) %>
+<% end %>
 
 <%# ── JOB TIME HISTORY ── %>
 <% if @production_order.jobs.any? %>
@@ -385,9 +429,11 @@
 <% end %>
   </div>
 
-  <div class="tab-pane fade" id="po-gl" role="tabpanel">
-    <%= render 'gl_posting', production_order: @production_order %>
-  </div>
+  <% if show_accounting %>
+    <div class="tab-pane fade" id="po-gl" role="tabpanel">
+      <%= render 'gl_posting', production_order: @production_order %>
+    </div>
+  <% end %>
   </div>
 </div>
 
