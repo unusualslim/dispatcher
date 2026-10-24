@@ -11,6 +11,13 @@
     <% if costing.product.nil? %>
       <p class="text-muted mb-0">Link a product to this production order to see costing.</p>
     <% else %>
+      <% if costing.qty_produced.zero? %>
+        <div class="alert alert-warning py-2 small">
+          <strong>No quantity produced yet.</strong> Standard hours, per-unit costs, the repack fee and the variance all
+          depend on it. Enter <strong>Total Qty Produced</strong> (<%= link_to 'Edit', edit_production_order_path(costing.production_order) %>)
+          or add a batch; until then only actual labor is shown.
+        </div>
+      <% end %>
       <div class="row g-4">
         <div class="col-lg-5">
           <h6 class="text-muted text-uppercase small">Line Labor</h6>
@@ -37,8 +44,13 @@
               <tr><td>Actual labor cost</td><td class="text-end"><%= number_to_currency(costing.actual_labor_cost) %></td></tr>
             </tbody>
           </table>
-          <% if costing.standard_labor_hours.zero? %>
-            <div class="small text-muted">No Line Labor standard on this product's BOM.</div>
+          <% if costing.standard_labor_hours_per_unit.zero? %>
+            <div class="small text-muted">No labor standard on this product's BOM (add a cost line in a Labor group).</div>
+          <% else %>
+            <div class="small text-muted">
+              Standard: <%= number_with_precision(1 / costing.standard_labor_hours_per_unit, precision: 1, strip_insignificant_zeros: true) %>
+              units per worker-hour.
+            </div>
           <% end %>
         </div>
 

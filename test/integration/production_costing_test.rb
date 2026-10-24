@@ -51,6 +51,11 @@ class ProductionCostingTest < ActionDispatch::IntegrationTest
     assert_select '.card-header', /Costing/
     assert_match 'Standard hours earned', response.body
     assert_select '#po-gl', /Journal Entry/
+    assert_match(/Standard:\s*134\s*units per worker-hour/, response.body)
+
+    po.update!(total_qty_produced: nil)
+    get production_order_path(po)
+    assert_match 'No quantity produced yet', response.body
   end
 
   test 'labor rate is editable and validated' do

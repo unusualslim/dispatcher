@@ -59,6 +59,16 @@ class ProductionOrderCostingTest < ActiveSupport::TestCase
     assert_in_delta 9, by_type['temp'], 0.0001
   end
 
+  test 'no variance without a quantity produced' do
+    clock(40)
+    @po.update!(total_qty_produced: nil)
+    costing = ProductionOrderCosting.new(@po)
+
+    assert_nil costing.variance
+    assert_in_delta 1.0 / 134, costing.standard_labor_hours_per_unit, 0.000001
+    assert_in_delta 1000, costing.actual_labor_cost, 0.01
+  end
+
   test 'no variance without a repack fee and no efficiency without hours' do
     @product.update!(pdi_repack_fee: nil)
     costing = ProductionOrderCosting.new(@po)

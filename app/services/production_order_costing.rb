@@ -49,8 +49,12 @@ class ProductionOrderCosting
                      ReportingGroup.non_inventory.ordered.find_by(labor: true)
   end
 
+  def standard_labor_hours_per_unit
+    product ? product.product_cost_lines.sum(0.to_d, &:hours_per_unit) : 0.to_d
+  end
+
   def standard_labor_hours
-    product ? product.product_cost_lines.sum(0.to_d, &:hours_per_unit) * qty_produced : 0.to_d
+    standard_labor_hours_per_unit * qty_produced
   end
 
   # Actual /line hours by worker employment type, e.g. { 'full_time' => 18.5, 'temp' => 6.5 };
@@ -94,8 +98,11 @@ class ProductionOrderCosting
   end
 
   # Positive = PDI capitalized more than the absorbed cost (favorable).
+  # nil until there's a fee and a quantity produced (with no quantity, all labor would look like variance).
   def variance
-    repack_fee_applied && (repack_fee_applied - absorbed_cost)
+    return nil unless repack_fee_applied && qty_produced.positive?
+
+    repack_fee_applied - absorbed_cost
   end
 
   def actual_cost_per_unit
