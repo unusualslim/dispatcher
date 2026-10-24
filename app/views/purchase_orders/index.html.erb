@@ -26,7 +26,8 @@
 <turbo-frame id="po-results">
   <%# Status filter tabs %>
   <% badge_colors = { 'draft' => 'secondary', 'pending_approval' => 'warning', 'approved' => 'primary',
-                      'submitted' => 'info', 'received' => 'success', 'cancelled' => 'danger' } %>
+                      'submitted' => 'info', 'received' => 'success', 'cancelled' => 'danger',
+                    'voided' => 'dark' } %>
   <ul class="nav nav-tabs mb-3">
     <li class="nav-item">
       <a href="<%= purchase_orders_path(q: @search) %>" class="nav-link <%= @status_filter.nil? ? 'active' : '' %>">
@@ -34,7 +35,7 @@
       </a>
     </li>
     <% PurchaseOrder::STATUSES.each do |status| %>
-      <% next if status == 'cancelled' && @status_counts[status] == 0 %>
+      <% next if %w[cancelled voided].include?(status) && @status_counts[status] == 0 %>
       <li class="nav-item">
         <a href="<%= purchase_orders_path(status: status, q: @search) %>" class="nav-link <%= @status_filter == status ? 'active' : '' %>">
           <%= status.humanize %>

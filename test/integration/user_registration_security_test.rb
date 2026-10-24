@@ -58,4 +58,14 @@ class UserRegistrationSecurityTest < ActionDispatch::IntegrationTest
     put user_registration_path, params: { user: { role: 'admin', current_password: 'password123' } }
     assert_equal 'worker', @driver.reload.role
   end
+
+  test 'a sign-up with no Turnstile token says the check did not load' do
+    sign_in @admin
+    params = sign_up_params
+    params.delete('cf-turnstile-response')
+
+    assert_no_difference('User.count') { post user_registration_path, params: params }
+    assert_response :unprocessable_entity
+    assert_match 'security check didn&#39;t load', response.body
+  end
 end

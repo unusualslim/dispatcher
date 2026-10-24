@@ -333,7 +333,7 @@ class DispatchesController < ApplicationController
   end
 
   def kanban
-    @drivers = User.all.order(:first_name)
+    @drivers = User.active.order(:first_name)
 
     @start_date = params[:start_date].present? ? (Date.parse(params[:start_date]) rescue Date.today) : Date.today
     @end_date   = params[:end_date].present?   ? (Date.parse(params[:end_date])   rescue Date.today + 6) : Date.today + 6

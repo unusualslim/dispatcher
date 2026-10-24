@@ -51,8 +51,13 @@ class Users::RegistrationsController < Devise::RegistrationsController
   def create
     @user = User.new(sign_up_params)
 
+    if params['cf-turnstile-response'].blank?
+      Rails.logger.warn '[Turnstile] No token submitted; the widget did not load or was not completed'
+      flash.now[:alert] = t('users.registrations.turnstile_missing')
+      return render :new, status: :unprocessable_entity
+    end
     unless verify_turnstile
-      flash.now[:alert] = 'Security check failed. Please try again.'
+      flash.now[:alert] = t('users.registrations.turnstile_failed')
       return render :new, status: :unprocessable_entity
     end
 

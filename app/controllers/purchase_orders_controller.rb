@@ -2,7 +2,9 @@ require 'csv'
 
 class PurchaseOrdersController < ApplicationController
   permission_area :purchasing, approve: %i[approve submit post_to_inventory]
-  before_action :set_purchase_order, only: %i[show edit update approve submit receive post_to_inventory]
+  before_action :set_purchase_order, only: %i[show edit update approve submit receive post_to_inventory void]
+  before_action :require_admin!, only: :void
+  before_action :keep_voided_read_only, only: %i[edit update approve submit receive post_to_inventory]
 
   def dashboard
     today = Date.today
@@ -203,7 +205,19 @@ class PurchaseOrdersController < ApplicationController
     redirect_to @purchase_order, alert: "Could not post to inventory: #{e.message}"
   end
 
+  # POST /purchase_orders/:id/void (admins)
+  def void
+    PurchaseOrderVoid.new(@purchase_order, current_user, params[:void_reason]).call!
+    redirect_to @purchase_order, notice: t('.voided', number: @purchase_order.display_number)
+  rescue ArgumentError, ActiveRecord::RecordInvalid => e
+    redirect_to @purchase_order, alert: e.message
+  end
+
   private
+
+  def keep_voided_read_only
+    redirect_to @purchase_order, alert: t('purchase_orders.voided_read_only') if @purchase_order.voided?
+  end
 
   def set_purchase_order
     @purchase_order = PurchaseOrder.includes(:vendor, line_items: :product).find(params[:id])

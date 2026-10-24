@@ -11,7 +11,7 @@
 
   <div class="form-group">
     <%= form.label :assigned_to, "Assign To User" %>
-    <%= form.collection_select :assigned_to, User.all, :id, :full_name, { prompt: "Select a User" }, class: "form-control" %>
+    <%= form.collection_select :assigned_to, User.active.or(User.where(id: form.object.assigned_to)), :id, :full_name, { prompt: "Select a User" }, class: "form-control" %>
   </div>
 
 <div class="form-group">

@@ -17,12 +17,16 @@
   </div>
 
   <%# ── User sections ──────────────────────────────────────────────────────────── %>
-  <% admins       = @users.select { |u| u.role == 'admin' } %>
-  <% staff        = @users.select { |u| u.role == 'staff' } %>
-  <% drivers      = @users.select { |u| u.role == 'worker' } %>
-  <% line_workers = @users.select { |u| u.role == 'line_worker' } %>
+  <% active_users = @users.select(&:active?) %>
+  <% admins       = active_users.select { |u| u.role == 'admin' } %>
+  <% staff        = active_users.select { |u| u.role == 'staff' } %>
+  <% drivers      = active_users.select { |u| u.role == 'worker' } %>
+  <% line_workers = active_users.select { |u| u.role == 'line_worker' } %>
+  <% inactive     = @users.reject(&:active?) %>
 
-  <% [["Admins", admins], ["Staff", staff], ["Drivers", drivers], ["Line Workers", line_workers]].each do |section_title, group| %>
+  <% sections = [["Admins", admins], ["Staff", staff], ["Drivers", drivers], ["Line Workers", line_workers]] %>
+  <% sections << ["Inactive", inactive] if inactive.any? %>
+  <% sections.each do |section_title, group| %>
     <div class="mb-4">
       <h6 class="text-muted text-uppercase fw-semibold mb-2" style="font-size:.75rem; letter-spacing:.05em;">
         <%= section_title %> (<%= group.size %>)
@@ -86,6 +90,20 @@
                     <td class="text-end" onclick="event.stopPropagation()">
                       <%= link_to edit_user_path(user), class: "btn btn-sm btn-outline-secondary me-1" do %>
                         <i class="bi bi-pencil"></i>
+                      <% end %>
+                      <% if user.active? %>
+                        <% unless user == current_user %>
+                          <%= button_to deactivate_user_path(user), method: :patch, class: "btn btn-sm btn-outline-warning me-1",
+                                                                    form: { class: "d-inline", data: { turbo_confirm: "Deactivate #{user.full_name}? They won't be able to sign in." } },
+                                                                    title: "Deactivate" do %>
+                            <i class="bi bi-person-slash"></i>
+                          <% end %>
+                        <% end %>
+                      <% else %>
+                        <%= button_to reactivate_user_path(user), method: :patch, class: "btn btn-sm btn-outline-success me-1",
+                                                                  form: { class: "d-inline" }, title: "Reactivate" do %>
+                          <i class="bi bi-person-check"></i>
+                        <% end %>
                       <% end %>
                       <%= form_with url: user_path(user), method: :delete, class: "d-inline" do %>
                         <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete"

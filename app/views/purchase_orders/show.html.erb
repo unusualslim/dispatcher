@@ -10,7 +10,8 @@
         <dt class="col-4">Status</dt>
         <dd class="col-8">
           <% bg = { 'draft' => 'secondary', 'pending_approval' => 'warning', 'approved' => 'primary',
-                    'submitted' => 'info', 'received' => 'success', 'cancelled' => 'danger' }
+                    'submitted' => 'info', 'received' => 'success', 'cancelled' => 'danger',
+                    'voided' => 'dark' }
              color = bg[@purchase_order.status] || 'secondary' %>
           <span class="badge bg-<%= color %>"><%= @purchase_order.status.humanize %></span>
           <% if @purchase_order.posted? %>
@@ -176,6 +177,14 @@
     </table>
   <% end %>
 
+  <% if @purchase_order.voided? %>
+    <div class="alert alert-dark">
+      <strong>Voided</strong> <%= @purchase_order.voided_at.strftime("%m/%d/%Y %I:%M %p") %>
+      by <%= @purchase_order.voided_by&.full_name.presence || 'an admin' %>: <%= @purchase_order.void_reason %>
+      <div class="small">Anything it posted to inventory was reversed. The purchase order is read-only.</div>
+    </div>
+  <% end %>
+
   <div class="d-flex gap-2">
     <% if %w[draft pending_approval].include?(@purchase_order.status) %>
       <%= link_to 'Edit', edit_purchase_order_path(@purchase_order), class: 'btn btn-outline-secondary' %>
@@ -200,5 +209,31 @@
             method: :patch, class: 'btn btn-success',
             data: { confirm: 'Post this PO to inventory? This will update stock levels for all matched products.' } %>
     <% end %>
+    <% if admin? && !@purchase_order.voided? %>
+      <button class="btn btn-outline-dark" type="button" data-bs-toggle="collapse" data-bs-target="#po-void-form">Void</button>
+    <% end %>
   </div>
+
+  <% if admin? && !@purchase_order.voided? %>
+    <div class="collapse mt-3" id="po-void-form">
+      <div class="card border-dark">
+        <div class="card-body">
+          <div class="fw-semibold mb-1">Void purchase order <%= @purchase_order.display_number %></div>
+          <p class="small text-muted mb-2">
+            Reverses anything it posted to inventory and takes it out of active purchasing. It stays for history but
+            can't be changed.
+            <% if @purchase_order.submitted_at.present? || %w[submitted received].include?(@purchase_order.status) %>
+              <strong class="text-danger">It was already sent to PDI; void it in PDI as well.</strong>
+            <% end %>
+          </p>
+          <%= form_with url: void_purchase_order_path(@purchase_order), method: :post, local: true, class: "d-flex gap-2 flex-wrap" do %>
+            <%= text_field_tag :void_reason, nil, class: "form-control form-control-sm", style: "max-width: 420px;",
+                                                  placeholder: "Reason (required)", required: true %>
+            <%= submit_tag "Void PO", class: "btn btn-dark btn-sm",
+                                      data: { turbo_confirm: "Void #{@purchase_order.display_number}? This can't be undone." } %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
 </div>

@@ -58,10 +58,12 @@
               <%= form.password_field :password_confirmation, class: "form-control", placeholder: "Confirm password", required: true %>
             </div>
 
+            <% turnstile_site_key = Rails.application.credentials.dig(:turnstile, :site_key) || ENV['TURNSTILE_SITE_KEY'] %>
             <div class="mb-4">
-              <div id="turnstile-widget"
-                   data-sitekey="<%= Rails.application.credentials.dig(:turnstile, :site_key) || ENV['TURNSTILE_SITE_KEY'] %>"
-                   data-theme="light"></div>
+              <% if turnstile_site_key.blank? %>
+                <div class="alert alert-warning small mb-0">Turnstile isn't configured (no site key), so new users can't be created.</div>
+              <% end %>
+              <div id="turnstile-widget" data-sitekey="<%= turnstile_site_key %>" data-theme="light"></div>
             </div>
 
             <div class="d-grid">
@@ -75,20 +77,4 @@
   </div>
 </div>
 
-<script>
-  (function renderTurnstile() {
-    var el = document.getElementById('turnstile-widget');
-    if (!el) return;
-    if (typeof turnstile !== 'undefined') {
-      turnstile.render(el, { sitekey: el.dataset.sitekey, theme: el.dataset.theme });
-    }
-  })();
-
-  document.addEventListener('turbo:load', function() {
-    var el = document.getElementById('turnstile-widget');
-    if (!el || el.querySelector('iframe')) return;
-    if (typeof turnstile !== 'undefined') {
-      turnstile.render(el, { sitekey: el.dataset.sitekey, theme: el.dataset.theme });
-    }
-  });
-</script>
+<script>window.renderTurnstile && window.renderTurnstile();</script>

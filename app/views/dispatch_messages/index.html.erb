@@ -9,7 +9,7 @@
       <div class="row align-items-center">
         <div class="col-md-8">
           <%= form.label :user_id, "Filter by User", class: "form-label" %>
-          <%= form.collection_select :user_id, User.all, :id, :full_name, { prompt: "Select a User" }, class: "form-select" %>
+          <%= form.collection_select :user_id, User.active, :id, :full_name, { prompt: "Select a User" }, class: "form-select" %>
         </div>
         <div class="col-md-4 text-end mt-3 mt-md-0">
           <%= form.submit "Filter", class: "btn btn-primary" %>

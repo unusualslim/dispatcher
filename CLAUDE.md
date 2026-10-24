@@ -101,7 +101,8 @@ Accounts post as Site-Major-Sub (site = `Location#pdi_site_code`, 4 digits). **R
 fuel/warehouse groups = PDI product categories (linked by `products.category` name, auto-created); non_inventory
 groups (Consumables, Labor, Overhead) hold cost lines. Admin → Reporting Groups / Costing Settings.
 **WorkOrders / Jobs** = shop work orders with comments; Jobs + JobWorkers are line-worker clock-in/out (`/line`)
-**User roles**: admin (everything), staff (per-area levels), worker (drivers), line_worker. Staff `users.permissions`
+**User roles**: admin (everything), staff (per-area levels), worker (drivers), line_worker. Users with history can't be
+deleted (`User#history_reasons`); admins deactivate them instead (`deactivated_at`: can't sign in, `User.active` in pickers). Staff `users.permissions`
 jsonb = { area => view|edit|approve } for sales/dispatch/production/purchasing/inventory/accounting (`UserPermissions`).
 Controllers declare `permission_area :x, approve: [...], lookups: [...]`: GET needs view, writes edit, listed actions
 approve, destroy* always admin. Views use `can?(:area, :level)`. Admin-only pages keep `require_admin!`.
@@ -137,7 +138,8 @@ download the file, delete it from FTP, run an import service, and record a `Sync
   standard_cost (history in `StandardCostHistory`), pdi_tank_id, stock_status, available_stock
 - `ProductComponent` — BOM lines
 - `LocationProduct` — per-location stock (`quantity`); `LocationProduct.adjust!(location, product, qty)`
-- `PurchaseOrder` — lifecycle: draft → pending_approval → approved → submitted → received → cancelled;
+- `PurchaseOrder` — lifecycle: draft → pending_approval → approved → submitted → received → cancelled; admins can
+  void (`PurchaseOrderVoid`: reverses posted receipts via `InventoryReversal`, read-only after, voided status);
   `pdi_reference` (shown via `display_number`), `posted_at`, optional `location_id`
 - `InventoryTransaction` — polymorphic audit trail (direction: 'in'/'out'), optional `location_id`
 - `ProductionOrderBatch` — QC workflow: qc_status (pending/passed/hold/rejected), lot_number, complete_and_deduct_inventory!(user)

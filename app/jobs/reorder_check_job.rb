@@ -5,7 +5,7 @@ class ReorderCheckJob < ApplicationJob
     created = ReorderService.run
     return unless created.any?
 
-    User.where(role: %w[admin manager]).each do |user|
+    User.active.where(role: %w[admin manager]).each do |user|
       next unless user.email_opt_in
 
       ReorderNotificationMailer.notify(user, created).deliver_later

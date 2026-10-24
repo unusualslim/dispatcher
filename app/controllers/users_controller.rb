@@ -1,6 +1,6 @@
 class UsersController < ApplicationController
   before_action :require_admin!
-  before_action :set_user, only: %i[show edit update destroy]
+  before_action :set_user, only: %i[show edit update destroy deactivate reactivate]
 
   # GET /users or /users.json
   def index
@@ -78,9 +78,27 @@ class UsersController < ApplicationController
     end
   end
 
+  # Inactive users keep their history but can't sign in and leave the pickers.
+  def deactivate
+    return redirect_to users_url, alert: t('.self') if @user == current_user
+
+    @user.update!(deactivated_at: Time.current)
+    redirect_to users_url, notice: t('.deactivated', name: display_name(@user))
+  end
+
+  def reactivate
+    @user.update!(deactivated_at: nil)
+    redirect_to users_url, notice: t('.reactivated', name: display_name(@user))
+  end
+
   # DELETE /users/1 or /users/1.json
   def destroy
-    @user.destroy
+    reasons = @user.history_reasons
+    if reasons.any?
+      return redirect_to users_url, alert: t('.has_history', name: display_name(@user), reasons: reasons.to_sentence)
+    end
+
+    @user.destroy!
 
     respond_to do |format|
       format.html { redirect_to users_url, notice: 'User was successfully destroyed.' }
@@ -89,6 +107,10 @@ class UsersController < ApplicationController
   end
 
   private
+
+  def display_name(user)
+    user.full_name.strip.presence || user.email
+  end
 
   def set_user
     @user = User.find(params[:id])

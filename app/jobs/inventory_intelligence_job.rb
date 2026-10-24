@@ -6,7 +6,7 @@ class InventoryIntelligenceJob < ApplicationJob
     report_type = report_type.to_sym
     report = InventoryIntelligenceService.new(report_type: report_type).run
 
-    recipients = User.where(role: %w[admin manager]).where(email_opt_in: true)
+    recipients = User.active.where(role: %w[admin manager]).where(email_opt_in: true)
 
     recipients.each do |user|
       case report_type

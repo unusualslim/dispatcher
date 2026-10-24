@@ -1,11 +1,13 @@
 class PurchaseOrder < ApplicationRecord
-  STATUSES      = %w[draft pending_approval approved submitted received cancelled].freeze
+  # voided: cancelled by an admin (PurchaseOrderVoid), posted receipts reversed, kept read-only
+  STATUSES      = %w[draft pending_approval approved submitted received cancelled voided].freeze
   TRIGGER_TYPES = %w[auto_reorder mrp_shortage manual pdi_import].freeze
 
   belongs_to :vendor
   belongs_to :location, optional: true
   belongs_to :approved_by, class_name: 'User', optional: true
   belongs_to :received_by, class_name: 'User', optional: true
+  belongs_to :voided_by, class_name: 'User', optional: true
 
   has_many :line_items, class_name: 'PurchaseOrderLineItem', dependent: :destroy
   has_many :inventory_transactions, as: :transactable
@@ -51,6 +53,15 @@ class PurchaseOrder < ApplicationRecord
 
   def posted?
     posted_at.present?
+  end
+
+  def voided?
+    voided_at.present?
+  end
+
+  # Voided POs are kept for history and can't be changed.
+  def readonly?
+    (persisted? && voided_at_in_database.present?) || super
   end
 
   def approve!(user)

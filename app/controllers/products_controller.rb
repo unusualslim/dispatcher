@@ -230,7 +230,7 @@ class ProductsController < ApplicationController
                                    .includes(:created_by)
                                    .limit(10)
     @open_purchase_orders = @product.purchase_orders
-                                    .where(status: PurchaseOrder::STATUSES - %w[received cancelled])
+                                    .where(status: PurchaseOrder::STATUSES - %w[received cancelled voided])
                                     .includes(:vendor, :line_items)
                                     .order(created_at: :desc)
     @standard_cost_histories = @product.standard_cost_histories.includes(:created_by)

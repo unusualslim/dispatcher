@@ -23,7 +23,7 @@
           <%# Driver %>
           <div>
             <%= form.label :driver_id, "Driver", class: "form-label fw-semibold mb-1" %>
-            <%= form.collection_select :driver_id, User.workers, :id, :first_name,
+            <%= form.collection_select :driver_id, User.workers.or(User.where(id: form.object.driver_id)), :id, :first_name,
                   { include_blank: "— Select a driver —" },
                   class: "form-select dispatch-driver-select" %>
           </div>

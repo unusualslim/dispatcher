@@ -12,7 +12,7 @@ class ProductionOrderVoid
     raise ArgumentError, 'Give a reason for voiding' if @reason.blank?
 
     @order.with_lock do
-      reverse_inventory!
+      InventoryReversal.reverse!(batch_moves, source: @order, reference: @order.number, user: @user)
       LedgerEntry.active_for(@order)&.reverse!(@user)
       @order.jobs.active.find_each(&:clock_out!)
       @order.update!(status: 'voided', voided_at: Time.current, voided_by: @user, void_reason: @reason)
@@ -21,25 +21,8 @@ class ProductionOrderVoid
 
   private
 
-  def reverse_inventory!
-    batch_ids = @order.production_order_batches.ids
-    InventoryTransaction.where(transactable_type: 'ProductionOrderBatch', transactable_id: batch_ids)
-                        .includes(:product).find_each { |tx| reverse!(tx) }
-  end
-
-  def reverse!(original)
-    InventoryTransaction.create!(
-      product: original.product, quantity: original.quantity, direction: original.direction == 'in' ? 'out' : 'in',
-      transactable: @order, location_id: original.location_id, reference_number: @order.number,
-      notes: "Void of #{@order.number}: reverses #{original.notes}".first(255), created_by_id: @user&.id
-    )
-    adjust_stock!(original, original.direction == 'in' ? -original.quantity : original.quantity)
-  end
-
-  def adjust_stock!(original, delta)
-    product = original.product
-    return LocationProduct.adjust!(Location.find(original.location_id), product, delta) if original.location_id
-
-    product.update!(current_stock: product.current_stock.to_d + delta)
+  def batch_moves
+    InventoryTransaction.where(transactable_type: 'ProductionOrderBatch',
+                               transactable_id: @order.production_order_batches.ids)
   end
 end

@@ -28,6 +28,10 @@ Rails.application.routes.draw do
   }
 
   resources :users do
+    member do
+      patch :deactivate
+      patch :reactivate
+    end
     collection do
       post :create_line_worker
     end
@@ -160,6 +164,7 @@ Rails.application.routes.draw do
       patch :submit
       patch :receive
       patch :post_to_inventory
+      post  :void
     end
     collection do
       get :export_pdi

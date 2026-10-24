@@ -50,6 +50,21 @@ en:
     voided_read_only: "This production order is voided and can't be changed."
     void:
       voided: "Production order %{number} voided; its inventory and any posted GL entry were reversed."
+  purchase_orders:
+    voided_read_only: "This purchase order is voided and can't be changed."
+    void:
+      voided: "Purchase order %{number} voided; anything it posted to inventory was reversed."
+  users:
+    registrations:
+      turnstile_missing: "The security check didn't load. Refresh the page and complete the checkbox; if no checkbox appears, the Turnstile widget may not allow this domain."
+      turnstile_failed: "Security check failed. Please try again."
+    destroy:
+      has_history: "%{name} has history in the app (%{reasons}), so they can't be deleted. Deactivate them instead."
+    deactivate:
+      deactivated: "%{name} is inactive and can no longer sign in."
+      self: "You can't deactivate yourself."
+    reactivate:
+      reactivated: "%{name} is active again."
   jobs:
     update:
       updated: "Clock times updated; labor costing uses the new hours."
