@@ -122,8 +122,11 @@ download the file, delete it from FTP, run an import service, and record a `Sync
 | `PdiVendorSyncJob` | `PdiVendorImportService` | AP Vendor List `.csv` |
 | `PdiProductSyncJob` | `InventoryImportService` (maps PDI site codes → locations) | current inventory `.xls` |
 | `PdiPurchaseOrderSyncJob` | `PdiWarehouseTransactionImportService` | Warehouse Transaction Report `.xls` |
+| `PdiFuelInventorySyncJob` | `PdiInventoryImportService` (FI report: tanks by product + PDI site number) | FI Inventory Report `.xls` |
 
-- Outbound: `PdiExportJob` uploads a CSV to FTP when a PurchaseOrder transitions to `submitted`.
+- Outbound: `PdiExportJob` uploads a CSV to FTP when a PurchaseOrder transitions to `submitted`;
+  `PdiGlExportJob` (scheduled) posts ready production journals and uploads pending FPST GL entries (`PdiGlExport`).
+- `PdiProductSyncJob`'s file pattern skips the FI report (that's `PdiFuelInventorySyncJob`).
 - **Scheduling**: `rake scheduler:tick` runs every minute as a Render cron job. It walks
   `AutomatedProcessesController::PROCESSES`, checks each `AutomatedProcessConfig` cron
   schedule, and runs due jobs with `perform_now`. Schedules are editable at `/automated_processes`.
@@ -145,7 +148,9 @@ download the file, delete it from FTP, run an import service, and record a `Sync
   void (`PurchaseOrderVoid`: reverses posted receipts via `InventoryReversal`, read-only after, voided status);
   `pdi_reference` (shown via `display_number`), `posted_at`, optional `location_id`
 - `InventoryTransaction` — polymorphic audit trail (direction: 'in'/'out'), optional `location_id`
-- `ProductionOrderBatch` — QC workflow: qc_status (pending/passed/hold/rejected), lot_number, complete_and_deduct_inventory!(user)
+- `ProductionOrderBatch` — now just the PDI batch number(s) recorded on an order (its old per-batch QC/complete
+  is retired; QC and inventory moves happen on the production order)
+- `QualitySpec` / `QualityResult` — per-product quality checks and each order's recorded results
 - `ProductionOrderComponent` — belongs_to :product (optional), quantity_actual
 - `PricingRule` / `PricingRuleProduct` — pricing rules that auto-populate prices on customer orders
 
@@ -170,7 +175,8 @@ download the file, delete it from FTP, run an import service, and record a `Sync
 ### Notable routes
 - /mrp, /purchasing_report, /inventory_intelligence, /inventory_transactions, /inventory_adjustments/new
 - /purchase_orders (+ approve / submit / receive / post_to_inventory, export_pdi, dashboard)
-- /production_orders (kanban, dashboard, bom_cost_report)
+- /production_orders (kanban, dashboard, bom_cost_report; member: void, record_quality, quality_certificate)
+- /quality_exceptions, /ledger_entries (GL Ledger), /reporting_groups, /costing_settings
 - /customer_orders (dashboard, bulk_close), /dispatches/kanban, /warehouse/kanban
 - /pricing_rules, /automated_processes, /docs (in-app user guides + changelog)
 - Products, Customers, Vendors, Locations all support CSV export → import_csv → process_import → confirm_import
@@ -192,7 +198,7 @@ download the file, delete it from FTP, run an import service, and record a `Sync
 - `SAMSARA_API_KEY` — live truck tracking
 - `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` — registration captcha (also readable from credentials)
 - `PDI_FTP_HOST`, `PDI_FTP_USER`, `PDI_FTP_PASSWORD` (+ optional `PDI_FTP_ORDER_DIR`,
-  `PDI_FTP_VENDOR_DIR`, `PDI_FTP_PRODUCT_DIR`, `PDI_FTP_PO_DIR`, `PDI_FTP_PATH`)
+  `PDI_FTP_VENDOR_DIR`, `PDI_FTP_PRODUCT_DIR`, `PDI_FTP_PO_DIR`, `PDI_FTP_FUEL_DIR`, `PDI_FTP_GL_DIR`, `PDI_FTP_PATH`)
 - `SENDGRID_USERNAME`, `SENDGRID_PASSWORD`
 - `TWILIO_SID`, `TWILIO_TOKEN`, `TWILIO_NUMBER` (MessagesController reads Twilio creds from Rails credentials)
 - `BATCH_QR_PASSWORD`, `BATCH_QR_SECRET` — batch label/QR gate (/gate, /labels, /l)
@@ -218,8 +224,9 @@ download the file, delete it from FTP, run an import service, and record a `Sync
 Minitest under `test/`. Coverage is concentrated on MRP services/models
 (MrpEngine, BomPopulator, MaterialAvailability, Reorder, ProductionOrderBatch);
 the PDI sync/import code and most controllers are largely untested. Security regression tests live in
-`test/integration/` (admin-only sign-up, Twilio webhook signature, announcement rich text).
-The suite has **~35 pre-existing failures/errors** (unauthenticated scaffold controller tests, MRP tests
+`test/integration/` (admin-only sign-up, Twilio webhook signature, announcement rich text, permissions).
+Costing, ledger, quality checks, voids and permissions have their own model/service/integration tests.
+The suite has **34 pre-existing failures/errors** (unauthenticated scaffold controller tests, MRP tests
 using old statuses, order-dependent data) — compare failures against that baseline rather than expecting green.
 CI (`.github/workflows/lint.yml`) runs RuboCop only.
 
@@ -236,7 +243,12 @@ file, remove it from the todo (or regenerate with the command at the top of `.ru
 - Cycle counts / physical inventory reconciliation
 - Partial PO receiving (currently all-or-nothing)
 - Finish multi-location inventory (LocationProduct exists; stock falls back to global `current_stock` when no location)
-- Production order completion UI improvements
+- Production order export to PDI at completion (waiting on a PDI change so PDI's production order can link back
+  to the app's; needs PDI's import layout)
+- Real GL accounts (production has placeholders 8001-01…8006-01) and PDI FTP pickup of FPST files
+- Hide Edit/Delete buttons for users without the level (the server already blocks them); finer per-view permissions
+- Possibly: incoming supplier COAs on PO receipts; Void for dispatches/adjustments/quotes; lot traceability
+  (fluid lot → bottle lot, entered by hand; PDI doesn't track lots)
 
 ### Upgrades / security still open (as of Oct 2026)
 - **Rails 8.1** — Brakeman flags Rails 7.2's security support as ended (2026-08-09)
@@ -253,3 +265,6 @@ file, remove it from the todo (or regenerate with the command at the top of `.ru
 - `dispatch_customer_orders` join table is legacy but still used by `CustomerOrder.unassigned_open_orders`
 - With the :async adapter, failed jobs are only visible in `SyncLog` and the Rails log
 - Zone.Identifier files from Windows show as deleted in git status — safe to ignore
+- Render runs migrations before swapping instances, so renaming/dropping a live column causes ~30s of 500s on the
+  old code — add the new column first and drop the old one in a later deploy
+- Production orders and POs are voided (admin), not deleted; users with history are deactivated, not deleted
