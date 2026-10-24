@@ -6,7 +6,8 @@ class ProductionOrderJournalTest < ActiveSupport::TestCase
   setup do
     @user = users(:admin_user)
     @product = products(:def_finished)
-    @product.update!(pdi_repack_fee: 0.75)
+    @category = ReportingGroup.create!(name: 'DEF', item_type: 'warehouse', post_production_gl: true)
+    @product.update!(pdi_repack_fee: 0.75, category: 'DEF')
     @consumables = ReportingGroup.create!(name: 'Consumables', item_type: 'non_inventory', gl_account: '6990-01')
     @labor = ReportingGroup.create!(name: 'Labor', item_type: 'non_inventory', labor: true, gl_account: '6100-12',
                                     temp_gl_account: '6935-02')
@@ -47,6 +48,16 @@ class ProductionOrderJournalTest < ActiveSupport::TestCase
 
     # 2010 − (448.90 pallet + 244.95 supervisor + 625 labor) = 691.15 favorable
     assert_equal 691.15, journal.lines.last.credit
+  end
+
+  test 'categories with production GL off are left to PDI' do
+    @category.update!(post_production_gl: false)
+    clock(20)
+    journal = ProductionOrderJournal.new(@po)
+
+    assert_not journal.posting_enabled?
+    assert_not journal.ready?
+    assert journal.lines.any?, 'still previews what would post'
   end
 
   test 'unfavorable variance is a debit' do

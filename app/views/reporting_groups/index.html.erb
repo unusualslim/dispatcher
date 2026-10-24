@@ -8,6 +8,8 @@
   arrives with a new category, and their names can't change because products link to them by name.
   <strong>Non-inventory</strong> groups hold the BOM cost lines absorbed into production; Labor groups are
   absorbed at actual /line hours, with temp workers' hours posting to the temp account.
+  <strong>Post production GL</strong> on a fuel or warehouse category means production orders for its products get
+  the app's FPST journal; leave it off and PDI handles everything for that category.
   Enter accounts as Major-Sub (e.g. <code>6110-01</code>); the production location adds the site.
 </p>
 
@@ -27,7 +29,10 @@
           <thead class="table-light">
             <tr>
               <th>Name</th>
-              <% unless non_inventory %><th style="width: 150px;">Item Type</th><% end %>
+              <% unless non_inventory %>
+                <th style="width: 150px;">Item Type</th>
+                <th class="text-center" style="width: 110px;">Post production GL</th>
+              <% end %>
               <th style="width: 150px;">GL Account</th>
               <% if non_inventory %>
                 <th style="width: 150px;">Temp Labor Account</th>
@@ -56,6 +61,11 @@
                     <%= select_tag 'reporting_group[item_type]',
                                    options_for_select(ReportingGroup::ITEM_TYPES.except('non_inventory').invert, group.item_type),
                                    form: form_id, class: 'form-select form-select-sm' %>
+                  </td>
+                  <td class="text-center">
+                    <%= hidden_field_tag 'reporting_group[post_production_gl]', '0', form: form_id, id: nil %>
+                    <%= check_box_tag 'reporting_group[post_production_gl]', '1', group.post_production_gl?, form: form_id,
+                                                                                                         class: 'form-check-input', id: "post_gl_#{group.id}" %>
                   </td>
                 <% end %>
                 <td><%= text_field_tag 'reporting_group[gl_account]', group.gl_account, form: form_id, class: 'form-control form-control-sm font-monospace', placeholder: 'Major-Sub' %></td>

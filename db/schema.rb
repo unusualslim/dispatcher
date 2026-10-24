@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_24_200000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_24_210000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -555,6 +555,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_24_200000) do
     t.integer "position"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "post_production_gl", default: false, null: false
     t.index ["name"], name: "index_reporting_groups_on_name", unique: true
   end
 

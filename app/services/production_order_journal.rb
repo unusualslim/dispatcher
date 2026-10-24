@@ -40,9 +40,7 @@ class ProductionOrderJournal
     production_order.date_completed
   end
 
-  def journal_id
-    JOURNAL_ID
-  end
+  def journal_id = JOURNAL_ID
 
   def description
     "Prod #{production_order.number} #{costing.product&.name}".strip.first(50)
@@ -50,6 +48,12 @@ class ProductionOrderJournal
 
   def site_code
     production_order.location&.pdi_site_code
+  end
+
+  # The finished good's fuel/warehouse category must have production GL posting turned on;
+  # otherwise PDI handles everything for this order.
+  def posting_enabled?
+    costing.product&.reporting_group&.post_production_gl? || false
   end
 
   def lines
@@ -70,7 +74,7 @@ class ProductionOrderJournal
   end
 
   def ready?
-    problems.empty?
+    posting_enabled? && problems.empty?
   end
 
   def full_account(major_sub)

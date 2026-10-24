@@ -19,6 +19,7 @@ class ReportingGroup < ApplicationRecord
   validates :item_type, inclusion: { in: ITEM_TYPES.keys }
   validates :gl_account, :temp_gl_account, format: { with: ACCOUNT_FORMAT }, allow_nil: true
   validate :labor_only_for_non_inventory
+  validate :production_gl_only_for_pdi_categories
   validate :pdi_name_unchanged, on: :update
 
   scope :ordered, -> { order(:position, :name) }
@@ -51,6 +52,12 @@ class ReportingGroup < ApplicationRecord
 
   def labor_only_for_non_inventory
     errors.add(:labor, 'applies only to non-inventory groups') if labor? && !non_inventory?
+  end
+
+  def production_gl_only_for_pdi_categories
+    return unless post_production_gl? && non_inventory?
+
+    errors.add(:post_production_gl, 'applies only to fuel and warehouse groups')
   end
 
   # PDI groups can switch between fuel and warehouse, but not to or from non-inventory.
