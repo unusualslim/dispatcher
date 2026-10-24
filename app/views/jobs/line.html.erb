@@ -139,17 +139,25 @@
 </style>
 
 <script>
+// Turbo fires turbo:load on the first page load too, and this script re-runs on every visit,
+// so bind each rendered screen exactly once (a WeakSet survives re-runs and ignores
+// Turbo's cached snapshots, which are fresh elements without listeners).
+window.lineScreensBound = window.lineScreensBound || new WeakSet();
 document.addEventListener("turbo:load", initLineScreen);
 document.addEventListener("DOMContentLoaded", initLineScreen);
 
 function initLineScreen() {
-  // Worker tile toggle
-  document.querySelectorAll(".worker-tile").forEach(tile => {
-    tile.addEventListener("click", () => {
-      tile.classList.toggle("selected");
-      tile.querySelector(".worker-checkbox").checked = tile.classList.contains("selected");
-      updateClockInBtn();
-    });
+  const screen = document.getElementById("line-screen");
+  if (!screen || window.lineScreensBound.has(screen)) return;
+  window.lineScreensBound.add(screen);
+
+  // Worker tile toggle (one delegated listener for every tile)
+  screen.addEventListener("click", (e) => {
+    const tile = e.target.closest(".worker-tile");
+    if (!tile) return;
+    tile.classList.toggle("selected");
+    tile.querySelector(".worker-checkbox").checked = tile.classList.contains("selected");
+    updateClockInBtn();
   });
 
   // Clock-in button enablement
@@ -159,17 +167,19 @@ function initLineScreen() {
     updateClockInBtn();
   }
 
-  // Live clock
+  // Live clock and active-job timer; clear any left from a previous visit
+  (window.lineScreenTimers || []).forEach(clearInterval);
+  window.lineScreenTimers = [];
+
   const timeEl = document.getElementById("current-time");
   if (timeEl) {
     const tick = () => {
       timeEl.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     };
     tick();
-    setInterval(tick, 1000);
+    window.lineScreenTimers.push(setInterval(tick, 1000));
   }
 
-  // Elapsed timer for active job
   const timerEl = document.getElementById("live-timer");
   if (timerEl) {
     const startedAt = new Date(timerEl.dataset.startedAt);
@@ -181,7 +191,7 @@ function initLineScreen() {
       timerEl.textContent = `${h}:${m}:${s}`;
     };
     tickTimer();
-    setInterval(tickTimer, 1000);
+    window.lineScreenTimers.push(setInterval(tickTimer, 1000));
   }
 }
 
