@@ -77,6 +77,23 @@ class CustomerMergeTest < ActiveSupport::TestCase
                  pairs.map { |p| [p.old_location.company_name, p.new_location.company_name] }.sort
   end
 
+  test 'leaves a location the PDI customer already has as a ship-to, and replaces its plain link when folding' do
+    # Already PDI ship-to 11 of the target: stays as it is, not re-paired with similar-named ship-to 12.
+    langdale = Location.create!(company_name: 'Langdale Fuel Co.', city: 'Valdosta', location_category_id: 2)
+    @app.locations << langdale
+    CustomerLocation.create!(customer: @pdi, location: langdale, pdi_location_id: '11')
+    CustomerLocation.create!(customer: @pdi, pdi_location_id: '12',
+                             location: Location.create!(company_name: 'Langdale Fuel Co', city: 'Valdosta',
+                                                        location_category_id: 2))
+    # The target also has a plain link to the app's ship-to 35 location (from an order).
+    CustomerLocation.create!(customer: @pdi, location: @ftp_yard)
+
+    CustomerMerge.new(@app, @pdi).merge!
+
+    assert_equal '11', CustomerLocation.find_by!(customer: @pdi, location: langdale).pdi_location_id
+    assert_equal ['35'], CustomerLocation.where(customer: @pdi, location: @ftp_yard).pluck(:pdi_location_id)
+  end
+
   test 'drops empty phone numbers and ones the PDI customer already has' do
     @app.phone_numbers.create!(number: '')
     @app.phone_numbers.create!(number: '(229) 555-0199')

@@ -158,6 +158,11 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
   PDI's Active / AccountStatus sets `products.active` / `customers.active` (an inactive record only gets the flag;
   inactive customers' ship-tos are skipped). Inactive records leave pickers (`Product.active`, `.selectable(keep_ids)`
   keeps a record's current choice) and the index pages unless "Show inactive" is ticked.
+- **Admin → Merge Customers** (`CustomerMerge`): folds app customers the import couldn't match by name into their
+  PDI twin (orders, quotes, rules, locations…); store-numbered locations ("146 Cartersville TA", "35 - Name") fold
+  into the PDI ship-to of that number. **Admin → Merge Locations** (`LocationMerge`, also "Merge into…" on a
+  location page): one location into another, moving every reference, combining stock and carrying PDI links;
+  refuses two different PDI ship-tos of one customer.
 - The FTP order import prefers these IDs ("2362 - Name" / "12 - Name" prefixes) before matching by name.
 - Customer and open-order pages lazy-load PDI credit (`/customers/:id/pdi_credit`, Turbo Frame).
 

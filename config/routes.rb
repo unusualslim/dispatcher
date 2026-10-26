@@ -215,6 +215,9 @@ Rails.application.routes.draw do
   resources :customer_merges, only: %i[index new create] do
     get :targets, on: :collection
   end
+  resources :location_merges, only: %i[index new create] do
+    get :targets, on: :collection
+  end
   resource :pdi_master_data_import, only: %i[new create] do
     post :preview, on: :collection
   end

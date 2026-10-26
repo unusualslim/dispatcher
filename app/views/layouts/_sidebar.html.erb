@@ -14,7 +14,7 @@
                           repack_batch_imports pdi_purchase_order_imports purchase_order_imports].include?(current) ||
                        (current == 'customer_order_products' && request.path == product_code_links_path) %>
 <% accounting_active = %w[ledger_entries reporting_groups costing_settings].include?(current) %>
-<% admin_active      = imports_active || %w[users customer_merges things warehouse_locations automated_processes announcements].include?(current) %>
+<% admin_active      = imports_active || %w[users customer_merges location_merges things warehouse_locations automated_processes announcements].include?(current) %>
 
 <nav id="sidebar" class="sidebar d-flex flex-column">
   <!-- Brand -->
@@ -152,6 +152,7 @@
           <% end %>
           <%= nav_item 'Users',               users_path,               'bi-person-badge', active: current == 'users' %>
           <%= nav_item 'Merge Customers',     customer_merges_path,     'bi-intersect',    active: current == 'customer_merges', keywords: 'duplicate pdi link combine' %>
+          <%= nav_item 'Merge Locations',     location_merges_path,     'bi-geo-alt',      active: current == 'location_merges', keywords: 'duplicate ship-to site combine' %>
           <%= nav_item 'Equipment & Assets',  things_path,              'bi-tools',        active: current == 'things', keywords: 'things' %>
           <%= nav_item 'Warehouse Locations', edit_warehouse_locations_path, 'bi-building-gear', active: current == 'warehouse_locations' %>
           <%= nav_item 'Automated Processes', automated_processes_path, 'bi-arrow-repeat', active: current == 'automated_processes', keywords: 'pdi sync schedule cron ftp' %>

@@ -1,0 +1,81 @@
+<div class="mb-3">
+  <%= link_to "← Merge Locations", location_merges_path, class: "text-decoration-none small" %>
+  <h1 class="mb-0 mt-1">Merge <%= @source.company_name %></h1>
+  <div class="text-muted small"><%= [@source.address, @source.city, @source.state, @source.zip].compact_blank.join(', ') %></div>
+</div>
+
+<div class="card shadow-sm mb-3">
+  <div class="card-body">
+    <%= form_with url: new_location_merge_path, method: :get, local: true, class: "d-flex gap-2 align-items-end flex-wrap" do %>
+      <%= hidden_field_tag :source_id, @source.id %>
+      <%= hidden_field_tag :return_to, params[:return_to] if params[:return_to].present? %>
+      <div style="min-width: 420px;">
+        <label class="form-label fw-semibold mb-1" for="target_id">Merge into (keep)</label>
+        <select name="target_id" id="target_id" class="form-select">
+          <% if @target %><option value="<%= @target.id %>" selected><%= @target.company_name %></option><% end %>
+        </select>
+      </div>
+      <%= submit_tag "Preview", class: "btn btn-primary" %>
+    <% end %>
+  </div>
+</div>
+
+<% if @error %>
+  <div class="alert alert-warning"><%= @error %></div>
+<% elsif @merge %>
+  <div class="card shadow-sm mb-3">
+    <div class="card-header fw-semibold"><%= @source.company_name %> → <%= @target.company_name %></div>
+    <div class="card-body">
+      <p class="mb-2">
+        <strong>Kept:</strong> <%= @target.company_name %> —
+        <%= [@target.address, @target.city, @target.state, @target.zip].compact_blank.join(', ').presence || 'no address' %>
+      </p>
+      <h6>Moves to the kept location</h6>
+      <ul>
+        <% @merge.counts.each do |label, count| %>
+          <li class="<%= 'text-muted' if count.zero? %>"><%= count %> <%= label.downcase %></li>
+        <% end %>
+      </ul>
+      <% links = @source.customer_locations.includes(:customer) %>
+      <% if links.any? %>
+        <h6>Customers</h6>
+        <ul class="small">
+          <% links.each do |link| %>
+            <li><%= link.customer.name %><%= " (PDI ship-to #{link.pdi_location_id})" if link.pdi_location_id %></li>
+          <% end %>
+        </ul>
+      <% end %>
+      <% if @merge.fills.any? %>
+        <h6>Fills the kept location's blank fields</h6>
+        <ul class="small"><% @merge.fills.each do |field, value| %><li><%= field.humanize %>: <%= value %></li><% end %></ul>
+      <% end %>
+      <% if @source.notes.present? || @source.location_notes.present? || @source.dispatch_notes.present? %>
+        <p class="small text-muted mb-0">Notes are appended to the kept location's notes.</p>
+      <% end %>
+    </div>
+    <div class="card-footer d-flex gap-2 align-items-center">
+      <%= button_to "Merge — #{@source.company_name} will be deleted", location_merges_path,
+            params: { source_id: @source.id, target_id: @target.id, return_to: params[:return_to] },
+            class: "btn btn-danger",
+            form: { data: { turbo_confirm: "Merge #{@source.company_name} into #{@target.company_name}? This can't be undone." } } %>
+      <%= link_to "Cancel", location_merges_path, class: "btn btn-outline-secondary" %>
+    </div>
+  </div>
+<% end %>
+
+<script>
+  (function () {
+    if (!window.jQuery || !jQuery.fn.select2) return;
+    jQuery('#target_id').select2({
+      placeholder: 'Search locations by name, city or address…',
+      width: '100%',
+      ajax: {
+        url: '<%= targets_location_merges_path %>',
+        dataType: 'json',
+        delay: 250,
+        data: function (p) { return { q: p.term }; },
+        processResults: function (data) { return { results: data }; }
+      }
+    });
+  })();
+</script>

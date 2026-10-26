@@ -94,6 +94,11 @@ en:
     export:
       exported: "Exported %{count} entries to PDI."
       failed: "Export to PDI failed; nothing was marked exported. %{error}"
+  location_merges:
+    create:
+      merged: "Merged %{source} into %{target} (%{summary})."
+      nothing_moved: "nothing to move"
+      failed: "Merge failed: %{error}"
   customer_merges:
     create:
       merged: "Merged %{source} into %{target} (%{summary})."

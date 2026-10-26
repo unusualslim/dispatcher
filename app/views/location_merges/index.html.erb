@@ -1,0 +1,39 @@
+<h1 class="mb-2">Merge Locations</h1>
+<p class="text-muted">
+  Likely duplicates: two of one customer's delivery locations at the same zip code (or the same city when one has
+  no zip). The suggested keeper is the one linked to the customer's PDI ship-to, else the one with more orders.
+  Merging moves everything from the removed location to the kept one and deletes it; you'll see a preview first.
+  Any location can also be merged from its own page.
+</p>
+
+<% if @pairs.empty? %>
+  <div class="text-center text-muted py-5">No likely duplicates.</div>
+<% else %>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead class="table-light">
+        <tr><th>Customer</th><th>Keep</th><th>Remove (merge into keep)</th><th></th></tr>
+      </thead>
+      <tbody>
+        <% @pairs.each do |pair| %>
+          <tr>
+            <td class="small"><%= link_to pair.customer.name, customer_path(pair.customer), class: "text-decoration-none" %></td>
+            <% [pair.keep, pair.remove].each do |location| %>
+              <td>
+                <%= link_to location.company_name, location_path(location), class: "fw-semibold text-decoration-none" %>
+                <div class="small text-muted">
+                  <%= [location.address, location.city, location.state, location.zip].compact_blank.join(', ').presence || 'no address' %>
+                  · <%= pluralize(@order_counts[location.id].to_i, 'order') %>
+                </div>
+              </td>
+            <% end %>
+            <td class="text-end text-nowrap">
+              <%= link_to "Review", new_location_merge_path(source_id: pair.remove.id, target_id: pair.keep.id), class: "btn btn-outline-primary btn-sm" %>
+              <%= link_to "Swap", new_location_merge_path(source_id: pair.keep.id, target_id: pair.remove.id), class: "btn btn-outline-secondary btn-sm" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

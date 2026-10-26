@@ -23,11 +23,19 @@ class CustomerMerge
       @pairs ||= begin
         taken = []
         source_links.filter_map do |link|
-          match = target_links.find { |t| taken.exclude?(t) && same_ship_to?(link.location, t) }
+          match = ship_to_for(link, taken)
           taken << match if match
           Pair.new(old_link: link, new_link: match) if match
         end
       end
+    end
+
+    # The target's PDI ship-to link this source location duplicates, if any. A location that already is
+    # one of the target's ship-tos stays as it is.
+    def ship_to_for(link, taken)
+      return if target_ship_to_location_ids.include?(link.location_id)
+
+      target_links.find { |t| taken.exclude?(t) && same_ship_to?(link.location, t) }
     end
 
     # Source locations that aren't folded into a PDI ship-to and simply move over.
@@ -61,6 +69,10 @@ class CustomerMerge
       @target_links ||= @target.customer_locations.where.not(pdi_location_id: nil).includes(:location).to_a
     end
 
+    def target_ship_to_location_ids
+      @target_ship_to_location_ids ||= target_links.map(&:location_id)
+    end
+
     def same_ship_to?(location, target_link)
       return false if location.id == target_link.location_id
 
@@ -89,6 +101,8 @@ class CustomerMerge
       CustomerOrder.where(customer_id: @target.id, location_id: new_location.id)
                    .update_all(location_id: old_location.id) # rubocop:disable Rails/SkipsModelValidations
       pair.old_link.destroy!
+      # The target's own plain link to the kept location (e.g. from its orders) gives way to the ship-to link.
+      CustomerLocation.where(customer: @target, location: old_location, pdi_location_id: nil).destroy_all
       pair.new_link.update!(location: old_location)
       new_location.destroy! if deletable?(new_location)
     end
