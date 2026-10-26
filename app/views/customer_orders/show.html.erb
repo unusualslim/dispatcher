@@ -79,6 +79,14 @@
         <div>
           <div class="text-muted small text-uppercase fw-semibold mb-1">Customer</div>
           <div class="fw-semibold"><%= @customer_order.customer&.name || "Not assigned" %></div>
+          <% customer = @customer_order.customer %>
+          <% if customer&.pdi_customer_id.present? && CustomerOrder::ACTIVE_STATUSES.include?(@customer_order.order_status_before_type_cast) %>
+            <% order_total = @customer_order.customer_order_products.sum('COALESCE(quantity, 0) * COALESCE(price, 0)') %>
+            <turbo-frame id="pdi_credit" class="d-block mt-1" loading="lazy"
+                         src="<%= pdi_credit_customer_path(customer, amount: order_total) %>">
+              <span class="text-muted small">Checking PDI credit…</span>
+            </turbo-frame>
+          <% end %>
         </div>
 
         <div>

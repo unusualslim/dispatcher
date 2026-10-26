@@ -81,6 +81,9 @@ Rails.application.routes.draw do
       post :process_import
       post :confirm_import
     end
+    member do
+      get :pdi_credit
+    end
   end
 
   resources :quotes do
@@ -209,6 +212,11 @@ Rails.application.routes.draw do
     post :preview, on: :collection
   end
   get 'pdi_product_import/download/:log_id', to: 'pdi_product_imports#download', as: :download_pdi_product_import
+  resource :pdi_master_data_import, only: %i[new create] do
+    post :preview, on: :collection
+  end
+  get 'pdi_master_data_import/download/:log_id', to: 'pdi_master_data_imports#download',
+                                                 as: :download_pdi_master_data_import
 
   resource :pdi_purchase_order_import, only: %i[new create] do
     post :preview, on: :collection

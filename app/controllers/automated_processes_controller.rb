@@ -16,13 +16,26 @@ class AutomatedProcessesController < ApplicationController
       description: 'Syncs fuel tank stock by product and site from PDI FTP (FI Inventory Report.xls)',
       default_schedule: '0 6 * * *' },
     { slug: 'pdi-gl-export', name: PdiGlExport::PROCESS_NAME, job: 'PdiGlExportJob',
-      description: 'Posts completed production orders\' FPST journals and uploads pending GL entries to PDI FTP' }
+      description: 'Posts completed production orders\' FPST journals and uploads pending GL entries to PDI FTP' },
+    { slug: 'pdi-master-data-sync', name: PdiMasterDataSyncJob::PROCESS_NAME, job: 'PdiMasterDataSyncJob',
+      description: 'Syncs customers, ship-tos, terminals and products from the PDI web service (GetMasterData). ' \
+                   'Off until scheduled; review the first run at Data Imports → PDI Master Data.',
+      default_schedule: '' },
+    { slug: 'pdi-order-api-sync', name: PdiOrderApiSyncJob::PROCESS_NAME, job: 'PdiOrderApiSyncJob',
+      description: 'Imports fuel and warehouse orders from the PDI web service and re-checks open orders\' ' \
+                   'status (replaces the FTP orders.xls sync). Off until scheduled.',
+      default_schedule: '' }
   ].freeze
+
+  # A process's schedule; new configs start at its default_schedule (blank = off), else hourly.
+  def self.config_for(process)
+    AutomatedProcessConfig.for_slug(process[:slug], default_schedule: process.fetch(:default_schedule, '0 * * * *'))
+  end
 
   def index
     @processes = PROCESSES.map do |p|
       logs   = SyncLog.for_process(p[:name])
-      config = AutomatedProcessConfig.for_slug(p[:slug], default_schedule: p[:default_schedule] || '0 * * * *')
+      config = self.class.config_for(p)
       p.merge(
         config: config,
         last_run: logs.first,
@@ -35,13 +48,13 @@ class AutomatedProcessesController < ApplicationController
 
   def show
     @process = find_process!
-    @config  = AutomatedProcessConfig.for_slug(@process[:slug])
+    @config  = self.class.config_for(@process)
     @logs    = SyncLog.for_process(@process[:name]).paginate(page: params[:page], per_page: 25)
   end
 
   def update_config
     process = find_process!
-    config  = AutomatedProcessConfig.for_slug(process[:slug])
+    config  = self.class.config_for(process)
     config.update!(config_params)
     redirect_to automated_process_path(params[:id]), notice: 'Schedule updated.'
   end

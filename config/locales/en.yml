@@ -94,3 +94,12 @@ en:
     export:
       exported: "Exported %{count} entries to PDI."
       failed: "Export to PDI failed; nothing was marked exported. %{error}"
+  pdi_master_data_imports:
+    preview:
+      fetch_failed: "Couldn't fetch PDI master data: %{error}"
+    create:
+      expired: "Preview expired. Please fetch from PDI again."
+      imported: "Import complete. %{summary}. Errors: %{errors} (see the import history)."
+      failed: "Import failed: %{error}"
+    download:
+      unavailable: "File not available."

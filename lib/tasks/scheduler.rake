@@ -2,7 +2,7 @@ namespace :scheduler do
   desc 'Check all automated process configs and trigger any that are due — run this every minute via Render cron job'
   task tick: :environment do
     AutomatedProcessesController::PROCESSES.each do |process|
-      config = AutomatedProcessConfig.for_slug(process[:slug])
+      config = AutomatedProcessesController.config_for(process)
       next unless config.due?
 
       config.mark_triggered!

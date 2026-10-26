@@ -66,7 +66,7 @@ Locations also act as warehouses/tanks for inventory (`show_in_warehouse_dropdow
 **CustomerOrder** = `order_status` enum mirrors **PDI order statuses** (Open Order, Quote, Pending,
 Released for Dispatch, Dispatched, Released for Picking, Picking in Progress, Shipped,
 Released for Billing, Billed, Delivered, Accepted/Rejected by Site, Expired, Expired Quote,
-Cancelled as Order/Quote, Quarantine). "Open" work = `CustomerOrder::ACTIVE_STATUSES`.
+Cancelled as Order/Quote, Quarantine, Credited, Staged, Loaded — key `truck_loaded`). "Open" work = `CustomerOrder::ACTIVE_STATUSES`.
 Orders mostly arrive via the PDI order sync.
 **Quotes** = price agreements (draft → sent → accepted/rejected). Lines are priced from pricing
 rules and store a snapshot (rule, basis, basis_cost, method, value, price_overridden). An accepted
@@ -118,7 +118,7 @@ download the file, delete it from FTP, run an import service, and record a `Sync
 
 | Job | Import service | File |
 |---|---|---|
-| `PdiOrderSyncJob` | `CustomerOrderImportService` | `orders.xls` |
+| `PdiOrderSyncJob` | `CustomerOrderImportService` | `orders.xls` (being replaced by the PDI Order API Sync, below) |
 | `PdiVendorSyncJob` | `PdiVendorImportService` | AP Vendor List `.csv` |
 | `PdiProductSyncJob` | `InventoryImportService` (maps PDI site codes → locations) | current inventory `.xls` |
 | `PdiPurchaseOrderSyncJob` | `PdiWarehouseTransactionImportService` | Warehouse Transaction Report `.xls` |
@@ -130,10 +130,33 @@ download the file, delete it from FTP, run an import service, and record a `Sync
 - **Scheduling**: `rake scheduler:tick` runs every minute as a Render cron job. It walks
   `AutomatedProcessesController::PROCESSES`, checks each `AutomatedProcessConfig` cron
   schedule, and runs due jobs with `perform_now`. Schedules are editable at `/automated_processes`.
+  A new process starts at its `default_schedule` (blank = Off), else hourly (`config_for`).
 - Manual imports (each with a preview step, and downloadable source file via SyncLog):
   customer orders, PDI products, PDI inventory, PDI purchase orders, purchase orders,
   repack batches, warehouse transactions, inventory, BOMs, min/max, vendor freight terms.
 - Debug: `rake pdi:ftp_ls`, `rake pdi:sync_vendors`
+
+## PDI Enterprise Web Service (SOAP)
+`PdiWebService` calls https://account.fivepointsservice.com/PDIEnterpriseWeb.asmx (partner `team.fivepoints`,
+UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMessage` (HTTP 200) or SOAP faults.
+- Working: `GetMasterData` (~4.6 MB, mode ignored), `CustomerCreditCheck` (CreditStatus 0 = OK, 1 = Credit Hold),
+  `GetOrderStatus` (numeric; 1 = Open, 99 = unknown order).
+- PDI's XSDs are in `docs/pdi_api/` (status codes: `PDIOrderElementTypes.xsd` → `PdiOrders::Statuses`).
+- `GetFuelOrders`/`GetWarehouseOrders` (`PdiWebService::OrderFilter`, sent with `xmlns=""`) are a **feed**: PDI hands
+  each order to the web partner once and leaves it out until it changes, whatever `RecordsToInclude` says. So never
+  poll them for testing (the PDI test tool uses the same partner), and save everything that arrives.
+- **PDI Order API Sync** (`PdiOrderApiSyncJob`, Off until scheduled; replaces `PdiOrderSyncJob`'s FTP orders.xls):
+  `PdiOrders::Feed` fetches (warehouse one status per call since its orders carry no status; finished statuses
+  only for delivery dates in the last 60 days) → raw XML saved gzipped on the SyncLog → `PdiOrderApiImportService`
+  upserts by `external_order_no` (`OrderWriter`, `Destination` matches PDI customer/ship-to IDs; DestinationType 0 =
+  own site, no customer) → `StatusCheck` asks `GetOrderStatus` for open app orders PDI didn't send (200/run).
+  Re-import a saved feed: `rake pdi:reimport_orders[SYNC_LOG_ID]`. Imported lines may have negative prices (credits).
+- **PDI Master Data** (`PdiMasterDataImportService` + `app/services/pdi_master_data/*_sync.rb`; Data Imports page and
+  `PdiMasterDataSyncJob`, schedule Off until set): customers → `customers.pdi_customer_id`; ship-tos (per customer in
+  PDI) → `customer_locations.pdi_location_id`, so one app location can serve many customers' ship-tos; terminals →
+  `locations.pdi_terminal_id` (link only); fuel + warehouse products by ID. Existing locations are never renamed.
+- The FTP order import prefers these IDs ("2362 - Name" / "12 - Name" prefixes) before matching by name.
+- Customer and open-order pages lazy-load PDI credit (`/customers/:id/pdi_credit`, Turbo Frame).
 
 ---
 
@@ -197,6 +220,7 @@ download the file, delete it from FTP, run an import service, and record a `Sync
 - `DATABASE_URL`, `RAILS_MASTER_KEY`
 - `SAMSARA_API_KEY` — live truck tracking
 - `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` — registration captcha (also readable from credentials)
+- `PDI_API_PARTNER_ID`, `PDI_API_PASSWORD` (+ optional `PDI_API_URL`) — PDI Enterprise Web Service
 - `PDI_FTP_HOST`, `PDI_FTP_USER`, `PDI_FTP_PASSWORD` (+ optional `PDI_FTP_ORDER_DIR`,
   `PDI_FTP_VENDOR_DIR`, `PDI_FTP_PRODUCT_DIR`, `PDI_FTP_PO_DIR`, `PDI_FTP_FUEL_DIR`, `PDI_FTP_GL_DIR`, `PDI_FTP_PATH`)
 - `SENDGRID_USERNAME`, `SENDGRID_PASSWORD`

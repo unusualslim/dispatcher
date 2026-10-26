@@ -59,6 +59,20 @@ class CustomersController < ApplicationController
     redirect_to customers_path, notice: 'Customer was successfully deleted.'
   end
 
+  # Lazy-loaded Turbo Frame: the customer's live credit position from PDI (?amount= compares an order total).
+  def pdi_credit
+    @customer = Customer.find(params[:id])
+    @amount = params[:amount].presence&.to_d
+    begin
+      if @customer.pdi_customer_id.present? && PdiWebService.configured?
+        @credit = PdiWebService.new(read_timeout: 15).credit_check(@customer.pdi_customer_id)
+      end
+    rescue PdiWebService::Error, Net::OpenTimeout, Net::ReadTimeout, SocketError => e
+      @error = e.message
+    end
+    render partial: 'customers/pdi_credit', layout: false
+  end
+
   def search
     @customers = if params[:query].present?
                    Customer.joins(:phone_numbers)

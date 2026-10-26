@@ -50,13 +50,16 @@ class CustomerOrder < ApplicationRecord
     expired_quote: 'Expired Quote',
     cancelled_as_order: 'Cancelled as Order',
     cancelled_as_quote: 'Cancelled as Quote',
-    quarantine: 'Quarantine'
+    quarantine: 'Quarantine',
+    credited: 'Credited',
+    staged: 'Staged',
+    truck_loaded: 'Loaded' # key can't be "loaded" (ActiveRecord::Relation#loaded)
   }
 
   # Statuses that represent active/open work (equivalent to the old "New")
   ACTIVE_STATUSES = [
     'Open Order', 'Quote', 'Pending', 'Released for Dispatch', 'Dispatched',
-    'Released for Picking', 'Picking in Progress', 'Released for Billing'
+    'Released for Picking', 'Picking in Progress', 'Released for Billing', 'Staged', 'Loaded'
   ].freeze
 
   PRODUCTS = ['DEF', 'Regular', 'Plus', 'Super', 'Eth-Regular', 'Eth-Plus', 'Eth-Super', 'Reg-E10', 'Plus-E10',

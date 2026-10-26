@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <!-- Shared element types used by generated schema documents -->
+  <xs:simpleType name="NotesType">
+    <xs:annotation>
+      <xs:documentation>
+        Defines the data type for notes fields.
+        Notes cannot be empty elements because if it is empty then it is ignored during processing.
+        You cannot set a notes value to an empty string using this schema.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:minLength value="1"/>
+      <xs:maxLength value="255"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="OrderStatusType">
+    <xs:annotation>
+      <xs:documentation>
+        Defines order status values that are allowed when modifying an order.
+        An order status must be specified by the numeric code.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:integer">
+      <xs:annotation>
+        <xs:documentation>
+        0:  Quote
+        1:  Open
+        2:  PickListPrinted
+        3:  Shipped
+        4:  Dispatched
+        5:  ReleaseForBilling
+        6:  Billed
+        7:  CancelledAsQuote
+        8:  CancelledAsOrder
+        9:  ExpiredQuote
+        10: ReleasedForDispatch
+        11: Credited
+        12: ReleasedForPicking
+        13: AcceptedBySite
+        14: RejectedBySite
+        15: Delivered
+        16: Pending
+        17: Staged
+        18: Loaded
+		    </xs:documentation>
+      </xs:annotation>
+      <xs:minInclusive value="0"/>
+    </xs:restriction>
+  </xs:simpleType>
+  
+  <xs:simpleType name="PercentFullType">
+    <xs:annotation>
+      <xs:documentation>
+        Defines the data type for percent full values.
+        Percent full values are decimal values with 6 total digits and 2 fractional digits.
+        Values must be between 0 and 1000, inclusive.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:decimal">
+      <xs:fractionDigits value="2"/>
+      <xs:totalDigits value="6"/>
+      <xs:minInclusive value="0"/>
+      <xs:maxInclusive value="1000"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="PickedQuantityType">
+    <xs:annotation>
+      <xs:documentation>
+        Defines the data type for picked quantity values.
+        Picked quantity values are decimal values with 12 total digits and 4 fractional digits.
+        Minimum value is 0.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:decimal">
+      <xs:fractionDigits value="4"/>
+      <xs:totalDigits value="12"/>
+      <xs:minInclusive value="0"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Record key types -->
+  <xs:simpleType name="RecordKeyType">
+    <xs:annotation>
+      <xs:documentation>
+        Defines the data type for order record keys. The record key for an existing record
+        must have a positive value greater than zero.
+        Record keys are decimal values with 15 total digits and 0 fractional digits.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:decimal">
+      <xs:fractionDigits value="0" />
+      <xs:totalDigits value="15" />
+      <xs:minInclusive value="1" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Define a type that allows only -1.
+      This is used as part of a composite validation that allows a -1 or > 0 value for
+      order detail keys. -->
+  <xs:simpleType name="NewRecordIndicator">
+    <xs:restriction base="xs:decimal">
+      <xs:fractionDigits value="0" />
+      <xs:totalDigits value="15" />
+      <xs:enumeration value="-1"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="RecordKeyModifyOnlyType">
+    <xs:annotation>
+      <xs:documentation>
+        Defines the data type for order record keys. An order record key must have a positive value
+        greater than zero because it is used to identify an existing order.
+        Record keys are decimal values with 15 total digits and 0 fractional digits.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="RecordKeyType">
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="RecordKeyModifyAndCreateType">
+    <xs:annotation>
+      <xs:documentation>
+        Defines the data type for record keys used within an order. Valid values are
+        -1 to indicate a new record to be added, or a positive value greater than zero
+        to identify an existing record to be modified.
+        All record keys are decimal values with 15 total digits and 0 fractional digits.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:union memberTypes="NewRecordIndicator RecordKeyType"/>
+  </xs:simpleType>
+
+</xs:schema>

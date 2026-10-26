@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PDIGetWarehouseOrdersInput>
+  <StatusToInclude>
+    <Status>1</Status>
+  </StatusToInclude>
+  <RecordsToInclude>0</RecordsToInclude>
+</PDIGetWarehouseOrdersInput>

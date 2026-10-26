@@ -1,0 +1,109 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <xs:element name="Status">
+    <xs:simpleType>
+      <xs:restriction base="xs:integer"/>
+    </xs:simpleType>
+  </xs:element>
+  
+  <xs:element name="StatusToInclude">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="Status" minOccurs="1" maxOccurs="unbounded"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="RecordsToInclude" type="xs:byte"/>
+  
+  <xs:element name="CarrierID">
+    <xs:simpleType>
+      <xs:restriction base ="xs:string">
+        <xs:maxLength value="15"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  
+  <xs:element name="Driver">
+    <xs:simpleType>
+      <xs:restriction base ="xs:string">
+        <xs:maxLength value="10"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  
+  <xs:element name="Vehicle">
+    <xs:simpleType>
+      <xs:restriction base ="xs:string">
+        <xs:maxLength value="15"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  
+  <xs:element name="SchedDelivDateTimeFrom" type="xs:dateTime"/>
+  
+  <xs:element name="SchedDelivDateTimeTo" type="xs:dateTime"/>
+  
+  <xs:element name="ActualDelivDateTimeFrom" type="xs:dateTime"/>
+  
+  <xs:element name="ActualDelivDateTimeTo" type="xs:dateTime"/>
+  
+  <xs:element name="LoadNo">
+    <xs:simpleType>
+      <xs:restriction base="xs:decimal">
+        <xs:fractionDigits value="0"/>
+        <xs:totalDigits value="15"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:element>
+  
+	<xs:element name="LoadReferenceNo">
+		<xs:simpleType>
+			<xs:restriction base ="xs:string">
+				<xs:maxLength value="15"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+
+	<xs:element name="SourcesToInclude">
+		<xs:simpleType>
+			<xs:restriction base ="xs:string">
+				<xs:maxLength value="200"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+
+	<xs:element name="CustomFilter">
+		<xs:simpleType>
+			<xs:restriction base ="xs:string">
+				<xs:maxLength value="4000"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+	
+  <xs:element  name="PDIGetFuelLoadsInput">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="StatusToInclude"/>
+        <xs:element ref="RecordsToInclude"/>
+        <xs:element ref="CarrierID" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="Driver" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="Vehicle" minOccurs="0" maxOccurs="1"/>
+        <xs:sequence minOccurs="0" maxOccurs="1">
+          <xs:element ref="SchedDelivDateTimeFrom"/>
+          <xs:element ref="SchedDelivDateTimeTo"/>
+        </xs:sequence>
+        <xs:sequence minOccurs="0" maxOccurs="1">
+          <xs:element ref="ActualDelivDateTimeFrom"/>
+          <xs:element ref="ActualDelivDateTimeTo"/>
+        </xs:sequence>
+        <xs:element ref="LoadNo" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="LoadReferenceNo" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="SourcesToInclude" minOccurs="0" maxOccurs="1"/>
+        <xs:element ref="CustomFilter" minOccurs="0" maxOccurs="1"/>
+	</xs:sequence>
+	</xs:complexType>
+  </xs:element>
+	
+</xs:schema>

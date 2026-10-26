@@ -15,6 +15,15 @@
           <!-- Additional Customer Info -->
           <p><strong>Email:</strong> <%= @customer.email %></p>
           <p><strong>Preferred Contact Method:</strong> <%= @customer.preferred_contact_method %></p>
+          <% if @customer.pdi_customer_id.present? %>
+            <p><strong>PDI Customer:</strong> <%= @customer.pdi_customer_id %></p>
+            <div class="mb-3">
+              <strong>PDI Credit:</strong>
+              <turbo-frame id="pdi_credit" src="<%= pdi_credit_customer_path(@customer) %>" loading="lazy">
+                <span class="text-muted small">Checking PDI…</span>
+              </turbo-frame>
+            </div>
+          <% end %>
 
           <!-- Associated Locations Section -->
           <h4>Locations</h4>

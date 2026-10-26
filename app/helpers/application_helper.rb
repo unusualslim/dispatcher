@@ -3,6 +3,7 @@
 # View helpers shared across the app: cron labels, sidebar nav links and badges.
 module ApplicationHelper
   CRON_PRESETS = {
+    'Off' => '',
     'Every 1 minute' => '* * * * *',
     'Every 2 minutes' => '*/2 * * * *',
     'Every 5 minutes' => '*/5 * * * *',

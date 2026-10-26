@@ -1,0 +1,37 @@
+<div class="container mt-4" style="max-width: 760px;">
+  <h1>PDI Master Data</h1>
+  <p class="text-muted">Pull customers, ship-to locations, terminals and products straight from PDI's web service, preview the changes, then confirm.</p>
+
+  <% unless @configured %>
+    <div class="alert alert-warning">
+      PDI web service credentials aren't set. Add <code>PDI_API_PARTNER_ID</code> and <code>PDI_API_PASSWORD</code> to the environment.
+    </div>
+  <% end %>
+
+  <div class="alert alert-info">
+    Linked to PDI: <strong><%= @linked_customers %></strong> customers,
+    <strong><%= @linked_ship_tos %></strong> ship-tos, <strong><%= @linked_terminals %></strong> terminals.
+  </div>
+
+  <%= form_with url: preview_pdi_master_data_import_path, method: :post, data: { turbo: false } do |f| %>
+    <%= f.submit 'Fetch from PDI and Preview', class: 'btn btn-primary', disabled: !@configured,
+                 data: { disable_with: 'Fetching from PDI…' } %>
+  <% end %>
+
+  <div class="card shadow-sm mt-3">
+    <div class="card-header fw-semibold">What this does</div>
+    <div class="card-body small text-muted">
+      <ul class="mb-0">
+        <li><strong>Customers</strong> get their PDI customer number. The first run links existing customers by name; PDI's name and phone win after that.</li>
+        <li><strong>Ship-tos</strong> are per customer in PDI, so their IDs go on the customer's location link. A ship-to is matched to one of the customer's locations with the same name, or to any location with the same name and address (so shared places like the FPS warehouse stay one location), else a new location is created.</li>
+        <li>Existing locations are never renamed; only blank address fields are filled in.</li>
+        <li><strong>Terminals</strong> are linked to existing origin locations by name. None are created.</li>
+        <li><strong>Products</strong> (fuel and warehouse) are matched by PDI item ID: names, reporting groups and package codes are updated, and active new items are added.</li>
+        <li>Inactive customers, ship-tos and products are not added. Stock, costs and prices are not touched.</li>
+        <li>Also available as the scheduled <%= link_to 'PDI Master Data Sync', automated_processes_path %> process (off until you set a schedule).</li>
+      </ul>
+    </div>
+  </div>
+
+  <%= render 'shared/import_history', logs: @logs, download_path: :download_pdi_master_data_import_path %>
+</div>

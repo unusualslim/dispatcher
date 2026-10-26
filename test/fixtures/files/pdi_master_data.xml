@@ -1,0 +1,51 @@
+<!-- Trimmed copy of the PDIMasterFile that PDI's GetMasterData returns. -->
+<PDIMasterFile>
+  <Origins>
+    <Terminals>
+      <Terminal><ID>2505</ID><Description>TransMontaigne - Americus</Description></Terminal>
+      <Terminal><ID>9999</ID><Description>Somewhere Else</Description></Terminal>
+    </Terminals>
+  </Origins>
+  <Destinations>
+    <Customers>
+      <Customer>
+        <ID>2362</ID><Description>Southern Performance Chemical</Description><Phone>(678) 354-7167</Phone>
+        <AccountStatus>Active</AccountStatus>
+        <CustomerLocation>
+          <ID>12</ID><Description>Southern Performance Chemical</Description><Address1>1605 Lake Street</Address1>
+          <City>Fort Valley</City><StateProvinceID>GA</StateProvinceID><PostalCode>32901     </PostalCode><Active>-1</Active>
+        </CustomerLocation>
+        <CustomerLocation>
+          <ID>100</ID><Description>FPS Warehouse</Description><Address1>10154 HWY 341 SOUTH</Address1>
+          <City>Fort Valley</City><StateProvinceID>GA</StateProvinceID><PostalCode>31030     </PostalCode><Active>-1</Active>
+        </CustomerLocation>
+        <CustomerLocation>
+          <ID>7</ID><Description>Closed Yard</Description><Address1>1 Old Rd</Address1>
+          <City>Fort Valley</City><StateProvinceID>GA</StateProvinceID><PostalCode>31030</PostalCode><Active>0</Active>
+        </CustomerLocation>
+      </Customer>
+      <Customer>
+        <ID>1935</ID><Description>Martin, Inc</Description><AccountStatus>Active</AccountStatus>
+        <CustomerLocation>
+          <ID>100</ID><Description>FPS Warehouse</Description><Address1>10154 HWY 341 SOUTH</Address1>
+          <City>Fort Valley</City><StateProvinceID>GA</StateProvinceID><PostalCode>31030     </PostalCode><Active>-1</Active>
+        </CustomerLocation>
+      </Customer>
+      <Customer><ID>500</ID><Description>Gone Away LLC</Description><AccountStatus>Inactive</AccountStatus></Customer>
+    </Customers>
+  </Destinations>
+  <Products>
+    <FuelProducts>
+      <FuelProduct>
+        <ID>101</ID><Description>87 Regular w/10% Ethanol</Description><ReportingGroup>GASOLINE</ReportingGroup><Active>Yes</Active>
+      </FuelProduct>
+    </FuelProducts>
+    <WarehouseProducts>
+      <WarehouseProduct>
+        <ID>DEF25</ID><Description>DEF 2.5 GAL</Description><ReportingGroup>DEF</ReportingGroup><Active>Yes</Active>
+        <ProductPackage><PackageCode>CS</PackageCode><RawPackageWeight>45.5</RawPackageWeight></ProductPackage>
+      </WarehouseProduct>
+      <WarehouseProduct><ID>OLD1</ID><Description>Retired</Description><ReportingGroup>DEF</ReportingGroup><Active>No</Active></WarehouseProduct>
+    </WarehouseProducts>
+  </Products>
+</PDIMasterFile>

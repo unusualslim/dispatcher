@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+	<xs:element name="OrderNo">
+		<xs:simpleType>
+			<xs:restriction base ="xs:string">
+				<xs:minLength value="1"/>
+				<xs:maxLength value="15"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+	
+	<xs:element name="NationalAccountID">
+		<xs:simpleType>
+			<xs:restriction base ="xs:string">
+				<xs:minLength value="0"/>
+				<xs:maxLength value="20"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+	
+	<xs:element name="NationalAcctLocID">
+		<xs:simpleType>
+			<xs:restriction base ="xs:string">
+				<xs:minLength value="0"/>
+				<xs:maxLength value="20"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+	
+	<xs:element name="OrderUpdateDateTime" type="xs:dateTime"/>
+	
+	<xs:element name="OrderStatus">
+		<xs:simpleType>
+		  <xs:restriction base="xs:integer"/>
+		</xs:simpleType>
+	</xs:element>
+  
+	<xs:element name="BuybackReferenceNo">
+		<xs:simpleType>
+			<xs:restriction base ="xs:string">
+				<xs:maxLength value="15"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+	
+	<xs:element name="Source">
+		<xs:simpleType>
+			<xs:restriction base ="xs:string">
+				<xs:maxLength value="15"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+	
+	<xs:element name="ErrorMessage">
+		<xs:simpleType>
+			<xs:restriction base ="xs:string">
+				<xs:maxLength value="1000"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:element>
+	
+	<xs:element name="PDIStatusLog">
+		<xs:complexType>
+		  <xs:sequence>
+			<xs:element maxOccurs="unbounded" ref="StatusLog"/>
+		  </xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="StatusLog">
+		<xs:complexType>
+		  <xs:sequence>
+			<xs:element ref="OrderNo" minOccurs="1" maxOccurs="1"/>
+			<xs:element ref="NationalAccountID" maxOccurs="1"/>
+			<xs:element ref="NationalAcctLocID" maxOccurs="1"/>
+			<xs:element ref="OrderUpdateDateTime" maxOccurs="1"/>
+			<xs:element ref="OrderStatus" minOccurs="1" maxOccurs="1"/>
+			<xs:element ref="BuybackReferenceNo" maxOccurs="1"/>
+			<xs:element ref="Source" maxOccurs="1"/>
+			<xs:element ref="ErrorMessage" maxOccurs="1"/>
+		  </xs:sequence>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

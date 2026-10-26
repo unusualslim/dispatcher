@@ -81,6 +81,7 @@ class CustomerOrderImportService
       when 'Customer:'
         next unless current_order
 
+        current_order[:customer_pdi_id] = pdi_id_prefix(row[2])
         current_order[:customer_name] = row[2].to_s.strip.sub(/\A\d+\s*-\s*/, '')
         current_order[:order_date]    = to_date(row[8])
         current_order[:invoice_no]    = row[14].to_s.strip.presence
@@ -88,6 +89,7 @@ class CustomerOrderImportService
       when 'Location / Site:'
         next unless current_order
 
+        current_order[:location_pdi_id] = pdi_id_prefix(row[2])
         current_order[:location_name] = row[2].to_s.strip.presence
         current_order[:delivery_date] = to_date(row[8])
 
@@ -124,8 +126,8 @@ class CustomerOrderImportService
 
     existing = CustomerOrder.find_by(external_order_no: external_order_no)
 
-    customer = find_or_create_customer(order_data[:customer_name])
-    location = find_or_create_location(order_data[:location_name])
+    customer = find_or_create_customer(order_data[:customer_name], order_data[:customer_pdi_id])
+    location = find_or_create_location(order_data[:location_name], customer, order_data[:location_pdi_id])
     status   = CANONICAL_STATUS[order_data[:odor_status].to_s.downcase] || 'open_order'
 
     attrs = {
@@ -181,7 +183,15 @@ class CustomerOrderImportService
     PriceCheckService.check_order!(order)
   end
 
-  def find_or_create_customer(name)
+  # "2362 - Southern Performance Chemical" → "2362" (PDI's customer / ship-to number)
+  def pdi_id_prefix(value)
+    value.to_s.strip[/\A(\d+)\s*-/, 1]
+  end
+
+  # Prefer the PDI customer number set by the PDI Master Data import, then the name.
+  def find_or_create_customer(name, pdi_id = nil)
+    linked = pdi_id && Customer.find_by(pdi_customer_id: pdi_id)
+    return linked if linked
     return nil if name.blank?
 
     Customer.find_or_create_by(name: name) do |c|
@@ -189,7 +199,11 @@ class CustomerOrderImportService
     end
   end
 
-  def find_or_create_location(name)
+  # Prefer the customer's PDI ship-to link (PDI Master Data import), then the location name.
+  def find_or_create_location(name, customer = nil, pdi_location_id = nil)
+    linked = customer && pdi_location_id &&
+             CustomerLocation.find_by(customer: customer, pdi_location_id: pdi_location_id)&.location
+    return linked if linked
     return Location.first! if name.blank?
 
     Location.find_or_create_by(company_name: name) do |l|

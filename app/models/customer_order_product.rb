@@ -9,7 +9,9 @@ class CustomerOrderProduct < ApplicationRecord
   scope :price_mismatches, -> { where(price_check: PRICE_MISMATCHES) }
 
   validates :quantity, numericality: true, allow_nil: true
-  validates :price, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
+  # PDI-imported orders can carry credits and adjustments (e.g. a -0.01 non-inventory line).
+  validates :price, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true,
+                    unless: -> { customer_order&.external_order_no.present? }
 
   # Imported lines are price-checked; keep the flag current when the price is edited here.
   after_save :recheck_price, if: -> { price_checked_at && (saved_change_to_price? || saved_change_to_product_id?) }

@@ -1,0 +1,27 @@
+<turbo-frame id="pdi_credit">
+  <% if @customer.pdi_customer_id.blank? %>
+    <span class="text-muted small">Not linked to a PDI customer yet (run the PDI Master Data import).</span>
+  <% elsif @error %>
+    <span class="text-danger small">Couldn't reach PDI: <%= @error %></span>
+  <% elsif @credit.nil? %>
+    <span class="text-muted small">PDI web service isn't configured.</span>
+  <% else %>
+    <div class="d-flex flex-wrap align-items-center gap-3">
+      <% if @credit.on_hold? %>
+        <span class="badge bg-danger">Credit Hold</span>
+      <% else %>
+        <span class="badge bg-success">Credit OK</span>
+      <% end %>
+      <span><span class="text-muted small">Available</span>
+        <strong class="<%= 'text-danger' if @credit.available_credit.to_d.negative? %>"><%= number_to_currency(@credit.available_credit) %></strong></span>
+      <span><span class="text-muted small">Limit</span> <%= number_to_currency(@credit.credit_limit) %></span>
+      <% if @amount&.positive? %>
+        <span><span class="text-muted small">This order</span> <%= number_to_currency(@amount) %></span>
+        <% if @amount > @credit.available_credit.to_d %>
+          <span class="badge bg-warning text-dark">Exceeds available credit</span>
+        <% end %>
+      <% end %>
+    </div>
+    <div class="text-muted small mt-1">Live from PDI, customer <%= @customer.pdi_customer_id %></div>
+  <% end %>
+</turbo-frame>

@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+<PDIOrderFeed fetched_at="2026-10-26T12:00:00-04:00">
+  <Batch type="warehouse" status="1">
+    <PDIWarehouseOrders>
+      <PDIWarehouseOrder>
+        <OrderNo>OD-050103-26</OrderNo><DestinationType>1</DestinationType><CustomerID>2362</CustomerID>
+        <CustomerLocationID>12</CustomerLocationID><PurchaseOrderNo>P6153</PurchaseOrderNo>
+        <DeliveryDateTime>2026-10-09T00:00:00</DeliveryDateTime><ScheduledDateTime>2026-10-09T00:00:00</ScheduledDateTime>
+        <BusinessDate>2026-10-09</BusinessDate><OrderKey>61274</OrderKey><TermsID>NET30</TermsID>
+        <ShipToDescription>Southern Performance Chemical</ShipToDescription><ShipToAddress1>1605 Lake Street</ShipToAddress1>
+        <ShipToCity>Melbourne</ShipToCity><ShipToState>FL</ShipToState><ShipToPostalCode>32901     </ShipToPostalCode>
+        <OrderTotalAmount>67881.00</OrderTotalAmount><CustomerDescription>Southern Performance Chemical</CustomerDescription>
+        <OrderEntryDateTime>2026-09-04T14:55:00</OrderEntryDateTime><CreditStatus>Credit Hold</CreditStatus>
+        <WarehouseDetail>
+          <OrderLineItemNo>1</OrderLineItemNo><Key>198973</Key><OrderedProductID>BF0130</OrderedProductID>
+          <OrderedPackageCode>12/1Q</OrderedPackageCode><WarehouseSiteID>7777</WarehouseSiteID>
+          <OrderedQuantity>1452.0000</OrderedQuantity><UnitPrice>46.7500000</UnitPrice>
+          <TotalExtendedAmount>67881.00</TotalExtendedAmount>
+        </WarehouseDetail>
+      </PDIWarehouseOrder>
+    </PDIWarehouseOrders>
+  </Batch>
+  <Batch type="fuel" status="0 1 3 4 5 10 13 14 15 16 17 18">
+    <PDIFuelOrders>
+      <PDIFuelOrder>
+        <OrderNo>OD-051313-26</OrderNo><OrderKey>62500</OrderKey><OrderStatus>4</OrderStatus>
+        <DestinationType>1</DestinationType><CustomerID>1082</CustomerID><CustomerLocationID>10</CustomerLocationID>
+        <DeliveryDateTime>2026-10-21T00:00:00</DeliveryDateTime><BusinessDate>2026-10-21</BusinessDate>
+        <CarrierID>1514</CarrierID><ShipToDescription>Farm Shop</ShipToDescription><ShipToAddress1>12 Mill Rd</ShipToAddress1>
+        <ShipToCity>Americus</ShipToCity><ShipToState>GA</ShipToState><ShipToPostalCode>31709</ShipToPostalCode>
+        <CustomerDescription>Sumter Farms</CustomerDescription>
+        <FuelDetail>
+          <OrderLineItemNo>1</OrderLineItemNo><OrderedProductID>101</OrderedProductID>
+          <OrderedQuantity>2500.00</OrderedQuantity><UnitPrice>2.8150000</UnitPrice>
+        </FuelDetail>
+        <NonInvDetail>
+          <OrderLineItemNo>2</OrderLineItemNo><OrderedProductID>FRT</OrderedProductID>
+          <OrderedQuantity>1.0000</OrderedQuantity><UnitPrice>45.0000000</UnitPrice>
+        </NonInvDetail>
+      </PDIFuelOrder>
+    </PDIFuelOrders>
+  </Batch>
+  <Batch type="fuel" status="6 7 8 9 11">
+    <PDIFuelOrders>
+      <PDIFuelOrder>
+        <OrderNo>OD-050878-26</OrderNo><OrderKey>62088</OrderKey><OrderStatus>6</OrderStatus>
+        <DestinationType>0</DestinationType><SiteID>14</SiteID>
+        <DeliveryDateTime>2026-10-01T09:44:00</DeliveryDateTime><BusinessDate>2026-10-01</BusinessDate>
+        <ShipToDescription>Tank Wagon Bulk Plant</ShipToDescription><ShipToCity>Fort Valley</ShipToCity>
+        <ShipToState>GA</ShipToState><ShipToPostalCode>31030     </ShipToPostalCode>
+        <InvoiceNo>OD-050878-26</InvoiceNo>
+        <FuelDetail>
+          <OrderLineItemNo>1</OrderLineItemNo><OrderedProductID>101</OrderedProductID>
+          <OrderedQuantity>752.00</OrderedQuantity><UnitPrice>2.4100000</UnitPrice>
+        </FuelDetail>
+      </PDIFuelOrder>
+    </PDIFuelOrders>
+  </Batch>
+</PDIOrderFeed>

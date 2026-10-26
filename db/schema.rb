@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_25_040000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_26_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -92,7 +92,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_25_040000) do
     t.bigint "location_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "pdi_location_id"
     t.index ["customer_id", "location_id"], name: "index_customer_locations_on_customer_id_and_location_id", unique: true
+    t.index ["customer_id", "pdi_location_id"], name: "index_customer_locations_on_customer_id_and_pdi_location_id", unique: true
     t.index ["customer_id"], name: "index_customer_locations_on_customer_id"
     t.index ["location_id"], name: "index_customer_locations_on_location_id"
   end
@@ -157,6 +159,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_25_040000) do
     t.string "email"
     t.string "phone"
     t.string "preferred_contact_method", default: "no preference"
+    t.string "pdi_customer_id"
+    t.index ["pdi_customer_id"], name: "index_customers_on_pdi_customer_id", unique: true
   end
 
   create_table "dispatch_customer_orders", force: :cascade do |t|
@@ -346,7 +350,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_25_040000) do
     t.boolean "disabled"
     t.boolean "show_in_warehouse_dropdown", default: false, null: false
     t.string "pdi_site_code"
+    t.string "pdi_terminal_id"
     t.index ["location_category_id"], name: "index_locations_on_location_category_id"
+    t.index ["pdi_terminal_id"], name: "index_locations_on_pdi_terminal_id", unique: true
   end
 
   create_table "locations_products", id: false, force: :cascade do |t|

@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <xs:complexType name="NonInvDetail">
+    <xs:sequence>
+      <xs:element name="OrderedProductID">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:maxLength value="50"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="InvoiceQuantity">
+        <xs:simpleType>
+          <xs:restriction base="xs:decimal">
+            <xs:fractionDigits value="4"/>
+            <xs:totalDigits value="12"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="SiteID" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:maxLength value="50"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="UnitPrice" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:decimal">
+            <xs:fractionDigits value="7"/>
+            <xs:totalDigits value="15"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="UnitPriceOverridden" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:integer">
+            <xs:pattern value="-1|0" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+    <xs:element name="EquipmentID" minOccurs="0">
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+        <xs:maxLength value="15"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="Payment">
+    <xs:sequence>
+      <xs:element name="TransactionCode">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:maxLength value="10"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="ReferenceNo">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:maxLength value="30"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="PaymentAmount" type="xs:decimal"/>
+      <xs:element name="IncludePaymentOnInvoice">
+        <xs:simpleType>
+          <xs:restriction base="xs:byte">
+            <xs:enumeration value="0">
+              <xs:annotation>
+                <xs:documentation>No</xs:documentation>
+              </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="1">
+              <xs:annotation>
+                <xs:documentation>Yes</xs:documentation>
+              </xs:annotation>
+            </xs:enumeration>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  
+  <xs:complexType name="Attribute">
+    <xs:sequence>
+      <xs:element name="AttributeID">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:maxLength value="15"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="AttributeValue">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:maxLength value="250"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="PDINonInvOrder">
+    <xs:sequence>
+      <xs:element name="OrderNo" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base ="xs:string">
+            <xs:maxLength value="15"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="DestinationType">
+        <xs:simpleType>
+          <xs:restriction base="xs:byte">
+            <xs:enumeration value="0">
+              <xs:annotation>
+                <xs:documentation>Company owned site</xs:documentation>
+              </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="1">
+              <xs:annotation>
+                <xs:documentation>Customer location</xs:documentation>
+              </xs:annotation>
+            </xs:enumeration>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="CustomerID" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:maxLength value="50"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="CustomerLocationID" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:maxLength value="50"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="SiteID" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:maxLength value="50"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="PurchaseOrderNo" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:maxLength value="20"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="AlternateReferenceNo" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base ="xs:string">
+            <xs:maxLength value="15"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="DeliveryDateTime" type="xs:dateTime" />
+      <xs:element name="BusinessDate" type="xs:date" />
+	  <xs:element name="OverrideMerchantAccount" minOccurs="0">
+		<xs:simpleType>
+			<xs:restriction base="xs:integer">
+				<xs:pattern value="-1|0" />
+			</xs:restriction>
+		</xs:simpleType>
+	  </xs:element>
+      <xs:element name="OverrideMerchantAccountID" minOccurs="0">
+		<xs:simpleType>
+			<xs:restriction base="xs:string">
+				<xs:maxLength value="50"/>
+			</xs:restriction>
+		</xs:simpleType>
+      </xs:element>
+       <xs:element name="OwnershipTransferAtOrigin" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base ="xs:byte">
+            <xs:pattern value="0|1"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="PaymentReceived" minOccurs="0" type="xs:integer" />
+      <xs:element name="TermsID" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base ="xs:string">
+            <xs:maxLength value="10"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="ContactEmailAddress" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:maxLength value="120"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="ContactPrimaryPhone" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:maxLength value="20"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="ContactName" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:maxLength value="50"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="Budget" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base ="xs:integer">
+            <xs:pattern value="1|0"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="NonInvDetail" type="NonInvDetail" maxOccurs="unbounded" />
+      <xs:element name="Payment" type ="Payment" minOccurs="0"/>
+      <xs:element name="Attribute" type="Attribute" minOccurs="0" maxOccurs="unbounded" />
+		<xs:element name="DeliveryDirections"  minOccurs="0">
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:maxLength value="400"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:element>
+		<xs:element name="DeliveryNotes" minOccurs="0">
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:maxLength value="255"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:element>
+		<xs:element name="OrderNotes" minOccurs="0">
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:maxLength value="255"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:element name="PDINonInvOrders">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="PDINonInvOrder" type="PDINonInvOrder" maxOccurs="unbounded" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  
+</xs:schema>
