@@ -94,6 +94,11 @@ en:
     export:
       exported: "Exported %{count} entries to PDI."
       failed: "Export to PDI failed; nothing was marked exported. %{error}"
+  customer_merges:
+    create:
+      merged: "Merged %{source} into %{target} (%{summary})."
+      nothing_moved: "nothing to move"
+      failed: "Merge failed: %{error}"
   pdi_master_data_imports:
     preview:
       fetch_failed: "Couldn't fetch PDI master data: %{error}"

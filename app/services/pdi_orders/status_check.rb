@@ -1,6 +1,6 @@
 module PdiOrders
-  # PDI only re-sends an order to this web partner once it changes, so open app orders that weren't in
-  # this run's feed are asked for their status one at a time (GetOrderStatus doesn't use up the feed).
+  # Open app orders that weren't in this run's feed (e.g. billed with a delivery date before the feed's
+  # window, or never in PDI) are asked for their status one at a time.
   class StatusCheck
     LIMIT = 200 # per run; least recently checked first, so a long list is covered over several runs
     NOT_FOUND = 99

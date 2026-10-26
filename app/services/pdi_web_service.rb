@@ -59,7 +59,6 @@ class PdiWebService
 
   # <PDIWarehouseOrders> with one <PDIWarehouseOrder> per order. Warehouse orders carry no status,
   # so callers ask for one status code at a time. Dates filter on the scheduled delivery date.
-  # Each order arrives once (see OrderFilter), so save whatever comes back.
   def warehouse_orders(**filter)
     call('GetWarehouseOrders', OrderFilter.xml('PDIGetWarehouseOrders', **filter))
   end

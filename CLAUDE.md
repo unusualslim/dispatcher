@@ -142,12 +142,12 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
 - Working: `GetMasterData` (~4.6 MB, mode ignored), `CustomerCreditCheck` (CreditStatus 0 = OK, 1 = Credit Hold),
   `GetOrderStatus` (numeric; 1 = Open, 99 = unknown order).
 - PDI's XSDs are in `docs/pdi_api/` (status codes: `PDIOrderElementTypes.xsd` → `PdiOrders::Statuses`).
-- `GetFuelOrders`/`GetWarehouseOrders` (`PdiWebService::OrderFilter`, sent with `xmlns=""`) are a **feed**: PDI hands
-  each order to the web partner once and leaves it out until it changes, whatever `RecordsToInclude` says. So never
-  poll them for testing (the PDI test tool uses the same partner), and save everything that arrives.
+- `GetFuelOrders`/`GetWarehouseOrders` (`PdiWebService::OrderFilter`, sent with `xmlns=""`): `RecordsToInclude`
+  0/1/2 (new / new+changed / changed) only return orders not yet sent to the web partner and mark them sent (PDI
+  can't reset the flags); **3 = all matching records**, which the sync always uses.
 - **PDI Order API Sync** (`PdiOrderApiSyncJob`, Off until scheduled; replaces `PdiOrderSyncJob`'s FTP orders.xls):
-  `PdiOrders::Feed` fetches (warehouse one status per call since its orders carry no status; finished statuses
-  only for delivery dates in the last 60 days) → raw XML saved gzipped on the SyncLog → `PdiOrderApiImportService`
+  `PdiOrders::Feed` fetches every run (warehouse one status per call since its orders carry no status; finished
+  statuses only for delivery dates in the last 60 days) → raw XML saved gzipped on the SyncLog → `PdiOrderApiImportService`
   upserts by `external_order_no` (`OrderWriter`, `Destination` matches PDI customer/ship-to IDs; DestinationType 0 =
   own site, no customer) → `StatusCheck` asks `GetOrderStatus` for open app orders PDI didn't send (200/run).
   Re-import a saved feed: `rake pdi:reimport_orders[SYNC_LOG_ID]`. Imported lines may have negative prices (credits).

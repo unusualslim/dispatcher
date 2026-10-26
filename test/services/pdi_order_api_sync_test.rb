@@ -86,17 +86,26 @@ class PdiOrderApiSyncTest < ActiveSupport::TestCase
     assert_equal 'open_order', sent.reload.order_status
   end
 
-  test 'job saves the feed, imports it and records the run' do
+  test 'job imports the feed and records the run, keeping the file only when something failed' do
     pdi = FakePdi.new
     with_env('PDI_API_PARTNER_ID' => 'p', 'PDI_API_PASSWORD' => 'x') do
       PdiWebService.stub(:new, pdi) { PdiOrderApiSyncJob.perform_now }
     end
 
     log = SyncLog.for_process(PdiOrderApiSyncJob::PROCESS_NAME).first
-    assert_equal ['success', 2], [log.status, log.records_created]
-    assert_includes Zlib.gunzip(Base64.strict_decode64(log.file_content)), '<OrderNo>OD-F1</OrderNo>'
+    assert_equal ['success', 2, nil], [log.status, log.records_created, log.file_content]
     assert_equal 'released_for_billing', CustomerOrder.find_by!(external_order_no: 'OD-F1').order_status
     assert_equal 'open_order', CustomerOrder.find_by!(external_order_no: 'OD-W1').order_status
+  end
+
+  test 'a run with a failed call keeps its feed file on the log' do
+    with_env('PDI_API_PARTNER_ID' => 'p', 'PDI_API_PASSWORD' => 'x') do
+      PdiWebService.stub(:new, FakePdi.new(fail_on: [:warehouse, [6]])) { PdiOrderApiSyncJob.perform_now }
+    end
+
+    log = SyncLog.for_process(PdiOrderApiSyncJob::PROCESS_NAME).first
+    assert_includes Zlib.gunzip(Base64.strict_decode64(log.file_content)), '<OrderNo>OD-F1</OrderNo>'
+    assert_match(/Fetch failed: warehouse orders \(status 6\): HTTP 409/, log.warnings)
   end
 
   test 'order filter matches PDI schema layout' do
@@ -104,7 +113,7 @@ class PdiOrderApiSyncTest < ActiveSupport::TestCase
                                                              to: Date.new(2026, 9, 30), order_no: 'OD-1&2')
 
     assert_equal '<PDIGetFuelOrdersFilter><PDIGetFuelOrdersInput xmlns=""><StatusToInclude><Status>6</Status>' \
-                 '<Status>7</Status></StatusToInclude><RecordsToInclude>1</RecordsToInclude>' \
+                 '<Status>7</Status></StatusToInclude><RecordsToInclude>3</RecordsToInclude>' \
                  '<SchedDelivDateTimeFrom>2026-09-01T00:00:00</SchedDelivDateTimeFrom>' \
                  '<SchedDelivDateTimeTo>2026-09-30T23:59:59</SchedDelivDateTimeTo><OrderNo>OD-1&amp;2</OrderNo>' \
                  '</PDIGetFuelOrdersInput></PDIGetFuelOrdersFilter>', xml

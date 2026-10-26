@@ -2,8 +2,8 @@ module PdiOrders
   # Pulls fuel and warehouse orders from PDI into one document that PdiOrderApiImportService reads
   # (and the SyncLog keeps, so a run can be imported again):
   #   <PDIOrderFeed><Batch type="warehouse" status="1"><PDIWarehouseOrders>…</PDIWarehouseOrders></Batch>…
-  # PDI hands each order to this web partner only once until it changes, so one failed call is noted
-  # and the rest still run: whatever arrived has to be saved.
+  # Every run asks for all matching orders (RecordsToInclude 3), so a failed call is noted and the
+  # rest still run; the next run fetches those orders again.
   class Feed
     # Delivery-date window (days) for finished statuses.
     LOOKBACK = 60

@@ -46,13 +46,14 @@ class PdiOrderApiSyncJob < ApplicationJob
 
   private
 
-  # The feed is saved before importing: PDI won't send these orders again, so a failed import
-  # can be re-run from the SyncLog.
+  # The feed is saved before importing so a failed import can be inspected or re-run from its SyncLog;
+  # clean runs drop it (every run fetches everything again, ~300 KB gzipped).
   def sync(log)
     client = PdiWebService.new
     feed = PdiOrders::Feed.new(client)
     xml = feed.fetch
     log.update!(file_name: FILE_NAME, file_content: Base64.strict_encode64(Zlib.gzip(xml)), file_binary: true)
-    self.class.import(xml, log, client: client, fetch_errors: feed.errors)
+    result = self.class.import(xml, log, client: client, fetch_errors: feed.errors)
+    log.update!(file_name: nil, file_content: nil) if result.errors.empty? && feed.errors.empty?
   end
 end

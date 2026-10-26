@@ -212,6 +212,9 @@ Rails.application.routes.draw do
     post :preview, on: :collection
   end
   get 'pdi_product_import/download/:log_id', to: 'pdi_product_imports#download', as: :download_pdi_product_import
+  resources :customer_merges, only: %i[index new create] do
+    get :targets, on: :collection
+  end
   resource :pdi_master_data_import, only: %i[new create] do
     post :preview, on: :collection
   end

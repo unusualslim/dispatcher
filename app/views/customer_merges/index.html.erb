@@ -1,0 +1,54 @@
+<div class="d-flex justify-content-between align-items-center mb-2">
+  <h1 class="mb-0">Merge Customers</h1>
+</div>
+<p class="text-muted">
+  App customers not linked to PDI, most orders first. When the PDI Master Data import couldn't match one by
+  name it created a new PDI-linked customer, so the same business can be here twice. Merging moves the app
+  customer's orders, quotes, pricing rules, production orders, phone numbers and locations onto the PDI
+  customer, then deletes the leftover. You'll see a preview first.
+</p>
+
+<div class="table-responsive">
+  <table class="table table-hover align-middle">
+    <thead class="table-light">
+      <tr>
+        <th>App customer</th>
+        <th class="text-end">Orders</th>
+        <th>Suggested PDI customer</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @rows.each do |row| %>
+        <% customer = row[:customer] %>
+        <tr>
+          <td>
+            <%= link_to customer.name, customer_path(customer), class: "fw-semibold text-decoration-none" %>
+            <% unless customer.active %><span class="badge bg-secondary ms-1">Inactive</span><% end %>
+          </td>
+          <td class="text-end"><%= row[:orders] %></td>
+          <td>
+            <% if row[:matches].any? %>
+              <% row[:matches].each do |match| %>
+                <div>
+                  <%= link_to "#{match.customer.name} [PDI #{match.customer.pdi_customer_id}]",
+                              new_customer_merge_path(source_id: customer.id, target_id: match.customer.id),
+                              class: "text-decoration-none" %>
+                  <span class="text-muted small">(<%= (match.score * 100).round.clamp(0, 100) %>% match)</span>
+                </div>
+              <% end %>
+            <% else %>
+              <span class="text-muted fst-italic">No close name match</span>
+            <% end %>
+          </td>
+          <td class="text-end text-nowrap">
+            <%= link_to "Pick a customer…", new_customer_merge_path(source_id: customer.id), class: "btn btn-outline-secondary btn-sm" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+<% if @rows.empty? %>
+  <div class="text-center text-muted py-5">Every customer is linked to PDI.</div>
+<% end %>

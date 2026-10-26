@@ -1,0 +1,93 @@
+<div class="mb-3">
+  <%= link_to "← Merge Customers", customer_merges_path, class: "text-decoration-none small" %>
+  <h1 class="mb-0 mt-1">Merge <%= @source.name %></h1>
+</div>
+
+<div class="card shadow-sm mb-3">
+  <div class="card-body">
+    <%= form_with url: new_customer_merge_path, method: :get, local: true, class: "d-flex gap-2 align-items-end flex-wrap" do %>
+      <%= hidden_field_tag :source_id, @source.id %>
+      <div style="min-width: 360px;">
+        <label class="form-label fw-semibold mb-1" for="target_id">Merge into</label>
+        <select name="target_id" id="target_id" class="form-select">
+          <% if @target %><option value="<%= @target.id %>" selected><%= @target.name %><%= " [PDI #{@target.pdi_customer_id}]" if @target.pdi_customer_id %></option><% end %>
+        </select>
+      </div>
+      <%= submit_tag "Preview", class: "btn btn-primary" %>
+    <% end %>
+  </div>
+</div>
+
+<% if @merge %>
+  <div class="card shadow-sm mb-3">
+    <div class="card-header fw-semibold">
+      <%= @source.name %> → <%= @target.name %><%= " (PDI #{@target.pdi_customer_id})" if @target.pdi_customer_id %>
+    </div>
+    <div class="card-body">
+      <h6>Moves to <%= @target.name %></h6>
+      <ul>
+        <% @merge.counts.each do |label, count| %>
+          <li class="<%= 'text-muted' if count.zero? %>"><%= count %> <%= label.downcase %></li>
+        <% end %>
+      </ul>
+
+      <% if @merge.contact_fills.any? %>
+        <h6>Fills <%= @target.name %>'s blank contact details</h6>
+        <ul><% @merge.contact_fills.each do |field, value| %><li><%= field.to_s.humanize %>: <%= value %></li><% end %></ul>
+      <% end %>
+
+      <% if @merge.locations.pairs.any? %>
+        <h6>Duplicate ship-to locations folded together</h6>
+        <p class="small text-muted mb-1">
+          The app's location is kept (it has the order history), takes the PDI ship-to link and any blank address
+          fields; the copy the PDI import made is deleted when nothing else uses it.
+        </p>
+        <table class="table table-sm">
+          <thead><tr><th>Kept (app)</th><th>PDI ship-to copy</th><th></th></tr></thead>
+          <tbody>
+            <% @merge.locations.pairs.each do |pair| %>
+              <tr>
+                <td><%= pair.old_location.company_name %></td>
+                <td>
+                  <%= pair.new_link.pdi_location_id %> · <%= pair.new_location.company_name %>
+                  <span class="text-muted small"><%= [pair.new_location.address, pair.new_location.city, pair.new_location.state].compact_blank.join(', ') %></span>
+                </td>
+                <td class="small text-muted">
+                  <%= pair.new_location.customer_locations.count > 1 ? 'kept: other customers use it' : 'deleted' %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+
+      <% if @merge.locations.moving.any? %>
+        <h6>Other locations that move over</h6>
+        <p class="small mb-0"><%= @merge.locations.moving.map { |link| link.location.company_name }.join('; ') %></p>
+      <% end %>
+    </div>
+    <div class="card-footer d-flex gap-2 align-items-center">
+      <%= button_to "Merge — #{@source.name} will be deleted", customer_merges_path,
+            params: { source_id: @source.id, target_id: @target.id },
+            class: "btn btn-danger", form: { data: { turbo_confirm: "Merge #{@source.name} into #{@target.name}? This can't be undone." } } %>
+      <%= link_to "Cancel", customer_merges_path, class: "btn btn-outline-secondary" %>
+    </div>
+  </div>
+<% end %>
+
+<script>
+  (function () {
+    if (!window.jQuery || !jQuery.fn.select2) return;
+    jQuery('#target_id').select2({
+      placeholder: 'Search customers by name or PDI ID…',
+      width: '100%',
+      ajax: {
+        url: '<%= targets_customer_merges_path %>',
+        dataType: 'json',
+        delay: 250,
+        data: function (p) { return { q: p.term }; },
+        processResults: function (data) { return { results: data }; }
+      }
+    });
+  })();
+</script>
