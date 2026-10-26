@@ -22,7 +22,14 @@ module PdiOrders
 
     def attributes(record)
       destination = Destination.new(@order, current: record.location)
-      @order.attrs.merge(customer: destination.customer, location: destination.location)
+      @order.attrs.merge(customer: destination.customer, location: destination.location, **carrier)
+    end
+
+    # The carrier's name for display (from master data), when PDI sent a carrier.
+    def carrier
+      return {} unless @order.carrier_id
+
+      { carrier: PdiCarrier.name_for(@order.carrier_id) || "PDI carrier #{@order.carrier_id}" }
     end
 
     def sync_lines(record)

@@ -344,13 +344,9 @@ class DispatchesController < ApplicationController
                          .where(dispatch_date: @start_date..@end_date)
                          .order(:dispatch_date)
     @dispatches_by_date = dispatches.group_by(&:dispatch_date)
-    fps_carriers = ['Five Points Logistics, LLC', 'Five Points Service, Inc.']
     @unassigned_orders = CustomerOrder.where.missing(:dispatch_customer_orders)
                                       .where(order_status: CustomerOrder::ACTIVE_STATUSES)
-                                      .where(
-                                        'external_order_no IS NULL OR carrier IN (?)',
-                                        fps_carriers
-                                      )
+                                      .dispatchable
                                       .includes(:location, customer_order_products: :product)
                                       .order(:required_delivery_date)
   end

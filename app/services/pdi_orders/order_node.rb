@@ -16,6 +16,7 @@ module PdiOrders
     def customer_name = text('CustomerDescription')
     def ship_to_id = text('CustomerLocationID')
     def site_id = text('SiteID')
+    def carrier_id = text('CarrierID')
 
     # DestinationType 0 = one of our own sites (tank wagon plant, bulk plant): no customer.
     def site? = text('DestinationType') == '0'
@@ -29,7 +30,7 @@ module PdiOrders
       { external_order_no: order_no, order_status: Statuses.enum_key(status_code),
         odor_status: Statuses.name(status_code), order_date: time('OrderEntryDateTime') || time('BusinessDate'),
         required_delivery_date: time('DeliveryDateTime')&.to_date || time('ScheduledDateTime')&.to_date,
-        invoice_no: text('InvoiceNo') }.compact
+        invoice_no: text('InvoiceNo'), pdi_carrier_id: carrier_id }.compact
     end
 
     def ship_to

@@ -99,4 +99,25 @@ class PdiOrderApiImportServiceTest < ActiveSupport::TestCase
     lines = CustomerOrder.find_by!(external_order_no: 'OD-051313-26').customer_order_products
     assert_equal %w[buy buy], lines.where(product_id: '901').pluck(:item_type)
   end
+
+  test 'orders carried by our own trucks (1514) are dispatchable; others only when entered in the app' do
+    PdiCarrier.create!(pdi_carrier_id: '1514', name: 'Five Points Logistics, LLC')
+    PdiOrderApiImportService.call(feed)
+
+    fuel = CustomerOrder.find_by!(external_order_no: 'OD-051313-26')
+    assert_equal ['1514', 'Five Points Logistics, LLC'], [fuel.pdi_carrier_id, fuel.carrier]
+    yard = Location.create!(company_name: 'Dispatch Yard', location_category_id: 2)
+    entered = CustomerOrder.create!(location: yard, order_status: 'open_order')
+    ftp = CustomerOrder.create!(location: yard, order_status: 'open_order', external_order_no: 'OD-1',
+                                carrier: 'Five Points Service, Inc.')
+    other = CustomerOrder.create!(location: yard, order_status: 'open_order', external_order_no: 'OD-2',
+                                  pdi_carrier_id: '1590', carrier: 'Old Dominion Freight Line, Inc.')
+
+    dispatchable = CustomerOrder.dispatchable
+    assert_includes dispatchable, fuel
+    assert_includes dispatchable, entered
+    assert_includes dispatchable, ftp
+    assert_not_includes dispatchable, other
+    assert_not_includes dispatchable, CustomerOrder.find_by!(external_order_no: 'OD-050103-26'), 'no carrier'
+  end
 end

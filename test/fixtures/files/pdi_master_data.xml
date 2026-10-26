@@ -6,6 +6,12 @@
       <Terminal><ID>9999</ID><Description>Somewhere Else</Description></Terminal>
     </Terminals>
   </Origins>
+  <SuppliersAndCarriers>
+    <Carriers>
+      <Carrier><Name>Five Points Logistics, LLC</Name><ERPNumber>1514</ERPNumber><Active>true</Active></Carrier>
+      <Carrier><Name>Old Dominion Freight Line, Inc.</Name><ERPNumber>1590</ERPNumber><Active>true</Active></Carrier>
+    </Carriers>
+  </SuppliersAndCarriers>
   <Destinations>
     <Customers>
       <Customer>

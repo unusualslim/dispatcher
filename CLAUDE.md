@@ -118,7 +118,7 @@ download the file, delete it from FTP, run an import service, and record a `Sync
 
 | Job | Import service | File |
 |---|---|---|
-| `PdiOrderSyncJob` | `CustomerOrderImportService` | `orders.xls` (being replaced by the PDI Order API Sync, below) |
+| `PdiOrderSyncJob` | `CustomerOrderImportService` | `orders.xls`: **turned off 2026-10-26**, replaced by the PDI Order API Sync (below), which also gets warehouse, own-site and recent billed orders the FTP report left out |
 | `PdiVendorSyncJob` | `PdiVendorImportService` | AP Vendor List `.csv` |
 | `PdiProductSyncJob` | `InventoryImportService` (maps PDI site codes → locations) | current inventory `.xls` |
 | `PdiPurchaseOrderSyncJob` | `PdiWarehouseTransactionImportService` | Warehouse Transaction Report `.xls` |
@@ -145,12 +145,14 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
 - `GetFuelOrders`/`GetWarehouseOrders` (`PdiWebService::OrderFilter`, sent with `xmlns=""`): `RecordsToInclude`
   0/1/2 (new / new+changed / changed) only return orders not yet sent to the web partner and mark them sent (PDI
   can't reset the flags); **3 = all matching records**, which the sync always uses.
-- **PDI Order API Sync** (`PdiOrderApiSyncJob`, Off until scheduled; replaces `PdiOrderSyncJob`'s FTP orders.xls):
+- **PDI Order API Sync** (`PdiOrderApiSyncJob`, every 15 min in production; the order source since 2026-10-26):
   `PdiOrders::Feed` fetches every run (warehouse one status per call since its orders carry no status; finished
   statuses only for delivery dates in the last 60 days) → raw XML saved gzipped on the SyncLog → `PdiOrderApiImportService`
   upserts by `external_order_no` (`OrderWriter`, `Destination` matches PDI customer/ship-to IDs; DestinationType 0 =
   own site, no customer) → `StatusCheck` asks `GetOrderStatus` for open app orders PDI didn't send (200/run).
   Re-import a saved feed: `rake pdi:reimport_orders[SYNC_LOG_ID]`. Imported lines may have negative prices (credits).
+  Fuel lines use the loaded product (`PurchasedProductID`; ordered 10011219 Bulk DEF → 901) except blends. Line
+  `item_type` comes from `Product#order_item_type`: fuel / non-inventory groups and raw materials are "buy".
 - **PDI Master Data** (`PdiMasterDataImportService` + `app/services/pdi_master_data/*_sync.rb`; Data Imports page and
   `PdiMasterDataSyncJob`, schedule Off until set): customers → `customers.pdi_customer_id`; ship-tos (per customer in
   PDI) → `customer_locations.pdi_location_id`, so one app location can serve many customers' ship-tos; terminals →

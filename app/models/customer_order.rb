@@ -64,6 +64,18 @@ class CustomerOrder < ApplicationRecord
 
   PRODUCTS = ['DEF', 'Regular', 'Plus', 'Super', 'Eth-Regular', 'Eth-Plus', 'Eth-Super', 'Reg-E10', 'Plus-E10',
               'Super-E10', 'ULS', 'Dyed ULS']
+  # PDI carriers whose orders our own drivers deliver: 1514 Five Points Logistics, 1512 Five Points Service.
+  DISPATCH_CARRIER_IDS = %w[1514 1512].freeze
+  # Orders from the old FTP import only have the carrier's name.
+  DISPATCH_CARRIER_NAMES = ['Five Points Logistics, LLC', 'Five Points Service, Inc.'].freeze
+
+  # Orders the dispatch board can assign: entered in the app, or a PDI order carried by our own trucks.
+  scope :dispatchable, lambda {
+    where(external_order_no: nil)
+      .or(where(pdi_carrier_id: DISPATCH_CARRIER_IDS))
+      .or(where(pdi_carrier_id: nil, carrier: DISPATCH_CARRIER_NAMES))
+  }
+
   scope :unassigned_open_orders, lambda {
     where(order_status: ACTIVE_STATUSES).where.not(id: joins(:dispatch_customer_orders).select(:id))
   }

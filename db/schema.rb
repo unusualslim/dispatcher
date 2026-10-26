@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_26_140000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_26_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -140,9 +140,11 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_26_140000) do
     t.string "carrier"
     t.date "invoice_date"
     t.string "salesperson"
+    t.string "pdi_carrier_id"
     t.index ["customer_id"], name: "index_customer_orders_on_customer_id"
     t.index ["external_order_no"], name: "index_customer_orders_on_external_order_no"
     t.index ["location_id"], name: "index_customer_orders_on_location_id"
+    t.index ["pdi_carrier_id"], name: "index_customer_orders_on_pdi_carrier_id"
   end
 
   create_table "customer_orders_things", id: false, force: :cascade do |t|
@@ -361,6 +363,15 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_26_140000) do
     t.string "product_id", null: false
     t.index ["location_id"], name: "index_locations_products_on_location_id"
     t.index ["product_id"], name: "index_locations_products_on_product_id"
+  end
+
+  create_table "pdi_carriers", force: :cascade do |t|
+    t.string "pdi_carrier_id", null: false
+    t.string "name", null: false
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["pdi_carrier_id"], name: "index_pdi_carriers_on_pdi_carrier_id", unique: true
   end
 
   create_table "phone_numbers", force: :cascade do |t|
