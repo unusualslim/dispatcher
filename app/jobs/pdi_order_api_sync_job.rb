@@ -14,20 +14,26 @@ class PdiOrderApiSyncJob < ApplicationJob
   def self.import(xml, log, client: nil, fetch_errors: [])
     result = PdiOrderApiImportService.call(xml)
     checks = client && PdiOrders::StatusCheck.new(client, skip: result.seen).run
+    merges = PdiOrders::LinkedOrderMerge.new.run
     log.update!(status: 'success', completed_at: Time.current, records_created: result.created,
                 records_updated: result.updated + checks&.updated.to_i, records_skipped: result.unchanged,
-                warnings: warnings(result, checks, fetch_errors))
+                warnings: warnings(result, checks, fetch_errors, merges))
     result
   end
 
-  def self.warnings(result, checks, fetch_errors)
-    lines = fetch_errors.map { |e| "Fetch failed: #{e}" } + result.errors
+  def self.warnings(result, checks, fetch_errors, merges)
+    lines = fetch_errors.map { |e| "Fetch failed: #{e}" } + result.errors + merge_lines(merges)
     if checks
       lines << "Status check: #{checks.checked} open orders checked, #{checks.updated} updated, " \
                "#{checks.not_found} not found in PDI"
       lines.concat(checks.errors)
     end
     lines.join("\n").presence
+  end
+
+  def self.merge_lines(merges)
+    merged = merges.merged.any? ? ["Merged app orders into their PDI orders: #{merges.merged.join(', ')}"] : []
+    merged + merges.errors
   end
 
   def perform
