@@ -4,14 +4,15 @@
       <%= hidden_field_tag :horizon, horizon %>
       <% { 'mrp_purchase_lead_days' => ['Purchase lead time', 'when the product and its primary vendor have none'],
            'mrp_production_days' => ['Production time', 'start → finished goods, when the product has none'],
-           'mrp_customer_lead_days' => ['Customer lead time', 'order → delivery, for orders without a delivery date'] }.each do |key, (label, hint)| %>
-        <div class="col-md-3">
+           'mrp_customer_lead_days' => ['Customer lead time', 'order → delivery, for orders without a delivery date'],
+           'mrp_transfer_days' => ['Transfer time', 'moving stock between warehouses'] }.each do |key, (label, hint)| %>
+        <div class="col-md-2">
           <%= label_tag key, "#{label} (days)", class: "form-label small fw-semibold mb-0" %>
           <%= number_field_tag key, AppSetting.mrp_days(key), min: 0, max: 365, class: "form-control form-control-sm" %>
           <div class="form-text"><%= hint %></div>
         </div>
       <% end %>
-      <div class="col-md-3"><%= submit_tag "Save defaults", class: "btn btn-primary btn-sm" %></div>
+      <div class="col-md-2"><%= submit_tag "Save defaults", class: "btn btn-primary btn-sm" %></div>
     <% end %>
   </div>
 </div>

@@ -113,8 +113,8 @@ class CustomerMerge
     end
 
     # Rows that still point at a location (anything but zero keeps it).
-    LOCATION_ID_MODELS = [CustomerLocation, CustomerOrder, InventoryTransaction, LocationContact, LocationProduct,
-                          ProductionOrder, PurchaseOrder, Quote].freeze
+    LOCATION_ID_MODELS = [CustomerLocation, CustomerOrder, CustomerOrderProduct, InventoryTransaction, LocationContact,
+                          LocationProduct, ProductionOrder, PurchaseOrder, Quote].freeze
 
     def references(location)
       LOCATION_ID_MODELS.sum { |model| model.where(location_id: location.id).count } +

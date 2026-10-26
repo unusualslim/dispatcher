@@ -4,6 +4,13 @@ class CustomerOrderProduct < ApplicationRecord
   # What priced this line: a locked quote price, or a dynamic pricing rule.
   belongs_to :quote_product, optional: true
   belongs_to :pricing_rule,  optional: true
+  # The warehouse the line ships from (PDI's site on the line); `warehouse` keeps PDI's site ID.
+  belongs_to :location, optional: true
+
+  # PDI sites that ship straight from a third party: no stock of ours moves, so MRP leaves them out.
+  DROPSHIP_SITES = %w[7777].freeze
+
+  def dropship? = DROPSHIP_SITES.include?(warehouse)
 
   PRICE_MISMATCHES = %w[lock_mismatch rule_mismatch].freeze
   scope :price_mismatches, -> { where(price_check: PRICE_MISMATCHES) }

@@ -25,6 +25,10 @@ class ProductionOrder < ApplicationRecord
 
   validates :status, inclusion: { in: STATUSES }, allow_blank: true
   validates :number, presence: true, uniqueness: true
+  # The production order form requires the warehouse it's made in (MRP plans per warehouse); imports don't.
+  attr_accessor :require_warehouse
+
+  validates :location_id, presence: { message: :warehouse_required }, if: :require_warehouse
 
   before_validation :set_default_status, on: :create
   before_validation :generate_number, on: :create

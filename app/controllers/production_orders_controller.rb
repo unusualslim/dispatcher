@@ -27,6 +27,7 @@ class ProductionOrdersController < ApplicationController
                          .ordered_default
     @production_orders = @production_orders.where(location_id: current_warehouse.id) if current_warehouse
     @production_orders = @production_orders.paginate(page: params[:page], per_page: 50)
+    @readiness = MaterialReadiness.new(@production_orders.to_a)
   end
 
   # GET /production_orders/dashboard
@@ -195,7 +196,8 @@ class ProductionOrdersController < ApplicationController
       status: 'created',
       product_id: params[:product_id],
       item: params[:item],
-      qty_to_make: params[:qty_to_make]
+      qty_to_make: params[:qty_to_make],
+      location: current_warehouse
     )
     5.times { |i| @production_order.production_order_components.build(position: i + 1) }
 
@@ -206,6 +208,7 @@ class ProductionOrdersController < ApplicationController
   # POST /production_orders
   def create
     @production_order = ProductionOrder.new(production_order_params)
+    @production_order.require_warehouse = true
 
     if @production_order.save
       # Auto-populate BOM components if none were manually entered
@@ -252,7 +255,9 @@ class ProductionOrdersController < ApplicationController
   end
 
   # GET /production_orders/:id
-  def show; end
+  def show
+    @readiness = MaterialReadiness.new([@production_order])
+  end
 
   # PATCH /production_orders/:id/record_quality — results: { spec_id => { value:, notes: } }
   def record_quality

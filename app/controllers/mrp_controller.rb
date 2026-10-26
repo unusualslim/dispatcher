@@ -7,15 +7,19 @@ class MrpController < ApplicationController
   def index
     @horizon = horizon
     @result = Mrp::Plan.new(horizon_days: @horizon).run
+    @warehouse_id = params.key?(:warehouse) ? params[:warehouse].presence&.to_i : current_warehouse&.id
     @draft_pos   = PurchaseOrder.includes(:vendor, line_items: :product).draft.order(created_at: :desc)
     @pending_pos = PurchaseOrder.includes(:vendor, line_items: :product).pending_approval.order(created_at: :desc)
   end
 
-  # One product's projected stock, day by day.
+  # One product's projected stock at each warehouse, day by day.
   def product
     @horizon = horizon
-    @plan = Mrp::Plan.new(horizon_days: @horizon).run.plans[params[:product_id]]
-    redirect_to mrp_path(horizon: @horizon), alert: t('.not_planned') unless @plan
+    result = Mrp::Plan.new(horizon_days: @horizon).run
+    @plans = result.for_product(params[:product_id]).sort_by { |plan| plan.location&.company_name.to_s }
+    @unassigned = result.unassigned.select { |product, _| product.id == params[:product_id] }.map(&:last)
+    @product = Product.find_by(id: params[:product_id])
+    redirect_to mrp_path(horizon: @horizon), alert: t('.not_planned') if @plans.empty? && @unassigned.empty?
   end
 
   def update_settings

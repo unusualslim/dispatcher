@@ -72,6 +72,17 @@ module ApplicationHelper
     end
   end
 
+  READINESS_COLORS = { green: '#198754', yellow: '#ffc107', red: '#dc3545' }.freeze
+
+  # Green / yellow / red dot for MaterialReadiness, with the reason on hover.
+  def readiness_dot(status, label: false)
+    return tag.span('—', class: 'text-muted') unless status
+
+    dot = tag.span('', class: 'd-inline-block rounded-circle align-middle', title: status.reason,
+                       style: "width:.8rem;height:.8rem;background:#{READINESS_COLORS[status.level]};")
+    label ? safe_join([dot, tag.span(status.reason, class: 'small text-muted ms-1')]) : dot
+  end
+
   # Small "Credit" badge for a customer PDI reports over its limit or on credit hold.
   def credit_flag(customer)
     return unless customer&.over_credit?

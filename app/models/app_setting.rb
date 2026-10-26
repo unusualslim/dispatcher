@@ -3,10 +3,11 @@ class AppSetting < ApplicationRecord
     'labor_rate' => '25.00',
     'mrp_purchase_lead_days' => '7',
     'mrp_production_days' => '1',
-    'mrp_customer_lead_days' => '3'
+    'mrp_customer_lead_days' => '3',
+    'mrp_transfer_days' => '1'
   }.freeze
 
-  MRP_KEYS = %w[mrp_purchase_lead_days mrp_production_days mrp_customer_lead_days].freeze
+  MRP_KEYS = %w[mrp_purchase_lead_days mrp_production_days mrp_customer_lead_days mrp_transfer_days].freeze
 
   validates :key, presence: true, uniqueness: true
 

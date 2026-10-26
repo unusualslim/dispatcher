@@ -56,6 +56,7 @@
         <table class="table table-hover table-striped align-middle mb-0">
           <thead class="table-light">
             <tr>
+              <th style="width: 40px;" title="Materials: green in stock, yellow depends on timing, red short">Mat.</th>
               <th style="width: 120px;">Order #</th>
               <th>Item</th>
               <th>Customer</th>
@@ -79,6 +80,7 @@
                 end %>
 
                 <tr>
+                  <td class="text-center"><%= readiness_dot(@readiness.order(po)) if MaterialReadiness::OPEN_STATUSES.include?(po.status) %></td>
                   <td><%= po.number.presence || "—" %></td>
                   <td><%= po.product&.name || "—" %></td>
                   <td><%= po.customer_name.presence || "—" %></td>
@@ -94,7 +96,7 @@
               <% end %>
             <% else %>
               <tr>
-                <td colspan="8" class="text-center text-muted py-4">
+                <td colspan="9" class="text-center text-muted py-4">
                   No production orders match your filters.
                 </td>
               </tr>

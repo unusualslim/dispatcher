@@ -38,6 +38,10 @@ en:
           attributes:
             passed:
               inclusion: "must be Pass or Fail"
+        production_order:
+          attributes:
+            location_id:
+              warehouse_required: "is required: choose the warehouse it is made in"
   access:
     denied: "You don't have access to that page."
   costing_settings:

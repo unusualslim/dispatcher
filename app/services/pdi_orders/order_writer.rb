@@ -46,14 +46,15 @@ module PdiOrders
     def signature(lines)
       lines.map do |line|
         code = line.respond_to?(:product_code) ? line.product_code : line.product_name
-        [code.to_s, line.quantity.to_i, line.price&.to_d.to_s]
+        site = line.respond_to?(:site) ? line.site : line.warehouse
+        [code.to_s, line.quantity.to_i, line.price&.to_d.to_s, site.to_s]
       end.sort
     end
 
     def line_attrs(line)
       product = Product.find_by(id: line.product_code)
       { product_name: line.product_code, product_id: product&.id, quantity: line.quantity, price: line.price,
-        item_type: product&.order_item_type || 'buy' }
+        item_type: product&.order_item_type || 'buy', warehouse: line.site, location: Warehouses.for_site(line.site) }
     end
   end
 end

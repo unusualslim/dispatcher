@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_26_170000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_26_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -114,7 +114,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_26_170000) do
     t.decimal "expected_price", precision: 12, scale: 4
     t.string "price_check"
     t.datetime "price_checked_at"
+    t.bigint "location_id"
     t.index ["customer_order_id"], name: "index_customer_order_products_on_customer_order_id"
+    t.index ["location_id"], name: "index_customer_order_products_on_location_id"
     t.index ["price_check"], name: "index_customer_order_products_on_price_check"
     t.index ["pricing_rule_id"], name: "index_customer_order_products_on_pricing_rule_id"
     t.index ["product_id"], name: "index_customer_order_products_on_product_id"
@@ -797,6 +799,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_26_170000) do
   add_foreign_key "customer_locations", "customers"
   add_foreign_key "customer_locations", "locations"
   add_foreign_key "customer_order_products", "customer_orders"
+  add_foreign_key "customer_order_products", "locations"
   add_foreign_key "customer_order_products", "pricing_rules", on_delete: :nullify
   add_foreign_key "customer_order_products", "products"
   add_foreign_key "customer_order_products", "quote_products", on_delete: :nullify

@@ -188,14 +188,20 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
 - `PricingRule` / `PricingRuleProduct` — pricing rules that auto-populate prices on customer orders
 
 ### Services (app/services/)
-- `Mrp::Plan` (app/services/mrp/, page /mrp) — time-phased MRP: per planned product (warehouse items, raw
-  materials and anything in their BOMs; not fuel) it projects stock day by day (on hand + open POs + open
-  production − open customer orders (not quotes/pending/released for billing) − production components), finds
-  when it runs out / drops below safety stock and which orders cause it, and suggests orders (need date − lead
-  time) or production (− production days, passing component demand down; parents planned before components).
+- `Mrp::Plan` (app/services/mrp/, page /mrp) — time-phased MRP **per warehouse**: per planned product
+  (warehouse items, raw materials and anything in their BOMs; not fuel) and warehouse it projects stock day by day
+  (`LocationProduct` on hand + open POs + open production − open customer order lines (not quotes/pending/
+  released for billing/dropship site 7777) − production components), finds when it runs out / drops below safety
+  stock (held at the product's main warehouse) and which orders cause it, then suggests a transfer of another
+  warehouse's spare stock (`Mrp::Transfers`), then orders (need date − lead time) or production (− production
+  days, passing component demand down at the same warehouse). POs / production orders / order lines with no
+  warehouse are listed as "Needs a warehouse", not netted. Order lines get their warehouse from the PDI order
+  sync (`customer_order_products.warehouse` = PDI site, `location_id` = location with that `pdi_site_code`).
   Lead times: product → primary vendor → AppSetting `mrp_purchase_lead_days` (7); `products.production_days` →
-  `mrp_production_days` (1); undated customer orders = order date + `customers.lead_time_days` →
-  `mrp_customer_lead_days` (3). Defaults are editable on the MRP page. Lot-for-lot, global stock (no location yet).
+  `mrp_production_days` (1); `mrp_transfer_days` (1); undated customer orders = order date +
+  `customers.lead_time_days` → `mrp_customer_lead_days` (3). Defaults are editable on the MRP page. Lot-for-lot.
+- `MaterialReadiness` — green/yellow/red dots for open production orders' components (and the order list) from
+  the same events at the order's warehouse: in stock / depends on incoming supply / short.
 - `BomPopulatorService` — auto-populates production order components from product BOM
 - `MaterialAvailabilityService` — checks if raw materials are available for a production order
 - `ReorderService` — creates draft POs for products below reorder_point

@@ -5,6 +5,7 @@ module Mrp
   #   - open production orders' components on their production date
   #   - open customer order lines on their delivery date (undated: order date + the customer's lead time)
   # Anything dated before today counts today and is flagged; anything after the horizon is left out.
+  # Each event carries its warehouse (location_id); dropship order lines are left out (no stock moves).
   class Events
     OPEN_PO_STATUSES = %w[draft pending_approval approved submitted].freeze
     # Stock is still on hand from Open Order through picking; quotes and pending orders don't consume it,
@@ -40,25 +41,29 @@ module Mrp
       po = line.purchase_order
       date = po.expected_delivery_date || po.created_at.to_date
       { date: date, qty: line.quantity, kind: :purchase, label: "PO #{po.display_number} · #{po.vendor&.name}",
-        path: purchase_order_path(po), flags: [(:late if date < @today), (:draft if po.status == 'draft')].compact }
+        path: purchase_order_path(po), flags: [(:late if date < @today), (:draft if po.status == 'draft')].compact,
+        location_id: po.location_id }
     end
 
     def productions
       open_production_orders.where(product_id: @ids).find_each do |order|
         add(order.product_id, date: order.due_date || order.production_date || @today, qty: order.qty_to_make,
                               kind: :production, label: "Production #{order.number}",
-                              path: production_order_path(order))
+                              path: production_order_path(order), location_id: order.location_id)
       end
     end
 
     def components
       ProductionOrderComponent.joins(:production_order).merge(open_production_orders).includes(:production_order)
-                              .where(product_id: @ids).find_each do |component|
-        order = component.production_order
-        add(component.product_id, date: order.production_date || order.due_date || @today,
-                                  qty: -component.quantity.to_d, kind: :component,
-                                  label: "Production #{order.number} uses", path: production_order_path(order))
-      end
+                              .where(product_id: @ids)
+                              .find_each { |component| add(component.product_id, **component_event(component)) }
+    end
+
+    def component_event(component)
+      order = component.production_order
+      { date: order.production_date || order.due_date || @today, qty: -component.quantity.to_d, kind: :component,
+        label: "Production #{order.number} uses", path: production_order_path(order), ref: component.id,
+        location_id: order.location_id }
     end
 
     def open_production_orders
@@ -68,6 +73,8 @@ module Mrp
     def customer_orders
       CustomerOrderProduct.joins(:customer_order).includes(customer_order: :customer)
                           .where(product_id: @ids, customer_orders: { order_status: DEMAND_STATUSES })
+                          .where('customer_order_products.warehouse IS NULL OR ' \
+                                 'customer_order_products.warehouse NOT IN (?)', CustomerOrderProduct::DROPSHIP_SITES)
                           .find_each { |line| add(line.product_id, **order_event(line)) }
     end
 
@@ -75,7 +82,7 @@ module Mrp
       order = line.customer_order
       date = delivery_date(order)
       { date: date, qty: -line.quantity.to_d, kind: :order, label: order_label(order),
-        path: customer_order_path(order), flags: date < @today ? [:overdue] : [] }
+        path: customer_order_path(order), flags: date < @today ? [:overdue] : [], location_id: line.location_id }
     end
 
     def delivery_date(order)
