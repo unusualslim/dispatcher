@@ -82,7 +82,8 @@ module Mrp
       order = line.customer_order
       date = delivery_date(order)
       { date: date, qty: -line.quantity.to_d, kind: :order, label: order_label(order),
-        path: customer_order_path(order), flags: date < @today ? [:overdue] : [], location_id: line.location_id }
+        path: customer_order_path(order), flags: date < @today ? [:overdue] : [],
+        location_id: line.location_id || order.ship_from_location_id }
     end
 
     def delivery_date(order)

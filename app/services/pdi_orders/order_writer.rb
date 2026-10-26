@@ -54,7 +54,7 @@ module PdiOrders
     def line_attrs(line)
       product = Product.find_by(id: line.product_code)
       { product_name: line.product_code, product_id: product&.id, quantity: line.quantity, price: line.price,
-        item_type: product&.order_item_type || 'buy', warehouse: line.site, location: Warehouses.for_site(line.site) }
+        item_type: product&.order_item_type || 'buy', warehouse: line.site, location: Warehouses.for_line(line) }
     end
   end
 end

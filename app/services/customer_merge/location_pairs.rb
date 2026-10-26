@@ -117,9 +117,12 @@ class CustomerMerge
                           LocationProduct, ProductionOrder, PurchaseOrder, Quote].freeze
 
     def references(location)
-      LOCATION_ID_MODELS.sum { |model| model.where(location_id: location.id).count } +
-        Dispatch.where(destination_location_id: location.id).count + WorkOrder.where(workable: location).count +
-        legacy_product_links(location)
+      LOCATION_ID_MODELS.sum { |model| model.where(location_id: location.id).count } + other_references(location)
+    end
+
+    def other_references(location)
+      Dispatch.where(destination_location_id: location.id).count + WorkOrder.where(workable: location).count +
+        CustomerOrder.where(ship_from_location_id: location.id).count + legacy_product_links(location)
     end
 
     # The old locations_products join table has no model.

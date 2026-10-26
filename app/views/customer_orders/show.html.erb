@@ -121,6 +121,13 @@
           </div>
         <% end %>
 
+        <% if @customer_order.ship_from_location %>
+          <div>
+            <div class="text-muted small text-uppercase fw-semibold mb-1">Ships from</div>
+            <div class="fw-semibold"><%= @customer_order.ship_from_location.company_name %></div>
+          </div>
+        <% end %>
+
         <% if @customer_order.carrier.present? %>
           <div>
             <div class="text-muted small text-uppercase fw-semibold mb-1">Carrier</div>

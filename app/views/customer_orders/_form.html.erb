@@ -20,6 +20,15 @@
         <div class="card-header fw-semibold">Order Details</div>
         <div class="card-body d-flex flex-column gap-3">
 
+          <%# Ship from (MRP plans the order at this warehouse) %>
+          <div>
+            <%= form.label :ship_from_location_id, "Ship from (warehouse)", class: "form-label fw-semibold mb-1" %>
+            <%= form.select :ship_from_location_id,
+                  Location.where(show_in_warehouse_dropdown: true).or(Location.where(id: form.object.ship_from_location_id))
+                          .order(:company_name).map { |l| [l.company_name, l.id] },
+                  { include_blank: "— Select a warehouse —" }, class: "form-select" %>
+          </div>
+
           <%# Customer %>
           <div>
             <%= form.label :customer_id, "Customer", class: "form-label fw-semibold mb-1" %>

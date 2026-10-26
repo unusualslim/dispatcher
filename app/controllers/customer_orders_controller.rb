@@ -127,6 +127,7 @@ class CustomerOrdersController < ApplicationController
     quote = Quote.accepted.find_by(id: params[:from_quote]) if params[:from_quote].present?
     quote = nil unless quote&.orderable?
     @customer_order = quote ? quote.build_order : CustomerOrder.new
+    @customer_order.ship_from_location ||= current_warehouse
   end
 
   def edit
@@ -236,6 +237,6 @@ class CustomerOrdersController < ApplicationController
 
   def customer_order_params
     params.require(:customer_order).permit(:required_delivery_date, :product, :freight_only, :customer_id,
-                                           :location_id, :approximate_product_amount, :notes, :order_status, customer_order_products_attributes: %i[id product_id quantity price quote_product_id pricing_rule_id _destroy], thing_ids: [])
+                                           :location_id, :ship_from_location_id, :approximate_product_amount, :notes, :order_status, customer_order_products_attributes: %i[id product_id quantity price quote_product_id pricing_rule_id _destroy], thing_ids: [])
   end
 end

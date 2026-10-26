@@ -3,8 +3,9 @@ module PdiOrders
   class OrderNode
     LINES = 'FuelDetail|WarehouseDetail|NonInvDetail'.freeze
 
-    # site: the PDI site the line ships from (warehouse site, or a fuel load's origin site).
-    Line = Struct.new(:product_code, :quantity, :price, :site, keyword_init: true)
+    # site: the PDI site the line ships from (warehouse site, or a fuel load's origin site); fuel: a FuelDetail
+    # line, which has no site until a load is assigned.
+    Line = Struct.new(:product_code, :quantity, :price, :site, :fuel, keyword_init: true)
 
     # batch_status: the status a warehouse order was fetched with (fuel orders carry their own).
     def initialize(node, batch_status = nil)
@@ -52,7 +53,8 @@ module PdiOrders
       @node.xpath(LINES).map do |line|
         Line.new(product_code: product_code(line), quantity: text('OrderedQuantity', line).to_d.round,
                  price: text('UnitPrice', line)&.to_d,
-                 site: text('WarehouseSiteID', line) || text('LoadDetail/OriginSiteID', line) || text('SiteID', line))
+                 site: text('WarehouseSiteID', line) || text('LoadDetail/OriginSiteID', line) || text('SiteID', line),
+                 fuel: line.name == 'FuelDetail')
       end
     end
 

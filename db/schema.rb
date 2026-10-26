@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_26_190000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_26_200000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -143,10 +143,12 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_26_190000) do
     t.date "invoice_date"
     t.string "salesperson"
     t.string "pdi_carrier_id"
+    t.bigint "ship_from_location_id"
     t.index ["customer_id"], name: "index_customer_orders_on_customer_id"
     t.index ["external_order_no"], name: "index_customer_orders_on_external_order_no"
     t.index ["location_id"], name: "index_customer_orders_on_location_id"
     t.index ["pdi_carrier_id"], name: "index_customer_orders_on_pdi_carrier_id"
+    t.index ["ship_from_location_id"], name: "index_customer_orders_on_ship_from_location_id"
   end
 
   create_table "customer_orders_things", id: false, force: :cascade do |t|
@@ -804,6 +806,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_26_190000) do
   add_foreign_key "customer_order_products", "products"
   add_foreign_key "customer_order_products", "quote_products", on_delete: :nullify
   add_foreign_key "customer_orders", "customers"
+  add_foreign_key "customer_orders", "locations", column: "ship_from_location_id"
   add_foreign_key "customer_orders", "locations", on_delete: :cascade
   add_foreign_key "dispatch_customer_orders", "customer_orders", on_delete: :cascade
   add_foreign_key "dispatch_customer_orders", "dispatches"

@@ -196,7 +196,9 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
   warehouse's spare stock (`Mrp::Transfers`), then orders (need date − lead time) or production (− production
   days, passing component demand down at the same warehouse). POs / production orders / order lines with no
   warehouse are listed as "Needs a warehouse", not netted. Order lines get their warehouse from the PDI order
-  sync (`customer_order_products.warehouse` = PDI site, `location_id` = location with that `pdi_site_code`).
+  sync (`customer_order_products.warehouse` = PDI site, `location_id` = location with that `pdi_site_code`; fuel
+  lines not yet on a load = main warehouse 0002). Orders entered in the app use `customer_orders.ship_from_location_id`
+  ("Ship from" on the order form). PDI is meant to be the order source; app-entered orders don't get PDI status.
   Lead times: product → primary vendor → AppSetting `mrp_purchase_lead_days` (7); `products.production_days` →
   `mrp_production_days` (1); `mrp_transfer_days` (1); undated customer orders = order date +
   `customers.lead_time_days` → `mrp_customer_lead_days` (3). Defaults are editable on the MRP page. Lot-for-lot.

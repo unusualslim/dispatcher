@@ -24,9 +24,7 @@ module Mrp
       @customer = Customer.create!(name: 'MRP Customer', preferred_contact_method: 'no preference', lead_time_days: 4)
     end
 
-    def stock(product, location, qty)
-      LocationProduct.create!(product: product, location: location, quantity: qty)
-    end
+    def stock(product, location, qty) = LocationProduct.create!(product: product, location: location, quantity: qty)
 
     # opts: date:, status:, order_date:, warehouse: (default the main warehouse), site: (PDI site ID)
     def order(product, qty, **opts)
@@ -104,6 +102,18 @@ module Mrp
       assert_equal @today + 3, events.find { |e| e.qty == -30 }.date, 'order date + customer lead time (4 days)'
       purchase = events.find { |e| e.kind == :purchase }
       assert_equal [[:late], @today - 2], [purchase.flags, purchase.original_date]
+    end
+
+    test 'plans orders entered in the app at their ship-from warehouse' do
+      stock(@raw, @south, 5)
+      app_order = CustomerOrder.create!(customer: @customer, location: @yard, order_status: 'open_order',
+                                        required_delivery_date: @today + 3, ship_from_location: @south)
+      app_order.customer_order_products.create!(product_id: @raw.id, product_name: @raw.id, quantity: 8)
+
+      south = run_plan.plans[['MRP-RAW', @south.id]]
+
+      assert_equal([-8], south.rows.map(&:event).select { |e| e.kind == :order }.map { |e| e.qty.to_i })
+      assert_equal @today + 3, south.runs_out_on
     end
 
     test 'holds safety stock at the main warehouse and uses the product lead time over the vendor' do
