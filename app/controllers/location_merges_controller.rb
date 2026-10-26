@@ -29,6 +29,17 @@ class LocationMergesController < ApplicationController
     redirect_to location_merges_path, alert: t('.failed', error: e.message)
   end
 
+  # Selected pairs ("remove_id:keep_id"), merged one by one.
+  def bulk
+    pairs = selected_pairs
+    return redirect_to location_merges_path, alert: t('.none') if pairs.empty?
+
+    result = LocationMerge::Bulk.new(pairs).run
+    report_bulk_errors(result.errors)
+    redirect_to location_merges_path,
+                notice: t('.done', merged: result.merged, skipped: result.skipped, errors: result.errors.size)
+  end
+
   # Location search for the keep picker.
   def targets
     term = params[:q].to_s.strip
@@ -40,6 +51,15 @@ class LocationMergesController < ApplicationController
   end
 
   private
+
+  def selected_pairs
+    Array(params[:pairs]).map { |pair| pair.to_s.split(':').map(&:to_i) }.select { |pair| pair.size == 2 }
+  end
+
+  def report_bulk_errors(errors)
+    errors.each { |error| Rails.logger.warn "[LocationMerge] bulk: #{error}" }
+    flash[:alert] = errors.first(10).join("\n") if errors.any?
+  end
 
   def build_merge
     LocationMerge.new(Location.find(params[:source_id]), Location.find(params[:target_id]))

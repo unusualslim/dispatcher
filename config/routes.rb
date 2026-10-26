@@ -217,6 +217,7 @@ Rails.application.routes.draw do
   end
   resources :location_merges, only: %i[index new create] do
     get :targets, on: :collection
+    post :bulk, on: :collection
   end
   resource :pdi_master_data_import, only: %i[new create] do
     post :preview, on: :collection

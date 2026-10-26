@@ -95,6 +95,9 @@ en:
       exported: "Exported %{count} entries to PDI."
       failed: "Export to PDI failed; nothing was marked exported. %{error}"
   location_merges:
+    bulk:
+      none: "No pairs selected."
+      done: "Merged %{merged} location(s); %{skipped} skipped (already merged); %{errors} failed."
     create:
       merged: "Merged %{source} into %{target} (%{summary})."
       nothing_moved: "nothing to move"

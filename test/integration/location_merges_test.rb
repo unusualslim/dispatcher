@@ -27,6 +27,20 @@ class LocationMergesTest < ActionDispatch::IntegrationTest
     assert_not Location.exists?(@dupe.id)
   end
 
+  test 'admin merges ticked pairs in bulk; 95%+ pairs come pre-ticked' do
+    sign_in User.create!(email: 'admin-bulk@example.com', password: 'password123', role: 'admin')
+    @dupe.update!(company_name: 'Lm Yard', address: '1 Main St')
+    @keep.update!(address: '1 Main St.')
+
+    get location_merges_path
+    assert_select "input.pair-select[value='#{@dupe.id}:#{@keep.id}'][checked]"
+
+    post bulk_location_merges_path, params: { pairs: ["#{@dupe.id}:#{@keep.id}"] }
+    assert_redirected_to location_merges_path
+    assert_match(/Merged 1 location/, flash[:notice])
+    assert_not Location.exists?(@dupe.id)
+  end
+
   test 'staff cannot merge locations' do
     sign_in User.create!(email: 'staff-lm@example.com', password: 'password123', role: 'staff',
                          permissions: { 'dispatch' => 'approve' })

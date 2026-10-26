@@ -3,16 +3,17 @@ class LocationMerge
   # share a street address, a distinctive name word, or have no address on one side. (An account like
   # Five Points Recode serves many unrelated businesses in one town; zip / city alone would flag them all.)
   # Each pair suggests keeping the one with the customer's PDI ship-to link, else the one with more orders.
-  # Pairs that are two different PDI ship-tos (a merge would be refused) are left out.
+  # Pairs that are two different PDI ship-tos (a merge would be refused) are left out. Each carries a
+  # Confidence score; most confident first.
   class Suggestions
-    Pair = Struct.new(:customer, :keep, :remove, keyword_init: true)
-    GENERIC_WORDS = %w[the inc llc co company corp and of travel center centers store site].freeze
+    Pair = Struct.new(:customer, :keep, :remove, :score, :reasons, keyword_init: true)
+    AUTO_SELECT = 95
 
     def pairs
       links = CustomerLocation.joins(:location).where(locations: { location_category_id: 2 })
                               .includes(:customer, :location).group_by(&:customer)
       links.flat_map { |customer, customer_links| pairs_for(customer, customer_links) }
-           .sort_by { |pair| [pair.customer.name.to_s, pair.keep.company_name.to_s] }
+           .sort_by { |pair| [-pair.score, pair.customer.name.to_s, pair.keep.company_name.to_s] }
     end
 
     private
@@ -22,7 +23,9 @@ class LocationMerge
         next unless candidate?(a, b)
 
         keep, remove = keeper_first(a, b)
-        Pair.new(customer: customer, keep: keep.location, remove: remove.location)
+        confidence = Confidence.new(keep, remove)
+        Pair.new(customer: customer, keep: keep.location, remove: remove.location, score: confidence.score,
+                 reasons: confidence.reasons)
       end
     end
 
@@ -51,10 +54,10 @@ class LocationMerge
       name_words(one).intersect?(name_words(other))
     end
 
-    def street(location) = location.address.to_s.downcase.gsub(/[^a-z0-9]/, '')
-    def name_words(location) = location.company_name.to_s.downcase.scan(/[a-z]{2,}/) - GENERIC_WORDS
-    def zip5(location) = location.zip.to_s.strip[0, 5].presence
-    def city(location) = location.city.to_s.strip.downcase
+    def street(location) = Confidence.street(location)
+    def name_words(location) = Confidence.name_words(location)
+    def zip5(location) = Confidence.zip5(location)
+    def city(location) = Confidence.city(location)
 
     def orders(location_id)
       @orders ||= CustomerOrder.group(:location_id).count
