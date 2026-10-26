@@ -55,6 +55,16 @@ class CustomerMergeTest < ActiveSupport::TestCase
     assert_match(/merge the other way/, error.message)
   end
 
+  test 'drops empty phone numbers and ones the PDI customer already has' do
+    @app.phone_numbers.create!(number: '')
+    @app.phone_numbers.create!(number: '(229) 555-0199')
+    @pdi.update!(phone: '229.555.0199')
+
+    CustomerMerge.new(@app, @pdi).merge!
+
+    assert_equal ['229-555-0100'], @pdi.phone_numbers.pluck(:number)
+  end
+
   test 'suggests PDI customers by shared name words, ignoring FTP leftovers' do
     Customer.create!(name: 'Mansfield Energy Partners', pdi_customer_id: '1931',
                      preferred_contact_method: 'no preference')

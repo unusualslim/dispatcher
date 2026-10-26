@@ -57,10 +57,21 @@ class CustomerMerge
     end
   end
 
+  # Empty numbers and ones the target already has (compared by digits) are dropped, not moved.
   def move_phone_numbers
-    existing = target.phone_numbers.pluck(:number)
+    existing = target_numbers
     source.phone_numbers.each do |phone|
-      existing.include?(phone.number) ? phone.destroy! : phone.update!(customer: target)
+      number = digits(phone.number)
+      number.present? && existing.exclude?(number) ? phone.update!(customer: target) : phone.destroy!
+      existing << number
     end
+  end
+
+  def target_numbers
+    (target.phone_numbers.pluck(:number) + [target.phone]).map { |number| digits(number) }
+  end
+
+  def digits(number)
+    number.to_s.gsub(/\D/, '')
   end
 end

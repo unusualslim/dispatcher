@@ -28,6 +28,7 @@ class CustomerMergesController < ApplicationController
     merge.merge!
     redirect_to customer_merges_path, notice: notice
   rescue ArgumentError, ActiveRecord::ActiveRecordError => e
+    log_failure(e)
     redirect_to customer_merges_path, alert: t('.failed', error: e.message)
   end
 
@@ -42,6 +43,11 @@ class CustomerMergesController < ApplicationController
   end
 
   private
+
+  def log_failure(error)
+    Rails.logger.warn "[CustomerMerge] #{params[:source_id]} → #{params[:target_id]} failed: " \
+                      "#{error.class}: #{error.message}"
+  end
 
   def merged_notice(merge)
     t('customer_merges.create.merged', source: merge.source.name, target: merge.target.name,
