@@ -39,6 +39,13 @@ class Product < ApplicationRecord
   scope :raw_materials,       -> { where(is_raw_material: true) }
   scope :finished_goods,      -> { where(is_raw_material: false) }
   scope :below_reorder_point, -> { raw_materials.where('current_stock <= reorder_point AND reorder_point IS NOT NULL') }
+  # Inactive products (set by hand or from PDI) stay on their history but leave pickers.
+  scope :active,              -> { where(active: true) }
+
+  # Picker list: active products plus any already chosen, so editing a record never drops its product.
+  def self.selectable(*keep_ids)
+    active.or(where(id: keep_ids.flatten.compact))
+  end
 
   # Stock at a specific warehouse location.
   # Returns 0 if no location_product row exists for this location yet.

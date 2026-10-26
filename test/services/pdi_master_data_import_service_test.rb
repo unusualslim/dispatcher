@@ -92,4 +92,36 @@ class PdiMasterDataImportServiceTest < ActiveSupport::TestCase
     assert_equal 1, result.count(:customers, :update)
     assert_equal 1, result.count(:products, :update)
   end
+
+  test 'marks an existing product inactive in PDI as inactive, changing nothing else, and back again' do
+    Product.where(id: 'OLD1').delete_all
+    old = Product.create!(id: 'OLD1', name: 'Our retired DEF', category: 'Legacy')
+
+    result = PdiMasterDataImportService.call(master_xml)
+
+    assert_equal [false, 'Our retired DEF', 'Legacy'], old.reload.values_at(:active, :name, :category)
+    change = result.for(:products, :update).find { |c| c.key == 'OLD1' }
+    assert_equal [{ active: false }, 'Inactive in PDI'], [change.changes, change.note]
+    assert_equal :unchanged, PdiMasterDataImportService.call(master_xml).for(:products, :unchanged, :update)
+                                                       .find { |c| c.key == 'OLD1' }.action
+
+    PdiMasterDataImportService.call(master_xml.sub('<Active>No</Active>', '<Active>Yes</Active>'))
+    assert_equal [true, 'Retired', 'DEF'], old.reload.values_at(:active, :name, :category)
+  end
+
+  test 'links and deactivates a customer inactive in PDI, leaving its ship-tos alone' do
+    gone = Customer.create!(name: 'Gone Away LLC', phone: '555-0100', preferred_contact_method: 'no preference')
+
+    assert_no_difference -> { Location.where(company_name: 'Gone Away Yard').count } do
+      PdiMasterDataImportService.call(master_xml)
+    end
+
+    assert_equal ['500', false, '555-0100'], gone.reload.values_at(:pdi_customer_id, :active, :phone)
+    assert_not CustomerLocation.exists?(customer: gone)
+
+    PdiMasterDataImportService.call(master_xml.sub('<AccountStatus>Inactive</AccountStatus>',
+                                                   '<AccountStatus>Active</AccountStatus>'))
+    assert gone.reload.active
+    assert CustomerLocation.exists?(customer: gone, pdi_location_id: '1')
+  end
 end

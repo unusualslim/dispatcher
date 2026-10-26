@@ -31,7 +31,11 @@
           <City>Fort Valley</City><StateProvinceID>GA</StateProvinceID><PostalCode>31030     </PostalCode><Active>-1</Active>
         </CustomerLocation>
       </Customer>
-      <Customer><ID>500</ID><Description>Gone Away LLC</Description><AccountStatus>Inactive</AccountStatus></Customer>
+      <Customer><ID>500</ID><Description>Gone Away LLC</Description><AccountStatus>Inactive</AccountStatus>
+        <CustomerLocation><ID>1</ID><Description>Gone Away Yard</Description><Address1>9 Old Rd</Address1>
+          <City>Cordele</City><StateProvinceID>GA</StateProvinceID><PostalCode>31015</PostalCode><Active>-1</Active>
+        </CustomerLocation>
+      </Customer>
     </Customers>
   </Destinations>
   <Products>

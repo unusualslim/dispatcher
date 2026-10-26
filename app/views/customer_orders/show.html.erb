@@ -245,7 +245,7 @@
                           <div class="small text-muted mt-1"><%= link_to "Link to MRP &rarr;".html_safe, product_code_links_path, class: "text-muted" %></div>
                         <% end %>
                       <% else %>
-                        <%= f.collection_select :product_id, Product.order(:name), :id, :name,
+                        <%= f.collection_select :product_id, Product.selectable(cop.product_id).order(:name), :id, :name,
                               { selected: cop.product_id, include_blank: "— Select —" },
                               class: "form-select form-select-sm" %>
                       <% end %>
@@ -353,7 +353,7 @@
         <div class="modal-body d-flex flex-column gap-3">
           <div>
             <%= f.label :product_id, "Product", class: "form-label fw-semibold" %>
-            <%= f.collection_select :product_id, Product.order(:name), :id, :name,
+            <%= f.collection_select :product_id, Product.active.order(:name), :id, :name,
                   { include_blank: "— Select a product —" }, class: "form-select" %>
           </div>
           <div>

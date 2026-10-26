@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_26_100000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_26_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -160,6 +160,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_26_100000) do
     t.string "phone"
     t.string "preferred_contact_method", default: "no preference"
     t.string "pdi_customer_id"
+    t.boolean "active", default: true, null: false
     t.index ["pdi_customer_id"], name: "index_customers_on_pdi_customer_id", unique: true
   end
 
@@ -510,6 +511,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_26_100000) do
     t.decimal "standard_cost", precision: 12, scale: 4
     t.decimal "pdi_repack_fee", precision: 12, scale: 4
     t.string "coa_note"
+    t.boolean "active", default: true, null: false
   end
 
   create_table "purchase_order_line_items", force: :cascade do |t|
@@ -725,6 +727,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_26_100000) do
     t.string "employment_type", default: "full_time", null: false
     t.jsonb "permissions", default: {}, null: false
     t.datetime "deactivated_at"
+    t.jsonb "list_filters", default: {}, null: false
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end

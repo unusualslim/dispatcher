@@ -1,6 +1,8 @@
 module PdiMasterData
   # PDI fuel and warehouse products → products, by PDI item ID (= products.id). PDI's name, reporting
-  # group and package code win; active new items are added. Stock and costs are left alone.
+  # group, package code and active flag win; active new items are added. An item inactive in PDI only
+  # has its app product marked inactive (nothing else changes) and is never added. Stock and costs are
+  # left alone.
   class ProductSync < Sync
     SECTION = :products
     NODES = '//Products/FuelProducts/FuelProduct | //Products/WarehouseProducts/WarehouseProduct'.freeze
@@ -18,22 +20,24 @@ module PdiMasterData
 
     def sync(id, node)
       attrs = product_attrs(node)
-      return update(@existing[id], attrs, node) if @existing[id]
-      return record(:skip, id, attrs[:name], {}, 'Inactive in PDI') unless text(node, 'Active') == 'Yes'
+      return create(id, attrs, node) unless @existing[id]
 
-      create(id, attrs, node)
+      active = text(node, 'Active') == 'Yes'
+      update(@existing[id], active ? attrs.merge(active: true) : { active: false }, node, attrs[:name])
     end
 
-    def update(product, attrs, node)
+    def update(product, attrs, node, name)
       changes = diff(product, attrs)
       if apply? && changes.any?
         ensure_fuel_group(node, attrs[:category])
         product.update!(changes)
       end
-      record(changes.any? ? :update : :unchanged, product.id, attrs[:name], changes)
+      record(changes.any? ? :update : :unchanged, product.id, name, changes, attrs[:active] ? nil : 'Inactive in PDI')
     end
 
     def create(id, attrs, node)
+      return record(:skip, id, attrs[:name], {}, 'Inactive in PDI') unless text(node, 'Active') == 'Yes'
+
       if apply?
         ensure_fuel_group(node, attrs[:category])
         Product.create!(attrs.merge(id: id, is_raw_material: raw_material?(attrs[:category])))

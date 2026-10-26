@@ -3,7 +3,7 @@
     <select name="customer_order[customer_order_products_attributes][<%= index %>][product_id]"
             class="form-select form-select-sm co-product-select">
       <option value="">— Select product —</option>
-      <% Product.order(:name).each do |p| %>
+      <% Product.selectable(cop.product_id).order(:name).each do |p| %>
         <option value="<%= p.id %>" data-weight="<%= p.weight.to_f %>" <%= 'selected' if cop.product_id.to_s == p.id.to_s %>><%= p.name %></option>
       <% end %>
     </select>

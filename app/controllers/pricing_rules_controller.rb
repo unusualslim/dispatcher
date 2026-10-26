@@ -107,9 +107,9 @@ class PricingRulesController < ApplicationController
   end
 
   def load_form_data
-    @customers = Customer.order(:name)
-    @products  = Product.includes(:standard_cost_histories,
-                                  product_components: { component_product: :standard_cost_histories })
+    @customers = Customer.selectable(@rule&.customer_id).order(:name)
+    @products  = Product.selectable(@rule&.pricing_rule_products&.map(&:product_id)).includes(:standard_cost_histories,
+                                                                                              product_components: { component_product: :standard_cost_histories })
                         .order(:name)
   end
 

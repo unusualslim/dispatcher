@@ -118,8 +118,8 @@ class QuotesController < ApplicationController
 
   def load_form_data
     # Finished goods plus anything sold under a pricing rule.
-    @products = Product.finished_goods
-                       .or(Product.where(id: PricingRuleProduct.select(:product_id)))
+    @products = Product.finished_goods.or(Product.where(id: PricingRuleProduct.select(:product_id))).active
+                       .or(Product.where(id: @quote&.quote_products&.map(&:product_id)))
                        .order(:name)
     # Rules and the products in each, for "add products from rule" on the form.
     @pricing_rules = PricingRule.includes(:customer, :pricing_rule_products).order(:name)

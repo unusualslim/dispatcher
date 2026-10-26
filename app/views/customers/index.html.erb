@@ -11,41 +11,74 @@
   </div>
 </div>
 
+<%# Filters (each user's last choice is remembered; Clear forgets it) %>
 <div class="card shadow-sm mb-3">
   <div class="card-body py-2">
-    <%= form_with(url: customers_path, method: :get, local: true, class: "d-flex gap-2") do %>
-      <%= text_field_tag :search, params[:search], placeholder: "Search customers...", class: "form-control form-control-sm", style: "max-width:300px;" %>
+    <%= form_with(url: customers_path, method: :get, local: true, class: "d-flex gap-2 flex-wrap align-items-center") do %>
+      <%= hidden_field_tag :filtered, '1' %>
+      <%= hidden_field_tag :sort, params[:sort] %>
+      <%= text_field_tag :search, params[:search], placeholder: "Name, PDI ID, phone or email…",
+            class: "form-control form-control-sm", style: "max-width:260px;" %>
+      <%= select_tag :pdi, options_for_select([['PDI: any', ''], ['Linked to PDI', 'linked'], ['Not linked', 'unlinked']], params[:pdi]),
+            class: "form-select form-select-sm", style: "max-width:150px;", onchange: "this.form.requestSubmit()" %>
+      <%= select_tag :activity, options_for_select([['Orders: any', '']] + CustomerListQuery::ACTIVITY.map { |v, l| [l, v] }, params[:activity]),
+            class: "form-select form-select-sm", style: "max-width:200px;", onchange: "this.form.requestSubmit()" %>
+      <%= select_tag :state, options_for_select([['All states', '']] + @states, params[:state]),
+            class: "form-select form-select-sm", style: "max-width:130px;", onchange: "this.form.requestSubmit()" %>
+      <%= text_field_tag :city, params[:city], placeholder: "City", class: "form-control form-control-sm", style: "max-width:140px;" %>
+      <div class="form-check mb-0">
+        <%= check_box_tag :inactive, '1', params[:inactive] == '1', class: "form-check-input", onchange: "this.form.requestSubmit()" %>
+        <%= label_tag :inactive, "Show inactive", class: "form-check-label small" %>
+      </div>
       <%= submit_tag "Search", class: "btn btn-primary btn-sm" %>
-      <% if params[:search].present? %>
-        <%= link_to "Clear", customers_path, class: "btn btn-outline-secondary btn-sm" %>
-      <% end %>
+      <%= link_to "Clear", customers_path(reset: 1), class: "btn btn-outline-secondary btn-sm" %>
     <% end %>
   </div>
 </div>
 
-<table class="table table-hover table-bordered align-middle">
-  <thead class="table-light">
-    <tr>
-      <th style="width:32px;"><input type="checkbox" class="form-check-input" id="bulk-select-all"></th>
-      <th>Name</th>
-      <th>Locations</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @customers.each do |customer| %>
+<div class="text-muted small mb-2"><%= pluralize(@customers.total_entries, 'customer') %></div>
+<div class="table-responsive">
+  <table class="table table-hover table-bordered align-middle">
+    <thead class="table-light">
       <tr>
-        <td><input type="checkbox" class="form-check-input bulk-row-select" value="<%= customer.id %>"></td>
-        <td><%= link_to customer.name, customer_path(customer), class: "text-decoration-none fw-semibold" %></td>
-        <td class="text-muted small">
-          <% if customer.locations.any? %>
-            <%= customer.locations.map(&:company_name).join(', ') %>
-          <% else %>
-            <span class="fst-italic">No locations</span>
-          <% end %>
-        </td>
+        <th style="width:32px;"><input type="checkbox" class="form-check-input" id="bulk-select-all"></th>
+        <th><%= sort_header 'Name', 'name' %></th>
+        <th><%= sort_header 'PDI ID', 'pdi' %></th>
+        <th><%= sort_header 'Locations', 'locations' %></th>
+        <th>Phone</th>
+        <th>Email</th>
+        <th><%= sort_header 'Last Order', 'last_order' %></th>
+        <th><%= sort_header 'Open Orders', 'open_orders' %></th>
       </tr>
-    <% end %>
-  </tbody>
-</table>
+    </thead>
+    <tbody>
+      <% @customers.each do |customer| %>
+        <tr>
+          <td><input type="checkbox" class="form-check-input bulk-row-select" value="<%= customer.id %>"></td>
+          <td>
+            <%= link_to customer.name, customer_path(customer), class: "text-decoration-none fw-semibold" %>
+            <% unless customer.active %><span class="badge bg-secondary ms-1">Inactive</span><% end %>
+          </td>
+          <td><%= customer.pdi_customer_id.presence || content_tag(:span, '—', class: 'text-muted') %></td>
+          <td class="text-muted small">
+            <% if customer.locations.any? %>
+              <% places = customer.locations.map { |l| [l.city, l.state].compact_blank.join(', ').presence || l.company_name }.uniq %>
+              <span title="<%= customer.locations.map(&:company_name).join(', ') %>">
+                <%= pluralize(customer.locations.size, 'location') %>: <%= truncate(places.join('; '), length: 70) %>
+              </span>
+            <% else %>
+              <span class="fst-italic">No locations</span>
+            <% end %>
+          </td>
+          <td class="small text-nowrap"><%= customer.phone %></td>
+          <td class="small"><%= mail_to customer.email if customer.email.present? %></td>
+          <td class="small text-nowrap"><%= customer.last_order_at&.to_date&.strftime('%b %-d, %Y') || content_tag(:span, '—', class: 'text-muted') %></td>
+          <td><%= customer.open_orders_count.to_i.positive? ? link_to(customer.open_orders_count, customer_path(customer)) : content_tag(:span, '0', class: 'text-muted') %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+<%= will_paginate @customers, renderer: BootstrapPaginationRenderer %>
 
 <%= render 'shared/bulk_select_js' %>

@@ -24,7 +24,7 @@
           <div>
             <%= form.label :customer_id, "Customer", class: "form-label fw-semibold mb-1" %>
             <%= form.select :customer_id,
-                  Customer.order(:name).map { |c| [c.name, c.id] },
+                  Customer.selectable(form.object.customer_id).order(:name).map { |c| [c.name, c.id] },
                   { include_blank: "— Select a customer —" },
                   class: "form-select co-customer-select" %>
           </div>
@@ -175,7 +175,7 @@
       <select name="customer_order[customer_order_products_attributes][__INDEX__][product_id]"
               class="form-select form-select-sm co-product-select">
         <option value="">— Select product —</option>
-        <% Product.order(:name).each do |p| %>
+        <% Product.active.order(:name).each do |p| %>
           <option value="<%= p.id %>" data-weight="<%= p.weight.to_f %>"><%= p.name %></option>
         <% end %>
       </select>

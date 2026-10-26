@@ -1,82 +1,18 @@
 class ProductsController < ApplicationController
   include CsvRoundTrip
+  include RemembersListFilters
   permission_area :inventory, lookups: %i[search bom]
   before_action :set_product, only: %i[show edit update destroy components]
 
   def index
-    @products = Product.all
+    return if restore_list_filters('products', ProductListQuery::KEYS)
+
+    list = ProductListQuery.new(params, warehouse: current_warehouse)
+    @selected_categories = list.categories
     @categories = Product.where.not(category: [nil, '']).distinct.order(:category).pluck(:category)
-
-    if params[:query].present?
-      @products = @products.where('name ILIKE ? OR id ILIKE ?', "%#{params[:query]}%", "%#{params[:query]}%")
-    end
-
-    case params[:type].presence || 'finished'
-    when 'raw'      then @products = @products.where(is_raw_material: true)
-    when 'finished' then @products = @products.where(is_raw_material: false)
-      # 'all' — no filter
-    end
-
-    @products = @products.where(category: params[:category]) if params[:category].present?
-
-    on_order_sql = <<~SQL.squish
-      COALESCE((
-        SELECT SUM(poli.quantity)
-        FROM purchase_order_line_items poli
-        JOIN purchase_orders po ON po.id = poli.purchase_order_id
-        WHERE poli.product_id = products.id
-          AND po.status IN ('draft','pending_approval','approved','submitted')
-      ), 0)
-    SQL
-
-    committed_sql = <<~SQL.squish
-      COALESCE((
-        SELECT SUM(poc.quantity)
-        FROM production_order_components poc
-        JOIN production_orders pro ON pro.id = poc.production_order_id
-        WHERE poc.product_id = products.id
-          AND pro.status IN ('created','in_progress')
-      ), 0)
-    SQL
-
-    # When a warehouse is selected, use location-specific stock; otherwise global current_stock
-    stock_sql = if current_warehouse
-                  "COALESCE((SELECT quantity FROM location_products WHERE location_id = #{current_warehouse.id.to_i} AND product_id = products.id), 0)"
-                else
-                  'products.current_stock'
-                end
-
-    @products = @products.where("(#{stock_sql}) > 0") if params[:in_stock] == '1'
-
-    case params[:status]
-    when 'critical'
-      # projected (on hand + on order) can't cover committed demand
-      @products = @products.where(
-        "reorder_point IS NOT NULL AND ((#{stock_sql}) + #{on_order_sql}) < (#{committed_sql})"
-      )
-    when 'low'
-      # can cover committed but on hand is at or below reorder point
-      @products = @products.where(
-        "reorder_point IS NOT NULL AND ((#{stock_sql}) + #{on_order_sql}) >= (#{committed_sql}) AND (#{stock_sql}) <= reorder_point"
-      )
-    when 'ok'
-      @products = @products.where(
-        "reorder_point IS NOT NULL AND ((#{stock_sql}) + #{on_order_sql}) >= (#{committed_sql}) AND (#{stock_sql}) > reorder_point"
-      )
-    end
-
-    @products = case params[:sort]
-                when 'stock_asc'      then @products.order(Arel.sql("(#{stock_sql}) ASC"))
-                when 'stock_desc'     then @products.order(Arel.sql("(#{stock_sql}) DESC"))
-                when 'cost'           then @products.order(cost_per_unit: :desc)
-                when 'category_asc'   then @products.order(Arel.sql("COALESCE(category, '') ASC, name ASC"))
-                when 'category_desc'  then @products.order(Arel.sql("COALESCE(category, '') DESC, name ASC"))
-                else @products.order(:name)
-                end
-
-    # Attach warehouse_on_hand as a computed column so the view can use it without N+1
-    @products = @products.select("products.*, (#{stock_sql}) AS warehouse_on_hand")
-    @products = @products.paginate(page: params[:page], per_page: 50)
+    @units = Product.where.not(unit_of_measurement: [nil, '']).distinct.order(:unit_of_measurement)
+                    .pluck(:unit_of_measurement)
+    @products = list.relation.paginate(page: params[:page], per_page: 50)
 
     # Preload on_order and committed aggregates in two bulk queries to avoid N+1
     product_ids = @products.map(&:id)
@@ -151,9 +87,9 @@ class ProductsController < ApplicationController
     q = params[:q].to_s.strip
     products =
       if q.blank?
-        Product.order(:name).limit(25)
+        Product.active.order(:name).limit(25)
       else
-        Product.where('name ILIKE ? OR id ILIKE ?', "%#{q}%", "%#{q}%")
+        Product.active.where('name ILIKE ? OR id ILIKE ?', "%#{q}%", "%#{q}%")
                .order(Arel.sql(<<~SQL.squish))
                  CASE
                    WHEN name ILIKE #{ActiveRecord::Base.connection.quote(q)}        THEN 0
@@ -245,6 +181,7 @@ class ProductsController < ApplicationController
       :unit_of_measurement,
       :weight,
       :is_raw_material,
+      :active,
       :current_stock,
       :reorder_point,
       :safety_stock,

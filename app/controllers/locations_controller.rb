@@ -4,8 +4,8 @@ class LocationsController < ApplicationController
   include CsvRoundTrip
   permission_area :sales, lookups: %i[search select2],
                           areas: { map: :dispatch, vehicles: :dispatch, dispatch_routes: :dispatch }
-  before_action :set_products, only: %i[new edit create update]
   before_action :set_location, only: %i[show edit update destroy]
+  before_action :set_products, only: %i[new edit create update]
 
   def index
     @locations = Location.includes(:location_category)
@@ -258,7 +258,7 @@ class LocationsController < ApplicationController
   end
 
   def set_products
-    @products = Product.all
+    @products = Product.selectable(@location&.product_ids).order(:name)
   end
 
   def set_location

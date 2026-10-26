@@ -71,4 +71,15 @@ module ApplicationHelper
     else 'bg-secondary'
     end
   end
+
+  # Column header that sorts the current list by `column` ("name" → name_asc / name_desc), keeping the
+  # filters. Loads the whole page so the filter form's hidden sort field stays in step.
+  def sort_header(label, column)
+    current = params[:sort].to_s
+    direction = current == "#{column}_asc" ? 'desc' : 'asc'
+    arrow = { "#{column}_asc" => ' ▲', "#{column}_desc" => ' ▼' }[current]
+    query = request.query_parameters.except('page').merge('sort' => "#{column}_#{direction}", 'filtered' => '1')
+    link_to "#{label}#{arrow}", "#{request.path}?#{query.to_query}",
+            class: 'text-decoration-none text-dark text-nowrap', data: { turbo_frame: '_top' }
+  end
 end

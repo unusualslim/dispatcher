@@ -155,6 +155,9 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
   `PdiMasterDataSyncJob`, schedule Off until set): customers → `customers.pdi_customer_id`; ship-tos (per customer in
   PDI) → `customer_locations.pdi_location_id`, so one app location can serve many customers' ship-tos; terminals →
   `locations.pdi_terminal_id` (link only); fuel + warehouse products by ID. Existing locations are never renamed.
+  PDI's Active / AccountStatus sets `products.active` / `customers.active` (an inactive record only gets the flag;
+  inactive customers' ship-tos are skipped). Inactive records leave pickers (`Product.active`, `.selectable(keep_ids)`
+  keeps a record's current choice) and the index pages unless "Show inactive" is ticked.
 - The FTP order import prefers these IDs ("2362 - Name" / "12 - Name" prefixes) before matching by name.
 - Customer and open-order pages lazy-load PDI credit (`/customers/:id/pdi_credit`, Turbo Frame).
 
@@ -203,6 +206,9 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
 - /customer_orders (dashboard, bulk_close), /dispatches/kanban, /warehouse/kanban
 - /pricing_rules, /automated_processes, /docs (in-app user guides + changelog)
 - Products, Customers, Vendors, Locations all support CSV export → import_csv → process_import → confirm_import
+- Products and Customers lists: filters/sorts live in `ProductListQuery` / `CustomerListQuery`; `sort_header` helper
+  makes sortable column headers; `RemembersListFilters` keeps each user's last filters in `users.list_filters`
+  (bare visit restores, the form sends `filtered=1`, Clear sends `reset=1`)
 
 ---
 

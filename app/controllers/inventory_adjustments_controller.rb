@@ -12,7 +12,7 @@ class InventoryAdjustmentsController < ApplicationController
   ].freeze
 
   def new
-    @products     = Product.order(:name)
+    @products     = Product.active.order(:name)
     @reason_codes = REASON_CODES
     @warehouses   = Location.where(location_category_id: 1).order(:company_name)
     @selected_product  = Product.find_by(id: params[:product_id])

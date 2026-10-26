@@ -1,17 +1,17 @@
 class CustomersController < ApplicationController
   include CsvRoundTrip
+  include RemembersListFilters
   permission_area :sales, lookups: %i[search select2]
   before_action :set_customer, only: %i[edit update destroy]
 
   # GET /customers
   def index
-    @customers = if params[:search].present?
-                   Customer.where('name LIKE ?', "%#{params[:search]}%")
-                 elsif params[:sort] == 'name'
-                   Customer.order(:name)
-                 else
-                   Customer.all
-                 end
+    return if restore_list_filters('customers', CustomerListQuery::KEYS)
+
+    @states = Location.where(id: CustomerLocation.select(:location_id)).where.not(state: [nil, ''])
+                      .distinct.order(:state).pluck(:state)
+    @customers = CustomerListQuery.new(params).relation.includes(:locations)
+                                  .paginate(page: params[:page], per_page: 50)
   end
 
   def show
@@ -87,12 +87,8 @@ class CustomersController < ApplicationController
   def select2
     term = params[:q].to_s.strip
 
-    customers =
-      if term.present?
-        Customer.where('LOWER(name) LIKE ?', "%#{term.downcase}%").order(:name).limit(25)
-      else
-        Customer.order(:name).limit(25)
-      end
+    customers = Customer.active.order(:name).limit(25)
+    customers = customers.where('LOWER(name) LIKE ?', "%#{term.downcase}%") if term.present?
 
     render json: customers.map { |c| { id: c.id, text: c.name } }
   end
@@ -104,8 +100,8 @@ class CustomersController < ApplicationController
   end
 
   def customer_params
-    params.require(:customer).permit(:name, :email, :phone, :preferred_contact_method, location_ids: [],
-                                                                                       phone_numbers_attributes: %i[id number _destroy])
+    params.require(:customer).permit(:name, :email, :phone, :preferred_contact_method, :active, location_ids: [],
+                                                                                                phone_numbers_attributes: %i[id number _destroy])
   end
 
   def csv_resource

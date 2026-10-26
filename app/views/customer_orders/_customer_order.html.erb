@@ -55,7 +55,7 @@
           <%= form_with model: [@customer_order, CustomerOrderProduct.new], local: true, data: { turbo: false } do |form| %>
             <div class="mb-3">
               <label for="product" class="form-label">Product</label>
-              <%= form.collection_select :product_id, Product.all, :id, :name, { prompt: "Select a Product" }, class: "form-select" %>
+              <%= form.collection_select :product_id, Product.active.order(:name), :id, :name, { prompt: "Select a Product" }, class: "form-select" %>
             </div>
 
             <div class="mb-3">
@@ -102,7 +102,7 @@
         <td>
           <%= form.collection_select(
             :product_id, 
-            Product.all,
+            Product.selectable(cop.product_id).order(:name),
             :id, 
             :name, 
             { prompt: "Select a Product", selected: cop.product_id },

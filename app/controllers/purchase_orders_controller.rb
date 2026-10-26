@@ -61,7 +61,7 @@ class PurchaseOrdersController < ApplicationController
     @purchase_order.expected_delivery_date = params[:expected_delivery_date].presence
     @purchase_order.notes = params[:notes].presence
     @vendors  = Vendor.includes(:vendor_freight_terms).order(:name)
-    @products = Product.order(:name)
+    @products = po_products
 
     product_ids = Array(params[:product_ids]).select(&:present?)
     product_ids = [params[:product_id]] if product_ids.empty? && params[:product_id].present?
@@ -115,7 +115,7 @@ class PurchaseOrdersController < ApplicationController
       redirect_to purchase_orders_path, notice: 'Purchase order created.'
     else
       @vendors  = Vendor.order(:name)
-      @products = Product.order(:name)
+      @products = po_products
       render :new, status: :unprocessable_entity
     end
   end
@@ -127,7 +127,7 @@ class PurchaseOrdersController < ApplicationController
       redirect_to @purchase_order, alert: 'Only draft or pending approval POs can be edited.'
     end
     @vendors    = Vendor.includes(:vendor_freight_terms).order(:name)
-    @products   = Product.order(:name)
+    @products   = po_products
     @warehouses = Location.where(location_category_id: 1).order(:company_name)
   end
 
@@ -140,7 +140,7 @@ class PurchaseOrdersController < ApplicationController
       redirect_to @purchase_order, notice: 'Purchase order updated.'
     else
       @vendors  = Vendor.order(:name)
-      @products = Product.order(:name)
+      @products = po_products
       render :edit, status: :unprocessable_entity
     end
   end
@@ -214,6 +214,11 @@ class PurchaseOrdersController < ApplicationController
   end
 
   private
+
+  # Active products plus the ones already on this PO's lines.
+  def po_products
+    Product.selectable(@purchase_order&.line_items&.map(&:product_id)).order(:name)
+  end
 
   def keep_voided_read_only
     redirect_to @purchase_order, alert: t('purchase_orders.voided_read_only') if @purchase_order.voided?

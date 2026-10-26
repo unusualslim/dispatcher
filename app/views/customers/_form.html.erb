@@ -32,6 +32,11 @@
     <%= form.select :preferred_contact_method, options_for_select(['no preference', 'phone', 'email'], @customer.preferred_contact_method), { prompt: 'Select Contact Method' }, class: "form-control" %>
   </div>
 
+  <div class="form-check form-switch mt-3">
+    <%= form.check_box :active, class: "form-check-input", role: "switch" %>
+    <%= form.label :active, "Active (inactive customers are hidden from pickers; PDI master data sets this)", class: "form-check-label" %>
+  </div>
+
   <!-- Submit Button -->
   <div class="form-group mt-3">
     <%= form.submit 'Save', class: 'btn btn-primary' %>

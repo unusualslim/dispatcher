@@ -10,7 +10,7 @@
   <div class="row g-3 mb-4">
     <div class="col-md-6">
       <label class="form-label fw-semibold">Customer</label>
-      <%= f.collection_select :customer_id, Customer.order(:name), :id, :name,
+      <%= f.collection_select :customer_id, Customer.selectable(f.object.customer_id).order(:name), :id, :name,
             { include_blank: "— Select customer —", selected: quote.customer_id },
             class: "form-select select2-customer", id: 'quote-customer' %>
     </div>

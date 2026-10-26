@@ -43,7 +43,7 @@ class LocationProductsController < ApplicationController
   end
 
   def set_products
-    @products = Product.all
+    @products = Product.selectable(@location_product&.product_id).order(:name)
   end
 
   def location_product_params

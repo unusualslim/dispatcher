@@ -9,7 +9,7 @@
       <!-- Customer Info Card -->
       <div class="card shadow-sm border-primary">
         <div class="card-header bg-primary text-white">
-          <h2><%= @customer.name %></h2>
+          <h2><%= @customer.name %><% unless @customer.active %> <span class="badge bg-secondary fs-6 align-middle">Inactive</span><% end %></h2>
         </div>
         <div class="card-body">
           <!-- Additional Customer Info -->
