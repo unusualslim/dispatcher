@@ -1,125 +1,126 @@
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1 class="mb-0">MRP Dashboard</h1>
-  <div class="d-flex gap-2">
-    <%= link_to 'Purchase Orders', purchase_orders_path, class: 'btn btn-outline-secondary btn-sm' %>
-    <%= link_to 'Products', products_path, class: 'btn btn-outline-secondary btn-sm' %>
+<% today = @result.today %>
+<% qty = ->(n) { number_with_precision(n, precision: 1, delimiter: ',', strip_insignificant_zeros: true) } %>
+<div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+  <div>
+    <h1 class="mb-0">MRP</h1>
+    <div class="text-muted small">
+      Projected stock for warehouse items and raw materials (and fuel used in BOMs), day by day through
+      <%= @result.horizon_end.strftime('%b %-d') %>: on hand + purchase orders + production − customer orders −
+      production components. Quotes and pending orders aren't counted.
+    </div>
+  </div>
+  <div class="d-flex gap-2 align-items-center">
+    <div class="btn-group btn-group-sm">
+      <% MrpController::HORIZONS.each do |days| %>
+        <%= link_to "#{days} days", mrp_path(horizon: days), class: "btn #{days == @horizon ? 'btn-secondary' : 'btn-outline-secondary'}" %>
+      <% end %>
+    </div>
+    <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="collapse" data-bs-target="#mrp-settings" type="button">Lead times</button>
     <%= link_to 'New PO', new_purchase_order_path, class: 'btn btn-primary btn-sm' %>
   </div>
 </div>
+<%= render 'settings', horizon: @horizon %>
 
-<%# ── Requirements from open orders ─────────────────────────────────────────── %>
+<%# ── Action needed ─────────────────────────────────────────────────────────── %>
+<% actions = @result.actions %>
 <div class="card shadow-sm mb-4">
   <div class="card-header fw-semibold d-flex justify-content-between">
-    <span>Material Requirements — Next 30 Days</span>
-    <span class="text-muted small">Based on open production orders</span>
+    <span>Action needed</span>
+    <span class="text-muted small"><%= pluralize(actions.size, 'product') %> will fall short</span>
   </div>
   <div class="card-body p-0">
-    <% if @requirements.empty? %>
-      <div class="p-4 text-muted text-center">
-        No open orders with BOM-linked products in the next 30 days.
-        <br><small>Set up BOM components on products and mark raw materials to see requirements here.</small>
-      </div>
+    <% if actions.empty? %>
+      <div class="p-4 text-muted text-center">Nothing runs short in the next <%= @horizon %> days.</div>
     <% else %>
-      <table class="table table-hover mb-0">
-        <thead class="table-light">
-          <tr>
-            <th>Raw Material</th>
-            <th>Needed</th>
-            <th>Available</th>
-            <th>Shortfall</th>
-            <th>Preferred Vendor</th>
-            <th>Lead Time</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @requirements.each do |req| %>
-            <tr class="<%= req.urgent ? 'table-danger' : '' %>">
-              <td class="fw-semibold">
-                <% if req.product %>
-                  <%= link_to req.description, product_path(req.product), class: 'text-decoration-none' %>
-                <% else %>
-                  <%= req.description %>
-                <% end %>
-              </td>
-              <td><%= number_with_precision(req.total_needed, precision: 1) %> <%= req.product&.unit_of_measurement %></td>
-              <td><%= number_with_precision(req.available_stock, precision: 1) %></td>
-              <td>
-                <% if req.shortfall > 0 %>
-                  <span class="text-danger fw-bold"><%= number_with_precision(req.shortfall, precision: 1) %></span>
-                <% else %>
-                  <span class="text-success">—</span>
-                <% end %>
-              </td>
-              <td><%= req.vendor&.name || '<span class="text-muted">None on file</span>'.html_safe %></td>
-              <td><%= req.lead_time_days ? "#{req.lead_time_days} days" : '—' %></td>
-              <td>
-                <% if req.shortfall > 0 %>
-                  <%= link_to 'Create PO',
-                        new_purchase_order_path(product_id: req.product&.id),
-                        class: 'btn btn-sm btn-danger' %>
-                <% end %>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr><th>Product</th><th>Runs out</th><th>Do</th><th>Why</th><th></th></tr>
+          </thead>
+          <tbody>
+            <% actions.each do |plan| %>
+              <% product = plan.product %>
+              <% first = plan.suggestions.first %>
+              <% total = plan.suggestions.sum(&:qty) %>
+              <% late = first.late?(today) %>
+              <tr class="<%= 'table-danger' if late %>">
+                <td>
+                  <%= link_to product.name, mrp_product_path(product.id, horizon: @horizon), class: "fw-semibold text-decoration-none" %>
+                  <div class="small text-muted"><%= product.id %> · on hand <%= qty.(plan.on_hand) %> <%= product.unit_of_measurement %></div>
+                </td>
+                <td class="text-nowrap">
+                  <% if plan.runs_out_on %>
+                    <span class="text-danger fw-semibold"><%= plan.runs_out_on.strftime('%b %-d') %></span>
+                  <% elsif plan.below_safety_on %>
+                    <span class="text-warning fw-semibold"><%= plan.below_safety_on.strftime('%b %-d') %></span>
+                    <div class="small text-muted">below safety stock</div>
+                  <% end %>
+                </td>
+                <td>
+                  <%= first.production? ? 'Produce' : 'Order' %> <strong><%= qty.(total) %></strong>
+                  <%= product.unit_of_measurement %> by <strong><%= first.act_by.strftime('%b %-d') %></strong>
+                  <% if late %><span class="badge bg-danger ms-1">late — act now</span><% end %>
+                  <div class="small text-muted">
+                    <%= first.production? ? "#{plan.lead_days}-day production" : [product.primary_vendor&.name, "#{plan.lead_days}-day lead time"].compact.join(' · ') %>
+                    <% if plan.suggestions.size > 1 %> · <%= pluralize(plan.suggestions.size, 'shortage') %> in the horizon<% end %>
+                  </div>
+                </td>
+                <td class="small">
+                  <% plan.causes.each do |event| %>
+                    <div><%= event.date.strftime('%b %-d') %> · <%= event.path ? link_to(event.label, event.path, class: 'text-decoration-none') : event.label %> (<%= qty.(event.qty) %>)</div>
+                  <% end %>
+                </td>
+                <td class="text-end text-nowrap">
+                  <% unless first.production? %>
+                    <%= link_to 'Create PO', new_purchase_order_path(product_ids: [product.id]), class: 'btn btn-sm btn-outline-danger' %>
+                  <% end %>
+                  <%= link_to 'Timeline', mrp_product_path(product.id, horizon: @horizon), class: 'btn btn-sm btn-outline-secondary' %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
     <% end %>
   </div>
 </div>
 
-<%# ── Raw material stock levels ──────────────────────────────────────────────── %>
+<%# ── Exceptions ───────────────────────────────────────────────────────────── %>
+<% late_pos = @result.flagged(:late) %>
+<% overdue = @result.flagged(:overdue) %>
+<% expedites = @result.expedites %>
 <div class="card shadow-sm mb-4">
-  <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
-    <span>Raw Material Stock Levels</span>
-    <%= link_to 'View All Products', products_path(status: 'low'), class: 'btn btn-outline-secondary btn-sm' %>
-  </div>
-  <div class="card-body p-0">
-    <% if @low_stock.empty? %>
-      <div class="p-4 text-muted text-center">No raw materials configured yet. Edit products to set reorder points.</div>
-    <% else %>
-      <table class="table table-sm mb-0">
-        <thead class="table-light">
-          <tr>
-            <th>Product</th>
-            <th>On Hand</th>
-            <th>On Order</th>
-            <th>Committed</th>
-            <th>Available</th>
-            <th>Reorder Point</th>
-            <th>Status</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @low_stock.each do |p| %>
-            <% status = p.stock_status %>
-            <tr>
-              <td><%= link_to p.name, product_path(p), class: 'text-decoration-none' %></td>
-              <td><%= number_with_precision(p.current_stock, precision: 1) %> <%= p.unit_of_measurement %></td>
-              <td class="text-success"><%= number_with_precision(p.on_order_qty, precision: 1) %></td>
-              <td class="text-warning"><%= number_with_precision(p.committed_qty, precision: 1) %></td>
-              <td class="<%= p.available_stock < 0 ? 'text-danger fw-bold' : '' %>">
-                <%= number_with_precision(p.available_stock, precision: 1) %>
-              </td>
-              <td><%= number_with_precision(p.reorder_point, precision: 1) %></td>
-              <td>
-                <% if status == :critical %>
-                  <span class="badge bg-danger">Critical</span>
-                <% elsif status == :low %>
-                  <span class="badge bg-warning text-dark">Low</span>
-                <% else %>
-                  <span class="badge bg-success">OK</span>
-                <% end %>
-              </td>
-              <td>
-                <%= link_to 'Create PO', new_purchase_order_path(product_ids: [p.id]),
-                      class: 'btn btn-outline-secondary btn-sm' %>
-              </td>
-            </tr>
+  <div class="card-header fw-semibold">Exceptions</div>
+  <div class="card-body small">
+    <% if late_pos.empty? && overdue.empty? && expedites.empty? %>
+      <div class="text-muted">No late purchase orders, overdue customer orders or late-arriving supply.</div>
+    <% end %>
+    <% if expedites.any? %>
+      <h6 class="mt-1">Supply arriving after the product runs out (expedite)</h6>
+      <ul>
+        <% expedites.each do |plan| %>
+          <% plan.expedite.each do |event| %>
+            <li><%= link_to plan.product.name, mrp_product_path(plan.product.id, horizon: @horizon) %> runs out <%= plan.runs_out_on.strftime('%b %-d') %>;
+              <%= link_to event.label, event.path %> (<%= qty.(event.qty) %>) arrives <%= event.date.strftime('%b %-d') %></li>
           <% end %>
-        </tbody>
-      </table>
+        <% end %>
+      </ul>
+    <% end %>
+    <% if late_pos.any? %>
+      <h6>Purchase orders past their expected date (counted as arriving today)</h6>
+      <ul>
+        <% late_pos.each do |plan, event| %>
+          <li><%= link_to event.label, event.path %>: <%= qty.(event.qty) %> <%= plan.product.name %>, expected <%= event.original_date&.strftime('%b %-d') %></li>
+        <% end %>
+      </ul>
+    <% end %>
+    <% if overdue.any? %>
+      <h6>Customer orders past their delivery date (counted as due today)</h6>
+      <ul>
+        <% overdue.each do |plan, event| %>
+          <li><%= link_to event.label, event.path %>: <%= qty.(-event.qty) %> <%= plan.product.name %>, due <%= event.original_date&.strftime('%b %-d') %></li>
+        <% end %>
+      </ul>
     <% end %>
   </div>
 </div>

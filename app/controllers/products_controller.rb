@@ -182,6 +182,8 @@ class ProductsController < ApplicationController
       :weight,
       :is_raw_material,
       :active,
+      :lead_time_days,
+      :production_days,
       :current_stock,
       :reorder_point,
       :safety_stock,

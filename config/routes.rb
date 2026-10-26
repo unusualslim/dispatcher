@@ -158,6 +158,9 @@ Rails.application.routes.draw do
   end
 
   get 'mrp', to: 'mrp#index', as: :mrp
+  get 'mrp/products/:product_id', to: 'mrp#product', as: :mrp_product, constraints: { product_id: %r{[^/]+} },
+                                  format: false
+  patch 'mrp/settings', to: 'mrp#update_settings', as: :mrp_settings
   get 'purchasing_report', to: 'purchasing_report#index', as: :purchasing_report
   resource :inventory_intelligence, only: [:show], controller: 'inventory_intelligence', as: :inventory_intelligence do
     post :send_test, on: :member

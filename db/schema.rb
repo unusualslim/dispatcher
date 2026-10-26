@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_26_160000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_26_170000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -167,6 +167,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_26_160000) do
     t.decimal "pdi_credit_limit", precision: 12, scale: 2
     t.decimal "pdi_available_credit", precision: 12, scale: 2
     t.datetime "pdi_credit_updated_at"
+    t.integer "lead_time_days"
     t.index ["pdi_customer_id"], name: "index_customers_on_pdi_customer_id", unique: true
   end
 
@@ -527,6 +528,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_26_160000) do
     t.decimal "pdi_repack_fee", precision: 12, scale: 4
     t.string "coa_note"
     t.boolean "active", default: true, null: false
+    t.integer "lead_time_days"
+    t.integer "production_days"
   end
 
   create_table "purchase_order_line_items", force: :cascade do |t|

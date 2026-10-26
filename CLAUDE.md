@@ -188,7 +188,14 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
 - `PricingRule` / `PricingRuleProduct` — pricing rules that auto-populate prices on customer orders
 
 ### Services (app/services/)
-- `MrpEngine` — raw material requirements from open customer orders + BOM
+- `Mrp::Plan` (app/services/mrp/, page /mrp) — time-phased MRP: per planned product (warehouse items, raw
+  materials and anything in their BOMs; not fuel) it projects stock day by day (on hand + open POs + open
+  production − open customer orders (not quotes/pending/released for billing) − production components), finds
+  when it runs out / drops below safety stock and which orders cause it, and suggests orders (need date − lead
+  time) or production (− production days, passing component demand down; parents planned before components).
+  Lead times: product → primary vendor → AppSetting `mrp_purchase_lead_days` (7); `products.production_days` →
+  `mrp_production_days` (1); undated customer orders = order date + `customers.lead_time_days` →
+  `mrp_customer_lead_days` (3). Defaults are editable on the MRP page. Lot-for-lot, global stock (no location yet).
 - `BomPopulatorService` — auto-populates production order components from product BOM
 - `MaterialAvailabilityService` — checks if raw materials are available for a production order
 - `ReorderService` — creates draft POs for products below reorder_point
@@ -259,11 +266,11 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
 
 ## Tests
 Minitest under `test/`. Coverage is concentrated on MRP services/models
-(MrpEngine, BomPopulator, MaterialAvailability, Reorder, ProductionOrderBatch);
+(Mrp::Plan, BomPopulator, MaterialAvailability, Reorder, ProductionOrderBatch);
 the PDI sync/import code and most controllers are largely untested. Security regression tests live in
 `test/integration/` (admin-only sign-up, Twilio webhook signature, announcement rich text, permissions).
 Costing, ledger, quality checks, voids and permissions have their own model/service/integration tests.
-The suite has **34 pre-existing failures/errors** (unauthenticated scaffold controller tests, MRP tests
+The suite has **29 pre-existing failures/errors** (unauthenticated scaffold controller tests, MRP tests
 using old statuses, order-dependent data) — compare failures against that baseline rather than expecting green.
 CI (`.github/workflows/lint.yml`) runs RuboCop only.
 

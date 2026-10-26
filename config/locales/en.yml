@@ -94,6 +94,11 @@ en:
     export:
       exported: "Exported %{count} entries to PDI."
       failed: "Export to PDI failed; nothing was marked exported. %{error}"
+  mrp:
+    product:
+      not_planned: "That product isn't planned by MRP (fuel, inactive, or not found)."
+    update_settings:
+      saved: "MRP defaults saved."
   location_merges:
     bulk:
       none: "No pairs selected."

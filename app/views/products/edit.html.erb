@@ -39,6 +39,14 @@
             <%= form.label :active, "Active (inactive products are hidden from pickers; PDI master data sets this)", class: 'form-check-label' %>
           </div>
         </div>
+        <div class="col-6">
+          <%= form.label :lead_time_days, "Purchase lead time (days)", class: 'form-label' %>
+          <%= form.number_field :lead_time_days, min: 0, class: 'form-control', placeholder: 'vendor / MRP default' %>
+        </div>
+        <div class="col-6">
+          <%= form.label :production_days, "Production time (days)", class: 'form-label' %>
+          <%= form.number_field :production_days, min: 0, class: 'form-control', placeholder: 'MRP default' %>
+        </div>
         <div class="col-12">
           <label class="form-label" for="product_vendor_ids">Vendors (in priority order)</label>
           <input type="hidden" name="product[vendor_ids][]" value="">
