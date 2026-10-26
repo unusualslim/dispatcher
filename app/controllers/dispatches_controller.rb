@@ -345,7 +345,8 @@ class DispatchesController < ApplicationController
                          .order(:dispatch_date)
     @dispatches_by_date = dispatches.group_by(&:dispatch_date)
     @unassigned_orders = CustomerOrder.where.missing(:dispatch_customer_orders)
-                                      .where(order_status: CustomerOrder::ACTIVE_STATUSES)
+                                      # released for billing / billed orders are done: not waiting for a dispatch
+                                      .where(order_status: CustomerOrder::ACTIVE_STATUSES - CustomerOrder::BILLING_STATUSES)
                                       .dispatchable
                                       .includes(:location, :customer, customer_order_products: :product)
                                       .order(:required_delivery_date)

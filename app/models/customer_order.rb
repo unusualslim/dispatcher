@@ -71,6 +71,9 @@ class CustomerOrder < ApplicationRecord
   # Orders from the old FTP import only have the carrier's name.
   DISPATCH_CARRIER_NAMES = ['Five Points Logistics, LLC', 'Five Points Service, Inc.'].freeze
 
+  # Delivered and with billing: the dispatch board's unassigned list drops these.
+  BILLING_STATUSES = ['Released for Billing', 'Billed'].freeze
+
   # Orders the dispatch board can assign: entered in the app, or a PDI order carried by our own trucks.
   scope :dispatchable, lambda {
     where(external_order_no: nil)
