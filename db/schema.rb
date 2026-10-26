@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_26_150000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_26_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -163,6 +163,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_26_150000) do
     t.string "preferred_contact_method", default: "no preference"
     t.string "pdi_customer_id"
     t.boolean "active", default: true, null: false
+    t.string "pdi_credit_status"
+    t.decimal "pdi_credit_limit", precision: 12, scale: 2
+    t.decimal "pdi_available_credit", precision: 12, scale: 2
+    t.datetime "pdi_credit_updated_at"
     t.index ["pdi_customer_id"], name: "index_customers_on_pdi_customer_id", unique: true
   end
 

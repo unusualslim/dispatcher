@@ -63,13 +63,7 @@ class CustomersController < ApplicationController
   def pdi_credit
     @customer = Customer.find(params[:id])
     @amount = params[:amount].presence&.to_d
-    begin
-      if @customer.pdi_customer_id.present? && PdiWebService.configured?
-        @credit = PdiWebService.new(read_timeout: 15).credit_check(@customer.pdi_customer_id)
-      end
-    rescue PdiWebService::Error, Net::OpenTimeout, Net::ReadTimeout, SocketError => e
-      @error = e.message
-    end
+    fetch_pdi_credit if @customer.pdi_customer_id.present? && PdiWebService.configured?
     render partial: 'customers/pdi_credit', layout: false
   end
 
@@ -94,6 +88,14 @@ class CustomersController < ApplicationController
   end
 
   private
+
+  # Live credit check; also refreshes the customer's saved snapshot (dispatch board badge).
+  def fetch_pdi_credit
+    @credit = PdiWebService.new(read_timeout: 15).credit_check(@customer.pdi_customer_id)
+    @customer.record_pdi_credit!(@credit.snapshot)
+  rescue PdiWebService::Error, Net::OpenTimeout, Net::ReadTimeout, SocketError => e
+    @error = e.message
+  end
 
   def set_customer
     @customer = Customer.find(params[:id])

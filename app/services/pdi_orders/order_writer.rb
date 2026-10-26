@@ -14,6 +14,7 @@ module PdiOrders
         record.assign_attributes(attributes(record))
         changed = record.changed?
         record.save! if changed
+        record.customer&.record_pdi_credit!(@order.credit)
         sync_lines(record) || changed ? action : :unchanged
       end
     end

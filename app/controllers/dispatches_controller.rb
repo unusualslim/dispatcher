@@ -339,7 +339,7 @@ class DispatchesController < ApplicationController
     @end_date   = params[:end_date].present?   ? (Date.parse(params[:end_date])   rescue Date.today + 6) : Date.today + 6
     @start_date, @end_date = @end_date, @start_date if @start_date > @end_date
 
-    dispatches = Dispatch.includes(:driver, customer_orders: [:location, { customer_order_products: :product }])
+    dispatches = Dispatch.includes(:driver, customer_orders: [:location, :customer, { customer_order_products: :product }])
                          .where.not(status: :deleted)
                          .where(dispatch_date: @start_date..@end_date)
                          .order(:dispatch_date)
@@ -347,7 +347,7 @@ class DispatchesController < ApplicationController
     @unassigned_orders = CustomerOrder.where.missing(:dispatch_customer_orders)
                                       .where(order_status: CustomerOrder::ACTIVE_STATUSES)
                                       .dispatchable
-                                      .includes(:location, customer_order_products: :product)
+                                      .includes(:location, :customer, customer_order_products: :product)
                                       .order(:required_delivery_date)
   end
 

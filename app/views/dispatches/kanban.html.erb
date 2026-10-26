@@ -392,7 +392,7 @@
           <% card_color = order.card_color || '#0d6efd' %>
 
           <%= link_to customer_order_path(order), class: 'order-card', style: "border-left: 4px solid #{card_color};" do %>
-            <h3>Order #<%= order.id %><% if order.external_order_no.present? %> <span style="font-size:.8rem;font-weight:400;color:#666;"><%= order.external_order_no %></span><% end %></h3>
+            <h3>Order #<%= order.id %><% if order.external_order_no.present? %> <span style="font-size:.8rem;font-weight:400;color:#666;"><%= order.external_order_no %></span><% end %> <%= credit_flag(order.customer) %></h3>
             <p><strong>Location:</strong> <%= company_name %><% city_state = [order.location&.city, order.location&.state].compact.join(", "); %><% if city_state.present? %> <span class="text-muted" style="font-size:.85em;"><%= city_state %></span><% end %></p>
             <p><strong>Product:</strong> <%= product_display %></p>
             <p><strong>Amount:</strong> <%= qty_display %></p>
@@ -472,7 +472,7 @@
                     <% top = o.customer_order_products.max_by { |c| c.quantity || 0 } %>
                     <% product_str = top ? "#{top.product&.name || top.product_name}#{top.quantity ? " · #{number_with_delimiter(top.quantity.to_i)}" : ""}" : nil %>
                     <div class="card-order-row">
-                      <span class="card-order-loc"><%= o.location&.company_name || "—" %></span>
+                      <span class="card-order-loc"><%= o.location&.company_name || "—" %> <%= credit_flag(o.customer) %></span>
                       <% city_state = [o.location&.city, o.location&.state].compact.join(", ") %>
                       <% if city_state.present? %>
                         <span class="card-order-product"><%= city_state %></span>

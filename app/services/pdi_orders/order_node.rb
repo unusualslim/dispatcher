@@ -33,6 +33,14 @@ module PdiOrders
         invoice_no: text('InvoiceNo'), pdi_carrier_id: carrier_id }.compact
     end
 
+    # The customer's credit as PDI reported it with this order.
+    def credit
+      return {} unless text('CreditStatus')
+
+      { pdi_credit_status: text('CreditStatus'), pdi_credit_limit: text('CreditLimit')&.to_d,
+        pdi_available_credit: text('TotalAvailableCredit')&.to_d }
+    end
+
     def ship_to
       { company_name: text('ShipToDescription'), city: text('ShipToCity'), state: text('ShipToState'),
         zip: text('ShipToPostalCode'), phone_number: text('ShipToPhone'),

@@ -20,6 +20,12 @@ class PdiWebService
     def on_hold?
       credit_status != 0
     end
+
+    # In the form Customer#record_pdi_credit! keeps (as on PDI's order feed).
+    def snapshot
+      { pdi_credit_status: on_hold? ? 'Credit Hold' : 'Good', pdi_credit_limit: credit_limit,
+        pdi_available_credit: available_credit }
+    end
   end
 
   def self.configured?

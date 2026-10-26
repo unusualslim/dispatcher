@@ -10,7 +10,8 @@
         <ShipToDescription>Southern Performance Chemical</ShipToDescription><ShipToAddress1>1605 Lake Street</ShipToAddress1>
         <ShipToCity>Melbourne</ShipToCity><ShipToState>FL</ShipToState><ShipToPostalCode>32901     </ShipToPostalCode>
         <OrderTotalAmount>67881.00</OrderTotalAmount><CustomerDescription>Southern Performance Chemical</CustomerDescription>
-        <OrderEntryDateTime>2026-09-04T14:55:00</OrderEntryDateTime><CreditStatus>Credit Hold</CreditStatus>
+        <OrderEntryDateTime>2026-09-04T14:55:00</OrderEntryDateTime><CreditLimit>250000.00</CreditLimit>
+        <TotalAvailableCredit>-53727.98</TotalAvailableCredit><CreditStatus>Credit Hold</CreditStatus>
         <WarehouseDetail>
           <OrderLineItemNo>1</OrderLineItemNo><Key>198973</Key><OrderedProductID>BF0130</OrderedProductID>
           <OrderedPackageCode>12/1Q</OrderedPackageCode><WarehouseSiteID>7777</WarehouseSiteID>

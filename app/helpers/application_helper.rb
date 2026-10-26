@@ -72,6 +72,18 @@ module ApplicationHelper
     end
   end
 
+  # Small "Credit" badge for a customer PDI reports over its limit or on credit hold.
+  def credit_flag(customer)
+    return unless customer&.over_credit?
+
+    available = customer.pdi_available_credit
+    limit = customer.pdi_credit_limit
+    as_of = customer.pdi_credit_updated_at
+    details = [customer.pdi_credit_status, ("available #{number_to_currency(available)}" if available),
+               ("limit #{number_to_currency(limit)}" if limit), as_of&.strftime('as of %b %-d %-I:%M %p')]
+    tag.span('Credit', class: 'badge bg-danger', style: 'font-size:.65rem;', title: details.compact.join(' · '))
+  end
+
   # Column header that sorts the current list by `column` ("name" → name_asc / name_desc), keeping the
   # filters. Loads the whole page so the filter form's hidden sort field stays in step.
   def sort_header(label, column)
