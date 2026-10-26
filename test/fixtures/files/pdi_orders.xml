@@ -33,6 +33,16 @@
           <OrderLineItemNo>1</OrderLineItemNo><OrderedProductID>101</OrderedProductID>
           <OrderedQuantity>2500.00</OrderedQuantity><UnitPrice>2.8150000</UnitPrice>
         </FuelDetail>
+        <FuelDetail>
+          <OrderLineItemNo>3</OrderLineItemNo><OrderedProductID>10011219</OrderedProductID>
+          <PurchasedProductID>901</PurchasedProductID><OrderedQuantity>275.00</OrderedQuantity>
+          <UnitPrice>2.6000000</UnitPrice>
+        </FuelDetail>
+        <FuelDetail>
+          <OrderLineItemNo>4</OrderLineItemNo><OrderedProductID>901</OrderedProductID>
+          <PurchasedProductID>901B</PurchasedProductID><ProductBlendID>901B</ProductBlendID>
+          <OrderedQuantity>100.00</OrderedQuantity><UnitPrice>2.5000000</UnitPrice>
+        </FuelDetail>
         <NonInvDetail>
           <OrderLineItemNo>2</OrderLineItemNo><OrderedProductID>FRT</OrderedProductID>
           <OrderedQuantity>1.0000</OrderedQuantity><UnitPrice>45.0000000</UnitPrice>

@@ -27,7 +27,8 @@ class PdiOrderApiImportServiceTest < ActiveSupport::TestCase
 
     fuel = CustomerOrder.find_by!(external_order_no: 'OD-051313-26')
     assert_equal 'dispatched', fuel.order_status
-    assert_equal %w[101 FRT], fuel.customer_order_products.order(:product_name).pluck(:product_name)
+    assert_equal %w[101 901 901 FRT], fuel.customer_order_products.order(:product_name).pluck(:product_name),
+                 'loaded product (901), not ordered 10011219; a blend keeps its ordered product'
 
     site = CustomerOrder.find_by!(external_order_no: 'OD-050878-26')
     assert_equal ['billed', 'OD-050878-26', nil], [site.order_status, site.invoice_no, site.customer]
@@ -83,5 +84,19 @@ class PdiOrderApiImportServiceTest < ActiveSupport::TestCase
     assert_empty result.errors
     lines = CustomerOrder.find_by!(external_order_no: 'OD-050878-26').customer_order_products
     assert_includes lines.map(&:price), BigDecimal('-0.01')
+  end
+
+  test 'fuel and non-inventory products do not need production; manufactured goods do' do
+    ReportingGroup.find_or_create_by!(name: 'DEF-Fuel') { |g| g.item_type = 'fuel' }
+    ReportingGroup.find_or_create_by!(name: 'DEF') { |g| g.item_type = 'warehouse' }
+    Product.where(id: %w[901 DEF25]).delete_all
+    Product.create!(id: '901', name: 'Diesel Exhaust Fluid 32.5%', category: 'DEF-Fuel')
+    Product.create!(id: 'DEF25', name: 'DEF 2.5 GAL', category: 'DEF')
+
+    assert_equal 'buy', Product.find('901').order_item_type
+    assert_equal 'production', Product.find('DEF25').order_item_type
+    PdiOrderApiImportService.call(feed)
+    lines = CustomerOrder.find_by!(external_order_no: 'OD-051313-26').customer_order_products
+    assert_equal %w[buy buy], lines.where(product_id: '901').pluck(:item_type)
   end
 end

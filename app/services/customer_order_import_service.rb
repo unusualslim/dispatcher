@@ -169,7 +169,7 @@ class CustomerOrderImportService
 
     line_items.each do |item|
       product   = Product.find_by(id: item[:product_code])
-      item_type = product && !product.is_raw_material? ? 'production' : 'buy'
+      item_type = product&.order_item_type || 'buy'
       order.customer_order_products.create!(
         product_name: item[:product_code],
         product_id: product&.id,

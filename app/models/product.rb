@@ -47,6 +47,20 @@ class Product < ApplicationRecord
     active.or(where(id: keep_ids.flatten.compact))
   end
 
+  # Item types that are bought or delivered as-is, never made here.
+  NOT_PRODUCED_ITEM_TYPES = %w[fuel non_inventory].freeze
+
+  # Whether a sold line of this product goes to production planning: not raw materials, and not fuel or
+  # non-inventory items (diesel, gasoline, Freight - DEF…), which are bought or delivered as-is.
+  def produced?
+    !is_raw_material? && NOT_PRODUCED_ITEM_TYPES.exclude?(reporting_group&.item_type)
+  end
+
+  # Order line item type for this product (customer_order_products.item_type).
+  def order_item_type
+    produced? ? 'production' : 'buy'
+  end
+
   # Stock at a specific warehouse location.
   # Returns 0 if no location_product row exists for this location yet.
   def stock_at(location)

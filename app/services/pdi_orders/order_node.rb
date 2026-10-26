@@ -40,12 +40,22 @@ module PdiOrders
 
     def lines
       @node.xpath(LINES).map do |line|
-        Line.new(product_code: text('OrderedProductID', line), quantity: text('OrderedQuantity', line).to_d.round,
+        Line.new(product_code: product_code(line), quantity: text('OrderedQuantity', line).to_d.round,
                  price: text('UnitPrice', line)&.to_d)
       end
     end
 
     private
+
+    # Fuel lines name the product ordered and the one actually loaded: ordered 10011219 "Bulk DEF" is
+    # loaded as 901. The loaded (purchased) product is the real one, except on blends, where it's the
+    # blend ID (ordered 901 → purchased 901B).
+    def product_code(line)
+      purchased = text('PurchasedProductID', line)
+      return text('OrderedProductID', line) if purchased.nil? || text('ProductBlendID', line)
+
+      purchased
+    end
 
     def text(path, node = @node)
       node.at_xpath(path)&.text&.strip.presence
