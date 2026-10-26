@@ -89,6 +89,7 @@ module Mrp
 
     test 'skips dropship lines, lists lines without a warehouse, and dates undated orders by the customer' do
       order(@raw, 500, date: @today + 2, warehouse: nil, site: '7777')
+      order(@raw, 300, date: @today + 2, warehouse: nil, site: '1331')
       order(@raw, 7, date: @today + 2, warehouse: nil)
       order(@raw, 30, order_date: @today - 1)
       late = PurchaseOrder.create!(vendor: @vendor, status: 'submitted', expected_delivery_date: @today - 2,
@@ -99,7 +100,7 @@ module Mrp
       events = result.plans[['MRP-RAW', @main.id]].rows.map(&:event)
 
       assert_equal([-7], result.unassigned.select { |p, _| p == @raw }.map { |_, e| e.qty.to_i })
-      assert_not events.any? { |e| e.qty == -500 }, 'dropship never touches our stock'
+      assert_not events.any? { |e| [-500, -300].include?(e.qty) }, 'dropship never touches our stock'
       assert_equal @today + 3, events.find { |e| e.qty == -30 }.date, 'order date + customer lead time (4 days)'
       purchase = events.find { |e| e.kind == :purchase }
       assert_equal [[:late], @today - 2], [purchase.flags, purchase.original_date]

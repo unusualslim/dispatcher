@@ -191,7 +191,7 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
 - `Mrp::Plan` (app/services/mrp/, page /mrp) — time-phased MRP **per warehouse**: per planned product
   (warehouse items, raw materials and anything in their BOMs; not fuel) and warehouse it projects stock day by day
   (`LocationProduct` on hand + open POs + open production − open customer order lines (not quotes/pending/
-  released for billing/dropship site 7777) − production components), finds when it runs out / drops below safety
+  released for billing/dropship sites 7777, 1331 Atmus) − production components), finds when it runs out / drops below safety
   stock (held at the product's main warehouse) and which orders cause it, then suggests a transfer of another
   warehouse's spare stock (`Mrp::Transfers`), then orders (need date − lead time) or production (− production
   days, passing component demand down at the same warehouse). POs / production orders / order lines with no

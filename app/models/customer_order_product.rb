@@ -8,7 +8,8 @@ class CustomerOrderProduct < ApplicationRecord
   belongs_to :location, optional: true
 
   # PDI sites that ship straight from a third party: no stock of ours moves, so MRP leaves them out.
-  DROPSHIP_SITES = %w[7777].freeze
+  # 7777 Dropship - Third Party WH, 1331 Atmus.
+  DROPSHIP_SITES = %w[7777 1331].freeze
 
   def dropship? = DROPSHIP_SITES.include?(warehouse)
 
