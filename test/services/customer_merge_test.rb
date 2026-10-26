@@ -55,6 +55,28 @@ class CustomerMergeTest < ActiveSupport::TestCase
     assert_match(/merge the other way/, error.message)
   end
 
+  test 'pairs store-numbered locations with the PDI ship-to of that number' do
+    ta = Customer.create!(name: 'TA', preferred_contact_method: 'no preference')
+    cartersville = Location.create!(company_name: '146 Cartersville TA', address: '981 Cassville White Rd',
+                                    city: 'Cartersville', location_category_id: 2)
+    columbia = Location.create!(company_name: 'TA 238 Columbia Petro', city: 'Columbia', location_category_id: 2)
+    elsewhere = Location.create!(company_name: 'TA 238 Annex', city: 'Augusta', location_category_id: 2)
+    ta.locations << [cartersville, columbia, elsewhere]
+    centers = Customer.create!(name: 'Travel Centers of America', pdi_customer_id: '2515',
+                               preferred_contact_method: 'no preference')
+    { '146' => %w[TA-Cartersville Cartersville],
+      '238' => ['TA-Columbia Petro 238', 'Columbia'] }.each do |id, (name, city)|
+      CustomerLocation.create!(customer: centers, pdi_location_id: id,
+                               location: Location.create!(company_name: name, city: city,
+                                                          address: "Travel Center ##{id}",
+                                                          location_category_id: 2))
+    end
+
+    pairs = CustomerMerge.new(ta, centers).locations.pairs
+    assert_equal [['146 Cartersville TA', 'TA-Cartersville'], ['TA 238 Columbia Petro', 'TA-Columbia Petro 238']],
+                 pairs.map { |p| [p.old_location.company_name, p.new_location.company_name] }.sort
+  end
+
   test 'drops empty phone numbers and ones the PDI customer already has' do
     @app.phone_numbers.create!(number: '')
     @app.phone_numbers.create!(number: '(229) 555-0199')

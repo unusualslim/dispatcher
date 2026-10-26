@@ -1,9 +1,11 @@
 class CustomerMerge
   # The source's delivery locations during a merge. The FTP order import named them "35 - Quik Trip
-  # Warehouse" (35 = PDI ship-to number); when the target already has PDI ship-to 35 (a location the
-  # master data import created), the two are folded together: the source's location is kept (it has
-  # the history), takes the PDI link and any blank address fields, and the import's copy is deleted
-  # if nothing else uses it. Other locations simply move to the target.
+  # Warehouse" (35 = PDI ship-to number), and store chains are often named by store number ("146
+  # Cartersville TA", "TA #201"), which is also PDI's ship-to number. When the target already has that
+  # PDI ship-to (a location the master data import created or linked), the two are folded together:
+  # the source's location is kept (it has the history), takes the PDI link and any blank address
+  # fields, the target's orders there move to it, and the other copy is deleted if nothing else uses
+  # it. Other locations simply move to the target.
   class LocationPairs
     Pair = Struct.new(:old_link, :new_link, keyword_init: true) do
       def old_location = old_link.location
@@ -62,10 +64,18 @@ class CustomerMerge
     def same_ship_to?(location, target_link)
       return false if location.id == target_link.location_id
 
-      prefix = location.company_name.to_s[/\A\s*(\d+)\s*-/, 1]
-      return prefix == target_link.pdi_location_id if prefix
+      name = location.company_name.to_s
+      leading = name[/\A\s*#?(\d+)(?:\s*-|\s)/, 1]
+      return leading == target_link.pdi_location_id if leading
+      return true if numbered_in_same_city?(location, target_link)
 
-      normalize(location.company_name) == normalize(target_link.location.company_name)
+      normalize(name) == normalize(target_link.location.company_name)
+    end
+
+    # "TA 238 Columbia Petro" / "TA #201": a number later in the name counts only in the same city.
+    def numbered_in_same_city?(location, target_link)
+      location.company_name.to_s.scan(/\d+/).include?(target_link.pdi_location_id) &&
+        location.city.to_s.strip.casecmp?(target_link.location.city.to_s.strip)
     end
 
     def normalize(name)
