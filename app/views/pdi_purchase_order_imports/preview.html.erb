@@ -6,6 +6,9 @@
         <% if @create_count > 0 %>
           <span class="text-success fw-semibold"><%= @create_count %> purchase orders to create</span>
         <% end %>
+        <% if @update_count > 0 %>
+          &nbsp;&middot;&nbsp;<span class="text-primary fw-semibold"><%= @update_count %> to update</span>
+        <% end %>
         <% if @skip_exists_count > 0 %>
           &nbsp;&middot;&nbsp;<span class="text-muted"><%= @skip_exists_count %> already imported</span>
         <% end %>
@@ -66,9 +69,17 @@
       </div>
     <% end %>
 
+    <% if @update_count > 0 %>
+      <div class="alert alert-primary">
+        <i class="bi bi-arrow-repeat"></i> <strong><%= @update_count %> purchase orders</strong> already imported but not yet in
+        inventory will be updated from PDI (status, dates, warehouse, lines). Those PDI has received since inventory
+        tracking started go into inventory at their line costs.
+      </div>
+    <% end %>
+
     <% if @skip_exists_count > 0 %>
       <div class="alert alert-secondary">
-        <i class="bi bi-check-circle"></i> <strong><%= @skip_exists_count %> purchase orders</strong> already imported — will be skipped.
+        <i class="bi bi-check-circle"></i> <strong><%= @skip_exists_count %> purchase orders</strong> already imported and in inventory (or voided) — will be skipped.
       </div>
     <% end %>
 

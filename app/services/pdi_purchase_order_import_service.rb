@@ -69,7 +69,7 @@ class PdiPurchaseOrderImportService
     'Inventoried' => 'received'
   }.freeze
 
-  Result = Struct.new(:created, :skipped_exists, :skipped_no_vendor, :errors, keyword_init: true)
+  Result = Struct.new(:created, :updated, :received, :skipped_exists, :skipped_no_vendor, :errors, keyword_init: true)
 
   PreviewRow = Struct.new(
     :po_key, :po_no, :vendor_name, :status, :order_date, :delivery_date,
@@ -87,19 +87,13 @@ class PdiPurchaseOrderImportService
 
   def preview
     batches = parse_batches
-    po_nos = batches.values.map { |rows| null_safe(rows.first[COL_PO_NO]) }.compact
-    existing_refs = PurchaseOrder.where(pdi_reference: po_nos).pluck(:pdi_reference).to_set
+    load_existing(batches)
 
     batches.map do |po_key, rows|
       first = rows.first
       po_no = null_safe(first[COL_PO_NO])
       vendor_name = null_safe(first[COL_VENDOR_NAME])
-
-      action = if po_no && existing_refs.include?(po_no)
-                 :skip_exists
-               else
-                 :create
-               end
+      action = preview_action(first)
 
       PreviewRow.new(
         po_key: po_key,
@@ -116,94 +110,161 @@ class PdiPurchaseOrderImportService
     end
   end
 
+  # :create, :update or :skip_exists (in inventory, voided, history, or a PO number taken by another PDI PO).
+  def preview_action(first)
+    po = match(first)
+    return history?(first) ? :skip_exists : :create if po.nil?
+
+    refreshable?(po) ? :update : :skip_exists
+  rescue ArgumentError
+    :skip_exists
+  end
+
+  # Creates new PDI POs and keeps ones not yet in inventory in step with PDI (status, dates, warehouse,
+  # lines). Received POs (Invoiced / Inventoried) go into inventory at their line costs when received on or
+  # after the inventory start date at one of our warehouses; older or dropship POs are only marked posted
+  # (PDI's inventory already has them). POs match on PDI's key, else the PO number.
   def run
-    result = Result.new(created: 0, skipped_exists: 0, skipped_no_vendor: 0, errors: [])
+    result = Result.new(created: 0, updated: 0, received: 0, skipped_exists: 0, skipped_no_vendor: 0, errors: [])
     batches = parse_batches
-    po_nos = batches.values.map { |rows| null_safe(rows.first[COL_PO_NO]) }.compact
-    existing_refs = PurchaseOrder.where(pdi_reference: po_nos).pluck(:pdi_reference).to_set
-    vendors_by_pdi_id = Vendor.all.index_by { |v| v.id.to_s }
-    locations_by_site = Location.all.index_by { |l| l.pdi_site_code.to_s }
+    load_existing(batches)
+    @vendors_by_pdi_id = Vendor.all.index_by { |v| v.id.to_s }
+    @locations_by_site = Location.all.index_by { |l| l.pdi_site_code.to_s }
 
     batches.each do |po_key, rows|
-      first = rows.first
-      po_no = null_safe(first[COL_PO_NO])
-
-      if po_no && existing_refs.include?(po_no)
-        result.skipped_exists += 1
-        next
-      end
-
-      pdi_vendor_id = null_safe(first[COL_VENDOR_ID])
-      vendor_name   = null_safe(first[COL_VENDOR_NAME])
-
-      # Find or create vendor
-      vendor = vendors_by_pdi_id[pdi_vendor_id]
-      unless vendor
-        vendor = Vendor.create!(id: pdi_vendor_id, name: vendor_name)
-        vendors_by_pdi_id[pdi_vendor_id] = vendor
-      end
-
-      pdi_status     = null_safe(first[COL_STATUS]) || 'Entered'
-      our_status     = STATUS_MAP[pdi_status] || 'draft'
-      order_date     = parse_date(first[COL_ORDER_DATE])
-      delivery_date  = parse_date(first[COL_DELIVERY_DATE])
-      business_date  = parse_date(first[COL_BUSINESS_DATE])
-      posted_inv_dt  = parse_datetime(first[COL_POSTED_INV_DT])
-      received_at    = parse_datetime(first[COL_POSTED_INVC_DT]) || posted_inv_dt
-      freight_amount = null_safe_decimal(first[COL_FREIGHT_ON_INVC]) || 0
-      other_charges  = null_safe_decimal(first[COL_OTHER_CHARGES]) || 0
-      po_no          = null_safe(first[COL_PO_NO])
-      comments       = null_safe(first[COL_HEADER_COMMENTS])
-      wh_site_id     = null_safe(first[COL_WH_SITE_ID])
-      location       = locations_by_site[wh_site_id] if wh_site_id
-
-      notes = "[PDI Import] #{po_no}"
-      notes += " | #{pdi_status}" if pdi_status
-      notes += " | #{comments}" if comments
-
-      po = PurchaseOrder.new(
-        vendor: vendor,
-        location: location,
-        pdi_reference: po_no,
-        status: our_status,
-        trigger_type: 'pdi_import',
-        expected_delivery_date: delivery_date,
-        submitted_at: order_date ? order_date.to_time : nil,
-        received_at: %w[received].include?(our_status) ? received_at : nil,
-        posted_at: %w[Invoiced
-                      Inventoried].include?(pdi_status) ? (posted_inv_dt || received_at || business_date&.to_time) : nil,
-        freight_amount: freight_amount,
-        other_charges: other_charges,
-        notes: notes
-      )
-
-      # Build line items — deduplicate by line key
-      line_rows = rows.uniq { |r| r[COL_LINE_KEY] }
-      line_rows.each do |row|
-        prod_id   = null_safe(row[COL_PROD_ID])
-        prod_name = null_safe(row[COL_PROD_DESC])
-        pkg_code  = null_safe(row[COL_PURCH_PKG])
-        quantity  = null_safe_decimal(row[COL_INVENT_QTY]) || null_safe_decimal(row[COL_PURCH_QTY]) || 0
-        unit_cost = null_safe_decimal(row[COL_UNIT_COST]) || 0
-
-        po.line_items.build(
-          product_id: prod_id,
-          product_name: prod_name,
-          quantity: quantity,
-          unit_cost: unit_cost,
-          package_code: pkg_code
-        )
-      end
-
-      po.save!(validate: false) # Skip freight_terms validation for historical data
-      # Override created_at to business date
-      po.update_column(:created_at, business_date.to_time) if business_date
-      result.created += 1
+      import_po(rows, result)
     rescue StandardError => e
       result.errors << "PO #{po_key} (#{null_safe(rows.first[COL_PO_NO])}): #{e.message}"
     end
 
     result
+  end
+
+  def import_po(rows, result)
+    first = rows.first
+    po = match(first)
+    return result.skipped_exists += 1 if po.nil? && history?(first)
+    return skip_existing(po, first, result) if po && !refreshable?(po)
+
+    action = po ? :updated : :created
+    po ||= PurchaseOrder.new
+    PurchaseOrder.transaction(requires_new: true) do
+      save_po!(po, rows)
+      result.received += 1 if receive!(po, null_safe(first[COL_STATUS]))
+    end
+    remember(po)
+    result[action] += 1
+  end
+
+  def load_existing(batches)
+    numbers = batches.values.filter_map { |rows| null_safe(rows.first[COL_PO_NO]) }
+    found = PurchaseOrder.where(pdi_po_key: batches.keys).or(PurchaseOrder.where(pdi_reference: numbers)).to_a
+    @by_key = found.select(&:pdi_po_key).index_by(&:pdi_po_key)
+    @by_number = found.select(&:pdi_reference).index_by(&:pdi_reference)
+  end
+
+  # The app's PO for this PDI PO: by key, else by number. PO numbers are unique in the app, so a number
+  # already taken by another PDI PO can't be imported.
+  def match(first)
+    key = first[COL_PO_KEY].to_s.strip
+    return @by_key[key] if @by_key[key]
+
+    po = @by_number[null_safe(first[COL_PO_NO])]
+    raise ArgumentError, 'PO number is used by another PDI PO; skipped' if po&.pdi_po_key && po.pdi_po_key != key
+
+    po
+  end
+
+  def remember(order)
+    @by_key[order.pdi_po_key] = order
+    @by_number[order.pdi_reference] ||= order if order.pdi_reference
+  end
+
+  # Numberless POs from before keys were stored can't be matched; once received before tracking began
+  # there's nothing to bring in, so they aren't imported again.
+  def history?(first)
+    return false if null_safe(first[COL_PO_NO]) || STATUS_MAP[null_safe(first[COL_STATUS])] != 'received'
+
+    start = InventoryRevaluation.start_date
+    start.nil? || received_date(first).nil? || received_date(first).to_date < start
+  end
+
+  # Already in inventory (or voided): left as is, apart from recording PDI's key.
+  def skip_existing(order, first, result)
+    order.update_column(:pdi_po_key, first[COL_PO_KEY].to_s.strip) if order.pdi_po_key.nil?
+    remember(order)
+    result.skipped_exists += 1
+  end
+
+  # PDI POs the app hasn't put into inventory or voided.
+  def refreshable?(order)
+    order.from_pdi? && !order.posted? && !order.voided?
+  end
+
+  def save_po!(order, rows)
+    first = rows.first
+    order.assign_attributes(po_attributes(first))
+    order.line_items.destroy_all if order.persisted?
+    rows.uniq { |r| r[COL_LINE_KEY] }.each { |row| order.line_items.build(line_attributes(row)) }
+    order.save!(validate: false) # Skip freight_terms validation for historical data
+    business_date = parse_date(first[COL_BUSINESS_DATE])
+    order.update_column(:created_at, business_date.to_time) if business_date
+  end
+
+  def po_attributes(first)
+    pdi_status = null_safe(first[COL_STATUS]) || 'Entered'
+    our_status = STATUS_MAP[pdi_status] || 'draft'
+    { vendor: vendor_for(first), location: location_for(null_safe(first[COL_WH_SITE_ID])),
+      pdi_reference: null_safe(first[COL_PO_NO]), pdi_po_key: first[COL_PO_KEY].to_s.strip, status: our_status,
+      trigger_type: 'pdi_import',
+      expected_delivery_date: parse_date(first[COL_DELIVERY_DATE]),
+      submitted_at: parse_date(first[COL_ORDER_DATE])&.to_time,
+      received_at: (received_date(first) if our_status == 'received'),
+      freight_amount: null_safe_decimal(first[COL_FREIGHT_ON_INVC]) || 0,
+      other_charges: null_safe_decimal(first[COL_OTHER_CHARGES]) || 0, notes: notes_for(first, pdi_status) }
+  end
+
+  # Invoice posting date, else inventory posting date, else the business date (Inventoried, not yet invoiced).
+  def received_date(first)
+    parse_datetime(first[COL_POSTED_INVC_DT]) || parse_datetime(first[COL_POSTED_INV_DT]) ||
+      parse_date(first[COL_BUSINESS_DATE])&.to_time
+  end
+
+  def notes_for(first, pdi_status)
+    comments = null_safe(first[COL_HEADER_COMMENTS])
+    ["[PDI Import] #{null_safe(first[COL_PO_NO])}", pdi_status, comments].compact.join(' | ')
+  end
+
+  # PDI sends "110"; locations store "0110".
+  def location_for(site)
+    @locations_by_site[site.to_s] || @locations_by_site[site.to_s.rjust(4, '0')] if site
+  end
+
+  def vendor_for(first)
+    pdi_vendor_id = null_safe(first[COL_VENDOR_ID])
+    @vendors_by_pdi_id[pdi_vendor_id] ||= Vendor.create!(id: pdi_vendor_id, name: null_safe(first[COL_VENDOR_NAME]))
+  end
+
+  def line_attributes(row)
+    { product_id: null_safe(row[COL_PROD_ID]), product_name: null_safe(row[COL_PROD_DESC]),
+      quantity: null_safe_decimal(row[COL_INVENT_QTY]) || null_safe_decimal(row[COL_PURCH_QTY]) || 0,
+      unit_cost: null_safe_decimal(row[COL_UNIT_COST]) || 0, package_code: null_safe(row[COL_PURCH_PKG]) }
+  end
+
+  # Received at one of our warehouses since costed tracking began.
+  def received_into_tracking?(order)
+    start = InventoryRevaluation.start_date
+    start && order.location && order.received_at && order.received_at.to_date >= start
+  end
+
+  # True when the PO went into inventory at cost.
+  def receive!(order, pdi_status)
+    return false unless %w[Invoiced Inventoried].include?(pdi_status)
+
+    return order.post_to_inventory!(nil) if received_into_tracking?(order)
+
+    order.update_column(:posted_at, order.received_at || Time.current)
+    false
   end
 
   private

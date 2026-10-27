@@ -28,6 +28,7 @@ class PdiPurchaseOrderImportsController < ApplicationController
 
     @rows = PdiPurchaseOrderImportService.new(tmp.path).preview
     @create_count = @rows.count { |r| r.action == :create }
+    @update_count = @rows.count { |r| r.action == :update }
     @skip_exists_count = @rows.count { |r| r.action == :skip_exists }
   end
 
@@ -54,11 +55,13 @@ class PdiPurchaseOrderImportsController < ApplicationController
         status: 'success',
         completed_at: Time.current,
         records_created: result.created,
+        records_updated: result.updated,
         records_skipped: result.skipped_exists + result.skipped_no_vendor,
         warnings: result.errors.any? ? result.errors.join("\n") : nil
       )
 
-      summary = "Import complete — #{result.created} purchase orders created."
+      summary = "Import complete — #{result.created} purchase orders created, #{result.updated} updated."
+      summary += " #{result.received} received into inventory at cost." if result.received.positive?
       summary += " #{result.skipped_exists} already imported." if result.skipped_exists > 0
       summary += " #{result.errors.count} warnings." if result.errors.any?
 

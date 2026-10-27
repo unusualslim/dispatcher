@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_27_140000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_27_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -615,6 +615,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_27_140000) do
     t.datetime "voided_at"
     t.bigint "voided_by_id"
     t.text "void_reason"
+    t.string "pdi_po_key"
+    t.index ["pdi_po_key"], name: "index_purchase_orders_on_pdi_po_key", unique: true
     t.index ["pdi_reference"], name: "index_purchase_orders_on_pdi_reference", unique: true
     t.index ["status"], name: "index_purchase_orders_on_status"
     t.index ["trigger_type"], name: "index_purchase_orders_on_trigger_type"

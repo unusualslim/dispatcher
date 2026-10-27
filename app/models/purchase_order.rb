@@ -27,10 +27,20 @@ class PurchaseOrder < ApplicationRecord
     errors.add(:freight_terms, 'is not an allowed freight term for this vendor') unless allowed.include?(freight_terms)
   end
 
-  after_update_commit :enqueue_pdi_export, if: :submitted?
+  # POs that came from PDI are already there; only app-entered POs are sent.
+  after_update_commit :enqueue_pdi_export, if: :submitted?, unless: :from_pdi?
 
   def submitted?
     status == 'submitted' && saved_change_to_status?
+  end
+
+  def from_pdi?
+    trigger_type == 'pdi_import'
+  end
+
+  # Stock goes to a warehouse; dropship POs (no warehouse) never enter inventory.
+  def postable?
+    status == 'received' && !posted? && location.present?
   end
 
   scope :pending_approval, -> { where(status: 'pending_approval') }
@@ -78,23 +88,28 @@ class PurchaseOrder < ApplicationRecord
 
   def post_to_inventory!(user)
     return false if posted?
+    raise ArgumentError, 'This PO has no warehouse (dropship), so it does not go into inventory' unless location
 
     transaction do
-      line_items.includes(:product).each do |line|
-        next unless line.product.present? && line.quantity.to_d > 0
-
-        InventoryPosting.post!(
-          product: line.product, location: location, quantity: line.quantity, movement_type: 'receipt',
-          unit_cost: line.unit_cost, source: self, reference: pdi_reference || id.to_s,
-          notes: "PO received from #{vendor.name}", user: user, occurred_on: received_at&.to_date
-        )
-      end
-      update!(posted_at: Time.current)
+      line_items.includes(:product).each { |line| post_line!(line, user) }
+      # update_columns: PDI history can fail validations.
+      update_columns(posted_at: Time.current, updated_at: Time.current)
     end
     true
   end
 
   private
+
+  # A receipt at the line's cost, dated when the PO was received.
+  def post_line!(line, user)
+    return unless line.product.present? && line.quantity.to_d.positive?
+
+    InventoryPosting.post!(
+      product: line.product, location: location, quantity: line.quantity, movement_type: 'receipt',
+      unit_cost: line.unit_cost, source: self, reference: pdi_reference || id.to_s,
+      notes: "PO received from #{vendor.name}", user: user, occurred_on: received_at&.to_date
+    )
+  end
 
   def enqueue_pdi_export
     PdiExportJob.perform_later(id)

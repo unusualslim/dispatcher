@@ -207,6 +207,13 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
   `inventory_tracking_start_date`; sales before it are ignored), revalues on standard-cost change and method change.
 - /inventory_valuation (`InventoryValuation`): value as of a date (today's balance minus later movements), movements
   by type, PPV, PDI sync differences (how much movement the app missed).
+- **PDI Purchase Orders import** (`PdiPurchaseOrderImportService`, manual on Data Imports for now — the user is working on
+  automating the PDI SQL export): 56-column CSV, no header, one row per PO line (col 0 PDI PO key, 1 PO number, 7/34
+  site, 9 status). Matches on `purchase_orders.pdi_po_key`, else PO number (numbers aren't unique in PDI: a taken number is
+  skipped with a warning; numberless POs received before tracking aren't re-imported). Refreshes PDI POs not yet posted;
+  Invoiced/Inventoried POs received on/after the inventory start date at one of our warehouses post receipts at line
+  cost, older/dropship ones are only stamped `posted_at`. POs with no warehouse (dropship 7777/1331) can't be posted to
+  inventory, and PDI-imported POs are never sent back to PDI by `PdiExportJob`.
 - **Inventory GL** (`InventoryGlPosting` + `InventoryJournal`, run by the scheduled `PdiGlExportJob`): for groups with
   `post_inventory_gl`, receipts (Dr Inventory at book, Dr/Cr PPV, Cr received-not-invoiced at actual), sales (Dr COGS),
   adjustments + PDI syncs (vs inventory adjustments) and revaluations post as FPST entries, **one per source document

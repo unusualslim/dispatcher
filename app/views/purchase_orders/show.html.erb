@@ -204,7 +204,10 @@
             method: :patch, class: 'btn btn-primary',
             data: { confirm: 'Confirm physical receipt of this order?' } %>
     <% end %>
-    <% if @purchase_order.status == 'received' && !@purchase_order.posted? %>
+    <% if @purchase_order.status == 'received' && !@purchase_order.posted? && !@purchase_order.postable? %>
+      <span class="text-muted small align-self-center">No warehouse (dropship): not posted to inventory</span>
+    <% end %>
+    <% if @purchase_order.postable? %>
       <%= button_to 'Post to Inventory', post_to_inventory_purchase_order_path(@purchase_order),
             method: :patch, class: 'btn btn-success',
             data: { confirm: 'Post this PO to inventory? This will update stock levels for all matched products.' } %>
