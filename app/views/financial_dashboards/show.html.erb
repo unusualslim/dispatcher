@@ -1,0 +1,209 @@
+<% d = @dashboard %>
+<% r = d.ranges %>
+<% sales = d.sales %>
+<% ops = d.operations %>
+<% snap = d.snapshot %>
+
+<div class="container-fluid px-4 py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+    <div>
+      <h1 class="mb-1">Financial Dashboard</h1>
+      <div class="text-muted small">
+        <strong><%= dashboard_range(r[:current]) %></strong><%= ' (month to date)' if d.month_to_date? %>
+        compared with <%= dashboard_range(r[:prior_month]) %> and <%= dashboard_range(r[:last_year]) %>
+      </div>
+    </div>
+    <%= form_with url: financial_dashboard_path, method: :get, local: true, class: 'd-flex gap-2 align-items-center' do %>
+      <%= select_tag :month, options_for_select(@months.map { |m| [m.strftime('%B %Y'), m.strftime('%Y-%m')] }, d.month.strftime('%Y-%m')),
+                     class: 'form-select form-select-sm', onchange: 'this.form.submit()', 'aria-label': 'Month' %>
+    <% end %>
+  </div>
+
+  <% if snap.awaiting_invoice_date.positive? %>
+    <div class="alert alert-warning small py-2">
+      <i class="bi bi-exclamation-triangle me-1"></i>
+      <strong><%= number_with_delimiter(snap.awaiting_invoice_date) %> billed PDI orders</strong> have no invoice date yet, so
+      they aren't in sales or delivery time. The daily PDI Order Sync (orders.xls) fills them in.
+    </div>
+  <% end %>
+
+  <%# KPI tiles %>
+  <% gm = sales.transform_values(&:gross_margin) %>
+  <% tiles = [
+       ['Net sales', number_to_currency(sales[:current].net_sales, precision: 0),
+        sales.transform_values(&:net_sales), {}],
+       ['Gross margin', gm[:current] ? number_to_currency(gm[:current], precision: 0) : nil, gm, {}],
+       ['Orders invoiced', number_with_delimiter(sales[:current].order_count),
+        sales.transform_values { |s| s.order_count.to_d }, {}],
+       ['Avg delivery time', ops[:current].average_delivery_days&.then { |v| "#{number_with_precision(v, precision: 1)} days" },
+        ops.transform_values(&:average_delivery_days), { kind: :days, higher_is_better: false }],
+       ['On time', ops[:current].on_time_share&.then { |v| number_to_percentage(v * 100, precision: 0) },
+        ops.transform_values(&:on_time_share), { kind: :points }]
+     ] %>
+  <div class="row g-3 mb-4">
+    <% tiles.each do |label, value, values, opts| %>
+      <div class="col-6 col-md-4 col-xl-2">
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <div class="text-muted small"><%= label %></div>
+            <div class="fs-4 fw-semibold"><%= value || tag.span('—', class: 'text-muted') %></div>
+            <% if value.nil? && label == 'Gross margin' %>
+              <div class="small text-muted">Starts once inventory is tracked at cost (Inventory Valuation)</div>
+            <% else %>
+              <div class="small">vs prior month <%= dashboard_change(values[:current], values[:prior_month], **opts) %></div>
+              <div class="small">vs last year <%= dashboard_change(values[:current], values[:last_year], **opts) %></div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <div class="text-muted small">Outstanding orders</div>
+          <div class="fs-4 fw-semibold"><%= number_with_delimiter(snap.outstanding_orders.count) %></div>
+          <div class="small text-muted"><%= number_to_currency(snap.outstanding_value, precision: 0) %> open now</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <% row = lambda do |label, values, format: :currency, **opts| %>
+    <% fmt = lambda do |v|
+         next tag.span('—', class: 'text-muted') if v.nil?
+
+         case format
+         when :currency then number_to_currency(v, precision: 0)
+         when :days then "#{number_with_precision(v, precision: 1)} days"
+         when :percent then number_to_percentage(v * 100, precision: 0)
+         when :ratio then number_to_percentage(v * 100, precision: 0)
+         else number_with_delimiter(v.to_d.round(format == :decimal ? 1 : 0))
+         end
+       end %>
+    <tr>
+      <td><%= label %></td>
+      <td class="text-end fw-semibold"><%= fmt.call(values[:current]) %></td>
+      <td class="text-end"><%= fmt.call(values[:prior_month]) %></td>
+      <td class="text-end small"><%= dashboard_change(values[:current], values[:prior_month], **opts) %></td>
+      <td class="text-end"><%= fmt.call(values[:last_year]) %></td>
+      <td class="text-end small"><%= dashboard_change(values[:current], values[:last_year], **opts) %></td>
+    </tr>
+  <% end %>
+  <% header = capture do %>
+    <thead class="table-light">
+      <tr>
+        <th></th>
+        <th class="text-end">This period</th>
+        <th class="text-end">Prior month</th>
+        <th class="text-end">Change</th>
+        <th class="text-end">Last year</th>
+        <th class="text-end">Change</th>
+      </tr>
+    </thead>
+  <% end %>
+
+  <div class="row g-3 mb-4">
+    <div class="col-xl-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-header fw-semibold">Sales</div>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <%= header %>
+            <tbody>
+              <% FinancialDashboard::Sales::TYPES.each do |type, label| %>
+                <% values = sales.transform_values { |s| s.by_type.dig(type, 0) } %>
+                <% next if values.values.all?(&:nil?) %>
+                <%= row.call(label, values.transform_values { |v| v || 0.to_d }) %>
+              <% end %>
+              <%= row.call(tag.strong('Net sales'), sales.transform_values(&:net_sales)) %>
+              <%= row.call('Taxes (PDI estimate)', sales.transform_values(&:taxes), higher_is_better: nil) %>
+              <%= row.call(tag.strong('Total billed'), sales.transform_values(&:total)) %>
+              <%= row.call('Fuel gallons', sales.transform_values(&:gallons), format: :number) %>
+              <%= row.call('Average order', sales.transform_values(&:average_order)) %>
+              <%= row.call('Cost of sales', sales.transform_values(&:cost_of_sales), higher_is_better: nil) %>
+              <%= row.call('New customers', sales.transform_values { |s| s.new_customers.to_d }, format: :number) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-header fw-semibold">Operations</div>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <%= header %>
+            <tbody>
+              <%= row.call('Avg delivery time (order → invoice)', ops.transform_values(&:average_delivery_days),
+                           format: :days, kind: :days, higher_is_better: false) %>
+              <%= row.call('Invoiced on time', ops.transform_values(&:on_time_share), format: :percent, kind: :points) %>
+              <%= row.call('Production orders completed', ops.transform_values { |o| o.completed_orders.count.to_d }, format: :number) %>
+              <%= row.call('Quantity produced', ops.transform_values(&:quantity_produced), format: :number) %>
+              <%= row.call('Labor efficiency', ops.transform_values(&:labor_efficiency), format: :ratio, kind: :points) %>
+              <%= row.call('Quality issues (out of range)', ops.transform_values { |o| o.quality_issues.to_d },
+                           format: :number, higher_is_better: false) %>
+              <%= row.call('Pricing exceptions', ops.transform_values { |o| o.price_exceptions.to_d },
+                           format: :number, higher_is_better: false) %>
+              <%= row.call('Purchase price variance', ops.transform_values(&:purchase_price_variance), higher_is_better: false) %>
+              <%= row.call('PO spend (received)', ops.transform_values(&:po_spend), higher_is_better: nil) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-xl-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-header fw-semibold">Right now</div>
+        <ul class="list-group list-group-flush">
+          <% [
+               ['Open pricing exceptions', number_with_delimiter(snap.open_price_exceptions), price_exceptions_path(filter: 'all')],
+               ['Quality issues to review', number_with_delimiter(snap.unreviewed_quality_issues), quality_exceptions_path],
+               ['Customers on credit hold or over limit', number_with_delimiter(snap.credit_holds), nil],
+               ['Inventory value', snap.inventory_value ? number_to_currency(snap.inventory_value, precision: 0) : 'Not tracked yet', inventory_valuation_path],
+               ["Open purchase orders (#{snap.open_purchase_orders.count})", number_to_currency(snap.open_po_value, precision: 0), purchase_orders_path],
+               ['Billed orders awaiting invoice date', number_with_delimiter(snap.awaiting_invoice_date), nil]
+             ].each do |label, value, path| %>
+            <li class="list-group-item d-flex justify-content-between">
+              <span><%= path ? link_to(label, path, class: 'text-decoration-none') : label %></span>
+              <span class="fw-semibold"><%= value %></span>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    </div>
+    <div class="col-xl-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-header fw-semibold">Top customers this period</div>
+        <% top = sales[:current].top_customers %>
+        <% if top.empty? %>
+          <div class="card-body text-muted small">No invoiced sales in this period.</div>
+        <% else %>
+          <table class="table table-sm mb-0">
+            <tbody>
+              <% top.each do |customer, net| %>
+                <tr>
+                  <td><%= customer ? link_to(customer.name, customer, class: 'text-decoration-none') : 'No customer (own sites)' %></td>
+                  <td class="text-end"><%= number_to_currency(net, precision: 0) %></td>
+                  <td class="text-end text-muted small" style="width: 70px;">
+                    <%= number_to_percentage(net / sales[:current].net_sales * 100, precision: 0) if sales[:current].net_sales.positive? %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <p class="text-muted small" style="max-width: 900px;">
+    Sales are order lines on orders invoiced in the period (by invoice date), at PDI's price × shipped quantity, grouped by the
+    product's reporting group. Taxes are PDI's per-unit estimate and only appear on orders synced from the PDI order API.
+    Delivery time runs from the order date to the invoice date; on time means invoiced by the required delivery date.
+    Gross margin and cost of sales come from inventory costing and start once opening balances are set.
+  </p>
+</div>

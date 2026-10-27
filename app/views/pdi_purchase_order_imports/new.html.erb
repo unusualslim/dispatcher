@@ -29,8 +29,10 @@
         <li>Creates purchase orders with line items, vendor, location, costs, and freight</li>
         <li>PDI status mapping: Entered → Draft, Ordered → Submitted, Invoiced/Inventoried → Received</li>
         <li>Creates missing vendors automatically from the PDI data</li>
-        <li>Does <strong>not</strong> adjust stock levels — history only</li>
-        <li>Safe to run multiple times — existing POs are skipped by PDI reference</li>
+        <li>Updates POs already imported that aren't in inventory yet (matched on PDI's PO key)</li>
+        <li>POs received on or after the inventory start date at one of our warehouses go into inventory at their line costs;
+            older and dropship POs are only marked posted</li>
+        <li>Safe to run multiple times</li>
       </ul>
     </div>
   </div>

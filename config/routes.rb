@@ -206,6 +206,7 @@ Rails.application.routes.draw do
   end
   resources :inventory_adjustments, only: %i[new create]
   resources :inventory_transactions, only: [:index]
+  resource :financial_dashboard, only: [:show]
   resource :inventory_valuation, only: [:show] do
     post :opening
   end
@@ -231,6 +232,11 @@ Rails.application.routes.draw do
   get 'pdi_master_data_import/download/:log_id', to: 'pdi_master_data_imports#download',
                                                  as: :download_pdi_master_data_import
 
+  resource :pdi_invoice_date_import, only: %i[new create] do
+    post :preview, on: :collection
+  end
+  get 'pdi_invoice_date_import/download/:log_id', to: 'pdi_invoice_date_imports#download',
+                                                  as: :download_pdi_invoice_date_import
   resource :pdi_purchase_order_import, only: %i[new create] do
     post :preview, on: :collection
   end

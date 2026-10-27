@@ -1,0 +1,41 @@
+<div class="container mt-4" style="max-width: 680px;">
+  <h1>Import Invoice Dates from PDI</h1>
+  <p class="text-muted">
+    PDI's order API doesn't send invoice dates, which sales and delivery time on the
+    <%= link_to 'Financial Dashboard', financial_dashboard_path %> depend on. Export them from PDI's database and upload them here.
+  </p>
+
+  <div class="alert alert-info">
+    <strong><%= number_with_delimiter(@missing) %> billed PDI orders</strong> have no invoice date yet.
+  </div>
+
+  <%= form_with url: preview_pdi_invoice_date_import_path, method: :post, multipart: true, data: { turbo: false } do |f| %>
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <div class="mb-3">
+          <%= f.label :file, 'Invoice dates export (.csv)', class: 'form-label fw-semibold' %>
+          <%= f.file_field :file, class: 'form-control', accept: '.csv' %>
+        </div>
+        <%= f.submit 'Preview Import', class: 'btn btn-primary' %>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="card shadow-sm mt-3">
+    <div class="card-header fw-semibold">File layout</div>
+    <div class="card-body small text-muted">
+      <ul class="mb-0">
+        <li>CSV with a header row. Columns are found by name, in any order:
+          <strong>order number</strong> (e.g. <code>OrderNo</code>, <code>OD-051224-26</code> values),
+          <strong>invoice date</strong> (e.g. <code>InvoiceDate</code>), and optionally <strong>invoice number</strong>
+          (<code>InvoiceNo</code>) and <strong>salesperson</strong>.</li>
+        <li>Dates as <code>2026-10-03</code>, <code>2026-10-03 00:00:00</code> or <code>10/03/2026</code>.</li>
+        <li>Orders are matched on the PDI order number. Orders not in the app are skipped.</li>
+        <li>The file's invoice date replaces the app's; invoice number and salesperson only when the file has them.</li>
+        <li>Safe to run again: unchanged orders are left alone.</li>
+      </ul>
+    </div>
+  </div>
+
+  <%= render 'shared/import_history', logs: @logs, download_path: :download_pdi_invoice_date_import_path %>
+</div>

@@ -57,15 +57,17 @@ module PdiOrders
 
     # A feed line (OrderNode::Line) or a saved order line, compared field by field.
     def line_key(line)
-      code = line.respond_to?(:product_code) ? line.product_code : line.product_name
-      site = line.respond_to?(:site) ? line.site : line.warehouse
-      [code.to_s, line.quantity.to_i, line.shipped_quantity&.to_d.to_s, line.price&.to_d.to_s, site.to_s]
+      feed = line.respond_to?(:product_code)
+      [(feed ? line.product_code : line.product_name).to_s, line.quantity.to_i,
+       *[line.shipped_quantity, line.price, line.tax_per_unit].map { |n| n&.to_d.to_s },
+       line.price_includes_taxes, (feed ? line.site : line.warehouse).to_s]
     end
 
     def line_attrs(line)
       product = Product.find_by(id: line.product_code)
       { product_name: line.product_code, product_id: product&.id, quantity: line.quantity,
-        shipped_quantity: line.shipped_quantity, price: line.price,
+        shipped_quantity: line.shipped_quantity, price: line.price, tax_per_unit: line.tax_per_unit,
+        price_includes_taxes: line.price_includes_taxes,
         item_type: product&.order_item_type || 'buy', warehouse: line.site, location: Warehouses.for_line(line) }
     end
   end

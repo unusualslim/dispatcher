@@ -50,6 +50,15 @@ en:
       updated: "Costing settings updated."
       invalid_accounts: "GL accounts must be Major-Sub, e.g. 1410-02: %{roles}"
       invalid_start_date: "GL posting start date must be a date."
+  pdi_invoice_date_imports:
+    preview:
+      choose_csv: "Please select a CSV file."
+    create:
+      expired: "Import session expired. Please re-upload the file."
+      done: "Invoice dates updated on %{count} orders."
+      failed: "Import failed: %{message}"
+    download:
+      unavailable: "File not available."
   inventory_valuations:
     opening:
       done: "Opening balances set. Inventory is now tracked at cost from today."

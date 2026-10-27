@@ -28,6 +28,11 @@ class ImportsController < ApplicationController
     { group: 'Regular', title: 'Warehouse Inventory', icon: 'bi-boxes',
       path: :new_inventory_import_path,
       description: 'Warehouse inventory report from PDI. Updates stock by part number and site.' },
+    { group: 'Regular', title: 'PDI Invoice Dates', icon: 'bi-calendar-check',
+      path: :new_pdi_invoice_date_import_path,
+      process: PdiInvoiceDateImportsController::PROCESS_NAME,
+      description: 'Invoice date, number and salesperson for PDI orders (CSV from a PDI query). ' \
+                   'Feeds sales and delivery time on the Financial Dashboard.' },
     { group: 'Regular', title: 'PDI Purchase Orders', icon: 'bi-bag-check',
       path: :new_pdi_purchase_order_import_path,
       process: PdiPurchaseOrderImportsController::PROCESS_NAME,

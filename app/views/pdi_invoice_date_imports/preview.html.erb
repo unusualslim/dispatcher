@@ -1,0 +1,21 @@
+<div class="container mt-4" style="max-width: 680px;">
+  <h1>Preview Invoice Date Import</h1>
+  <table class="table table-sm mt-3" style="max-width: 420px;">
+    <tbody>
+      <tr><td>Rows in the file</td><td class="text-end fw-semibold"><%= number_with_delimiter(@summary.rows) %></td></tr>
+      <tr><td>Orders found in the app</td><td class="text-end"><%= number_with_delimiter(@summary.matched) %></td></tr>
+      <tr class="table-success"><td><strong>Orders that will change</strong></td><td class="text-end fw-semibold"><%= number_with_delimiter(@summary.changes) %></td></tr>
+      <tr><td>Not in the app (skipped)</td><td class="text-end"><%= number_with_delimiter(@summary.not_found) %></td></tr>
+      <% if @summary.bad_dates.positive? %>
+        <tr class="table-warning"><td>Rows with no readable invoice date (skipped)</td><td class="text-end"><%= number_with_delimiter(@summary.bad_dates) %></td></tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <%= form_with url: pdi_invoice_date_import_path, method: :post, data: { turbo: false } do |f| %>
+    <div class="d-flex gap-2">
+      <%= f.submit 'Confirm Import', class: 'btn btn-success', disabled: @summary.changes.zero? %>
+      <%= link_to 'Cancel', new_pdi_invoice_date_import_path, class: 'btn btn-outline-secondary' %>
+    </div>
+  <% end %>
+</div>

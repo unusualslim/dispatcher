@@ -5,7 +5,8 @@ module PdiOrders
 
     # site: the PDI site the line ships from (warehouse site, or a fuel load's origin site); fuel: a FuelDetail
     # line, which has no site until a load is assigned.
-    Line = Struct.new(:product_code, :quantity, :shipped_quantity, :price, :site, :fuel, keyword_init: true)
+    Line = Struct.new(:product_code, :quantity, :shipped_quantity, :price, :tax_per_unit, :price_includes_taxes,
+                      :site, :fuel, keyword_init: true)
 
     # batch_status: the status a warehouse order was fetched with (fuel orders carry their own).
     def initialize(node, batch_status = nil)
@@ -52,7 +53,7 @@ module PdiOrders
     def lines
       @node.xpath(LINES).map do |line|
         Line.new(product_code: product_code(line), quantity: text('OrderedQuantity', line).to_d.round,
-                 shipped_quantity: shipped_quantity(line), price: text('UnitPrice', line)&.to_d,
+                 shipped_quantity: shipped_quantity(line), price: text('UnitPrice', line)&.to_d, **taxes(line),
                  site: text('WarehouseSiteID', line) || text('LoadDetail/OriginSiteID', line) || text('SiteID', line),
                  fuel: line.name == 'FuelDetail')
       end
@@ -70,6 +71,18 @@ module PdiOrders
         return nonzero(line, 'DeliveredNetQuantity')
       end
       nonzero(line, 'InvoicedQuantity') || nonzero(line, 'BillingQuantity') || nonzero(line, 'PickedQuantity')
+    end
+
+    # PDI's estimated tax per unit, and whether the unit price already includes it.
+    def taxes(line)
+      { tax_per_unit: text('EstimatedPerUnitTaxAmount', line)&.to_d,
+        price_includes_taxes: flag(line, 'UnitPriceIncludesTaxes') }
+    end
+
+    # PDI booleans: -1 true, 0 false.
+    def flag(line, path)
+      value = text(path, line)
+      value && value != '0'
     end
 
     def nonzero(line, path)

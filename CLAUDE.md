@@ -133,6 +133,10 @@ download the file, delete it from FTP, run an import service, and record a `Sync
   `AutomatedProcessesController::PROCESSES`, checks each `AutomatedProcessConfig` cron
   schedule, and runs due jobs with `perform_now`. Schedules are editable at `/automated_processes`.
   A new process starts at its `default_schedule` (blank = Off), else hourly (`config_for`).
+- **Invoice dates**: the API sends none. `PdiInvoiceDateImportService` (Data Imports → PDI Invoice Dates) takes a CSV from
+  the user's PDI SQL query (columns found by header: order number, invoice date, optional invoice # / salesperson) and
+  bulk-updates orders by `external_order_no`. Big `orders.xls` files time out (Cloudflare ~100s, roo memory), so this is
+  the route for history.
 - Manual imports (each with a preview step, and downloadable source file via SyncLog):
   customer orders, PDI products, PDI inventory, PDI purchase orders, purchase orders,
   repack batches, warehouse transactions, inventory, BOMs, min/max, vendor freight terms.
@@ -266,6 +270,10 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
 - /quality_exceptions, /ledger_entries (GL Ledger), /reporting_groups, /costing_settings
 - /customer_orders (dashboard, bulk_close), /dispatches/kanban, /warehouse/kanban
 - /pricing_rules, /automated_processes, /docs (in-app user guides + changelog)
+- /financial_dashboard (Accounting, `FinancialDashboard` + `::Sales` / `::Operations` / `::Snapshot`): month to date vs the
+  same days of the prior month and of last year. Sales = lines on orders by **invoice date** (from orders.xls; billed
+  orders without one are flagged, not guessed), price × shipped qty, split by reporting group item type; taxes from PDI's
+  per-line `tax_per_unit` (`price_includes_taxes` → taken out of product sales). Delivery = order date → invoice date.
 - Products, Customers, Vendors, Locations all support CSV export → import_csv → process_import → confirm_import
 - Products and Customers lists: filters/sorts live in `ProductListQuery` / `CustomerListQuery`; `sort_header` helper
   makes sortable column headers; `RemembersListFilters` keeps each user's last filters in `users.list_filters`

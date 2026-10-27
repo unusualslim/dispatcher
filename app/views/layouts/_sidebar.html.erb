@@ -9,11 +9,11 @@
 <% production_active = %w[production_orders jobs warehouse work_orders quality_exceptions].include?(current) %>
 <% purchasing_active = %w[purchase_orders purchasing_report mrp vendors].include?(current) %>
 <% inventory_active  = %w[inventory_intelligence products inventory_adjustments inventory_transactions inventory_valuations].include?(current) %>
-<% imports_active    = %w[imports customer_order_imports inventory_imports pdi_inventory_imports warehouse_transaction_imports
+<% imports_active    = %w[imports customer_order_imports inventory_imports pdi_inventory_imports pdi_invoice_date_imports warehouse_transaction_imports
                           bom_imports min_max_imports vendor_freight_term_imports pdi_product_imports
                           repack_batch_imports pdi_purchase_order_imports purchase_order_imports].include?(current) ||
                        (current == 'customer_order_products' && request.path == product_code_links_path) %>
-<% accounting_active = %w[ledger_entries reporting_groups costing_settings].include?(current) %>
+<% accounting_active = %w[financial_dashboards ledger_entries reporting_groups costing_settings].include?(current) %>
 <% admin_active      = imports_active || %w[users customer_merges location_merges things warehouse_locations automated_processes announcements].include?(current) %>
 
 <nav id="sidebar" class="sidebar d-flex flex-column">
@@ -143,6 +143,7 @@
         <% if can?(:accounting) %>
         <!-- ACCOUNTING -->
         <%= render 'layouts/sidebar_section', label: 'Accounting', icon: 'bi-journal-text', id: 'accountingCollapse', active: accounting_active do %>
+          <%= nav_item 'Financial Dashboard', financial_dashboard_path, 'bi-speedometer2', active: current == 'financial_dashboards', keywords: 'sales mtd month to date kpi margin delivery' %>
           <%= nav_item 'GL Ledger',        ledger_entries_path,        'bi-journal-text', active: current == 'ledger_entries', keywords: 'journal fpst gl export posting' %>
           <%= nav_item 'Reporting Groups', reporting_groups_path,      'bi-diagram-2',    active: current == 'reporting_groups', keywords: 'gl account posting cost' %>
           <%= nav_item 'Costing Settings', edit_costing_settings_path, 'bi-calculator',   active: current == 'costing_settings', keywords: 'labor rate cost gl start date' %>
