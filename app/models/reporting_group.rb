@@ -17,16 +17,27 @@ class ReportingGroup < ApplicationRecord
   }.freeze
   DEFAULT_COSTING_METHOD = 'weighted_average'.freeze
 
+  # Accounts the app posts inventory movements to when it owns a category's inventory GL (post_inventory_gl).
+  INVENTORY_ACCOUNTS = {
+    'inventory' => 'Inventory',
+    'cogs' => 'COGS',
+    'ppv' => 'Purchase price variance',
+    'receipts_clearing' => 'Received not invoiced',
+    'adjustment' => 'Inventory adjustments',
+    'revaluation' => 'Revaluation'
+  }.freeze
+  INVENTORY_ACCOUNT_COLUMNS = INVENTORY_ACCOUNTS.keys.map { |role| :"#{role}_gl_account" }.freeze
+
   has_many :product_cost_lines, dependent: :restrict_with_error
   has_many :products, foreign_key: :category, primary_key: :name, inverse_of: :reporting_group,
                       dependent: :restrict_with_error
 
-  normalizes :gl_account, :temp_gl_account, with: ->(account) { account.strip.presence }
+  normalizes :gl_account, :temp_gl_account, *INVENTORY_ACCOUNT_COLUMNS, with: ->(account) { account.strip.presence }
 
   validates :name, presence: true, uniqueness: true
   validates :item_type, inclusion: { in: ITEM_TYPES.keys }
   validates :costing_method, inclusion: { in: COSTING_METHODS.keys }
-  validates :gl_account, :temp_gl_account, format: { with: ACCOUNT_FORMAT }, allow_nil: true
+  validates :gl_account, :temp_gl_account, *INVENTORY_ACCOUNT_COLUMNS, format: { with: ACCOUNT_FORMAT }, allow_nil: true
   validate :labor_only_for_non_inventory
   validate :inventory_gl_only_for_pdi_categories
   validate :pdi_name_unchanged, on: :update
@@ -59,6 +70,11 @@ class ReportingGroup < ApplicationRecord
     COSTING_METHODS[costing_method]
   end
 
+  # Major-Sub for an inventory posting role ('inventory', 'cogs', …).
+  def inventory_account(role)
+    self[:"#{role}_gl_account"]
+  end
+
   # Major-Sub to credit for actual labor by a worker of the given employment type.
   def account_for_employment(type)
     type == 'temp' ? temp_gl_account : gl_account
@@ -70,8 +86,8 @@ class ReportingGroup < ApplicationRecord
     errors.add(:labor, 'applies only to non-inventory groups') if labor? && !non_inventory?
   end
 
-  # post_inventory_gl: the app (not PDI) posts this category's inventory, COGS and sales.
-  # Reserved for later; nothing posts the inventory side yet. Production costing always posts.
+  # post_inventory_gl: the app (not PDI) posts this category's inventory movements (InventoryGlPosting).
+  # Production costing always posts.
   def inventory_gl_only_for_pdi_categories
     return unless post_inventory_gl? && non_inventory?
 

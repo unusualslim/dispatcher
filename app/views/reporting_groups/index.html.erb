@@ -8,9 +8,10 @@
   arrives with a new category, and their names can't change because products link to them by name.
   <strong>Non-inventory</strong> groups hold the BOM cost lines absorbed into production; Labor groups are
   absorbed at actual /line hours, with temp workers' hours posting to the temp account.
-  <strong>Post inventory GL</strong> on a fuel or warehouse category will hand that category's inventory, COGS and
-  sales posting from PDI to the app. That isn't built yet, so it has no effect today: PDI posts the inventory side for
-  every category. Production costing (the FPST journal) posts for every production order regardless.
+  <strong>Post inventory GL</strong> on a fuel or warehouse category makes the app post that category's inventory
+  movements (receipts with PPV, sales to COGS, adjustments, PDI sync differences, revaluations) to the FPST journal,
+  using the inventory accounts under the category. Only turn it on once PDI stops posting that category's inventory,
+  or it posts twice. Production costing (the FPST journal) posts for every production order regardless.
   Enter accounts as Major-Sub (e.g. <code>6110-01</code>); the production location adds the site.
 </p>
 <p class="text-muted" style="max-width: 820px;">
@@ -40,7 +41,7 @@
               <% unless non_inventory %>
                 <th style="width: 150px;">Item Type</th>
                 <th style="width: 170px;">Costing</th>
-                <th class="text-center" style="width: 110px;" title="App posts this category's inventory, COGS and sales instead of PDI (not built yet)">Post inventory GL</th>
+                <th class="text-center" style="width: 110px;" title="App posts this category's inventory movements to the GL instead of PDI">Post inventory GL</th>
               <% end %>
               <th style="width: 150px;">GL Account</th>
               <% if non_inventory %>
@@ -94,7 +95,7 @@
                   </td>
                 <% end %>
                 <td class="text-end"><%= in_use %></td>
-                <td class="text-end text-nowrap">
+                <td class="text-end text-nowrap" rowspan="<%= non_inventory ? 1 : 2 %>">
                   <%= form_with model: group, id: form_id, method: :patch, class: 'd-inline' do %>
                     <button type="submit" class="btn btn-sm btn-primary">Save</button>
                   <% end %>
@@ -104,6 +105,22 @@
                   <% end %>
                 </td>
               </tr>
+              <% unless non_inventory %>
+                <tr class="small">
+                  <td colspan="6" class="pt-0 border-top-0">
+                    <div class="d-flex flex-wrap gap-2 align-items-end">
+                      <span class="text-muted me-1">Inventory GL:</span>
+                      <% ReportingGroup::INVENTORY_ACCOUNTS.each do |role, label| %>
+                        <label class="d-flex flex-column" style="width: 120px;">
+                          <span class="text-muted" style="font-size: 0.72rem;"><%= label %></span>
+                          <%= text_field_tag "reporting_group[#{role}_gl_account]", group.inventory_account(role), form: form_id,
+                                             class: 'form-control form-control-sm font-monospace', placeholder: 'Major-Sub' %>
+                        </label>
+                      <% end %>
+                    </div>
+                  </td>
+                </tr>
+              <% end %>
             <% end %>
           </tbody>
           <% if non_inventory %>

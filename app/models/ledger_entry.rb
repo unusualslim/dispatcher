@@ -4,6 +4,9 @@ class LedgerEntry < ApplicationRecord
   STATUSES = %w[approved exported].freeze
 
   belongs_to :production_order, optional: true
+  # Inventory entries: the PO, PDI order, product… whose movements they post (InventoryGlPosting).
+  belongs_to :source, polymorphic: true, optional: true
+  has_many :inventory_transactions, dependent: :nullify
   belongs_to :approved_by, class_name: 'User', optional: true
   belongs_to :sync_log, optional: true
   belongs_to :reversal_of, class_name: 'LedgerEntry', optional: true
@@ -57,7 +60,8 @@ class LedgerEntry < ApplicationRecord
     raise ArgumentError, 'Already reversed' if reversal
 
     LedgerEntry.create!(
-      production_order: production_order, reversal_of: self, reference_number: "#{reference_number}-REV",
+      production_order: production_order, source: source, reversal_of: self,
+      reference_number: "#{reference_number}-REV",
       reference_date: Time.zone.today, description: "Reverse #{description}".first(50), journal_id: journal_id,
       approved_by: user, approved_at: Time.current, ledger_lines: reversed_lines
     )

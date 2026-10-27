@@ -3,11 +3,12 @@ class LedgerEntriesController < ApplicationController
 
   def index
     @status = params[:status].presence_in(LedgerEntry::STATUSES)
-    @entries = LedgerEntry.includes(:production_order, :approved_by, :ledger_lines, :reversal, :reversal_of)
+    @entries = LedgerEntry.includes(:production_order, :source, :approved_by, :ledger_lines, :reversal, :reversal_of)
                           .newest_first.limit(200)
     @entries = @entries.where(status: @status) if @status
     @pending_count = LedgerEntry.pending_export.count
     @exports = SyncLog.for_process(PdiGlExport::PROCESS_NAME).limit(10)
+    @inventory_problems = InventoryGlPosting.problems
   end
 
   # Approve & post a production order's FPST journal.

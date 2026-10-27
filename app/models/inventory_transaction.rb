@@ -18,6 +18,7 @@ class InventoryTransaction < ApplicationRecord
   belongs_to :created_by, class_name: 'User', optional: true
   belongs_to :transactable, polymorphic: true, optional: true
   belongs_to :reversal_of, class_name: 'InventoryTransaction', optional: true
+  belongs_to :ledger_entry, optional: true
   has_one :reversal, class_name: 'InventoryTransaction', foreign_key: :reversal_of_id, inverse_of: :reversal_of,
                      dependent: :restrict_with_error
   has_many :inventory_layer_draws, dependent: :destroy

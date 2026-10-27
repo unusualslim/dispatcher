@@ -207,6 +207,13 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
   `inventory_tracking_start_date`; sales before it are ignored), revalues on standard-cost change and method change.
 - /inventory_valuation (`InventoryValuation`): value as of a date (today's balance minus later movements), movements
   by type, PPV, PDI sync differences (how much movement the app missed).
+- **Inventory GL** (`InventoryGlPosting` + `InventoryJournal`, run by the scheduled `PdiGlExportJob`): for groups with
+  `post_inventory_gl`, receipts (Dr Inventory at book, Dr/Cr PPV, Cr received-not-invoiced at actual), sales (Dr COGS),
+  adjustments + PDI syncs (vs inventory adjustments) and revaluations post as FPST entries, **one per source document
+  and date** (reference = PO / PDI order / ADJ-… number, `-2`… when it posts again). Accounts are the group's six
+  `*_gl_account` columns (Major-Sub, site from the location). Movements wait (listed on GL Ledger) while an account or
+  site code is missing; `gl_posted_at` marks them done. Production moves stay on the production journal. Only movements
+  on/after both the inventory start date and `gl_posting_start_date` post.
 
 ### Services (app/services/)
 - `Mrp::Plan` (app/services/mrp/, page /mrp) — time-phased MRP **per warehouse**: per planned product

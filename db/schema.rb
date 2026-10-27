@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_27_120000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_27_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -281,7 +281,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_27_120000) do
     t.decimal "variance_amount", precision: 16, scale: 4
     t.decimal "balance_quantity", precision: 14, scale: 3
     t.decimal "balance_value", precision: 16, scale: 4
+    t.bigint "ledger_entry_id"
+    t.datetime "gl_posted_at"
     t.index ["created_by_id"], name: "index_inventory_transactions_on_created_by_id"
+    t.index ["ledger_entry_id"], name: "index_inventory_transactions_on_ledger_entry_id"
     t.index ["movement_type"], name: "index_inventory_transactions_on_movement_type"
     t.index ["product_id", "location_id", "occurred_on"], name: "idx_on_product_id_location_id_occurred_on_2cf8b664e6"
     t.index ["product_id"], name: "index_inventory_transactions_on_product_id"
@@ -329,10 +332,13 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_27_120000) do
     t.bigint "reversal_of_id"
     t.bigint "approved_by_id"
     t.bigint "sync_log_id"
+    t.string "source_type"
+    t.bigint "source_id"
     t.index ["approved_by_id"], name: "index_ledger_entries_on_approved_by_id"
     t.index ["production_order_id"], name: "index_ledger_entries_on_production_order_id"
     t.index ["reference_number"], name: "index_ledger_entries_on_reference_number", unique: true
     t.index ["reversal_of_id"], name: "index_ledger_entries_on_reversal_of_id", unique: true
+    t.index ["source_type", "source_id"], name: "index_ledger_entries_on_source"
     t.index ["sync_log_id"], name: "index_ledger_entries_on_sync_log_id"
   end
 
@@ -720,6 +726,12 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_27_120000) do
     t.datetime "updated_at", null: false
     t.boolean "post_inventory_gl", default: false, null: false
     t.string "costing_method", default: "weighted_average", null: false
+    t.string "inventory_gl_account"
+    t.string "cogs_gl_account"
+    t.string "ppv_gl_account"
+    t.string "receipts_clearing_gl_account"
+    t.string "adjustment_gl_account"
+    t.string "revaluation_gl_account"
     t.index ["name"], name: "index_reporting_groups_on_name", unique: true
   end
 
@@ -857,6 +869,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_27_120000) do
   add_foreign_key "inventory_layer_draws", "inventory_cost_layers"
   add_foreign_key "inventory_layer_draws", "inventory_transactions"
   add_foreign_key "inventory_transactions", "inventory_transactions", column: "reversal_of_id"
+  add_foreign_key "inventory_transactions", "ledger_entries"
   add_foreign_key "inventory_transactions", "products"
   add_foreign_key "job_workers", "jobs"
   add_foreign_key "job_workers", "users"
