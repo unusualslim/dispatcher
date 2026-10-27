@@ -110,14 +110,12 @@ class PdiPurchaseOrderImportService
     end
   end
 
-  # :create, :update or :skip_exists (in inventory, voided, history, or a PO number taken by another PDI PO).
+  # :create, :update or :skip_exists (in inventory, voided, or history).
   def preview_action(first)
     po = match(first)
     return history?(first) ? :skip_exists : :create if po.nil?
 
     refreshable?(po) ? :update : :skip_exists
-  rescue ArgumentError
-    :skip_exists
   end
 
   # Creates new PDI POs and keeps ones not yet in inventory in step with PDI (status, dates, warehouse,
@@ -160,24 +158,19 @@ class PdiPurchaseOrderImportService
     numbers = batches.values.filter_map { |rows| null_safe(rows.first[COL_PO_NO]) }
     found = PurchaseOrder.where(pdi_po_key: batches.keys).or(PurchaseOrder.where(pdi_reference: numbers)).to_a
     @by_key = found.select(&:pdi_po_key).index_by(&:pdi_po_key)
-    @by_number = found.select(&:pdi_reference).index_by(&:pdi_reference)
+    # Number matching only for POs imported before keys were stored.
+    @by_number = found.select { |po| po.pdi_reference && po.pdi_po_key.nil? }.index_by(&:pdi_reference)
   end
 
-  # The app's PO for this PDI PO: by key, else by number. PO numbers are unique in the app, so a number
-  # already taken by another PDI PO can't be imported.
+  # The app's PO for this PDI PO: by key, else (POs imported before keys were stored) by number. PDI PO
+  # numbers repeat, so a number match is claimed by the first PDI PO that has it.
   def match(first)
     key = first[COL_PO_KEY].to_s.strip
-    return @by_key[key] if @by_key[key]
-
-    po = @by_number[null_safe(first[COL_PO_NO])]
-    raise ArgumentError, 'PO number is used by another PDI PO; skipped' if po&.pdi_po_key && po.pdi_po_key != key
-
-    po
+    @by_key[key] || @by_number.delete(null_safe(first[COL_PO_NO]))
   end
 
   def remember(order)
     @by_key[order.pdi_po_key] = order
-    @by_number[order.pdi_reference] ||= order if order.pdi_reference
   end
 
   # Numberless POs from before keys were stored can't be matched; once received before tracking began

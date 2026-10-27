@@ -67,14 +67,22 @@ class PdiPurchaseOrderImportServiceTest < ActiveSupport::TestCase
     assert_raises(ArgumentError) { dropship.post_to_inventory!(nil) }
   end
 
-  test 'POs match on PDI key; a repeated PO number is skipped with a warning' do
+  test 'POs match on PDI key, so PDI POs can share a number' do
     first = line('TODD', 'Ordered', received: 'NULL')
     second = line('TODD', 'Ordered', received: 'NULL').tap { |row| row[0] = 'key-other' }
-    result = import(first, second)
 
-    assert_equal 1, result.created
-    assert_match(/used by another PDI PO/, result.errors.join)
-    assert_equal 'key-TODD', PurchaseOrder.find_by!(pdi_reference: 'TODD').pdi_po_key
+    assert_equal [2, []], import(first, second).to_h.values_at(:created, :errors)
+    assert_equal [2, 0], import(first, second).to_h.values_at(:updated, :created)
+    assert_equal %w[key-TODD key-other], PurchaseOrder.where(pdi_reference: 'TODD').order(:id).pluck(:pdi_po_key)
+  end
+
+  test 'a PO imported before keys were stored is matched once by number' do
+    old = PurchaseOrder.create!(vendor: vendors(:chem_supply), pdi_reference: 'LP', status: 'submitted',
+                                trigger_type: 'pdi_import')
+    rows = [line('LP', 'Ordered', received: 'NULL'), line('LP', 'Ordered', received: 'NULL').tap { |r| r[0] = 'k2' }]
+
+    assert_equal [1, 1], import(*rows).to_h.values_at(:updated, :created)
+    assert_equal 'key-LP', old.reload.pdi_po_key
   end
 
   test 'numberless POs received before tracking began are not imported again' do

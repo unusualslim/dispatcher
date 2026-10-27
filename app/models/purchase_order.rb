@@ -15,7 +15,6 @@ class PurchaseOrder < ApplicationRecord
 
   validates :status,       inclusion: { in: STATUSES }
   validates :trigger_type, inclusion: { in: TRIGGER_TYPES }, allow_nil: true
-  validates :pdi_reference, uniqueness: true, allow_nil: true
   validate :freight_term_allowed_for_vendor
 
   def freight_term_allowed_for_vendor
