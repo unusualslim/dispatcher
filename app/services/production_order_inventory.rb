@@ -14,13 +14,18 @@ module ProductionOrderInventory
     moves(order).in_effect.exists?
   end
 
+  # Finished goods come in at what went into them: the components' inventory cost plus the absorbed
+  # supplies, overhead and labor (ProductionOrderCosting). Standard products book at standard instead.
   def post!(order, user = nil)
     return if posted?(order)
 
-    consume_components!(order, user)
+    consumed = consume_components!(order, user)
     finished = order.product
     produced = order.total_qty_produced.to_d
-    move!(order, finished, produced, 'in', user) if finished && !finished.is_raw_material? && produced.positive?
+    return unless finished && !finished.is_raw_material? && produced.positive?
+
+    unit_cost = (consumed + ProductionOrderCosting.new(order).absorbed_cost) / produced
+    move!(order, finished, produced, user, unit_cost: unit_cost)
   end
 
   def reverse!(order, user = nil)
@@ -28,12 +33,17 @@ module ProductionOrderInventory
   end
 
   # Actual quantities when entered, otherwise the planned quantity scaled to what was produced.
+  # Returns the inventory cost of what was used.
   def consume_components!(order, user)
     ratio = produced_ratio(order)
-    order.production_order_components.includes(:product).find_each do |comp|
-      used = comp.quantity_actual.presence&.to_d || (comp.quantity.to_d * ratio)
-      move!(order, comp.product, used, 'out', user) if comp.product && used.positive?
+    order.production_order_components.includes(:product).find_each.sum(0.to_d) do |comp|
+      used = used_quantity(comp, ratio)
+      comp.product && used.positive? ? move!(order, comp.product, -used, user).total_cost : 0
     end
+  end
+
+  def used_quantity(comp, ratio)
+    comp.quantity_actual.presence&.to_d || (comp.quantity.to_d * ratio)
   end
 
   def produced_ratio(order)
@@ -41,14 +51,11 @@ module ProductionOrderInventory
     planned.positive? ? order.total_qty_produced.to_d / planned : 1
   end
 
-  def move!(order, product, qty, direction, user)
-    InventoryTransaction.create!(product: product, quantity: qty, direction: direction, transactable: order,
-                                 reference_number: order.number, created_by_id: user&.id,
-                                 location_id: order.location_id,
-                                 notes: "#{direction == 'in' ? 'Produced' : 'Consumed'} in #{order.number}")
-    delta = direction == 'in' ? qty : -qty
-    return LocationProduct.adjust!(order.location, product, delta) if order.location
-
-    product.update!(current_stock: product.current_stock.to_d + delta)
+  # qty signed: produced goods in, components out.
+  def move!(order, product, qty, user, unit_cost: nil)
+    InventoryPosting.post!(product: product, location: order.location, quantity: qty,
+                           movement_type: qty.positive? ? 'production_output' : 'production_use',
+                           unit_cost: unit_cost, source: order, reference: order.number, user: user,
+                           notes: "#{qty.positive? ? 'Produced' : 'Consumed'} in #{order.number}")
   end
 end

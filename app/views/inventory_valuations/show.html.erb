@@ -1,0 +1,165 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="mb-0">Inventory Valuation</h1>
+    <div class="text-muted small">
+      <% if @start_date %>
+        Tracked at cost since <%= @start_date.strftime('%b %-d, %Y') %>. Costing method per category on
+        <%= link_to 'Reporting Groups', reporting_groups_path %>.
+      <% else %>
+        Costed tracking hasn't started yet.
+      <% end %>
+    </div>
+  </div>
+  <%= link_to 'Inventory History', inventory_transactions_path, class: 'btn btn-outline-secondary btn-sm' %>
+</div>
+
+<% unless @start_date %>
+  <div class="alert alert-warning" style="max-width: 900px;">
+    <strong>Set opening balances to start.</strong> This values every location's stock as it stands now (PDI's
+    numbers) at each product's basis: the standard cost for Standard categories, PDI's weighted average for the rest.
+    From then on every receipt, production, adjustment and shipped PDI order moves stock at cost, and each PDI
+    inventory sync posts only the difference it finds.
+    <% if admin? %>
+      <%= button_to 'Set opening balances now', opening_inventory_valuation_path, class: 'btn btn-warning btn-sm mt-2',
+                                                                               form: { data: { turbo_confirm: 'Value all stock on hand and start costed tracking from today? This runs once.' } } %>
+    <% else %>
+      An admin can set them here.
+    <% end %>
+  </div>
+<% end %>
+
+<div class="card shadow-sm mb-3">
+  <div class="card-body py-2">
+    <%= form_with url: inventory_valuation_path, method: :get, local: true, class: 'd-flex gap-2 align-items-end flex-wrap' do %>
+      <div>
+        <label class="form-label small mb-0">As of</label>
+        <%= date_field_tag :as_of, @as_of, class: 'form-control form-control-sm' %>
+      </div>
+      <div>
+        <label class="form-label small mb-0">Movements from</label>
+        <%= date_field_tag :from, @from, class: 'form-control form-control-sm' %>
+      </div>
+      <div>
+        <label class="form-label small mb-0">Location</label>
+        <%= select_tag :location_id, options_from_collection_for_select(@locations, :id, :company_name, params[:location_id]),
+                       include_blank: 'All locations', class: 'form-select form-select-sm' %>
+      </div>
+      <div>
+        <label class="form-label small mb-0">Category</label>
+        <%= select_tag :group, options_for_select(@groups.map { |g| ["#{g.name} (#{g.costing_method_label})", g.name] }, params[:group]),
+                       include_blank: 'All categories', class: 'form-select form-select-sm' %>
+      </div>
+      <button type="submit" class="btn btn-sm btn-primary">Show</button>
+      <%= link_to 'Clear', inventory_valuation_path, class: 'btn btn-sm btn-outline-secondary' %>
+    <% end %>
+  </div>
+</div>
+
+<% movements = @valuation.movements_by_type(@from) %>
+<% ppv = @valuation.purchase_price_variance(@from) %>
+<div class="row g-3 mb-3">
+  <div class="col-md-4">
+    <div class="card shadow-sm h-100"><div class="card-body">
+      <div class="text-muted small">Inventory value, <%= @as_of.strftime('%b %-d, %Y') %></div>
+      <div class="fs-3 fw-semibold"><%= number_to_currency(@valuation.total_value) %></div>
+    </div></div>
+  </div>
+  <div class="col-md-4">
+    <div class="card shadow-sm h-100"><div class="card-body">
+      <div class="text-muted small" title="Receipt cost above standard (positive = paid more than standard)">Purchase price variance, period</div>
+      <div class="fs-3 fw-semibold"><%= number_to_currency(ppv.sum { |_, v| v }) %></div>
+      <div class="text-muted small">Standard categories only</div>
+    </div></div>
+  </div>
+  <div class="col-md-4">
+    <div class="card shadow-sm h-100"><div class="card-body">
+      <div class="text-muted small" title="Stock PDI counted that the app didn't see move. Closer to zero = the app is catching every movement.">PDI sync differences, period</div>
+      <% sync_value = movements.fetch('pdi_sync', [0, 0]).last %>
+      <div class="fs-3 fw-semibold"><%= number_to_currency(sync_value) %></div>
+      <div class="text-muted small">Stock PDI counted that the app didn't see move</div>
+    </div></div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header fw-semibold">Movements <%= @from.strftime('%b %-d') %> – <%= @as_of.strftime('%b %-d, %Y') %></div>
+      <% if movements.empty? %>
+        <div class="card-body text-muted small">No costed movements in this period.</div>
+      <% else %>
+        <table class="table table-sm mb-0">
+          <thead class="table-light"><tr><th>Type</th><th class="text-end">Net quantity</th><th class="text-end">Net value</th></tr></thead>
+          <tbody>
+            <% InventoryTransaction::MOVEMENT_TYPES.each do |type, label| %>
+              <% next unless movements.key?(type) %>
+              <% qty, value = movements[type] %>
+              <tr>
+                <td><%= link_to label, inventory_transactions_path(movement_type: type), class: 'text-decoration-none' %></td>
+                <td class="text-end"><%= InventoryTransaction::VALUE_ONLY_TYPES.include?(type) ? '—' : number_with_precision(qty, precision: 1, delimiter: ',') %></td>
+                <td class="text-end <%= 'text-danger' if value.negative? %>"><%= number_to_currency(value) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header fw-semibold">Purchase price variance by product</div>
+      <% if ppv.empty? %>
+        <div class="card-body text-muted small">None in this period. Variance is recorded on receipts of Standard-costed products.</div>
+      <% else %>
+        <table class="table table-sm mb-0">
+          <thead class="table-light"><tr><th>Product</th><th class="text-end">Variance</th></tr></thead>
+          <tbody>
+            <% ppv.first(15).each do |product, variance| %>
+              <tr>
+                <td><%= link_to product.name, inventory_transactions_path(product_id: product.id, movement_type: 'receipt'), class: 'text-decoration-none' %></td>
+                <td class="text-end <%= variance.positive? ? 'text-danger' : 'text-success' %>"><%= number_to_currency(variance) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<% if @valuation.rows_by_group.empty? %>
+  <div class="text-center text-muted py-5">No stock on hand.</div>
+<% end %>
+<% @valuation.rows_by_group.each do |group, rows| %>
+  <div class="card shadow-sm mb-3">
+    <div class="card-header d-flex justify-content-between">
+      <span class="fw-semibold"><%= group&.name || 'No category' %>
+        <span class="badge text-bg-light border ms-1"><%= group&.costing_method_label || ReportingGroup::COSTING_METHODS[ReportingGroup::DEFAULT_COSTING_METHOD] %></span></span>
+      <span class="fw-semibold"><%= number_to_currency(rows.sum(&:value)) %></span>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Product</th>
+            <th>Location</th>
+            <th class="text-end">On hand</th>
+            <th class="text-end">Unit cost</th>
+            <th class="text-end">Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.each do |row| %>
+            <tr>
+              <td><%= link_to row.product.name, inventory_transactions_path(product_id: row.product.id), class: 'text-decoration-none' %> <span class="text-muted small"><%= row.product.id %></span></td>
+              <td class="small"><%= row.location.company_name %></td>
+              <td class="text-end <%= 'text-danger' if row.quantity.negative? %>"><%= number_with_precision(row.quantity, precision: 1, delimiter: ',') %> <span class="text-muted small"><%= row.product.unit_of_measurement %></span></td>
+              <td class="text-end"><%= row.unit_cost ? number_to_currency(row.unit_cost, precision: 4) : '—' %></td>
+              <td class="text-end"><%= number_to_currency(row.value) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% end %>

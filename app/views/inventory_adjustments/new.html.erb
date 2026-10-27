@@ -50,6 +50,12 @@
         </div>
 
         <div class="col-12">
+          <label class="form-label">Unit Cost <span class="text-muted small">(optional, additions only)</span></label>
+          <input type="number" name="unit_cost" step="0.0001" min="0" class="form-control" placeholder="Current cost">
+          <div class="form-text">Leave blank to value the stock at the location's current cost. Removals always go out at current cost.</div>
+        </div>
+
+        <div class="col-12">
           <label class="form-label fw-semibold">Reason</label>
           <select name="reason_code" class="form-select" required>
             <option value="">Select reason...</option>

@@ -11,15 +11,23 @@ module PdiOrders
       CustomerOrder.transaction do
         record = CustomerOrder.find_or_initialize_by(external_order_no: @order.order_no)
         action = record.new_record? ? :created : :updated
-        record.assign_attributes(attributes(record))
-        changed = record.changed?
-        record.save! if changed
-        record.customer&.record_pdi_credit!(@order.credit)
-        sync_lines(record) || changed ? action : :unchanged
+        changed = save_order(record)
+        lines_changed = sync_lines(record)
+        InventorySales.sync!(record) # shipped orders take their lines out of stock
+        lines_changed || changed ? action : :unchanged
       end
     end
 
     private
+
+    # True when the order itself changed.
+    def save_order(record)
+      record.assign_attributes(attributes(record))
+      changed = record.changed?
+      record.save! if changed
+      record.customer&.record_pdi_credit!(@order.credit)
+      changed
+    end
 
     def attributes(record)
       destination = Destination.new(@order, current: record.location)
@@ -44,16 +52,20 @@ module PdiOrders
     end
 
     def signature(lines)
-      lines.map do |line|
-        code = line.respond_to?(:product_code) ? line.product_code : line.product_name
-        site = line.respond_to?(:site) ? line.site : line.warehouse
-        [code.to_s, line.quantity.to_i, line.price&.to_d.to_s, site.to_s]
-      end.sort
+      lines.map { |line| line_key(line) }.sort
+    end
+
+    # A feed line (OrderNode::Line) or a saved order line, compared field by field.
+    def line_key(line)
+      code = line.respond_to?(:product_code) ? line.product_code : line.product_name
+      site = line.respond_to?(:site) ? line.site : line.warehouse
+      [code.to_s, line.quantity.to_i, line.shipped_quantity&.to_d.to_s, line.price&.to_d.to_s, site.to_s]
     end
 
     def line_attrs(line)
       product = Product.find_by(id: line.product_code)
-      { product_name: line.product_code, product_id: product&.id, quantity: line.quantity, price: line.price,
+      { product_name: line.product_code, product_id: product&.id, quantity: line.quantity,
+        shipped_quantity: line.shipped_quantity, price: line.price,
         item_type: product&.order_item_type || 'buy', warehouse: line.site, location: Warehouses.for_line(line) }
     end
   end

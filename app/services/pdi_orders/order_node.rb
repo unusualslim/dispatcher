@@ -5,7 +5,7 @@ module PdiOrders
 
     # site: the PDI site the line ships from (warehouse site, or a fuel load's origin site); fuel: a FuelDetail
     # line, which has no site until a load is assigned.
-    Line = Struct.new(:product_code, :quantity, :price, :site, :fuel, keyword_init: true)
+    Line = Struct.new(:product_code, :quantity, :shipped_quantity, :price, :site, :fuel, keyword_init: true)
 
     # batch_status: the status a warehouse order was fetched with (fuel orders carry their own).
     def initialize(node, batch_status = nil)
@@ -52,13 +52,30 @@ module PdiOrders
     def lines
       @node.xpath(LINES).map do |line|
         Line.new(product_code: product_code(line), quantity: text('OrderedQuantity', line).to_d.round,
-                 price: text('UnitPrice', line)&.to_d,
+                 shipped_quantity: shipped_quantity(line), price: text('UnitPrice', line)&.to_d,
                  site: text('WarehouseSiteID', line) || text('LoadDetail/OriginSiteID', line) || text('SiteID', line),
                  fuel: line.name == 'FuelDetail')
       end
     end
 
     private
+
+    # What left the warehouse: fuel = net gallons lifted on its loads (else delivered); warehouse = invoiced,
+    # billed or picked. nil until PDI has a non-zero figure.
+    def shipped_quantity(line)
+      if line.name == 'FuelDetail'
+        lifted = line.xpath('LoadDetail/LiftNetQuantity').sum { |q| q.text.to_d }
+        return lifted unless lifted.zero?
+
+        return nonzero(line, 'DeliveredNetQuantity')
+      end
+      nonzero(line, 'InvoicedQuantity') || nonzero(line, 'BillingQuantity') || nonzero(line, 'PickedQuantity')
+    end
+
+    def nonzero(line, path)
+      qty = text(path, line)&.to_d
+      qty unless qty.nil? || qty.zero?
+    end
 
     # Fuel lines name the product ordered and the one actually loaded: ordered 10011219 "Bulk DEF" is
     # loaded as 901. The loaded (purchased) product is the real one, except on blends, where it's the

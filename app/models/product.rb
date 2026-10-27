@@ -33,6 +33,7 @@ class Product < ApplicationRecord
   validates :id, presence: true
 
   after_save :record_inventory_cost_change, if: :saved_change_to_cost_per_unit?
+  after_save -> { InventoryRevaluation.standard_changed!(self) }, if: :saved_change_to_standard_cost?
   after_save -> { ReportingGroup.ensure_for_category!(category) },
              if: -> { saved_change_to_category? && category.present? }
 
@@ -59,6 +60,16 @@ class Product < ApplicationRecord
   # Order line item type for this product (customer_order_products.item_type).
   def order_item_type
     produced? ? 'production' : 'buy'
+  end
+
+  # Whether stock and value are tracked: anything not in a non-inventory reporting group.
+  def inventory_item?
+    reporting_group.nil? || !reporting_group.non_inventory?
+  end
+
+  # How this product's inventory is valued (its reporting group's choice; weighted average by default).
+  def costing_method
+    reporting_group&.costing_method || ReportingGroup::DEFAULT_COSTING_METHOD
   end
 
   # Stock at a specific warehouse location.

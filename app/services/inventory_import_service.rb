@@ -137,9 +137,11 @@ class InventoryImportService
       product = Product.find_by(id: part_number)
       next unless product
 
-      lp = LocationProduct.find_or_initialize_by(location_id: location.id, product_id: product.id)
-      lp.quantity = total_qty
-      lp.save!
+      # PDI's quantity wins; the difference posts as a "PDI sync" movement at the app's cost.
+      current = LocationProduct.find_by(location_id: location.id, product_id: product.id)&.quantity.to_d
+      InventoryPosting.post!(product: product, location: location, quantity: total_qty.to_d - current,
+                             movement_type: 'pdi_sync', reference: "PDI-INV-#{Time.zone.today.strftime('%Y%m%d')}",
+                             notes: "PDI inventory sync — ending #{total_qty}")
       products_to_sync << product.id
     end
 

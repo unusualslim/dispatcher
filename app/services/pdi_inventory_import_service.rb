@@ -69,19 +69,13 @@ class PdiInventoryImportService
     product.update!(attrs)
   end
 
-  # Sets the site's quantity and records the change as an inventory transaction.
+  # Brings the site to PDI's quantity; the difference posts as a "PDI sync" movement at the app's cost.
   def set_location_stock!(product, location, ending)
-    lp = LocationProduct.find_or_initialize_by(location_id: location.id, product_id: product.id)
-    delta = ending - lp.quantity.to_d
-    lp.update!(quantity: ending)
-    return lp if delta.zero?
-
-    InventoryTransaction.create!(
-      product: product, location_id: location.id, quantity: delta.abs, direction: delta.positive? ? 'in' : 'out',
-      reference_number: "PDI-FI-#{Time.zone.today.strftime('%Y%m%d')}",
-      notes: "PDI FI Inventory Report sync — ending #{ending}", created_by_id: @user&.id
-    )
-    lp
+    current = LocationProduct.find_by(location_id: location.id, product_id: product.id)&.quantity.to_d
+    InventoryPosting.post!(product: product, location: location, quantity: ending - current, movement_type: 'pdi_sync',
+                           reference: "PDI-FI-#{Time.zone.today.strftime('%Y%m%d')}", user: @user,
+                           notes: "PDI FI Inventory Report sync — ending #{ending}")
+    true
   end
 
   def locations_by_site

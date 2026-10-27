@@ -180,12 +180,33 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
 - `PurchaseOrder` — lifecycle: draft → pending_approval → approved → submitted → received → cancelled; admins can
   void (`PurchaseOrderVoid`: reverses posted receipts via `InventoryReversal`, read-only after, voided status);
   `pdi_reference` (shown via `display_number`), `posted_at`, optional `location_id`
-- `InventoryTransaction` — polymorphic audit trail (direction: 'in'/'out'), optional `location_id`
+- `InventoryTransaction` — polymorphic audit trail (direction: 'in'/'out'), `location_id`; costed rows carry
+  `movement_type` (opening/receipt/sale/production_use/production_output/adjustment/pdi_sync/revaluation),
+  `occurred_on`, `unit_cost`, `total_cost`, `variance_amount` (PPV on standard receipts) and the location's balance after.
+  Rows from before costing have no type or cost.
 - `ProductionOrderBatch` — now just the PDI batch number(s) recorded on an order (its old per-batch QC/complete
   is retired; QC and inventory moves happen on the production order)
 - `QualitySpec` / `QualityResult` — per-product quality checks and each order's recorded results
 - `ProductionOrderComponent` — belongs_to :product (optional), quantity_actual
 - `PricingRule` / `PricingRuleProduct` — pricing rules that auto-populate prices on customer orders
+
+### Costed inventory (since 2026-10-27)
+- Each fuel/warehouse `ReportingGroup` has a `costing_method`: weighted_average (default, PDI's), standard
+  (`products.standard_cost`; receipt actual − standard → `variance_amount`) or fifo (`InventoryCostLayer`s, issues record
+  `InventoryLayerDraw`s). Cost is kept **per location** (`location_products.inventory_value`).
+- **Every stock change goes through `InventoryPosting`** (`post!` signed quantity, `reverse!` at the original value,
+  `revalue!` value-only). No location → main warehouse (PDI site 0002). Don't write `LocationProduct.quantity` directly
+  (only the retired per-batch completion still uses `LocationProduct.adjust!`).
+- Movements: PO post_to_inventory (receipt at line cost), production (components out at cost; output in at components +
+  `ProductionOrderCosting#absorbed_cost`), adjustments (optional unit cost), voids/reopens (`InventoryReversal`), PDI
+  inventory imports (FI + warehouse: post only the difference as `pdi_sync`), and **sales**: `InventorySales.sync!` runs
+  on every PDI order write — shipped statuses (shipped … billed, delivered, credited) take `shipped_quantity` (PDI lifted /
+  invoiced / picked; falls back to ordered) out of the line's warehouse, re-posting when lines change or the order cancels.
+  Dropship and non-inventory lines are skipped.
+- `InventoryRevaluation`: one-time `opening!` (admin button on /inventory_valuation; sets AppSetting
+  `inventory_tracking_start_date`; sales before it are ignored), revalues on standard-cost change and method change.
+- /inventory_valuation (`InventoryValuation`): value as of a date (today's balance minus later movements), movements
+  by type, PPV, PDI sync differences (how much movement the app missed).
 
 ### Services (app/services/)
 - `Mrp::Plan` (app/services/mrp/, page /mrp) — time-phased MRP **per warehouse**: per planned product

@@ -2,7 +2,8 @@ class LocationProduct < ApplicationRecord
   belongs_to :location
   belongs_to :product
 
-  # Adjust per-location stock by delta (positive = in, negative = out).
+  # Adjust per-location stock by delta (positive = in, negative = out), without cost.
+  # Only the retired per-batch completion still uses this; everything else posts through InventoryPosting.
   # Creates the location_product row if it doesn't exist.
   # Also keeps Product.current_stock in sync as a global total.
   def self.adjust!(location, product, delta)
@@ -10,5 +11,10 @@ class LocationProduct < ApplicationRecord
     lp.quantity = (lp.quantity || 0) + delta
     lp.save!
     product.update_column(:current_stock, where(product_id: product.id).sum(:quantity))
+  end
+
+  # Value ÷ quantity; nil with nothing on hand.
+  def average_cost
+    inventory_value.to_d / quantity if quantity.to_d.positive?
   end
 end

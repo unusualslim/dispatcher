@@ -83,21 +83,11 @@ class PurchaseOrder < ApplicationRecord
       line_items.includes(:product).each do |line|
         next unless line.product.present? && line.quantity.to_d > 0
 
-        InventoryTransaction.create!(
-          product: line.product,
-          quantity: line.quantity,
-          direction: 'in',
-          transactable: self,
-          reference_number: pdi_reference || id.to_s,
-          notes: "PO received from #{vendor.name}",
-          created_by_id: user.id,
-          location_id: location_id
+        InventoryPosting.post!(
+          product: line.product, location: location, quantity: line.quantity, movement_type: 'receipt',
+          unit_cost: line.unit_cost, source: self, reference: pdi_reference || id.to_s,
+          notes: "PO received from #{vendor.name}", user: user, occurred_on: received_at&.to_date
         )
-        if location.present?
-          LocationProduct.adjust!(location, line.product, line.quantity)
-        else
-          line.product.increment!(:current_stock, line.quantity)
-        end
       end
       update!(posted_at: Time.current)
     end

@@ -33,26 +33,11 @@ class InventoryAdjustmentsController < ApplicationController
       return
     end
 
-    ActiveRecord::Base.transaction do
-      InventoryTransaction.create!(
-        product: product,
-        quantity: quantity,
-        direction: direction,
-        reference_number: "ADJ-#{Time.current.strftime('%Y%m%d%H%M%S')}",
-        notes: notes,
-        created_by_id: current_user.id,
-        location_id: location&.id
-      )
-
-      delta = direction == 'in' ? quantity : -quantity
-      if location.present?
-        LocationProduct.adjust!(location, product, delta)
-      elsif direction == 'in'
-        product.increment!(:current_stock, quantity)
-      else
-        product.decrement!(:current_stock, quantity)
-      end
-    end
+    InventoryPosting.post!(
+      product: product, location: location, quantity: direction == 'in' ? quantity : -quantity,
+      movement_type: 'adjustment', unit_cost: (params[:unit_cost].presence if direction == 'in'),
+      reference: "ADJ-#{Time.current.strftime('%Y%m%d%H%M%S')}", notes: notes, user: current_user
+    )
 
     redirect_to inventory_transactions_path(product_id: product.id),
                 notice: "#{direction == 'in' ? 'Added' : 'Removed'} #{quantity} #{product.unit_of_measurement} #{direction == 'in' ? 'to' : 'from'} #{product.name}#{location ? " at #{location.company_name}" : ''}."

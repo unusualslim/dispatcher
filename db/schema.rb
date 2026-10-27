@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_26_220000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_27_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -115,6 +115,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_26_220000) do
     t.string "price_check"
     t.datetime "price_checked_at"
     t.bigint "location_id"
+    t.decimal "shipped_quantity", precision: 14, scale: 3
     t.index ["customer_order_id"], name: "index_customer_order_products_on_customer_order_id"
     t.index ["location_id"], name: "index_customer_order_products_on_location_id"
     t.index ["price_check"], name: "index_customer_order_products_on_price_check"
@@ -234,6 +235,32 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_26_220000) do
     t.index ["product_id", "created_at"], name: "index_inventory_cost_histories_on_product_id_and_created_at"
   end
 
+  create_table "inventory_cost_layers", force: :cascade do |t|
+    t.string "product_id", null: false
+    t.bigint "location_id", null: false
+    t.bigint "inventory_transaction_id"
+    t.date "received_on", null: false
+    t.decimal "quantity", precision: 14, scale: 3, null: false
+    t.decimal "remaining_quantity", precision: 14, scale: 3, null: false
+    t.decimal "unit_cost", precision: 14, scale: 6, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["inventory_transaction_id"], name: "index_inventory_cost_layers_on_inventory_transaction_id"
+    t.index ["location_id"], name: "index_inventory_cost_layers_on_location_id"
+    t.index ["product_id", "location_id", "received_on"], name: "idx_on_product_id_location_id_received_on_12f4e51ed1"
+  end
+
+  create_table "inventory_layer_draws", force: :cascade do |t|
+    t.bigint "inventory_transaction_id", null: false
+    t.bigint "inventory_cost_layer_id", null: false
+    t.decimal "quantity", precision: 14, scale: 3, null: false
+    t.decimal "unit_cost", precision: 14, scale: 6, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["inventory_cost_layer_id"], name: "index_inventory_layer_draws_on_inventory_cost_layer_id"
+    t.index ["inventory_transaction_id"], name: "index_inventory_layer_draws_on_inventory_transaction_id"
+  end
+
   create_table "inventory_transactions", force: :cascade do |t|
     t.decimal "quantity", precision: 14, scale: 3, null: false
     t.string "direction", null: false
@@ -247,7 +274,16 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_26_220000) do
     t.string "product_id", null: false
     t.bigint "location_id"
     t.bigint "reversal_of_id"
+    t.string "movement_type"
+    t.date "occurred_on"
+    t.decimal "unit_cost", precision: 14, scale: 6
+    t.decimal "total_cost", precision: 16, scale: 4
+    t.decimal "variance_amount", precision: 16, scale: 4
+    t.decimal "balance_quantity", precision: 14, scale: 3
+    t.decimal "balance_value", precision: 16, scale: 4
     t.index ["created_by_id"], name: "index_inventory_transactions_on_created_by_id"
+    t.index ["movement_type"], name: "index_inventory_transactions_on_movement_type"
+    t.index ["product_id", "location_id", "occurred_on"], name: "idx_on_product_id_location_id_occurred_on_2cf8b664e6"
     t.index ["product_id"], name: "index_inventory_transactions_on_product_id"
     t.index ["reversal_of_id"], name: "index_inventory_transactions_on_reversal_of_id", unique: true
     t.index ["transactable_type", "transactable_id"], name: "idx_inv_trans_on_transactable"
@@ -338,6 +374,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_26_220000) do
     t.datetime "updated_at", null: false
     t.string "product_id", null: false
     t.decimal "quantity", precision: 14, scale: 3, default: "0.0", null: false
+    t.decimal "inventory_value", precision: 16, scale: 4, default: "0.0", null: false
     t.index ["location_id"], name: "index_location_products_on_location_id"
     t.index ["product_id"], name: "index_location_products_on_product_id"
   end
@@ -682,6 +719,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_26_220000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "post_inventory_gl", default: false, null: false
+    t.string "costing_method", default: "weighted_average", null: false
     t.index ["name"], name: "index_reporting_groups_on_name", unique: true
   end
 
@@ -814,6 +852,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_26_220000) do
   add_foreign_key "dispatch_messages", "users"
   add_foreign_key "dispatches", "things", column: "asset_id"
   add_foreign_key "dispatches", "vendors"
+  add_foreign_key "inventory_cost_layers", "inventory_transactions"
+  add_foreign_key "inventory_cost_layers", "locations"
+  add_foreign_key "inventory_layer_draws", "inventory_cost_layers"
+  add_foreign_key "inventory_layer_draws", "inventory_transactions"
   add_foreign_key "inventory_transactions", "inventory_transactions", column: "reversal_of_id"
   add_foreign_key "inventory_transactions", "products"
   add_foreign_key "job_workers", "jobs"

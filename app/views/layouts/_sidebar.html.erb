@@ -8,7 +8,7 @@
                        (current == 'locations' && action == 'map') %>
 <% production_active = %w[production_orders jobs warehouse work_orders quality_exceptions].include?(current) %>
 <% purchasing_active = %w[purchase_orders purchasing_report mrp vendors].include?(current) %>
-<% inventory_active  = %w[inventory_intelligence products inventory_adjustments inventory_transactions].include?(current) %>
+<% inventory_active  = %w[inventory_intelligence products inventory_adjustments inventory_transactions inventory_valuations].include?(current) %>
 <% imports_active    = %w[imports customer_order_imports inventory_imports pdi_inventory_imports warehouse_transaction_imports
                           bom_imports min_max_imports vendor_freight_term_imports pdi_product_imports
                           repack_batch_imports pdi_purchase_order_imports purchase_order_imports].include?(current) ||
@@ -136,6 +136,7 @@
           <%= nav_item 'Products',           products_path,                'bi-box-seam',      active: current == 'products' %>
           <%= nav_item 'Adjust Inventory',   new_inventory_adjustment_path, 'bi-sliders',      active: current == 'inventory_adjustments', keywords: 'adjustment stock count' %>
           <%= nav_item 'Inventory History',  inventory_transactions_path,  'bi-clock-history', active: current == 'inventory_transactions', keywords: 'transactions' %>
+          <%= nav_item 'Inventory Valuation', inventory_valuation_path,    'bi-cash-stack',    active: current == 'inventory_valuations', keywords: 'value cost fifo standard weighted average ppv variance' %>
         <% end %>
         <% end %>
 

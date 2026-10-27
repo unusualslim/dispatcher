@@ -9,6 +9,14 @@ class ReportingGroup < ApplicationRecord
     'non_inventory' => 'Non-inventory'
   }.freeze
 
+  # How inventory in fuel and warehouse groups is valued. PDI uses weighted average.
+  COSTING_METHODS = {
+    'weighted_average' => 'Weighted Average',
+    'standard' => 'Standard',
+    'fifo' => 'FIFO'
+  }.freeze
+  DEFAULT_COSTING_METHOD = 'weighted_average'.freeze
+
   has_many :product_cost_lines, dependent: :restrict_with_error
   has_many :products, foreign_key: :category, primary_key: :name, inverse_of: :reporting_group,
                       dependent: :restrict_with_error
@@ -17,10 +25,14 @@ class ReportingGroup < ApplicationRecord
 
   validates :name, presence: true, uniqueness: true
   validates :item_type, inclusion: { in: ITEM_TYPES.keys }
+  validates :costing_method, inclusion: { in: COSTING_METHODS.keys }
   validates :gl_account, :temp_gl_account, format: { with: ACCOUNT_FORMAT }, allow_nil: true
   validate :labor_only_for_non_inventory
   validate :inventory_gl_only_for_pdi_categories
   validate :pdi_name_unchanged, on: :update
+
+  # Revalues the group's stock on hand to the new method's basis.
+  after_update -> { InventoryRevaluation.method_changed!(self) }, if: :saved_change_to_costing_method?
 
   scope :ordered, -> { order(:position, :name) }
   scope :non_inventory, -> { where(item_type: 'non_inventory') }
@@ -41,6 +53,10 @@ class ReportingGroup < ApplicationRecord
 
   def item_type_label
     ITEM_TYPES[item_type]
+  end
+
+  def costing_method_label
+    COSTING_METHODS[costing_method]
   end
 
   # Major-Sub to credit for actual labor by a worker of the given employment type.

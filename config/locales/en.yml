@@ -50,6 +50,9 @@ en:
       updated: "Costing settings updated."
       invalid_accounts: "GL accounts must be Major-Sub, e.g. 1410-02: %{roles}"
       invalid_start_date: "GL posting start date must be a date."
+  inventory_valuations:
+    opening:
+      done: "Opening balances set. Inventory is now tracked at cost from today."
   reporting_groups:
     create:
       created: "Added reporting group %{name}."

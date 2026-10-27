@@ -13,6 +13,13 @@
   every category. Production costing (the FPST journal) posts for every production order regardless.
   Enter accounts as Major-Sub (e.g. <code>6110-01</code>); the production location adds the site.
 </p>
+<p class="text-muted" style="max-width: 820px;">
+  <strong>Costing</strong> sets how the app values a fuel or warehouse category's inventory: <strong>Weighted Average</strong>
+  (what PDI uses), <strong>Standard</strong> (stock at the product's standard cost; the difference from purchase cost is
+  purchase price variance) or <strong>FIFO</strong> (oldest cost layers are used first). Changing it revalues the stock on
+  hand: Standard moves it to standard cost, FIFO starts one layer at the current average. See
+  <%= link_to 'Inventory Valuation', inventory_valuation_path %>.
+</p>
 
 <% ReportingGroup::ITEM_TYPES.each do |type, label| %>
   <% groups = @groups_by_type[type] %>
@@ -32,6 +39,7 @@
               <th>Name</th>
               <% unless non_inventory %>
                 <th style="width: 150px;">Item Type</th>
+                <th style="width: 170px;">Costing</th>
                 <th class="text-center" style="width: 110px;" title="App posts this category's inventory, COGS and sales instead of PDI (not built yet)">Post inventory GL</th>
               <% end %>
               <th style="width: 150px;">GL Account</th>
@@ -61,6 +69,11 @@
                   <td>
                     <%= select_tag 'reporting_group[item_type]',
                                    options_for_select(ReportingGroup::ITEM_TYPES.except('non_inventory').invert, group.item_type),
+                                   form: form_id, class: 'form-select form-select-sm' %>
+                  </td>
+                  <td>
+                    <%= select_tag 'reporting_group[costing_method]',
+                                   options_for_select(ReportingGroup::COSTING_METHODS.invert, group.costing_method),
                                    form: form_id, class: 'form-select form-select-sm' %>
                   </td>
                   <td class="text-center">

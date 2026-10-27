@@ -206,6 +206,9 @@ Rails.application.routes.draw do
   end
   resources :inventory_adjustments, only: %i[new create]
   resources :inventory_transactions, only: [:index]
+  resource :inventory_valuation, only: [:show] do
+    post :opening
+  end
   get 'imports', to: 'imports#index', as: :imports
   resource :pdi_inventory_import, only: %i[new create]
   resource :inventory_import, only: %i[new create] do

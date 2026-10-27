@@ -109,7 +109,7 @@ class QualityCheckTest < ActionDispatch::IntegrationTest
     assert_redirected_to production_order_path(@po)
     assert_equal 98, @po.reload.total_qty_produced
 
-    done = ProductionOrder.create!(product: @product, status: 'completed', total_qty_produced: 50)
+    done = ProductionOrder.create!(product: @product, location: @location, status: 'completed', total_qty_produced: 50)
     get production_order_path(done)
     assert_select '#qty-produced-form', 0
   end
