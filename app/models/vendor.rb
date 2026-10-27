@@ -5,7 +5,14 @@ class Vendor < ApplicationRecord
   has_many :products, through: :product_vendors
   has_many :vendor_freight_terms, dependent: :destroy
 
-  validates :name, presence: true, uniqueness: true
+  # Not unique: PDI has separate vendors with the same name (e.g. KM Solutions 1570 product, 1571 freight).
+  # The PDI vendor ID tells them apart.
+  validates :name, presence: true
+
+  # For pickers: the name with the PDI vendor ID.
+  def label
+    "#{name} (#{id})"
+  end
 
   def freight_term_names
     vendor_freight_terms.pluck(:freight_term).sort

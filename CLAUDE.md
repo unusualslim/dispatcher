@@ -126,6 +126,8 @@ download the file, delete it from FTP, run an import service, and record a `Sync
 
 - Outbound: `PdiExportJob` uploads a CSV to FTP when a PurchaseOrder transitions to `submitted`;
   `PdiGlExportJob` (scheduled) posts ready production journals and uploads pending FPST GL entries (`PdiGlExport`).
+- Vendors are keyed by PDI vendor ID; names are **not** unique (PDI has same-name vendors, e.g. KM Solutions 1570
+  product / 1571 freight), so pickers show `Vendor#label` ("Name (ID)"). Never match vendors by name.
 - `PdiProductSyncJob`'s file pattern skips the FI report (that's `PdiFuelInventorySyncJob`).
 - **Scheduling**: `rake scheduler:tick` runs every minute as a Render cron job. It walks
   `AutomatedProcessesController::PROCESSES`, checks each `AutomatedProcessConfig` cron

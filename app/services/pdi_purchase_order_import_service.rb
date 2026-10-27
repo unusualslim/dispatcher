@@ -240,6 +240,7 @@ class PdiPurchaseOrderImportService
     @locations_by_site[site.to_s] || @locations_by_site[site.to_s.rjust(4, '0')] if site
   end
 
+  # By PDI vendor ID (names aren't unique in PDI), else a new vendor.
   def vendor_for(first)
     pdi_vendor_id = null_safe(first[COL_VENDOR_ID])
     @vendors_by_pdi_id[pdi_vendor_id] ||= Vendor.create!(id: pdi_vendor_id, name: null_safe(first[COL_VENDOR_NAME]))

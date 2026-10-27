@@ -82,4 +82,16 @@ class PdiPurchaseOrderImportServiceTest < ActiveSupport::TestCase
 
     assert_equal [0, 1], import(old).to_h.values_at(:created, :skipped_exists)
   end
+
+  test 'vendors match on PDI ID; PDI vendors can share a name' do
+    Vendor.create!(id: '1571', name: 'KM Solutions, LLC')
+    row = line('FPS2005', 'Ordered', received: 'NULL').tap do |r|
+      r[3] = '1570'
+      r[4] = 'KM Solutions, LLC'
+    end
+
+    assert_equal 1, import(row).created
+    vendor = PurchaseOrder.find_by!(pdi_reference: 'FPS2005').vendor
+    assert_equal ['1570', 'KM Solutions, LLC (1570)'], [vendor.id, vendor.label]
+  end
 end

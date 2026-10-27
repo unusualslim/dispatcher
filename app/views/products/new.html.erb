@@ -68,7 +68,7 @@
           <select name="product[vendor_ids][]" id="product_vendor_ids" multiple="multiple"
                   class="form-select select2" data-placeholder="Select vendors in priority order...">
             <% @vendors.each do |v| %>
-              <option value="<%= v.id %>"><%= v.name %></option>
+              <option value="<%= v.id %>"><%= v.label %></option>
             <% end %>
           </select>
           <div class="form-text">First selected = primary vendor. Select multiple for fallback suppliers.</div>

@@ -49,7 +49,7 @@
           <%# Vendor %>
           <div>
             <%= form.label :vendor_id, "Vendor", class: "form-label fw-semibold mb-1" %>
-            <%= form.collection_select :vendor_id, Vendor.all, :id, :name,
+            <%= form.collection_select :vendor_id, Vendor.order(:name), :id, :label,
                   { include_blank: "— Select a vendor —" },
                   class: "form-select" %>
           </div>

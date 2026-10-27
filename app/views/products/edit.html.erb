@@ -55,7 +55,7 @@
             <% @vendors.each do |v| %>
               <option value="<%= v.id %>"
                 <%= 'selected' if @product.vendors.map(&:id).include?(v.id) %>>
-                <%= v.name %>
+                <%= v.label %>
               </option>
             <% end %>
           </select>
