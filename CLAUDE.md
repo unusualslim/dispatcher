@@ -99,8 +99,9 @@ order's GL Posting tab. **Cost Items** (`CostItem`, Accounting → Cost Items): 
 tape, labels, labor, overhead) priced as bought (each/roll/gallon/day); a `ProductCostLine` with `cost_item_id` takes the
 item's group, name and current unit cost (labor lines still use the labor rate). Loaded 2026-10-27 from the internal
 "MASTER PRICING MATRIX" workbook, whose Master Item-Price sheet also set 48 component standard costs (landed, effective
-2026-10-01; migration `LoadStandardCostMatrix`). The workbook's kit tabs (per package type) are the source for
-finished-good cost lines. **Ledger**: `LedgerEntry`/`LedgerLine` freeze posted entries (corrections = reversing
+2026-10-01; migration `LoadStandardCostMatrix`). Its kit tabs (one block per package type: 1/2.5 squat, 55 gal drum…)
+became cost lines on 216 finished goods (`LoadKitCostLines`: template → products by BOM packaging/family; labor =
+hours at the labor rate sized to the sheet's $/unit). **Ledger**: `LedgerEntry`/`LedgerLine` freeze posted entries (corrections = reversing
 entries, `<ref>-REV`, re-post `<PO#>-2`). `ProductionGlPosting` auto-posts on completion (for orders completed on/after the
 `gl_posting_start_date` setting; reopening reverses). Costing always posts; `reporting_groups.post_inventory_gl` is
 reserved for the app taking over a category's inventory/COGS/sales posting from PDI (not built); the scheduled `PdiGlExportJob` sweeps ready orders and `PdiGlExport` uploads pending entries as one FPST CSV
