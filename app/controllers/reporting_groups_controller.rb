@@ -36,7 +36,7 @@ class ReportingGroupsController < ApplicationController
 
   def reporting_group_params
     params.require(:reporting_group)
-          .permit(:name, :item_type, :costing_method, :gl_account, :temp_gl_account, :labor, :post_inventory_gl,
+          .permit(:name, :item_type, :costing_method, :gl_account, :temp_gl_account, :labor, :post_inventory_gl, :buy,
                   *ReportingGroup::INVENTORY_ACCOUNT_COLUMNS)
   end
 

@@ -164,7 +164,8 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
   own site, no customer) → `StatusCheck` asks `GetOrderStatus` for open app orders PDI didn't send (200/run).
   Re-import a saved feed: `rake pdi:reimport_orders[SYNC_LOG_ID]`. Imported lines may have negative prices (credits).
   Fuel lines use the loaded product (`PurchasedProductID`; ordered 10011219 Bulk DEF → 901) except blends. Line
-  `item_type` comes from `Product#order_item_type`: fuel / non-inventory groups and raw materials are "buy".
+  `item_type` comes from `Product#order_item_type`: fuel / non-inventory groups, groups ticked **Buy** on Reporting
+  Groups (HYDRAULICS) and raw materials are "buy".
 - **PDI Master Data** (`PdiMasterDataImportService` + `app/services/pdi_master_data/*_sync.rb`; Data Imports page and
   `PdiMasterDataSyncJob`, schedule Off until set): customers → `customers.pdi_customer_id`; ship-tos (per customer in
   PDI) → `customer_locations.pdi_location_id`, so one app location can serve many customers' ship-tos; terminals →

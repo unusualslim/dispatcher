@@ -51,10 +51,11 @@ class Product < ApplicationRecord
   # Item types that are bought or delivered as-is, never made here.
   NOT_PRODUCED_ITEM_TYPES = %w[fuel non_inventory].freeze
 
-  # Whether a sold line of this product goes to production planning: not raw materials, and not fuel or
-  # non-inventory items (diesel, gasoline, Freight - DEF…), which are bought or delivered as-is.
+  # Whether a sold line of this product goes to production planning: not raw materials, not fuel or
+  # non-inventory items (diesel, gasoline, Freight - DEF…), and not groups marked Buy (HYDRAULICS), which are
+  # bought or delivered as-is.
   def produced?
-    !is_raw_material? && NOT_PRODUCED_ITEM_TYPES.exclude?(reporting_group&.item_type)
+    !is_raw_material? && NOT_PRODUCED_ITEM_TYPES.exclude?(reporting_group&.item_type) && !reporting_group&.buy?
   end
 
   # Order line item type for this product (customer_order_products.item_type).

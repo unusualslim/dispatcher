@@ -18,7 +18,8 @@
   <strong>Costing</strong> sets how the app values a fuel or warehouse category's inventory: <strong>Weighted Average</strong>
   (what PDI uses), <strong>Standard</strong> (stock at the product's standard cost; the difference from purchase cost is
   purchase price variance) or <strong>FIFO</strong> (oldest cost layers are used first). Changing it revalues the stock on
-  hand: Standard moves it to standard cost, FIFO starts one layer at the current average. See
+  hand: Standard moves it to standard cost, FIFO starts one layer at the current average. <strong>Buy</strong> marks a
+  category bought finished and never made here (e.g. HYDRAULICS): its order lines are buy items, not production. See
   <%= link_to 'Inventory Valuation', inventory_valuation_path %>.
 </p>
 
@@ -41,6 +42,7 @@
               <% unless non_inventory %>
                 <th style="width: 150px;">Item Type</th>
                 <th style="width: 170px;">Costing</th>
+                <th class="text-center" style="width: 70px;" title="Bought finished, never made here: order lines are buy, not production">Buy</th>
                 <th class="text-center" style="width: 110px;" title="App posts this category's inventory movements to the GL instead of PDI">Post inventory GL</th>
               <% end %>
               <th style="width: 150px;">GL Account</th>
@@ -78,6 +80,10 @@
                                    form: form_id, class: 'form-select form-select-sm' %>
                   </td>
                   <td class="text-center">
+                    <%= hidden_field_tag 'reporting_group[buy]', '0', form: form_id, id: nil %>
+                    <%= check_box_tag 'reporting_group[buy]', '1', group.buy?, form: form_id, class: 'form-check-input', id: "buy_#{group.id}" %>
+                  </td>
+                  <td class="text-center">
                     <%= hidden_field_tag 'reporting_group[post_inventory_gl]', '0', form: form_id, id: nil %>
                     <%= check_box_tag 'reporting_group[post_inventory_gl]', '1', group.post_inventory_gl?, form: form_id,
                                                                                                          class: 'form-check-input', id: "post_inventory_gl_#{group.id}" %>
@@ -107,7 +113,7 @@
               </tr>
               <% unless non_inventory %>
                 <tr class="small">
-                  <td colspan="6" class="pt-0 border-top-0">
+                  <td colspan="7" class="pt-0 border-top-0">
                     <div class="d-flex flex-wrap gap-2 align-items-end">
                       <span class="text-muted me-1">Inventory GL:</span>
                       <% ReportingGroup::INVENTORY_ACCOUNTS.each do |role, label| %>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_27_200000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_27_210000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -753,6 +753,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_27_200000) do
     t.string "receipts_clearing_gl_account"
     t.string "adjustment_gl_account"
     t.string "revaluation_gl_account"
+    t.boolean "buy", default: false, null: false
     t.index ["name"], name: "index_reporting_groups_on_name", unique: true
   end
 
