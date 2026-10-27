@@ -68,27 +68,6 @@
     </div>
   </div>
 
-  <% row = lambda do |label, values, format: :currency, **opts| %>
-    <% fmt = lambda do |v|
-         next tag.span('—', class: 'text-muted') if v.nil?
-
-         case format
-         when :currency then number_to_currency(v, precision: 0)
-         when :days then "#{number_with_precision(v, precision: 1)} days"
-         when :percent then number_to_percentage(v * 100, precision: 0)
-         when :ratio then number_to_percentage(v * 100, precision: 0)
-         else number_with_delimiter(v.to_d.round(format == :decimal ? 1 : 0))
-         end
-       end %>
-    <tr>
-      <td><%= label %></td>
-      <td class="text-end fw-semibold"><%= fmt.call(values[:current]) %></td>
-      <td class="text-end"><%= fmt.call(values[:prior_month]) %></td>
-      <td class="text-end small"><%= dashboard_change(values[:current], values[:prior_month], **opts) %></td>
-      <td class="text-end"><%= fmt.call(values[:last_year]) %></td>
-      <td class="text-end small"><%= dashboard_change(values[:current], values[:last_year], **opts) %></td>
-    </tr>
-  <% end %>
   <% header = capture do %>
     <thead class="table-light">
       <tr>
@@ -113,15 +92,15 @@
               <% FinancialDashboard::Sales::TYPES.each do |type, label| %>
                 <% values = sales.transform_values { |s| s.by_type.dig(type, 0) } %>
                 <% next if values.values.all?(&:nil?) %>
-                <%= row.call(label, values.transform_values { |v| v || 0.to_d }) %>
+                <%= dashboard_row(label, values.transform_values { |v| v || 0.to_d }) %>
               <% end %>
-              <%= row.call(tag.strong('Net sales'), sales.transform_values(&:net_sales)) %>
-              <%= row.call('Taxes (PDI estimate)', sales.transform_values(&:taxes), higher_is_better: nil) %>
-              <%= row.call(tag.strong('Total billed'), sales.transform_values(&:total)) %>
-              <%= row.call('Fuel gallons', sales.transform_values(&:gallons), format: :number) %>
-              <%= row.call('Average order', sales.transform_values(&:average_order)) %>
-              <%= row.call('Cost of sales', sales.transform_values(&:cost_of_sales), higher_is_better: nil) %>
-              <%= row.call('New customers', sales.transform_values { |s| s.new_customers.to_d }, format: :number) %>
+              <%= dashboard_row(tag.strong('Net sales'), sales.transform_values(&:net_sales)) %>
+              <%= dashboard_row('Taxes (PDI estimate)', sales.transform_values(&:taxes), higher_is_better: nil) %>
+              <%= dashboard_row(tag.strong('Total billed'), sales.transform_values(&:total)) %>
+              <%= dashboard_row('Fuel gallons', sales.transform_values(&:gallons), format: :number) %>
+              <%= dashboard_row('Average order', sales.transform_values(&:average_order)) %>
+              <%= dashboard_row('Cost of sales', sales.transform_values(&:cost_of_sales), higher_is_better: nil) %>
+              <%= dashboard_row('New customers', sales.transform_values { |s| s.new_customers.to_d }, format: :number) %>
             </tbody>
           </table>
         </div>
@@ -135,18 +114,18 @@
           <table class="table table-sm align-middle mb-0">
             <%= header %>
             <tbody>
-              <%= row.call('Avg delivery time (order → invoice)', ops.transform_values(&:average_delivery_days),
+              <%= dashboard_row('Avg delivery time (order → invoice)', ops.transform_values(&:average_delivery_days),
                            format: :days, kind: :days, higher_is_better: false) %>
-              <%= row.call('Invoiced on time', ops.transform_values(&:on_time_share), format: :percent, kind: :points) %>
-              <%= row.call('Production orders completed', ops.transform_values { |o| o.completed_orders.count.to_d }, format: :number) %>
-              <%= row.call('Quantity produced', ops.transform_values(&:quantity_produced), format: :number) %>
-              <%= row.call('Labor efficiency', ops.transform_values(&:labor_efficiency), format: :ratio, kind: :points) %>
-              <%= row.call('Quality issues (out of range)', ops.transform_values { |o| o.quality_issues.to_d },
+              <%= dashboard_row('Invoiced on time', ops.transform_values(&:on_time_share), format: :percent, kind: :points) %>
+              <%= dashboard_row('Production orders completed', ops.transform_values { |o| o.completed_orders.count.to_d }, format: :number) %>
+              <%= dashboard_row('Quantity produced', ops.transform_values(&:quantity_produced), format: :number) %>
+              <%= dashboard_row('Labor efficiency', ops.transform_values(&:labor_efficiency), format: :percent, kind: :points) %>
+              <%= dashboard_row('Quality issues (out of range)', ops.transform_values { |o| o.quality_issues.to_d },
                            format: :number, higher_is_better: false) %>
-              <%= row.call('Pricing exceptions', ops.transform_values { |o| o.price_exceptions.to_d },
+              <%= dashboard_row('Pricing exceptions', ops.transform_values { |o| o.price_exceptions.to_d },
                            format: :number, higher_is_better: false) %>
-              <%= row.call('Purchase price variance', ops.transform_values(&:purchase_price_variance), higher_is_better: false) %>
-              <%= row.call('PO spend (received)', ops.transform_values(&:po_spend), higher_is_better: nil) %>
+              <%= dashboard_row('Purchase price variance', ops.transform_values(&:purchase_price_variance), higher_is_better: false) %>
+              <%= dashboard_row('PO spend (received)', ops.transform_values(&:po_spend), higher_is_better: nil) %>
             </tbody>
           </table>
         </div>

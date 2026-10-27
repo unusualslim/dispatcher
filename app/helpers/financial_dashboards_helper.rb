@@ -12,11 +12,35 @@ module FinancialDashboardsHelper
     change_tag(delta, kind, higher_is_better)
   end
 
+  # A comparison table row: this period, prior month, change, last year, change.
+  # format: :currency, :days, :percent (a share), or :number; opts go to dashboard_change.
+  def dashboard_row(label, values, format: :currency, **opts)
+    current = tag.td(dashboard_value(values[:current], format), class: 'text-end fw-semibold')
+    comparisons = %i[prior_month last_year].map { |period| comparison_cells(values, period, format, opts) }
+    tag.tr(safe_join([tag.td(label), current, *comparisons]))
+  end
+
+  def dashboard_value(value, format)
+    return tag.span('—', class: 'text-muted') if value.nil?
+
+    case format
+    when :currency then number_to_currency(value, precision: 0)
+    when :days then "#{number_with_precision(value, precision: 1)} days"
+    when :percent then number_to_percentage(value * 100, precision: 0)
+    else number_with_delimiter(value.to_d.round)
+    end
+  end
+
   def dashboard_range(range)
     "#{range.begin.strftime('%b %-d')} – #{range.end.strftime('%b %-d, %Y')}"
   end
 
   private
+
+  def comparison_cells(values, period, format, opts)
+    safe_join([tag.td(dashboard_value(values[period], format), class: 'text-end'),
+               tag.td(dashboard_change(values[:current], values[period], **opts), class: 'text-end small')])
+  end
 
   def change_tag(delta, kind, higher_is_better)
     tag.span(class: change_class(delta, higher_is_better)) do
