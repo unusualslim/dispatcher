@@ -50,4 +50,23 @@ class ProductCostLineTest < ActiveSupport::TestCase
     assert_in_delta 0.1675 + 0.18925, @product.non_inventory_standard_cost, 0.00001
     assert_in_delta material + 0.1675 + 0.18925, @product.bom_standard_cost, 0.00001
   end
+
+  test 'a line picked from the cost item catalog takes its price, group and name' do
+    pallet = CostItem.create!(name: 'PALLET 48x40', reporting_group: @consumables, unit_cost: 13.40, unit: 'each')
+    cost_line = line(cost_item: pallet, reporting_group: @overhead, per_quantity: 80)
+
+    assert_equal ['PALLET 48x40', @consumables], [cost_line.description, cost_line.reporting_group]
+    assert_in_delta 0.1675, cost_line.cost_per_unit, 0.00001
+
+    pallet.update!(unit_cost: 16.00)
+    assert_in_delta 0.2, cost_line.reload.cost_per_unit, 0.00001
+    assert_not pallet.destroy, 'kept while a cost line uses it'
+  end
+
+  test 'cost items belong to non-inventory groups' do
+    warehouse = ReportingGroup.create!(name: 'Boxes', item_type: 'warehouse')
+
+    assert_not CostItem.new(name: 'Tape', reporting_group: warehouse, unit_cost: 1).valid?
+    assert_not CostItem.new(name: 'Tape', reporting_group: @consumables, unit_cost: -1).valid?
+  end
 end

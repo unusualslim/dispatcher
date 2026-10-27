@@ -1,0 +1,94 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="mb-0">Cost Items</h1>
+</div>
+
+<p class="text-muted" style="max-width: 900px;">
+  Non-inventory costs absorbed into production (pallets, film, tape, labels, labor, overhead), priced as bought:
+  per each, roll, gallon or day. Pick one on a product's <strong>Non-Inventory Costs</strong> line and the line takes this
+  price, so changing it here re-costs every finished good that uses it. The reporting group decides the GL account
+  (<%= link_to 'Reporting Groups', reporting_groups_path %>). Labor lines still cost at the
+  <%= link_to 'labor rate', edit_costing_settings_path %>; the crew prices here are for reference.
+</p>
+
+<datalist id="cost-item-units">
+  <% CostItem::UNITS.each do |unit| %><option value="<%= unit %>"></option><% end %>
+</datalist>
+
+<% (@groups.map(&:id) | @items_by_group.keys).each do |group_id| %>
+  <% group = @groups.find { |g| g.id == group_id } %>
+  <% items = @items_by_group[group_id] || [] %>
+  <div class="card shadow-sm mb-4">
+    <div class="card-header fw-semibold d-flex justify-content-between">
+      <%= group&.name %>
+      <span class="text-muted small fw-normal"><%= pluralize(items.size, 'item') %></span>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Name</th>
+            <th style="width: 150px;">Group</th>
+            <th style="width: 120px;" class="text-end">Unit cost</th>
+            <th style="width: 100px;">Per</th>
+            <th style="width: 150px;">Vendor</th>
+            <th style="width: 145px;">Effective</th>
+            <th class="text-center" style="width: 60px;">Active</th>
+            <th class="text-end" style="width: 70px;" title="Product cost lines using this item">Lines</th>
+            <th style="width: 140px;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% items.each do |item| %>
+            <% form_id = "cost_item_#{item.id}" %>
+            <% in_use = @line_counts[item.id].to_i %>
+            <tr class="<%= 'text-muted' unless item.active? %>">
+              <td>
+                <%= text_field_tag 'cost_item[name]', item.name, form: form_id, class: 'form-control form-control-sm', required: true %>
+                <% if item.notes.present? %><div class="small text-muted mt-1"><%= item.notes %></div><% end %>
+              </td>
+              <td><%= select_tag 'cost_item[reporting_group_id]', options_from_collection_for_select(@groups, :id, :name, item.reporting_group_id), form: form_id, class: 'form-select form-select-sm' %></td>
+              <td><%= number_field_tag 'cost_item[unit_cost]', item.unit_cost, step: 'any', min: 0, form: form_id, class: 'form-control form-control-sm text-end', required: true %></td>
+              <td><%= text_field_tag 'cost_item[unit]', item.unit, list: 'cost-item-units', form: form_id, class: 'form-control form-control-sm' %></td>
+              <td><%= text_field_tag 'cost_item[vendor]', item.vendor, form: form_id, class: 'form-control form-control-sm' %></td>
+              <td><%= date_field_tag 'cost_item[effective_date]', item.effective_date, form: form_id, class: 'form-control form-control-sm' %></td>
+              <td class="text-center">
+                <%= hidden_field_tag 'cost_item[active]', '0', form: form_id, id: nil %>
+                <%= check_box_tag 'cost_item[active]', '1', item.active?, form: form_id, class: 'form-check-input', id: "active_#{item.id}" %>
+              </td>
+              <td class="text-end"><%= in_use %></td>
+              <td class="text-end text-nowrap">
+                <%= form_with model: item, id: form_id, method: :patch, class: 'd-inline' do %>
+                  <button type="submit" class="btn btn-sm btn-primary">Save</button>
+                <% end %>
+                <% if in_use.zero? %>
+                  <%= button_to 'Delete', cost_item_path(item), method: :delete, class: 'btn btn-sm btn-outline-danger',
+                                                                form: { class: 'd-inline', data: { turbo_confirm: "Delete #{item.name}?" } } %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+        <% if group %>
+          <% new_form = "new_cost_item_#{group.id}" %>
+          <tfoot>
+            <tr class="table-light">
+              <td><%= text_field_tag 'cost_item[name]', nil, form: new_form, class: 'form-control form-control-sm', placeholder: "New #{group.name.downcase} item", required: true %></td>
+              <td><%= hidden_field_tag 'cost_item[reporting_group_id]', group.id, form: new_form, id: nil %><span class="small text-muted"><%= group.name %></span></td>
+              <td><%= number_field_tag 'cost_item[unit_cost]', nil, step: 'any', min: 0, form: new_form, class: 'form-control form-control-sm text-end', required: true %></td>
+              <td><%= text_field_tag 'cost_item[unit]', nil, list: 'cost-item-units', form: new_form, class: 'form-control form-control-sm', placeholder: 'each' %></td>
+              <td><%= text_field_tag 'cost_item[vendor]', nil, form: new_form, class: 'form-control form-control-sm' %></td>
+              <td><%= date_field_tag 'cost_item[effective_date]', Date.today, form: new_form, class: 'form-control form-control-sm' %></td>
+              <td></td>
+              <td></td>
+              <td class="text-end">
+                <%= form_with model: CostItem.new, id: new_form, class: 'd-inline' do %>
+                  <button type="submit" class="btn btn-sm btn-outline-primary">Add</button>
+                <% end %>
+              </td>
+            </tr>
+          </tfoot>
+        <% end %>
+      </table>
+    </div>
+  </div>
+<% end %>

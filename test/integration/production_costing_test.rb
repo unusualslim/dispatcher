@@ -29,6 +29,28 @@ class ProductionCostingTest < ActionDispatch::IntegrationTest
     assert_match '$0.1675', response.body
   end
 
+  test 'cost items are kept on their page and priced onto product cost lines' do
+    post cost_items_path, params: { cost_item: { name: 'PALLET 48x40', reporting_group_id: @consumables.id,
+                                                 unit_cost: '13.40', unit: 'each' } }
+    assert_redirected_to cost_items_path
+    pallet = CostItem.find_by!(name: 'PALLET 48x40')
+
+    patch product_path(@product), params: { product: {
+      product_cost_lines_attributes: { '0' => { cost_item_id: pallet.id, description: '', quantity: '1',
+                                                per_quantity: '80' } }
+    } }
+    assert_redirected_to product_path(@product)
+    assert_equal ['PALLET 48x40', pallet.id], @product.product_cost_lines.pick(:description, :cost_item_id)
+
+    patch cost_item_path(pallet), params: { cost_item: { unit_cost: '16' } }
+    get product_path(@product)
+    assert_match '$0.2000', response.body
+
+    get cost_items_path
+    assert_response :success
+    assert_select 'input[value=?]', 'PALLET 48x40'
+  end
+
   test 'BOM component picker searches instead of listing every product' do
     get product_path(@product)
     assert_response :success

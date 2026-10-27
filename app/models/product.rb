@@ -26,7 +26,7 @@ class Product < ApplicationRecord
   has_many :vendors, through: :product_vendors
 
   accepts_nested_attributes_for :product_components, allow_destroy: true, reject_if: :all_blank
-  accepts_nested_attributes_for :product_cost_lines, allow_destroy: true, reject_if: ->(a) { a['description'].blank? }
+  accepts_nested_attributes_for :product_cost_lines, allow_destroy: true, reject_if: ProductCostLine::BLANK_ROW
   accepts_nested_attributes_for :quality_specs, allow_destroy: true, reject_if: ->(a) { a['name'].blank? }
 
   validates :name, presence: true

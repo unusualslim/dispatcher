@@ -29,6 +29,7 @@ class ReportingGroup < ApplicationRecord
   INVENTORY_ACCOUNT_COLUMNS = INVENTORY_ACCOUNTS.keys.map { |role| :"#{role}_gl_account" }.freeze
 
   has_many :product_cost_lines, dependent: :restrict_with_error
+  has_many :cost_items, dependent: :restrict_with_error
   has_many :products, foreign_key: :category, primary_key: :name, inverse_of: :reporting_group,
                       dependent: :restrict_with_error
 

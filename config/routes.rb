@@ -13,6 +13,7 @@ Rails.application.routes.draw do
   resource :warehouse_locations, only: %i[edit update]
   resource :costing_settings, only: %i[edit update]
   resources :reporting_groups, only: %i[index create update destroy]
+  resources :cost_items, only: %i[index create update destroy]
   get 'calendar', to: 'calendar#index'
   get 'calendar/events', to: 'calendar#events'
   get 'vendors/index'

@@ -13,7 +13,7 @@
                           bom_imports min_max_imports vendor_freight_term_imports pdi_product_imports
                           repack_batch_imports pdi_purchase_order_imports purchase_order_imports].include?(current) ||
                        (current == 'customer_order_products' && request.path == product_code_links_path) %>
-<% accounting_active = %w[financial_dashboards ledger_entries reporting_groups costing_settings].include?(current) %>
+<% accounting_active = %w[financial_dashboards ledger_entries reporting_groups cost_items costing_settings].include?(current) %>
 <% admin_active      = imports_active || %w[users customer_merges location_merges things warehouse_locations automated_processes announcements].include?(current) %>
 
 <nav id="sidebar" class="sidebar d-flex flex-column">
@@ -154,6 +154,7 @@
           <%= nav_item 'Financial Dashboard', financial_dashboard_path, 'bi-speedometer2', active: current == 'financial_dashboards', keywords: 'sales mtd month to date kpi margin delivery' %>
           <%= nav_item 'GL Ledger',        ledger_entries_path,        'bi-journal-text', active: current == 'ledger_entries', keywords: 'journal fpst gl export posting' %>
           <%= nav_item 'Reporting Groups', reporting_groups_path,      'bi-diagram-2',    active: current == 'reporting_groups', keywords: 'gl account posting cost' %>
+          <%= nav_item 'Cost Items',       cost_items_path,            'bi-tags',         active: current == 'cost_items', keywords: 'non-inventory pallet film tape label labor overhead consumables price' %>
           <%= nav_item 'Costing Settings', edit_costing_settings_path, 'bi-calculator',   active: current == 'costing_settings', keywords: 'labor rate cost gl start date' %>
         <% end %>
         <% end %>

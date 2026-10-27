@@ -33,7 +33,7 @@ class ProductionOrderCosting
   end
 
   def lines
-    @lines ||= (product&.product_cost_lines&.includes(:reporting_group) || []).map do |cl|
+    @lines ||= (product&.product_cost_lines&.includes(:reporting_group, :cost_item) || []).map do |cl|
       Line.new(description: cl.description, reporting_group: cl.reporting_group, cost_per_unit: cl.cost_per_unit,
                standard: cl.cost_per_unit * qty_produced)
     end

@@ -95,7 +95,12 @@ moves and any posted GL entry, clocks out crews; voided orders are read-only); `
 "Standard Calculated (BOM)" pricing uses this full cost. PDI's single per-product repack fee (`products.pdi_repack_fee`)
 goes to a clearing account; `ProductionOrderJournal` builds the FPST GL entry per production order (Dr clearing,
 Cr cost lines at standard, Cr /line labor at actual split by `users.employment_type`, variance plug), shown on the
-order's GL Posting tab. **Ledger**: `LedgerEntry`/`LedgerLine` freeze posted entries (corrections = reversing
+order's GL Posting tab. **Cost Items** (`CostItem`, Accounting → Cost Items): catalog of non-inventory costs (pallets, film,
+tape, labels, labor, overhead) priced as bought (each/roll/gallon/day); a `ProductCostLine` with `cost_item_id` takes the
+item's group, name and current unit cost (labor lines still use the labor rate). Loaded 2026-10-27 from the internal
+"MASTER PRICING MATRIX" workbook, whose Master Item-Price sheet also set 48 component standard costs (landed, effective
+2026-10-01; migration `LoadStandardCostMatrix`). The workbook's kit tabs (per package type) are the source for
+finished-good cost lines. **Ledger**: `LedgerEntry`/`LedgerLine` freeze posted entries (corrections = reversing
 entries, `<ref>-REV`, re-post `<PO#>-2`). `ProductionGlPosting` auto-posts on completion (for orders completed on/after the
 `gl_posting_start_date` setting; reopening reverses). Costing always posts; `reporting_groups.post_inventory_gl` is
 reserved for the app taking over a category's inventory/COGS/sales posting from PDI (not built); the scheduled `PdiGlExportJob` sweeps ready orders and `PdiGlExport` uploads pending entries as one FPST CSV

@@ -292,6 +292,10 @@
           Costs absorbed into each unit of this product that aren't inventory items. Each line works out to
           <strong>Qty × Unit Cost ÷ Per</strong> per unit, and its reporting group decides the GL account.
         </p>
+        <p class="small text-muted mb-2">
+          Pick a <strong>Cost Item</strong> to price the line from the <%= link_to 'Cost Items', cost_items_path %> catalog (its
+          group and current price are used, so a price change there re-costs this product), or leave it blank and type a unit cost.
+        </p>
         <ul class="small text-muted mb-3">
           <li><strong>Pallet</strong>: Qty 1 × Unit Cost $13.40 ÷ Per 80 (cases on a pallet) = $0.1675 per case</li>
           <li><strong>Tape</strong>: Qty 30 (inches per case) × Unit Cost $21.09 (a roll) ÷ Per 35,984 (inches on a roll) = $0.0176</li>
@@ -300,6 +304,7 @@
         </ul>
 
         <div class="d-flex gap-2 align-items-end small text-muted fw-semibold mb-1" aria-hidden="true">
+          <div style="width: 220px;">Cost Item</div>
           <div style="flex: 1; min-width: 160px;">Description</div>
           <div style="width: 150px;">Reporting Group</div>
           <div style="width: 110px;" title="How many of the item one unit uses (e.g. 30 inches of tape, 1 hour of labor)">Qty</div>
@@ -313,6 +318,7 @@
           <%= f.fields_for :product_cost_lines do |cl| %>
             <div class="d-flex gap-2 align-items-center" data-cost-line-row="1">
               <%= cl.hidden_field :id if cl.object&.persisted? %>
+              <%= cl.select :cost_item_id, options_for_select(cost_item_options(cl.object.cost_item_id), cl.object.cost_item_id), { include_blank: '(none)' }, class: "form-select", style: "width: 220px;", "aria-label": "Cost item" %>
               <%= cl.text_field :description, class: "form-control", style: "flex: 1; min-width: 160px;", placeholder: "e.g. Pallet", "aria-label": "Description" %>
               <%= cl.collection_select :reporting_group_id, ReportingGroup.non_inventory.ordered, :id, :name, {}, class: "form-select", style: "width: 150px;", "aria-label": "Reporting group" %>
               <%= cl.number_field :quantity, step: "any", class: "form-control", style: "width: 110px;", placeholder: "Qty", "aria-label": "Qty" %>
@@ -401,6 +407,7 @@
 <script>
   window.costLineGroups = <%= ReportingGroup.non_inventory.ordered.map { |g| { id: g.id, name: g.name, labor: g.labor? } }.to_json.html_safe %>;
   window.laborRate = <%= AppSetting.labor_rate.to_f %>;
+  window.costItems = <%= CostItem.active.ordered.map { |i| { id: i.id, name: i.name, group_id: i.reporting_group_id, unit_cost: i.unit_cost.to_f } }.to_json.html_safe %>;
 </script>
 
 <script>
@@ -488,7 +495,14 @@ document.addEventListener("turbo:load", function () {
       opt.textContent = g.name;
       return opt.outerHTML;
     }).join('');
+    var items = '<option value="">(none)</option>' + window.costItems.map(function (i) {
+      var opt = document.createElement('option');
+      opt.value = i.id;
+      opt.textContent = i.name;
+      return opt.outerHTML;
+    }).join('');
     var html = '<div class="d-flex gap-2 align-items-center" data-cost-line-row="1">' +
+      '<select class="form-select" style="width: 220px;" aria-label="Cost item" name="' + base + '[cost_item_id]">' + items + '</select>' +
       '<input class="form-control" style="flex: 1; min-width: 160px;" type="text" placeholder="e.g. Pallet" aria-label="Description" name="' + base + '[description]" />' +
       '<select class="form-select" style="width: 150px;" aria-label="Reporting group" name="' + base + '[reporting_group_id]">' + groups + '</select>' +
       '<input class="form-control" style="width: 110px;" type="number" step="any" placeholder="Qty" aria-label="Qty" value="1" name="' + base + '[quantity]" />' +
@@ -528,18 +542,26 @@ document.addEventListener("turbo:load", function () {
   });
 });
 
-// Live Cost / unit for each line; Labor-group lines take their unit cost from the labor rate.
-function refreshCostLine(row) {
+// Live Cost / unit for each line; Labor-group lines take their unit cost from the labor rate and
+// lines with a cost item take the item's group and price.
+function refreshCostLine(row, changed) {
   var field = function (attr) { return row.querySelector('[name$="[' + attr + ']"]'); };
+  var item = window.costItems.find(function (i) { return String(i.id) === field('cost_item_id').value; });
+  var groupSelect = field('reporting_group_id');
+  if (item) {
+    groupSelect.value = String(item.group_id);
+    if (changed === field('cost_item_id')) field('description').value = item.name;
+  }
+  groupSelect.disabled = !!item;
   var group = window.costLineGroups.find(function (g) { return String(g.id) === field('reporting_group_id').value; });
   var labor = group && group.labor;
   var unitCost = field('unit_cost');
-  unitCost.disabled = !!labor;
-  unitCost.placeholder = labor ? '$' + window.laborRate.toFixed(2) + '/hr' : 'Unit cost';
-  if (labor) unitCost.value = '';
+  unitCost.disabled = !!(labor || item);
+  unitCost.placeholder = labor ? '$' + window.laborRate.toFixed(2) + '/hr' : (item ? '$' + item.unit_cost : 'Unit cost');
+  if (labor || item) unitCost.value = '';
 
   var qty = parseFloat(field('quantity').value), per = parseFloat(field('per_quantity').value);
-  var cost = labor ? window.laborRate : parseFloat(unitCost.value);
+  var cost = labor ? window.laborRate : (item ? item.unit_cost : parseFloat(unitCost.value));
   var out = row.querySelector('[data-cost-per-unit]');
   out.textContent = (qty > 0 && per > 0 && cost >= 0) ? '$' + (qty * cost / per).toFixed(4) : '';
 }
@@ -553,7 +575,7 @@ document.addEventListener("turbo:load", function () {
   ['input', 'change'].forEach(function (evt) {
     container.addEventListener(evt, function (e) {
       var row = e.target.closest('[data-cost-line-row]');
-      if (row) refreshCostLine(row);
+      if (row) refreshCostLine(row, e.target);
     });
   });
 });

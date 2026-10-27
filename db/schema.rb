@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_27_180000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_27_191000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -85,6 +85,21 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_27_180000) do
     t.datetime "updated_at", null: false
     t.index ["user_id"], name: "index_comments_on_user_id"
     t.index ["work_order_id"], name: "index_comments_on_work_order_id"
+  end
+
+  create_table "cost_items", force: :cascade do |t|
+    t.string "name", null: false
+    t.bigint "reporting_group_id", null: false
+    t.decimal "unit_cost", precision: 12, scale: 5, null: false
+    t.string "unit"
+    t.string "vendor"
+    t.date "effective_date"
+    t.text "notes"
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_cost_items_on_name", unique: true
+    t.index ["reporting_group_id"], name: "index_cost_items_on_reporting_group_id"
   end
 
   create_table "customer_locations", force: :cascade do |t|
@@ -476,6 +491,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_27_180000) do
     t.integer "position"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "cost_item_id"
+    t.index ["cost_item_id"], name: "index_product_cost_lines_on_cost_item_id"
     t.index ["product_id"], name: "index_product_cost_lines_on_product_id"
     t.index ["reporting_group_id"], name: "index_product_cost_lines_on_reporting_group_id"
   end
@@ -852,6 +869,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_27_180000) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "comments", "users"
   add_foreign_key "comments", "work_orders"
+  add_foreign_key "cost_items", "reporting_groups"
   add_foreign_key "customer_locations", "customers"
   add_foreign_key "customer_locations", "locations"
   add_foreign_key "customer_order_products", "customer_orders"
@@ -892,6 +910,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_27_180000) do
   add_foreign_key "phone_numbers", "customers"
   add_foreign_key "product_components", "products"
   add_foreign_key "product_components", "products", column: "component_product_id"
+  add_foreign_key "product_cost_lines", "cost_items"
   add_foreign_key "product_cost_lines", "reporting_groups"
   add_foreign_key "product_vendors", "products"
   add_foreign_key "product_vendors", "vendors"

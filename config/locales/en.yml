@@ -62,6 +62,13 @@ en:
   inventory_valuations:
     opening:
       done: "Opening balances set. Inventory is now tracked at cost from today."
+  cost_items:
+    create:
+      created: "Added cost item %{name}."
+    update:
+      updated: "Saved %{name}."
+    destroy:
+      deleted: "Deleted %{name}."
   reporting_groups:
     create:
       created: "Added reporting group %{name}."

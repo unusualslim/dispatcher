@@ -35,7 +35,7 @@ class ProductsController < ApplicationController
               .where(product_id: product_ids)
               .includes(component_product: :standard_cost_histories)
               .group_by(&:product_id)
-    cost_line_map = ProductCostLine.where(product_id: product_ids).includes(:reporting_group)
+    cost_line_map = ProductCostLine.where(product_id: product_ids).includes(:reporting_group, :cost_item)
                                    .order(:position, :id).group_by(&:product_id)
 
     @products.each do |p|
@@ -206,6 +206,7 @@ class ProductsController < ApplicationController
                                    _destroy],
       product_cost_lines_attributes: %i[
         id
+        cost_item_id
         description
         reporting_group_id
         quantity
