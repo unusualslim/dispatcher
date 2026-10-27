@@ -118,7 +118,7 @@ download the file, delete it from FTP, run an import service, and record a `Sync
 
 | Job | Import service | File |
 |---|---|---|
-| `PdiOrderSyncJob` | `CustomerOrderImportService` | `orders.xls`: **turned off 2026-10-26**, replaced by the PDI Order API Sync (below), which also gets warehouse, own-site and recent billed orders the FTP report left out |
+| `PdiOrderSyncJob` | `CustomerOrderImportService` | `orders.xls` (daily): the PDI Order API Sync (below) owns orders since 2026-10-26, so for orders already in the app this only fills **invoice date, invoice # and salesperson** (the API doesn't send them); orders not in the app (history) are created |
 | `PdiVendorSyncJob` | `PdiVendorImportService` | AP Vendor List `.csv` |
 | `PdiProductSyncJob` | `InventoryImportService` (maps PDI site codes → locations) | current inventory `.xls` |
 | `PdiPurchaseOrderSyncJob` | `PdiWarehouseTransactionImportService` | Warehouse Transaction Report `.xls` |

@@ -4,7 +4,7 @@
     <p class="text-muted mb-0">
       <span class="text-success fw-semibold"><%= @create_count %> new orders will be created</span>
       <% if @update_count > 0 %>
-        &nbsp;&middot;&nbsp;<span class="text-primary fw-semibold"><%= @update_count %> existing orders will be updated</span>
+        &nbsp;&middot;&nbsp;<span class="text-primary fw-semibold"><%= @update_count %> existing orders: invoice date, invoice # and salesperson only</span>
       <% end %>
     </p>
   </div>
@@ -37,7 +37,7 @@
                 <% if row.action == :create %>
                   <span class="badge bg-success">Create</span>
                 <% else %>
-                  <span class="badge bg-primary">Update</span>
+                  <span class="badge bg-primary" title="Already in the app: status and lines come from the PDI Order API Sync">Invoice details</span>
                 <% end %>
               </td>
             </tr>

@@ -29,7 +29,7 @@ class CustomerOrderImportService
         order_date: order_data[:order_date],
         odor_status: order_data[:odor_status],
         line_items_count: order_data[:line_items]&.size || 0,
-        action: existing ? :update : :create
+        action: existing ? :invoice_details : :create
       )
     end
   end
@@ -125,6 +125,7 @@ class CustomerOrderImportService
     return if external_order_no.blank?
 
     existing = CustomerOrder.find_by(external_order_no: external_order_no)
+    return fill_invoice_details(existing, order_data, result) if existing
 
     customer = find_or_create_customer(order_data[:customer_name], order_data[:customer_pdi_id])
     location = find_or_create_location(order_data[:location_name], customer, order_data[:location_pdi_id])
@@ -144,22 +145,20 @@ class CustomerOrderImportService
       location: location
     }
 
-    if existing
-      existing.assign_attributes(attrs)
-      if existing.changed?
-        existing.save!
-        sync_line_items(existing, order_data[:line_items])
-        existing.sync_approximate_amount
-        result.updated += 1
-      else
-        result.skipped += 1
-      end
-    else
-      order = CustomerOrder.create!(attrs)
-      sync_line_items(order, order_data[:line_items])
-      order.sync_approximate_amount
-      result.created += 1
-    end
+    order = CustomerOrder.create!(attrs)
+    sync_line_items(order, order_data[:line_items])
+    order.sync_approximate_amount
+    result.created += 1
+  end
+
+  # Orders already in the app belong to the PDI Order API Sync (status, lines, customer, ship-to). orders.xls
+  # only adds what the API doesn't send: the invoice date, invoice number and salesperson.
+  def fill_invoice_details(order, order_data, result)
+    order.assign_attributes(order_data.slice(:invoice_date, :invoice_no, :salesperson).compact)
+    return result.skipped += 1 unless order.changed?
+
+    order.save!
+    result.updated += 1
   end
 
   def sync_line_items(order, line_items)

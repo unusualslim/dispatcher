@@ -26,7 +26,7 @@ class CustomerOrderImportsController < ApplicationController
 
     @rows          = CustomerOrderImportService.new(tmp.path).preview
     @create_count  = @rows.count { |r| r.action == :create }
-    @update_count  = @rows.count { |r| r.action == :update }
+    @update_count  = @rows.count { |r| r.action == :invoice_details }
   end
 
   def create
