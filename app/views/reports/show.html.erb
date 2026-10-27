@@ -1,0 +1,123 @@
+<% filters = @report.filters %>
+<% rows = @report.rows %>
+<% limit = 2000 %>
+<div class="container-fluid px-4 py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+    <div>
+      <div class="small d-print-none"><%= link_to '← Reports', reports_path, class: 'text-decoration-none' %></div>
+      <h1 class="mb-1"><%= @report_class.title %></h1>
+      <div class="text-muted small"><%= @report_class.description %></div>
+      <div class="small mt-1"><strong><%= filters.range.begin.strftime('%b %-d, %Y') %> – <%= filters.range.end.strftime('%b %-d, %Y') %></strong></div>
+    </div>
+    <div class="d-flex gap-2 d-print-none">
+      <%= link_to report_path(@report_class.key, format: :csv, **filters.to_params), class: 'btn btn-outline-secondary btn-sm' do %>
+        <i class="bi bi-download"></i> CSV
+      <% end %>
+      <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()"><i class="bi bi-printer"></i> Print</button>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-3 d-print-none">
+    <div class="card-body py-2">
+      <%= form_with url: report_path(@report_class.key), method: :get, local: true, class: 'd-flex flex-wrap gap-2 align-items-end' do %>
+        <div>
+          <label class="form-label small mb-0">From</label>
+          <%= date_field_tag :from, filters.range.begin, class: 'form-control form-control-sm' %>
+        </div>
+        <div>
+          <label class="form-label small mb-0">To</label>
+          <%= date_field_tag :to, filters.range.end, class: 'form-control form-control-sm' %>
+        </div>
+        <% if filters.offers?(:customer_id) %>
+          <div style="min-width: 240px;">
+            <label class="form-label small mb-0">Customer</label>
+            <%= select_tag :customer_id, options_for_select(@customers, filters[:customer_id]), include_blank: 'All customers',
+                                                                                                class: 'form-select form-select-sm report-select2' %>
+          </div>
+        <% end %>
+        <% if filters.offers?(:product_id) %>
+          <div style="min-width: 240px;">
+            <label class="form-label small mb-0">Product</label>
+            <%= select_tag :product_id, options_for_select(@products, filters[:product_id]), include_blank: 'All products',
+                                                                                             class: 'form-select form-select-sm report-select2' %>
+          </div>
+        <% end %>
+        <% if filters.offers?(:location_id) %>
+          <div>
+            <label class="form-label small mb-0">Warehouse</label>
+            <%= select_tag :location_id, options_for_select(@locations, filters[:location_id]), include_blank: 'All',
+                                                                                                class: 'form-select form-select-sm' %>
+          </div>
+        <% end %>
+        <% if filters.offers?(:item_type) %>
+          <div>
+            <label class="form-label small mb-0">Item type</label>
+            <%= select_tag :item_type, options_for_select(ReportingGroup::ITEM_TYPES.invert, filters[:item_type]),
+                           include_blank: 'All', class: 'form-select form-select-sm' %>
+          </div>
+        <% end %>
+        <% if filters.offers?(:movement_type) %>
+          <div>
+            <label class="form-label small mb-0">Movement</label>
+            <%= select_tag :movement_type, options_for_select(InventoryTransaction::MOVEMENT_TYPES.invert, filters[:movement_type]),
+                           include_blank: 'All', class: 'form-select form-select-sm' %>
+          </div>
+        <% end %>
+        <% if filters.offers?(:only_problems) %>
+          <div class="form-check mb-1">
+            <%= hidden_field_tag :only_problems, '0', id: nil %>
+            <%= check_box_tag :only_problems, '1', filters.only_problems?, class: 'form-check-input' %>
+            <label class="form-check-label small" for="only_problems">Problems only</label>
+          </div>
+        <% end %>
+        <button type="submit" class="btn btn-sm btn-primary">Run</button>
+        <%= link_to 'Reset', report_path(@report_class.key), class: 'btn btn-sm btn-outline-secondary' %>
+      <% end %>
+    </div>
+  </div>
+
+  <% if rows.empty? %>
+    <div class="text-center text-muted py-5">Nothing for these filters.</div>
+  <% else %>
+    <div class="card shadow-sm">
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <% @report.columns.each do |column| %>
+                <th class="<%= 'text-end' if report_numeric?(column) %> text-nowrap"><%= column.label %></th>
+              <% end %>
+            </tr>
+          </thead>
+          <tbody>
+            <% rows.first(limit).each do |row| %>
+              <tr>
+                <% @report.columns.each do |column| %>
+                  <td class="<%= 'text-end text-nowrap' if report_numeric?(column) %>"><%= report_cell(@report, row, column) %></td>
+                <% end %>
+              </tr>
+            <% end %>
+          </tbody>
+          <% if @report.totals.any? %>
+            <tfoot class="table-light fw-semibold">
+              <tr>
+                <% @report.columns.each_with_index do |column, i| %>
+                  <td class="<%= 'text-end text-nowrap' if report_numeric?(column) %>">
+                    <%= i.zero? ? "Total (#{number_with_delimiter(rows.size)})" : report_value(@report.totals[column.key], column.format) %>
+                  </td>
+                <% end %>
+              </tr>
+            </tfoot>
+          <% end %>
+        </table>
+      </div>
+    </div>
+    <% if rows.size > limit %>
+      <div class="text-muted small mt-2">Showing the first <%= number_with_delimiter(limit) %> of <%= number_with_delimiter(rows.size) %> rows; totals and CSV include all of them.</div>
+    <% end %>
+  <% end %>
+</div>
+
+<script>
+  $(function() { $('.report-select2').select2({ theme: 'bootstrap-5', width: '100%', allowClear: true, placeholder: 'All' }); });
+</script>

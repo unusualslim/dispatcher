@@ -431,3 +431,10 @@ html, body {
   color: #ffffff;
   box-shadow: inset 3px 0 0 var(--sidebar-active);
 }
+
+/* Printing: just the page content (reports, dashboards). */
+@media print {
+  #sidebar, .topbar, .sidebar-overlay { display: none !important; }
+  .main-wrapper { margin-left: 0 !important; }
+  .card { box-shadow: none !important; }
+}

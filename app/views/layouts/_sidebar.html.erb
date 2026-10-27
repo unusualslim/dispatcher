@@ -80,6 +80,14 @@
 
         <div id="sidebarAccordion">
 
+        <ul class="sidebar-nav mb-1">
+          <%= nav_item 'Reports', reports_path, 'bi-file-earmark-bar-graph', active: current == 'reports', keywords: 'report export csv print' %>
+          <% Reports::Registry::REPORTS.each do |report| %>
+            <% next unless can?(report.area) %>
+            <%= nav_search_item "Report: #{report.title}", report_path(report.key), 'bi-table', keywords: report.description %>
+          <% end %>
+        </ul>
+
         <% if can?(:sales) %>
         <!-- SALES -->
         <%= render 'layouts/sidebar_section', label: 'Sales', icon: 'bi-cart3', id: 'salesCollapse', active: sales_active do %>

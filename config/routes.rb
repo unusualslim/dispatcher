@@ -207,6 +207,7 @@ Rails.application.routes.draw do
   resources :inventory_adjustments, only: %i[new create]
   resources :inventory_transactions, only: [:index]
   resource :financial_dashboard, only: [:show]
+  resources :reports, only: %i[index show]
   resource :inventory_valuation, only: [:show] do
     post :opening
   end

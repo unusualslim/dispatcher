@@ -270,6 +270,12 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
 - /quality_exceptions, /ledger_entries (GL Ledger), /reporting_groups, /costing_settings
 - /customer_orders (dashboard, bulk_close), /dispatches/kanban, /warehouse/kanban
 - /pricing_rules, /automated_processes, /docs (in-app user guides + changelog)
+- **/reports — Reports hub** (`ReportsController`, sidebar "Reports" at the top). Reports are classes in
+  `app/services/reports/` (`Reports::Base`: `report title:, area:, description:, filters:`, `#columns`, `#rows` as hashes,
+  optional `#link_for`; totals, CSV and print are shared). **Add new reports to `Reports::Registry::REPORTS`**; `PAGES`
+  lists existing report-like pages on the hub. A report's `area` is the permission area that can see it. Filters
+  (`Reports::Filters`): dates (default this month, `default_from` per report), customer, product, warehouse, vendor,
+  item type, movement type, "problems only". Sales reports reuse `FinancialDashboard::Sales` (`Reports::SalesLines`).
 - /financial_dashboard (Accounting, `FinancialDashboard` + `::Sales` / `::Operations` / `::Snapshot`): month to date vs the
   same days of the prior month and of last year. Sales = lines on orders by **invoice date** (from orders.xls; billed
   orders without one are flagged, not guessed), price × shipped qty, split by reporting group item type; taxes from PDI's
