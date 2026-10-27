@@ -50,9 +50,14 @@
       <% else %>
 
         <!-- QUICK-JUMP SEARCH -->
-        <div class="sidebar-search">
-          <i class="bi bi-search"></i>
-          <input type="search" id="sidebarSearch" placeholder="Jump to…  ( / )" autocomplete="off" aria-label="Search pages">
+        <div class="sidebar-search-row">
+          <div class="sidebar-search">
+            <i class="bi bi-search"></i>
+            <input type="search" id="sidebarSearch" placeholder="Jump to…  ( / )" autocomplete="off" aria-label="Search pages">
+          </div>
+          <button type="button" class="sidebar-collapse-all" id="sidebarCollapseAll" title="Collapse all menus" aria-label="Collapse all menus">
+            <i class="bi bi-arrows-collapse"></i>
+          </button>
         </div>
 
         <!-- FAVORITES (always expanded, outside accordion) -->
@@ -182,6 +187,12 @@
             var acc = document.getElementById('sidebarAccordion');
             acc.addEventListener('shown.bs.collapse', save);
             acc.addEventListener('hidden.bs.collapse', save);
+
+            document.getElementById('sidebarCollapseAll').addEventListener('click', function() {
+              acc.querySelectorAll('.sidebar-collapse.show').forEach(function(el) {
+                bootstrap.Collapse.getOrCreateInstance(el, { toggle: false }).hide();
+              });
+            });
           })();
         </script>
 

@@ -358,9 +358,33 @@ html, body {
 }
 
 /* ─── Sidebar quick-jump search ──────────────────────────── */
+.sidebar-search-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 10px 6px;
+}
+
 .sidebar-search {
   position: relative;
-  margin: 2px 10px 6px;
+  flex-grow: 1;
+}
+
+.sidebar-collapse-all {
+  flex-shrink: 0;
+  padding: 4px 7px;
+  border: 1px solid var(--sidebar-border);
+  border-radius: 6px;
+  background-color: rgba(255,255,255,0.06);
+  color: var(--sidebar-label);
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.sidebar-collapse-all:hover {
+  color: #ffffff;
+  background-color: rgba(255,255,255,0.1);
 }
 
 .sidebar-search i {
