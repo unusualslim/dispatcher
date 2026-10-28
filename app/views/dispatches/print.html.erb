@@ -37,8 +37,10 @@
     td { border-bottom: 1px solid var(--rule); padding: 3px 4px; vertical-align: top; }
     .num { text-align: right; white-space: nowrap; }
     /* Blank line for the driver to write the quantity actually delivered. */
-    td.fill { width: 0.95in; padding: 12px 10px 3px 8px; }
-    td.fill span { display: block; border-bottom: 1px solid var(--ink); height: 1px; }
+    /* Product rows are tall with text on the bottom so the driver has room to write on the line. */
+    tbody td { padding-top: 22px; vertical-align: bottom; }
+    td.fill { width: 1in; padding: 22px 10px 4px 8px; }
+    td.fill span { display: block; border-bottom: 1px solid var(--ink); }
     tfoot td { font-weight: 700; border-bottom: none; }
     .notes { border: 1px solid var(--rule); border-radius: 3px; padding: 5px 7px; margin-bottom: 8px; white-space: pre-line; }
     .notes h2 { font-size: 9px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 2px; white-space: normal; }
