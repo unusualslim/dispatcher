@@ -11,6 +11,7 @@ class VendorsControllerTest < ActionDispatch::IntegrationTest
   test 'should get index' do
     get vendors_url
     assert_response :success
+    assert_select "form[action='#{vendors_path}'][method='post']", 0 # vendors come from PDI, no add form
   end
 
   test 'should show vendor' do

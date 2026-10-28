@@ -16,19 +16,6 @@
     </div>
   </div>
 
-  <div class="card p-3">
-    <h3>Add Vendor</h3>
-    <%= form_with model: @vendor, local: true do |form| %>
-      <div class="mb-3">
-        <%= form.label :name, "Vendor Name" %>
-        <%= form.text_field :name, class: "form-control", required: true %>
-      </div>
-      <%= form.submit "Add Vendor", class: "btn btn-success" %>
-    <% end %>
-  </div>
-
-  <hr>
-
   <div class="d-flex justify-content-between align-items-center mb-2">
     <h3 class="mb-0">Vendor List</h3>
     <input type="text" id="vendor-search" class="form-control form-control-sm w-auto" placeholder="Search vendors…" autocomplete="off" style="min-width: 220px;">

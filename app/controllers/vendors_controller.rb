@@ -5,7 +5,6 @@ class VendorsController < ApplicationController
 
   def index
     @vendors = Vendor.includes(:vendor_freight_terms).order(:name)
-    @vendor = Vendor.new # For the form
   end
 
   def show; end
@@ -18,16 +17,6 @@ class VendorsController < ApplicationController
       redirect_to @vendor, notice: 'Vendor updated.'
     else
       render :edit, status: :unprocessable_entity
-    end
-  end
-
-  def create
-    @vendor = Vendor.new(vendor_params)
-    if @vendor.save
-      redirect_to vendors_path, notice: 'Vendor successfully added.'
-    else
-      @vendors = Vendor.includes(:vendor_freight_terms).order(:name)
-      render :index, status: :unprocessable_entity
     end
   end
 

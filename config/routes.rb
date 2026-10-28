@@ -16,10 +16,6 @@ Rails.application.routes.draw do
   resources :cost_items, only: %i[index create update destroy]
   get 'calendar', to: 'calendar#index'
   get 'calendar/events', to: 'calendar#events'
-  get 'vendors/index'
-  get 'vendors/new'
-  get 'vendors/create'
-  get 'vendors/destroy'
   get 'messages/reply'
 
   devise_for :users, controllers: {
@@ -293,7 +289,8 @@ Rails.application.routes.draw do
 
   resources :dispatch_messages, only: %i[index show]
 
-  resources :vendors, only: %i[index new create destroy show edit update] do
+  # Vendors come from PDI (vendor sync), so there's no new/create.
+  resources :vendors, only: %i[index destroy show edit update] do
     collection do
       post :import_preferred_vendors
       get  :export_csv
