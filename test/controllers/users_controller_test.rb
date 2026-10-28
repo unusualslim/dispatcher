@@ -15,6 +15,11 @@ class UsersControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test 'new sends admins to the sign-up form' do
+    get new_user_url
+    assert_redirected_to new_user_registration_path
+  end
+
   test 'should show user' do
     get user_url(@user)
     assert_response :success

@@ -28,6 +28,8 @@ class DispatchPrintTest < ActionDispatch::IntegrationTest
     get print_dispatch_path(@dispatch)
 
     assert_response :success
+    assert_select 'body.hide-prices' # prices are hidden until unticked
+    assert_select '#hide-prices[checked]'
     assert_select '.sheet', 1
     assert_select '.sheet .copy', 2
     assert_select '.copy-label', text: 'Driver Copy'

@@ -24,7 +24,7 @@ Rails.application.routes.draw do
     passwords: 'users/passwords'
   }
 
-  resources :users do
+  resources :users, except: :create do # new users come through the admin-only sign-up
     member do
       patch :deactivate
       patch :reactivate

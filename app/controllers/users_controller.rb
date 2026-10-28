@@ -26,20 +26,13 @@ class UsersController < ApplicationController
     @job_workers = job_workers
   end
 
-  # GET /users/new
+  # GET /users/new — users are added through the admin-only sign-up
   def new
-    @user = User.new
+    redirect_to new_user_registration_path
   end
 
   # GET /users/1/edit
   def edit; end
-
-  # POST /users or /users.json
-  def create
-    super do |user|
-      Rails.logger.debug { "User creation failed: #{user.errors.full_messages.join(', ')}" } if user.errors.any?
-    end
-  end
 
   # POST /users/line_worker — quick-add a display-only line worker (no login needed)
   def create_line_worker
