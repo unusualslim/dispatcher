@@ -1,0 +1,110 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="mb-0">Samsara</h1>
+</div>
+
+<p class="text-muted">
+  <strong>Send to Samsara</strong> on a dispatch creates a route for its driver: home base → origin terminal →
+  each customer stop → home base. Order details go in the stop notes. The route leaves at the start time below
+  on the dispatch date, and Samsara works out the arrival times. Locations are matched to Samsara addresses
+  (by street address, GPS, then name) or created in Samsara the first time they're on a route.
+</p>
+
+<% if @samsara_error %>
+  <div class="alert alert-warning">Couldn't reach Samsara: <%= @samsara_error %></div>
+<% end %>
+
+<%= form_with url: samsara_settings_path, method: :patch, local: true do %>
+  <div class="row g-3 mb-3">
+    <div class="col-md-6 col-lg-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <label class="form-label fw-semibold" for="samsara_route_start_time">Route start time</label>
+          <%= time_field_tag :samsara_route_start_time, Samsara::RoutePush.start_time, class: 'form-control',
+                             style: 'max-width: 160px;', required: true %>
+          <div class="form-text">When routes leave the home base on the dispatch date.</div>
+
+          <label class="form-label fw-semibold mt-3" for="samsara_home_location_id">Default home base</label>
+          <%= select_tag :samsara_home_location_id,
+                         options_from_collection_for_select(@home_options, :id, :company_name,
+                                                            Samsara::RoutePush.default_home&.id),
+                         include_blank: 'Origin terminal', class: 'form-select' %>
+          <div class="form-text">For drivers without their own home base.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-3">
+    <div class="card-header fw-semibold">Drivers</div>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead class="table-light">
+          <tr><th>Driver</th><th>Samsara driver</th><th>Home base</th></tr>
+        </thead>
+        <tbody>
+          <% @drivers.each do |driver| %>
+            <% suggested = driver.samsara_driver_id.presence ||
+                 @samsara_drivers.find { |d| Samsara::AddressMatch.normalize_name(d['name']) == Samsara::AddressMatch.normalize_name(driver.full_name) }&.dig('id') %>
+            <tr>
+              <td><%= driver.full_name %></td>
+              <td>
+                <% if @samsara_drivers.any? %>
+                  <%= select_tag "drivers[#{driver.id}][samsara_driver_id]",
+                                 options_for_select(@samsara_drivers.map { |d| [d['name'], d['id']] }, suggested),
+                                 include_blank: 'Not linked', class: 'form-select form-select-sm' %>
+                  <% if suggested && driver.samsara_driver_id.blank? %>
+                    <div class="form-text">Matched by name. Save to keep.</div>
+                  <% end %>
+                <% else %>
+                  <%= text_field_tag "drivers[#{driver.id}][samsara_driver_id]", driver.samsara_driver_id,
+                                     class: 'form-control form-control-sm', placeholder: 'Samsara driver ID' %>
+                <% end %>
+              </td>
+              <td>
+                <%= select_tag "drivers[#{driver.id}][home_location_id]",
+                               options_from_collection_for_select(@home_options, :id, :company_name, driver.home_location_id),
+                               include_blank: 'Default', class: 'form-select form-select-sm' %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <%= submit_tag 'Save', class: 'btn btn-primary mb-4' %>
+<% end %>
+
+<div class="card shadow-sm">
+  <div class="card-header fw-semibold">Linked locations (<%= @linked_locations.size %>)</div>
+  <% if @linked_locations.empty? %>
+    <div class="card-body text-muted">None yet. Locations link the first time they're on a route sent to Samsara.</div>
+  <% else %>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead class="table-light">
+          <tr><th>Location</th><th>Samsara address</th><th></th></tr>
+        </thead>
+        <tbody>
+          <% @linked_locations.each do |location| %>
+            <% address = @samsara_addresses[location.samsara_address_id] %>
+            <tr>
+              <td>
+                <%= link_to location.company_name, location_path(location) %>
+                <div class="small text-muted"><%= location.full_address %></div>
+              </td>
+              <td>
+                <%= address ? address['name'] : location.samsara_address_id %>
+                <% if address %><div class="small text-muted"><%= address['formattedAddress'] %></div><% end %>
+              </td>
+              <td class="text-end">
+                <%= button_to 'Unlink', unlink_location_samsara_settings_path(location_id: location.id), method: :delete,
+                              class: 'btn btn-outline-secondary btn-sm' %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+</div>

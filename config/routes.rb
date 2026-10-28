@@ -12,6 +12,9 @@ Rails.application.routes.draw do
   get 'set_warehouse', to: 'warehouses#set', as: :set_warehouse
   resource :warehouse_locations, only: %i[edit update]
   resource :costing_settings, only: %i[edit update]
+  resource :samsara_settings, only: %i[edit update] do
+    delete :unlink_location
+  end
   resources :reporting_groups, only: %i[index create update destroy]
   resources :cost_items, only: %i[index create update destroy]
   get 'calendar', to: 'calendar#index'
@@ -45,6 +48,7 @@ Rails.application.routes.draw do
       patch :mark_as_sent_to_driver
       post :upload_files
       get :print
+      post :send_to_samsara
     end
     collection do
       get 'kanban'

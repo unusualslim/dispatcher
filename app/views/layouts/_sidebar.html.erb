@@ -14,7 +14,7 @@
                           repack_batch_imports pdi_purchase_order_imports purchase_order_imports].include?(current) ||
                        (current == 'customer_order_products' && request.path == product_code_links_path) %>
 <% accounting_active = %w[financial_dashboards ledger_entries reporting_groups cost_items costing_settings].include?(current) %>
-<% admin_active      = imports_active || %w[users customer_merges location_merges things warehouse_locations automated_processes announcements].include?(current) %>
+<% admin_active      = imports_active || %w[users customer_merges location_merges things warehouse_locations automated_processes samsara_settings announcements].include?(current) %>
 
 <nav id="sidebar" class="sidebar d-flex flex-column">
   <!-- Brand -->
@@ -171,6 +171,7 @@
           <%= nav_item 'Merge Locations',     location_merges_path,     'bi-geo-alt',      active: current == 'location_merges', keywords: 'duplicate ship-to site combine' %>
           <%= nav_item 'Equipment & Assets',  things_path,              'bi-tools',        active: current == 'things', keywords: 'things' %>
           <%= nav_item 'Warehouse Locations', edit_warehouse_locations_path, 'bi-building-gear', active: current == 'warehouse_locations' %>
+          <%= nav_item 'Samsara',             edit_samsara_settings_path, 'bi-truck',      active: current == 'samsara_settings', keywords: 'routes drivers gps home base' %>
           <%= nav_item 'Automated Processes', automated_processes_path, 'bi-arrow-repeat', active: current == 'automated_processes', keywords: 'pdi sync schedule cron ftp' %>
           <%= nav_item 'Announcements',       announcements_path,       'bi-megaphone',    active: current == 'announcements' %>
         <% end %>

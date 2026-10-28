@@ -144,3 +144,13 @@ en:
       failed: "Import failed: %{error}"
     download:
       unavailable: "File not available."
+  dispatches:
+    send_to_samsara:
+      sent: "Route sent to Samsara for %{driver}."
+      updated: "Samsara route updated for %{driver}."
+  samsara_settings:
+    update:
+      updated: "Samsara settings saved."
+      invalid_time: "Start time must be a time like 08:00."
+    unlink_location:
+      unlinked: "%{name} unlinked. It will be matched again (or created) the next time it's on a route."

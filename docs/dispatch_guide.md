@@ -72,6 +72,17 @@ A dispatch links a driver and truck to one or more customer orders for a specifi
 
 Open a dispatch and click **Send to Driver**. This sends the driver a notification and changes the status to "Sent to Driver." The dispatch also appears as a route line on the Map view.
 
+### Sending the Route to Samsara
+
+Instead of keying the route into Samsara by hand, open the dispatch and click **Send to Samsara**. The app creates a
+route for the driver in Samsara: their home base → the origin terminal → each customer stop → back to the home base.
+The terminal stop lists what to load (each product's total) plus the dispatch notes; each customer stop lists its
+order numbers, products and quantities, and the site's phone, contacts and notes. The route leaves at the start time
+set on **Admin → Samsara** (8:00 AM unless changed) on the dispatch date, and Samsara fills in the arrival times.
+
+If you change the dispatch afterwards, click **Update in Samsara** to replace the route's stops. Once the driver has
+started the route, make further changes in Samsara itself. Printing the order and texting the driver work as before.
+
 ### Completing a Dispatch
 
 Open the dispatch and click **Mark as Complete**. This closes out the delivery. Individual customer orders can then be marked complete separately if needed.

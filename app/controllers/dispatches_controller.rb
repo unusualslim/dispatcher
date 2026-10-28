@@ -3,7 +3,8 @@ require 'net/http'
 
 class DispatchesController < ApplicationController
   before_action :set_dispatch,
-                only: %i[show print edit update destroy mark_as_complete mark_as_billed send_notification upload_files]
+                only: %i[show print edit update destroy mark_as_complete mark_as_billed send_notification upload_files
+                         send_to_samsara]
   # Drivers only see and upload to their own dispatches (checked in those actions); everything else is the
   # Dispatch area.
   DRIVER_ACTIONS = %w[index show print upload_files].freeze
@@ -393,6 +394,15 @@ class DispatchesController < ApplicationController
     else
       redirect_to dispatch_path(@dispatch), alert: 'Failed to update dispatch status.'
     end
+  end
+
+  # POST /dispatches/1/send_to_samsara — create (or refresh) this dispatch's route in Samsara
+  def send_to_samsara
+    resent = @dispatch.samsara_route_id.present?
+    Samsara::RoutePush.new(@dispatch).call!
+    redirect_to dispatch_path(@dispatch), notice: t(resent ? '.updated' : '.sent', driver: @dispatch.driver.full_name)
+  rescue *Samsara::Client::FAILURES, ActiveRecord::RecordInvalid => e
+    redirect_to dispatch_path(@dispatch), alert: e.message
   end
 
   def destroy_file

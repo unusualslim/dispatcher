@@ -13,6 +13,7 @@ class User < ApplicationRecord
   validates :employment_type, inclusion: { in: EMPLOYMENT_TYPES.keys }
 
   has_many :dispatches, foreign_key: :driver_id, dependent: :nullify
+  belongs_to :home_location, class_name: 'Location', optional: true # where this driver's Samsara routes start/end
   has_many :user_favorites, dependent: :destroy
   has_many :job_workers, dependent: :restrict_with_error # labor history feeds costing and the GL
   has_many :jobs, through: :job_workers

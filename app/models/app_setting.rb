@@ -4,7 +4,8 @@ class AppSetting < ApplicationRecord
     'mrp_purchase_lead_days' => '7',
     'mrp_production_days' => '1',
     'mrp_customer_lead_days' => '3',
-    'mrp_transfer_days' => '1'
+    'mrp_transfer_days' => '1',
+    'samsara_route_start_time' => '08:00'
   }.freeze
 
   MRP_KEYS = %w[mrp_purchase_lead_days mrp_production_days mrp_customer_lead_days mrp_transfer_days].freeze

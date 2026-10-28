@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_27_210000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_28_200000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -233,6 +233,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_27_210000) do
     t.integer "truck_id"
     t.integer "trailer_id"
     t.string "vendor_id"
+    t.string "samsara_route_id"
+    t.datetime "samsara_sent_at"
     t.index ["asset_id"], name: "index_dispatches_on_asset_id"
   end
 
@@ -423,8 +425,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_27_210000) do
     t.boolean "show_in_warehouse_dropdown", default: false, null: false
     t.string "pdi_site_code"
     t.string "pdi_terminal_id"
+    t.string "samsara_address_id"
     t.index ["location_category_id"], name: "index_locations_on_location_category_id"
     t.index ["pdi_terminal_id"], name: "index_locations_on_pdi_terminal_id", unique: true
+    t.index ["samsara_address_id"], name: "index_locations_on_samsara_address_id"
   end
 
   create_table "locations_products", id: false, force: :cascade do |t|
@@ -822,7 +826,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_27_210000) do
     t.jsonb "permissions", default: {}, null: false
     t.datetime "deactivated_at"
     t.jsonb "list_filters", default: {}, null: false
+    t.string "samsara_driver_id"
+    t.bigint "home_location_id"
     t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["home_location_id"], name: "index_users_on_home_location_id"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
@@ -939,5 +946,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_27_210000) do
   add_foreign_key "quotes", "users", column: "lock_ended_by_id"
   add_foreign_key "things", "dispatches"
   add_foreign_key "user_favorites", "users"
+  add_foreign_key "users", "locations", column: "home_location_id"
   add_foreign_key "work_orders", "vendors"
 end

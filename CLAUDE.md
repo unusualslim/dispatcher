@@ -294,6 +294,22 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
 
 ---
 
+## Samsara routes
+- **Send to Samsara** on a dispatch (`DispatchesController#send_to_samsara`, dispatch edit) → `Samsara::RoutePush` creates a
+  Samsara route for the driver: home base → origin terminal (skipped when it's the home base) → customer stops (orders
+  for the same site in a row = one stop) → home base. Notes from `Samsara::StopNotes` (load totals + dispatch notes on the
+  terminal stop; order #, products, site phone/contacts/notes on each delivery stop; 2000-char cap).
+- Times: only the first stop is real (dispatch date at AppSetting `samsara_route_start_time`, default 08:00 Eastern);
+  middle stops get placeholders and `recomputeScheduledTimes: true` lets Samsara fill them from drive time.
+- Re-send PATCHes the stored `dispatches.samsara_route_id` (replacing all stops) unless the route has started; a route
+  deleted in Samsara is recreated.
+- Links (`Samsara::Links`): `users.samsara_driver_id` (matched by full name), `users.home_location_id` (else AppSetting
+  `samsara_home_location_id`, else the origin), `locations.samsara_address_id` (`Samsara::AddressMatch`: street number +
+  street in the same city, then GPS within 300 m, then normalized name; otherwise created in Samsara with a 250 m circle).
+  Review on **Admin → Samsara** (`SamsaraSettingsController`).
+- `Samsara::Client` wraps the API (`SAMSARA_API_KEY`). The token needs Read/Write Routes, Read Drivers and Read/Write
+  Addresses for routing; the map's vehicle feed still has its own call in LocationsController.
+
 ## Map
 - Leaflet.js + OpenStreetMap tiles, centered on Georgia
 - Location markers: blue=origin terminal, red=destination, green=has active order

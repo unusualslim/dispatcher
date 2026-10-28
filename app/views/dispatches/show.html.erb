@@ -34,6 +34,12 @@
         <%= f.submit "Mark Billed", class: "btn btn-warning btn-sm" %>
       <% end %>
     <% end %>
+    <% if @dispatch.driver_id && @dispatch.dispatch_customer_order.any? && can?(:dispatch, :edit) %>
+      <%= button_to send_to_samsara_dispatch_path(@dispatch), method: :post, class: "btn btn-outline-primary btn-sm",
+                    form: { data: { turbo_confirm: (@dispatch.samsara_route_id ? "Replace the stops on this dispatch's Samsara route?" : nil) } } do %>
+        <i class="bi bi-send"></i> <%= @dispatch.samsara_route_id ? "Update in Samsara" : "Send to Samsara" %>
+      <% end %>
+    <% end %>
     <%= link_to print_dispatch_path(@dispatch), class: "btn btn-outline-secondary btn-sm", target: "_blank", rel: "noopener" do %>
       <i class="bi bi-printer"></i> Print Order
     <% end %>
