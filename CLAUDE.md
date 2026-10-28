@@ -358,6 +358,10 @@ file, remove it from the todo (or regenerate with the command at the top of `.ru
 - Production order export to PDI at completion (waiting on a PDI change so PDI's production order can link back
   to the app's; needs PDI's import layout)
 - Real GL accounts (production has placeholders 8001-01…8006-01) and PDI FTP pickup of FPST files
+- **Freight on purchases and sales** — bring freight into PO costs and customer order/sales pricing (design to come from the user)
+- **Sales invoicing** — if the app controls inventory it needs a formal sales invoicing process; that role moves
+  away from PDI (today PDI bills and the app only reads invoice dates/numbers back)
+- **Standard cost exceptions** — an exceptions review like /quality_exceptions, for standard cost variances
 - Hide Edit/Delete buttons for users without the level (the server already blocks them); finer per-view permissions
 - Possibly: incoming supplier COAs on PO receipts; Void for dispatches/adjustments/quotes; lot traceability
   (fluid lot → bottle lot, entered by hand; PDI doesn't track lots)
