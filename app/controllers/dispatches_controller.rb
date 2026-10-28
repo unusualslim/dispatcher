@@ -402,6 +402,7 @@ class DispatchesController < ApplicationController
     Samsara::RoutePush.new(@dispatch).call!
     redirect_to dispatch_path(@dispatch), notice: t(resent ? '.updated' : '.sent', driver: @dispatch.driver.full_name)
   rescue *Samsara::Client::FAILURES, ActiveRecord::RecordInvalid => e
+    Rails.logger.warn("Send to Samsara failed for dispatch #{@dispatch.id}: #{e.class}: #{e.message}")
     redirect_to dispatch_path(@dispatch), alert: e.message
   end
 

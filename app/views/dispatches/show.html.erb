@@ -36,7 +36,8 @@
     <% end %>
     <% if @dispatch.driver_id && @dispatch.dispatch_customer_order.any? && can?(:dispatch, :edit) %>
       <%= button_to send_to_samsara_dispatch_path(@dispatch), method: :post, class: "btn btn-outline-primary btn-sm",
-                    form: { data: { turbo_confirm: (@dispatch.samsara_route_id ? "Replace the stops on this dispatch's Samsara route?" : nil) } } do %>
+                    form: { data: { turbo: false },
+                            onsubmit: ("return confirm('Replace the stops on this dispatch\'s Samsara route?')" if @dispatch.samsara_route_id) } do %>
         <i class="bi bi-send"></i> <%= @dispatch.samsara_route_id ? "Update in Samsara" : "Send to Samsara" %>
       <% end %>
     <% end %>
