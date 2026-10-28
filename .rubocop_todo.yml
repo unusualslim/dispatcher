@@ -952,8 +952,6 @@ Layout/LineLength:
     - 'db/migrate/20260507100001_cleanup_products_before_pk_swap.rb'
     - 'db/migrate/20260507100003_swap_products_primary_key_to_string.rb'
     - 'db/seeds.rb'
-    - 'test/controllers/dispatches_controller_test.rb'
-    - 'test/controllers/users_controller_test.rb'
     - 'test/integration/customer_order_form_test.rb'
     - 'test/services/price_check_service_test.rb'
     - 'test/services/quote_margin_review_test.rb'

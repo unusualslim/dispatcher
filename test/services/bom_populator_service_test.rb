@@ -52,7 +52,7 @@ class BomPopulatorServiceTest < ActiveSupport::TestCase
   end
 
   test 'returns false and creates nothing when product has no BOM' do
-    empty_product = Product.create!(name: 'No BOM Product')
+    empty_product = Product.create!(id: 'NOBOM1', name: 'No BOM Product')
     @order.update!(product: empty_product)
 
     result = BomPopulatorService.new(@order).call

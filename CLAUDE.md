@@ -338,8 +338,8 @@ Minitest under `test/`. Coverage is concentrated on MRP services/models
 the PDI sync/import code and most controllers are largely untested. Security regression tests live in
 `test/integration/` (admin-only sign-up, Twilio webhook signature, announcement rich text, permissions).
 Costing, ledger, quality checks, voids and permissions have their own model/service/integration tests.
-The suite has **29 pre-existing failures/errors** (unauthenticated scaffold controller tests, MRP tests
-using old statuses, order-dependent data) — compare failures against that baseline rather than expecting green.
+The suite is **green** (cleared 2026-10-28); keep it that way. Controller tests sign in with
+`Devise::Test::IntegrationHelpers` and create their own records rather than relying on fixtures.
 CI (`.github/workflows/lint.yml`) runs RuboCop only.
 
 ## Lint

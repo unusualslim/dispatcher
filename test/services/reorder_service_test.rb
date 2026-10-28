@@ -1,7 +1,7 @@
 require 'test_helper'
 
 class ReorderServiceTest < ActiveSupport::TestCase
-  fixtures :products, :vendors, :purchase_orders
+  fixtures :products, :vendors, :purchase_orders, :purchase_order_line_items
 
   setup do
     @urea    = products(:urea) # current_stock:20, reorder_point:100, safety_stock:25
@@ -14,8 +14,8 @@ class ReorderServiceTest < ActiveSupport::TestCase
     end
 
     po = PurchaseOrder.last
-    assert_equal 'draft',    po.status
-    assert_equal @urea.id,   po.product_id
+    assert_equal 'draft', po.status
+    assert_equal [@urea.id], po.line_items.map(&:product_id)
   end
 
   test 'calculates order quantity to reach reorder_point + safety_stock' do
@@ -24,17 +24,12 @@ class ReorderServiceTest < ActiveSupport::TestCase
 
     # target = reorder_point(100) + safety_stock(25) = 125
     # qty    = target(125) - current_stock(20) = 105
-    assert_equal 105, po.quantity
+    assert_equal 105, po.line_items.sole.quantity
   end
 
   test 'does not create a duplicate PO if one is already active' do
-    PurchaseOrder.create!(
-      product: @urea,
-      vendor: @vendor,
-      quantity: 50,
-      status: 'draft',
-      trigger_type: 'auto_reorder'
-    )
+    po = PurchaseOrder.create!(vendor: @vendor, status: 'draft', trigger_type: 'auto_reorder')
+    po.line_items.create!(product: @urea, quantity: 50)
 
     assert_no_difference 'PurchaseOrder.count' do
       ReorderService.run

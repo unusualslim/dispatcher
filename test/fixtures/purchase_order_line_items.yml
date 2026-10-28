@@ -1,0 +1,5 @@
+draft_concentrate_line:
+  purchase_order: draft_concentrate_po
+  product: def_concentrate
+  quantity: 200.0
+  unit_cost: 2.50

@@ -1,28 +1,18 @@
 require 'test_helper'
 
+# New users are added through the admin-only Devise sign-up (see user_registration_security_test.rb).
 class UsersControllerTest < ActionDispatch::IntegrationTest
+  include Devise::Test::IntegrationHelpers
+
   setup do
-    @user = users(:one)
+    sign_in User.create!(email: 'users-admin@example.com', password: 'password123', role: 'admin')
+    @user = User.create!(email: 'driver@example.com', password: 'password123', role: 'worker',
+                         first_name: 'Dana', last_name: 'Driver')
   end
 
   test 'should get index' do
     get users_url
     assert_response :success
-  end
-
-  test 'should get new' do
-    get new_user_url
-    assert_response :success
-  end
-
-  test 'should create user' do
-    assert_difference('User.count') do
-      post users_url,
-           params: { user: { email: @user.email, encrypted_password: @user.encrypted_password, first_name: @user.first_name,
-                             last_name: @user.last_name, phone_number: @user.phone_number, remember_created_at: @user.remember_created_at, reset_password_sent_at: @user.reset_password_sent_at, reset_password_token: @user.reset_password_token, role: @user.role } }
-    end
-
-    assert_redirected_to user_url(User.last)
   end
 
   test 'should show user' do
@@ -36,10 +26,9 @@ class UsersControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'should update user' do
-    patch user_url(@user),
-          params: { user: { email: @user.email, encrypted_password: @user.encrypted_password, first_name: @user.first_name,
-                            last_name: @user.last_name, phone_number: @user.phone_number, remember_created_at: @user.remember_created_at, reset_password_sent_at: @user.reset_password_sent_at, reset_password_token: @user.reset_password_token, role: @user.role } }
-    assert_redirected_to user_url(@user)
+    patch user_url(@user), params: { user: { first_name: 'Dan', password: '' } }
+    assert_redirected_to users_url
+    assert_equal 'Dan', @user.reload.first_name
   end
 
   test 'should destroy user' do
