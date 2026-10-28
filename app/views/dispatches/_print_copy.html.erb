@@ -1,0 +1,113 @@
+<%
+  dispatch = @dispatch
+  origin   = @origin_location
+  ship_to  = order.location
+  driver   = dispatch.driver
+  price    = ->(v) { number_to_currency(v, precision: v.round(2) == v ? 2 : 4) }
+  fmt_date = ->(d) { d&.strftime('%m/%d/%Y') || '—' }
+  lines    = order.customer_order_products.sort_by(&:id)
+  priced   = lines.select(&:price)
+%>
+<section class="copy">
+  <header>
+    <div>
+      <div class="copy-label"><%= label %></div>
+      <h1>Delivery Order</h1>
+    </div>
+    <div class="company"><strong>Five Points Service, Inc.</strong>Perry Brothers Oil · Americus, GA</div>
+  </header>
+
+  <dl>
+    <dt>Order</dt><dd><%= order.external_order_no.presence || "##{order.id}" %><%= ' (Freight Only)' if order.freight_only? %></dd>
+    <dt>Dispatch</dt><dd>#<%= dispatch.id %></dd>
+    <dt>Order Date</dt><dd><%= fmt_date.(order.order_date) %></dd>
+    <dt>Dispatch Date</dt><dd><%= fmt_date.(dispatch.dispatch_date) %></dd>
+    <dt>Deliver By</dt><dd><%= fmt_date.(order.required_delivery_date) %></dd>
+    <dt>Driver</dt><dd><%= driver&.full_name.presence || '—' %></dd>
+    <dt>Status</dt><dd><%= CustomerOrder.order_statuses[order.order_status] || '—' %></dd>
+    <dt>Truck</dt><dd><%= dispatch.truck&.name || '—' %></dd>
+    <dt>Customer</dt><dd><%= order.customer&.name || '—' %></dd>
+    <dt>Trailer</dt><dd><%= dispatch.trailer&.name || '—' %></dd>
+    <% if order.salesperson.present? || order.carrier.present? || dispatch.vendor %>
+      <dt>Salesperson</dt><dd><%= order.salesperson.presence || '—' %></dd>
+      <dt>Carrier</dt><dd><%= dispatch.vendor&.name || order.carrier.presence || '—' %></dd>
+    <% end %>
+  </dl>
+
+  <div class="boxes">
+    <div class="box">
+      <h2>Origin</h2>
+      <% if origin %>
+        <div class="name"><%= origin.company_name %></div>
+        <div><%= origin.address %></div>
+        <div><%= [origin.city, [origin.state, origin.zip].compact_blank.join(' ')].compact_blank.join(', ') %></div>
+        <% if origin.phone_number.present? %><div><%= origin.phone_number %></div><% end %>
+        <% if origin.notes.present? %><div class="note"><%= origin.notes %></div><% end %>
+      <% else %>
+        <div class="name"><%= dispatch.origin.presence || 'No origin set' %></div>
+      <% end %>
+      <% if order.ship_from_location && order.ship_from_location != origin %>
+        <div class="note">Ship from: <%= order.ship_from_location.company_name %></div>
+      <% end %>
+    </div>
+    <div class="box">
+      <h2>Ship To</h2>
+      <div class="name"><%= ship_to.company_name %></div>
+      <div><%= ship_to.address %></div>
+      <div><%= [ship_to.city, [ship_to.state, ship_to.zip].compact_blank.join(' ')].compact_blank.join(', ') %></div>
+      <% if ship_to.phone_number.present? %><div><%= ship_to.phone_number %></div><% end %>
+      <% ship_to.location_contacts.each do |contact| %>
+        <div><%= [contact.name, contact.phone].compact_blank.join(' · ') %></div>
+      <% end %>
+      <% if ship_to.notes.present? %><div class="note"><%= ship_to.notes %></div><% end %>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Product</th>
+        <th class="num">Ordered</th>
+        <th class="num">Delivered</th>
+        <th>Unit</th>
+        <th class="num price">Price</th>
+        <th class="num price">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if lines.empty? %>
+        <tr><td colspan="6">No products on this order.</td></tr>
+      <% end %>
+      <% lines.each do |line| %>
+        <tr>
+          <td><%= [line.product_id, line.product&.name || line.product_name].compact_blank.join(' – ').presence || 'Unknown' %></td>
+          <td class="num"><%= number_with_delimiter(line.quantity) %></td>
+          <td class="fill"><span></span></td>
+          <td><%= line.product&.unit_of_measurement || '—' %></td>
+          <td class="num price"><%= line.price ? price.(line.price) : '—' %></td>
+          <td class="num price"><%= line.price ? number_to_currency((line.quantity || 0) * line.price) : '—' %></td>
+        </tr>
+      <% end %>
+    </tbody>
+    <% if priced.any? %>
+      <tfoot class="price">
+        <tr>
+          <td colspan="5" class="num">Order Total</td>
+          <td class="num"><%= number_to_currency(priced.sum { |l| (l.quantity || 0) * l.price }) %></td>
+        </tr>
+      </tfoot>
+    <% end %>
+  </table>
+
+  <% if order.notes.present? %>
+    <div class="notes"><h2>Order Notes</h2><%= order.notes %></div>
+  <% end %>
+  <% if dispatch.notes.present? %>
+    <div class="notes"><h2>Dispatch Notes</h2><%= dispatch.notes %></div>
+  <% end %>
+
+  <div class="sign">
+    <div>Driver signature</div>
+    <div>Customer signature</div>
+  </div>
+</section>

@@ -3,10 +3,10 @@ require 'net/http'
 
 class DispatchesController < ApplicationController
   before_action :set_dispatch,
-                only: %i[show edit update destroy mark_as_complete mark_as_billed send_notification upload_files]
+                only: %i[show print edit update destroy mark_as_complete mark_as_billed send_notification upload_files]
   # Drivers only see and upload to their own dispatches (checked in those actions); everything else is the
   # Dispatch area.
-  DRIVER_ACTIONS = %w[index show upload_files].freeze
+  DRIVER_ACTIONS = %w[index show print upload_files].freeze
   permission_area :dispatch, approve: %i[mark_as_billed],
                              unless: -> { driver? && DRIVER_ACTIONS.include?(action_name) }
 
@@ -97,6 +97,23 @@ class DispatchesController < ApplicationController
     rescue StandardError
       @road_distance = nil
     end
+  end
+
+  # GET /dispatches/1/print — landscape sheet per order, two identical halves to cut (driver copy + dispatch copy)
+  def print
+    if driver? && @dispatch.driver_id != current_user.id
+      redirect_to dispatches_path, alert: 'You can only view your own dispatches.'
+      return
+    end
+
+    origins = Location.where(location_category_id: 1)
+    @origin_location = origins.find { |l| l.full_address_with_company == @dispatch.origin } ||
+                       origins.find { |l| l.city == @dispatch.origin }
+    @customer_orders = @dispatch.customer_orders
+                                .includes(:customer, :ship_from_location, location: :location_contacts,
+                                                                          customer_order_products: :product)
+                                .order(:id)
+    render layout: false
   end
 
   # POST /dispatches/1/upload_files

@@ -48,6 +48,7 @@ Rails.application.routes.draw do
       patch :mark_as_billed
       patch :mark_as_sent_to_driver
       post :upload_files
+      get :print
     end
     collection do
       get 'kanban'
