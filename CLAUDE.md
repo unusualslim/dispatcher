@@ -300,7 +300,8 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
   for the same site in a row = one stop) → home base. Notes from `Samsara::StopNotes` (load totals + dispatch notes on the
   terminal stop; order #, products, site phone/contacts/notes on each delivery stop; 2000-char cap).
 - Times: only the first stop is real (dispatch date at AppSetting `samsara_route_start_time`, default 08:00 Eastern);
-  middle stops get placeholders and `recomputeScheduledTimes: true` lets Samsara fill them from drive time.
+  later stops (the last one too: Samsara 400s without it) get placeholder arrivals and `recomputeScheduledTimes: true`
+  lets Samsara fill them from drive time.
 - Re-send PATCHes the stored `dispatches.samsara_route_id` (replacing all stops) unless the route has started; a route
   deleted in Samsara is recreated.
 - Links (`Samsara::Links`): `users.samsara_driver_id` (matched by full name), `users.home_location_id` (else AppSetting

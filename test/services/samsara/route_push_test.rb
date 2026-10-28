@@ -68,8 +68,8 @@ module Samsara
       start = Time.zone.local(2026, 10, 30, 7, 30)
       assert_equal start.iso8601, body[:stops].first[:scheduledDepartureTime]
       assert_nil body[:stops].first[:scheduledArrivalTime]
-      assert(body[:stops][1..3].all? { |s| s[:scheduledArrivalTime].present? })
-      assert_nil body[:stops].last[:scheduledArrivalTime]
+      assert(body[:stops].drop(1).all? { |s| s[:scheduledArrivalTime].present? }) # the last stop needs one too
+      assert(body[:stops].drop(1).none? { |s| s[:scheduledDepartureTime] })
 
       assert_includes body[:stops][1][:notes], '5,300 Gallon Bulk DEF'
       assert_includes body[:stops][1][:notes], 'Release # 9713957'

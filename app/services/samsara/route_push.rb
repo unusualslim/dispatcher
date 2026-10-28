@@ -1,11 +1,11 @@
 module Samsara
   # Sends a dispatch to Samsara as a route for its driver, the way the dispatcher keys them in by hand:
   # home base → origin terminal → each customer stop (order details in the stop notes, see StopNotes) → home base.
-  # Only the first stop gets a real time (the dispatch date at the samsara_route_start_time setting);
-  # Samsara recomputes the rest from drive time. Re-sending replaces the stops of the route it created,
+  # Only the first stop gets a real time (the dispatch date at the samsara_route_start_time setting); the rest get
+  # placeholders that Samsara recomputes from drive time. Re-sending replaces the stops of the route it created,
   # unless the driver has already started it.
   class RoutePush
-    PLACEHOLDER_GAP = 30.minutes # Samsara needs a time on middle stops; recomputeScheduledTimes replaces these
+    PLACEHOLDER_GAP = 30.minutes # arrival times Samsara requires after stop 1; recomputeScheduledTimes replaces them
     SETTINGS = { routeStartingCondition: 'departFirstStop', routeCompletionCondition: 'arriveLastStop' }.freeze
 
     def self.default_home
@@ -88,10 +88,10 @@ module Samsara
       end
     end
 
-    # Departure time on the first stop, placeholders on the middle ones, none on the last.
+    # Departure time on the first stop, placeholder arrival times on the rest (Samsara wants one on the last stop too).
     def schedule(stops)
       stops.first[:scheduledDepartureTime] = start_at.iso8601
-      stops[1...-1].each.with_index(1) do |stop, i|
+      stops.drop(1).each.with_index(1) do |stop, i|
         stop[:scheduledArrivalTime] = (start_at + (PLACEHOLDER_GAP * i)).iso8601
       end
       stops
