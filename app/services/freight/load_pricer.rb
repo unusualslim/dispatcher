@@ -80,7 +80,7 @@ module Freight
       case freight_rule.basis
       when 'per_load' then primary_class ? primary_class.loads_for(total_gallons) : 1
       when 'flat' then 1
-      else total_gallons
+      else freight_rule.billable_quantity(total_gallons, primary_class)
       end
     end
 

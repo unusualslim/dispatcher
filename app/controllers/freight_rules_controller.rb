@@ -81,6 +81,7 @@ class FreightRulesController < ApplicationController
   def rule_params
     params.require(:freight_rule).permit(:name, :side, :charge_type, :basis, :freight_table_id, :origin_location_id,
                                          :freight_class_id, :carrier_id, :customer_id, :markup_percent,
-                                         :minimum_amount, :calculation, :effective_from, :effective_to, :active, :notes)
+                                         :minimum_amount, :calculation, :bill_full_load, :effective_from,
+                                         :effective_to, :active, :notes)
   end
 end

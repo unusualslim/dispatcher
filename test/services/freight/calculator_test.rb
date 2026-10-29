@@ -38,6 +38,13 @@ module Freight
       assert_equal 450.to_d, charge.amount # 9,000 gal × 0.05 (42 mi)
     end
 
+    test 'bill at least a full load on a per-gallon rule' do
+      rule(bill_full_load: true)
+      @order.customer_order_products.each { |line| line.update!(quantity: 4000) }
+      charge = Calculator.new(@order).call.charges.sole
+      assert_equal [8500.to_d, 425.to_d], [charge.quantity, charge.amount] # 8,500 × 0.05
+    end
+
     test 'per load counts whole loads by the freight class' do
       rule(basis: 'per_load', freight_table: flat(600))
       charge = Calculator.new(@order).call.charges.sole

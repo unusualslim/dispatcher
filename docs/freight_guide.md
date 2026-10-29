@@ -58,6 +58,7 @@ A rule says **when** to use a table and **what its rate means**.
   - **Purchase cost + markup**, for sale rules that mark up a third-party carrier's cost
 - **When it applies**: origin, freight class, carrier, customer, and the effective dates. A blank field matches any order.
 - **Minimum $** (optional): the charge never goes below it.
+- **Bill at least a full load** (per-gallon rules): a short load is charged as the freight class's full load, e.g. 4,800 gal on class C is charged as 5,200 gal.
 - **Calculated** (purchase rules only): **Per order**, where each order is priced on its own lane, or **Per dispatch, farthest stop** (see below).
 
 When more than one rule matches, the most specific one wins. A rule naming the customer beats one naming the carrier. Carrier beats origin, and origin beats class. Ties go to the newest effective date.

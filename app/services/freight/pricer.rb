@@ -19,6 +19,7 @@ module Freight
       return warn(no_rate_message(rule)) unless row
 
       qty = basis_quantity(rule.basis, volume)
+      qty &&= rule.billable_quantity(qty, freight_class)
       qty && build(rule, freight_class, qty, row.rate, extend_amount(rule, qty, row.rate))
     end
 

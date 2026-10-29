@@ -132,6 +132,7 @@
                   <% if rule.markup? %><span class="text-muted">(+<%= number_with_precision(rule.markup_percent, precision: 2, strip_insignificant_zeros: true) %>%)</span><% end %>
                   <% if rule.minimum_amount %><div class="text-muted">min <%= number_to_currency(rule.minimum_amount) %></div><% end %>
                   <% if rule.per_dispatch? %><div><span class="badge bg-info-subtle text-info-emphasis">Per dispatch, farthest stop</span></div><% end %>
+                  <% if rule.bill_full_load? && rule.basis == 'per_unit' %><div><span class="badge bg-secondary-subtle text-secondary-emphasis">Min. full load</span></div><% end %>
                 </td>
                 <td class="small"><%= rule.freight_table ? link_to(rule.freight_table.name, freight_table_path(rule.freight_table)) : '—' %></td>
                 <td class="small text-nowrap">

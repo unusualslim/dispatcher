@@ -67,6 +67,15 @@ module Freight
       assert_equal @fpl.id, @dispatch.freight_payables.sole.vendor_id
     end
 
+    test 'bill at least a full load charges a short load as the class full load' do
+      FreightRule.find_by!(name: 'FPL load').update!(bill_full_load: true)
+      # 3,000 gal on an 8,500 gal class
+      @orders.flat_map(&:customer_order_products).each { |line| line.update!(quantity: 1000) }
+      summary = DispatchCalculator.new(@dispatch).apply!.summary
+      assert_equal 730.to_d, summary[:total] # 8,500 × 0.08 + 50
+      assert_equal(730.to_d, @orders.sum { |o| o.order_freight_charges.purchase.sum(:amount) })
+    end
+
     test 'a stop without a lane or GPS is reported' do
       FreightLane.find_by(destination_location: @far).destroy!
       result = DispatchCalculator.new(@dispatch).apply!

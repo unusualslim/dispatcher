@@ -62,6 +62,15 @@ class FreightRule < ApplicationRecord
 
   def markup? = basis == 'markup'
   def per_dispatch? = calculation == 'dispatch_farthest'
+
+  # Gallons to charge: with "bill at least a full load" on a per-gallon rule, a short load is charged as the
+  # class's full load (5,200 gal); more than that is charged as is.
+  def billable_quantity(quantity, freight_class)
+    return quantity unless bill_full_load? && basis == 'per_unit' && freight_class
+
+    [quantity, freight_class.full_load_quantity].max
+  end
+
   def side_label = SIDES[side]&.split(' (')&.first
   def charge_label = CHARGE_TYPES[charge_type]
   def basis_label = BASES[basis]
