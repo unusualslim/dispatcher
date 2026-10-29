@@ -41,6 +41,7 @@ Rails.application.routes.draw do
   end
 
   resources :dispatches do
+    resource :freight, only: :create, controller: 'dispatch_freights'
     member do
       post 'send_notification'
       patch :mark_as_complete
@@ -212,6 +213,9 @@ Rails.application.routes.draw do
     resources :rates, only: %i[create destroy], controller: 'freight_table_rates' do
       post :import, on: :collection
     end
+  end
+  resources :freight_lanes, only: %i[create update destroy] do
+    post :import, on: :collection
   end
   resources :freight_classes, only: %i[index create update destroy] do
     post :assign, on: :collection

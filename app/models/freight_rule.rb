@@ -8,6 +8,10 @@ class FreightRule < ApplicationRecord
   BASES = { 'per_unit' => 'Per gallon / unit', 'per_load' => 'Per load', 'per_stop' => 'Per additional stop',
             'per_pump_off' => 'Per pump off', 'percent' => 'Percent of freight', 'flat' => 'Flat per order',
             'markup' => 'Purchase cost + markup' }.freeze
+  # Per order: each order priced on its own lane. Per dispatch, farthest stop: the carrier prices the whole load
+  # at the farthest stop's lane (extra stops on top), split back over the orders by gallons
+  # (Freight::DispatchCalculator).
+  CALCULATIONS = { 'order' => 'Per order', 'dispatch_farthest' => 'Per dispatch, farthest stop' }.freeze
   # Each charge type's usual basis, for the form.
   DEFAULT_BASIS = { 'freight' => 'per_unit', 'fuel_surcharge' => 'percent', 'extra_stop' => 'per_stop',
                     'pump_off' => 'per_pump_off' }.freeze
@@ -26,9 +30,11 @@ class FreightRule < ApplicationRecord
   validates :side, inclusion: { in: SIDES.keys }
   validates :charge_type, inclusion: { in: CHARGE_TYPES.keys }
   validates :basis, inclusion: { in: BASES.keys }
+  validates :calculation, inclusion: { in: CALCULATIONS.keys }
   validates :freight_table, presence: true, unless: :markup?
   validates :markup_percent, numericality: true, if: :markup?
   validate :markup_only_on_sales
+  validate :dispatch_only_on_purchases
   validate :dates_in_order
 
   scope :active, -> { where(active: true) }
@@ -55,6 +61,7 @@ class FreightRule < ApplicationRecord
   end
 
   def markup? = basis == 'markup'
+  def per_dispatch? = calculation == 'dispatch_farthest'
   def side_label = SIDES[side]&.split(' (')&.first
   def charge_label = CHARGE_TYPES[charge_type]
   def basis_label = BASES[basis]
@@ -71,6 +78,10 @@ class FreightRule < ApplicationRecord
 
   def markup_only_on_sales
     errors.add(:basis, 'markup only applies to sale rules') if markup? && side != 'sale'
+  end
+
+  def dispatch_only_on_purchases
+    errors.add(:calculation, 'per dispatch only applies to purchase rules') if per_dispatch? && side != 'purchase'
   end
 
   def dates_in_order

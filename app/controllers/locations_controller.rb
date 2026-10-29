@@ -20,7 +20,7 @@ class LocationsController < ApplicationController
     )
   end
 
-  SHOW_TABS = %w[orders products customers].freeze
+  SHOW_TABS = %w[orders products customers freight].freeze
 
   # Orders, products and customers sit in tabs; only the open tab is loaded, and each is paginated.
   def show
@@ -28,11 +28,12 @@ class LocationsController < ApplicationController
     find_list_neighbors(@location, Location.order(:company_name, :id).pluck(:id))
     @tab = SHOW_TABS.include?(params[:tab]) ? params[:tab] : 'orders'
     @counts = { 'orders' => @location.customer_orders.count, 'products' => @location.location_products.count,
-                'customers' => @location.customers.count }
+                'customers' => @location.customers.count, 'freight' => location_lanes.count }
     case @tab
     when 'orders'
       @orders = @location.customer_orders.includes(customer_order_products: :product)
                          .order(created_at: :desc).paginate(page: params[:page], per_page: 25)
+    when 'freight' then load_freight
     when 'products'
       @location_products = @location.location_products.includes(:product).left_joins(:product)
                                     .order('products.name').paginate(page: params[:page], per_page: 50)
@@ -230,6 +231,18 @@ class LocationsController < ApplicationController
   end
 
   private
+
+  # Lanes to or from the location, and the point-to-point rates into it.
+  def location_lanes
+    FreightLane.where(destination_location: @location).or(FreightLane.where(origin_location: @location))
+  end
+
+  def load_freight
+    @lanes = location_lanes.includes(:origin_location, :destination_location).order(:standard_miles)
+    @lane_origins = Location.where(location_category_id: 1).or(Location.where(show_in_warehouse_dropdown: true))
+                            .where.not(id: @location.id).order(:company_name)
+    @freight_rates = FreightTableRate.where(destination_location: @location).includes(:freight_table, :origin_location)
+  end
 
   def fetch_samsara_vehicles
     api_key = ENV.fetch('SAMSARA_API_KEY', nil)

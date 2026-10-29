@@ -6,9 +6,9 @@ class FreightRulesController < ApplicationController
   before_action :load_options, only: %i[new create edit update]
 
   def index
-    @tab = params[:tab] == 'tables' ? 'tables' : 'rules'
-    @rules = FreightRule.includes(:freight_table, :origin_location, :freight_class, :carrier, :customer).ordered
-    @rules = @rules.active if params[:show_inactive].blank?
+    @tab = %w[tables lanes].include?(params[:tab]) ? params[:tab] : 'rules'
+    load_lanes if @tab == 'lanes'
+    load_rules
     @tables = FreightTable.ordered.includes(:rates)
     @rule_counts = FreightRule.group(:freight_table_id).count
   end
@@ -49,6 +49,19 @@ class FreightRulesController < ApplicationController
     @rule = FreightRule.find(params[:id])
   end
 
+  def load_rules
+    @rules = FreightRule.includes(:freight_table, :origin_location, :freight_class, :carrier, :customer).ordered
+    @rules = @rules.active if params[:show_inactive].blank?
+  end
+
+  def load_lanes
+    @lanes = FreightLane.includes(:origin_location, :destination_location)
+                        .joins(:destination_location).order('locations.company_name')
+    @lanes = @lanes.where(origin_location_id: params[:origin_id]) if params[:origin_id].present?
+    @lanes = @lanes.paginate(page: params[:page], per_page: 100)
+    @lane_origins = Location.where(id: FreightLane.select(:origin_location_id)).order(:company_name)
+  end
+
   def load_options
     @tables = FreightTable.ordered
     @classes = FreightClass.ordered
@@ -61,6 +74,6 @@ class FreightRulesController < ApplicationController
   def rule_params
     params.require(:freight_rule).permit(:name, :side, :charge_type, :basis, :freight_table_id, :origin_location_id,
                                          :freight_class_id, :carrier_id, :customer_id, :markup_percent,
-                                         :minimum_amount, :effective_from, :effective_to, :active, :notes)
+                                         :minimum_amount, :calculation, :effective_from, :effective_to, :active, :notes)
   end
 end

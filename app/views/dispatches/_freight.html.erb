@@ -1,0 +1,100 @@
+<%# Freight for the load: each order's customer charge and its share of the carrier cost. %>
+<% orders = @dispatch.customer_orders.includes(:location, :customer, order_freight_charges: :carrier).to_a %>
+<% origin = @dispatch.origin_location %>
+<% load_charges = orders.flat_map(&:order_freight_charges).select { |c| c.dispatch_id == @dispatch.id } %>
+<% payable = @dispatch.freight_payables.includes(:vendor).first %>
+<div class="col-12" id="freight">
+  <div class="card shadow-sm">
+    <div class="card-header fw-semibold d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <span>
+        Freight
+        <% if @dispatch.freight_calculated_at %>
+          <span class="text-muted small fw-normal ms-2">calculated <%= @dispatch.freight_calculated_at.strftime('%m/%d/%Y %l:%M %p') %></span>
+        <% end %>
+      </span>
+      <%= button_to 'Calculate freight', dispatch_freight_path(@dispatch), method: :post, class: 'btn btn-primary btn-sm',
+                    form: { data: { turbo: false } } %>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Order</th><th>Stop</th><th class="text-end">Miles</th><th class="text-end">Gallons</th>
+            <th class="text-end">Customer freight</th><th class="text-end">Carrier cost</th><th class="text-end">Margin</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% totals = Hash.new(0.to_d) %>
+          <% orders.each do |order| %>
+            <% miles, source = Freight::Miles.between(origin, order.location) %>
+            <% gallons = order.customer_order_products.select { |l| l.product&.freight_class }.sum { |l| (l.shipped_quantity || l.quantity).to_d } %>
+            <% sale = order.freight_sale_total %>
+            <% cost = order.freight_purchase_total %>
+            <% totals[:gallons] += gallons; totals[:sale] += sale; totals[:cost] += cost %>
+            <tr>
+              <td><%= link_to order.external_order_no.presence || "##{order.id}", customer_order_path(order, anchor: 'freight') %></td>
+              <td>
+                <%= order.location&.company_name %>
+                <% if order.customer %><div class="small text-muted"><%= order.customer.name %></div><% end %>
+              </td>
+              <td class="text-end">
+                <% if miles %>
+                  <%= miles.round %>
+                  <span class="small text-muted" title="<%= source == :lane ? 'Standard lane miles' : 'GPS estimate: add a lane' %>"><%= source == :lane ? 'lane' : '≈ GPS' %></span>
+                <% else %>
+                  <span class="text-danger small">no lane</span>
+                <% end %>
+              </td>
+              <td class="text-end"><%= number_with_delimiter(gallons.round) %></td>
+              <td class="text-end">
+                <%= number_to_currency(sale) %>
+                <% if order.freight_in_price? && sale.positive? %><div class="small text-muted">in price</div><% end %>
+              </td>
+              <td class="text-end"><%= number_to_currency(cost) %></td>
+              <td class="text-end <%= (sale - cost).negative? ? 'text-danger' : '' %>"><%= number_to_currency(sale - cost) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+        <tfoot>
+          <tr class="fw-semibold">
+            <td colspan="3" class="text-end">Load</td>
+            <td class="text-end"><%= number_with_delimiter(totals[:gallons].round) %></td>
+            <td class="text-end"><%= number_to_currency(totals[:sale]) %></td>
+            <td class="text-end"><%= number_to_currency(totals[:cost]) %></td>
+            <td class="text-end"><%= number_to_currency(totals[:sale] - totals[:cost]) %></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    <div class="card-body small">
+      <% if load_charges.any? %>
+        <div class="fw-semibold mb-1">Carrier priced per load<%= " (#{payable.vendor.name})" if payable %>:</div>
+        <ul class="mb-2">
+          <% load_charges.group_by(&:charge_type).each do |_type, parts| %>
+            <li><%= parts.first.description.sub(/ \(dispatch.*\z/, '') %>: <strong><%= number_to_currency(parts.sum(&:amount)) %></strong>
+              <% if parts.first.charge_type == 'freight' %>
+                <% gal = parts.sum(&:quantity) %>
+                <% if gal.positive? %><span class="text-muted">(<%= number_with_precision(parts.sum(&:amount) / gal, precision: 4) %>/gal × <%= number_with_delimiter(gal.round) %> gal)</span><% end %>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+        <div class="text-muted">Split over the orders by gallons. Customers are charged on their own lane.</div>
+      <% else %>
+        <div class="text-muted">
+          Calculates every order's customer freight on its own lane. When the carrier's purchase rule is
+          <strong>Per dispatch, farthest stop</strong> (e.g. Five Points Logistics), the carrier cost is priced for the
+          load at the farthest stop plus additional stops, and split over the orders by gallons.
+        </div>
+      <% end %>
+      <% if payable %>
+        <div class="mt-2">
+          Payable: <%= link_to payable.vendor.name, freight_payables_path(status: 'all', vendor_id: payable.vendor_id) %>
+          <%= number_to_currency(payable.balance) %>
+          <span class="badge bg-<%= payable.invoiced? ? 'success' : 'warning text-dark' %>"><%= payable.status %></span>
+          <% if payable.intercompany? %><span class="badge bg-info-subtle text-info-emphasis">intercompany</span><% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

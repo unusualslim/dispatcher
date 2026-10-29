@@ -19,12 +19,19 @@ module Freight
     end
 
     def call
-      charges = SIDES.each_with_object([]) do |side, all|
+      charges = sides.each_with_object([]) do |side, all|
         side_charges = class_groups.filter_map { |freight_class, qty| base_freight(side, freight_class, qty, all) }
         all.concat(side_charges + accessorials(side, side_charges.sum(&:amount), all))
       end
       @pricer.warn('No products on this order have a freight class, so nothing was calculated.') if class_groups.empty?
       Result.new(charges: charges, warnings: @pricer.warnings.uniq)
+    end
+
+    # A carrier that prices per dispatch (farthest stop) sets the carrier cost from the dispatch, not here.
+    def dispatch_priced?
+      return @dispatch_priced if defined?(@dispatch_priced)
+
+      @dispatch_priced = (class_groups.any? && find_rule('purchase', 'freight', primary_class)&.per_dispatch?) || false
     end
 
     # Replaces the calculated charges (manual ones stay) and refreshes the carrier payables.
@@ -39,8 +46,10 @@ module Freight
 
     private
 
+    def sides = dispatch_priced? ? SIDES - ['purchase'] : SIDES
+
     def replace_calculated!(charges)
-      order.order_freight_charges.where(calculated: true).delete_all
+      order.order_freight_charges.where(calculated: true, dispatch_id: nil).delete_all
       charges.each { |charge| charge.update!(customer_order: order, calculated: true) }
       order.update!(freight_calculated_at: Time.current)
       order.order_freight_charges.reset

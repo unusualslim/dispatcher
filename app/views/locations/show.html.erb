@@ -60,7 +60,7 @@
   </div>
 
   <ul class="nav nav-tabs mb-3">
-    <% { 'orders' => 'Customer Orders', 'products' => 'Products', 'customers' => 'Customers' }.each do |tab, label| %>
+    <% { 'orders' => 'Customer Orders', 'products' => 'Products', 'customers' => 'Customers', 'freight' => 'Freight' }.each do |tab, label| %>
       <li class="nav-item">
         <%= link_to location_path(@location, tab: tab), class: "nav-link #{'active' if @tab == tab}" do %>
           <%= label %> <span class="badge rounded-pill bg-secondary ms-1"><%= @counts[tab] %></span>
@@ -115,6 +115,9 @@
     <% else %>
       <p class="text-muted">No customer orders associated with this location.</p>
     <% end %>
+
+  <% elsif @tab == 'freight' %>
+    <%= render 'freight_tab' %>
 
   <% elsif @tab == 'products' %>
     <% if @location_products.any? %>

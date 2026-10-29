@@ -12,6 +12,8 @@ class Dispatch < ApplicationRecord
   belongs_to :trailer, class_name: 'Thing', optional: true
   has_many :things
   belongs_to :destination_location, class_name: 'Location', optional: true
+  has_many :order_freight_charges, dependent: :nullify
+  has_many :freight_payables, as: :source, dependent: :destroy
   # Not a database column (the real status lives in `status`); declared so Rails 7.1+
   # accepts the enum. Behaves as before: in-memory only, never saved.
   attribute :dispatch_status, :string
@@ -20,6 +22,13 @@ class Dispatch < ApplicationRecord
 
   def freight_only?
     customer_orders.exists?(freight_only: true)
+  end
+
+  # The origin terminal (stored as its full address text).
+  def origin_location
+    return if origin.blank?
+
+    @origin_location ||= Location.where(location_category_id: 1).find { |l| l.full_address_with_company == origin }
   end
 
   private

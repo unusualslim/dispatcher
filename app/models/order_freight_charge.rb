@@ -8,6 +8,8 @@ class OrderFreightCharge < ApplicationRecord
   belongs_to :freight_rule, optional: true
   belongs_to :freight_class, optional: true
   belongs_to :carrier, class_name: 'Vendor', optional: true
+  # Set on a share of a dispatch's carrier freight (per-dispatch pricing); recalculating the order leaves it alone.
+  belongs_to :dispatch, optional: true
 
   normalizes :carrier_id, with: ->(value) { value.presence }
 

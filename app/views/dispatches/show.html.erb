@@ -234,6 +234,10 @@
     </div>
   </div>
 
+  <% unless driver? %>
+    <%= render 'freight' %>
+  <% end %>
+
   <%# ── Attached Files ─────────────────────────────────────────────────────── %>
   <div class="col-12">
     <div class="card shadow-sm">

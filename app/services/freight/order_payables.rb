@@ -14,7 +14,8 @@ module Freight
 
     # { carrier vendor id => purchase freight }
     def carrier_totals(order)
-      order.order_freight_charges.purchase.where.not(carrier_id: nil).group(:carrier_id).sum(:amount)
+      order.order_freight_charges.purchase.where(dispatch_id: nil).where.not(carrier_id: nil)
+           .group(:carrier_id).sum(:amount)
     end
   end
 end

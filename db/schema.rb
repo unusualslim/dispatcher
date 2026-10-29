@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_29_120000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_29_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -243,6 +243,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_29_120000) do
     t.string "vendor_id"
     t.string "samsara_route_id"
     t.datetime "samsara_sent_at"
+    t.datetime "freight_calculated_at"
     t.index ["asset_id"], name: "index_dispatches_on_asset_id"
   end
 
@@ -262,6 +263,18 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_29_120000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["code"], name: "index_freight_classes_on_code", unique: true
+  end
+
+  create_table "freight_lanes", force: :cascade do |t|
+    t.bigint "origin_location_id", null: false
+    t.bigint "destination_location_id", null: false
+    t.decimal "standard_miles", precision: 10, scale: 1, null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["destination_location_id"], name: "index_freight_lanes_on_destination_location_id"
+    t.index ["origin_location_id", "destination_location_id"], name: "index_freight_lanes_on_route", unique: true
+    t.index ["origin_location_id"], name: "index_freight_lanes_on_origin_location_id"
   end
 
   create_table "freight_payables", force: :cascade do |t|
@@ -300,6 +313,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_29_120000) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "calculation", default: "order", null: false
     t.index ["carrier_id"], name: "index_freight_rules_on_carrier_id"
     t.index ["customer_id"], name: "index_freight_rules_on_customer_id"
     t.index ["freight_class_id"], name: "index_freight_rules_on_freight_class_id"
@@ -539,7 +553,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_29_120000) do
     t.boolean "calculated", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "dispatch_id"
     t.index ["customer_order_id"], name: "index_order_freight_charges_on_customer_order_id"
+    t.index ["dispatch_id"], name: "index_order_freight_charges_on_dispatch_id"
     t.index ["freight_class_id"], name: "index_order_freight_charges_on_freight_class_id"
     t.index ["freight_rule_id"], name: "index_order_freight_charges_on_freight_rule_id"
   end
@@ -1008,6 +1024,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_29_120000) do
   add_foreign_key "dispatch_messages", "users"
   add_foreign_key "dispatches", "things", column: "asset_id"
   add_foreign_key "dispatches", "vendors"
+  add_foreign_key "freight_lanes", "locations", column: "destination_location_id"
+  add_foreign_key "freight_lanes", "locations", column: "origin_location_id"
   add_foreign_key "freight_payables", "vendors"
   add_foreign_key "freight_rules", "customers"
   add_foreign_key "freight_rules", "freight_classes"
@@ -1039,6 +1057,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_29_120000) do
   add_foreign_key "location_products", "products"
   add_foreign_key "locations", "location_categories"
   add_foreign_key "order_freight_charges", "customer_orders"
+  add_foreign_key "order_freight_charges", "dispatches"
   add_foreign_key "order_freight_charges", "freight_classes"
   add_foreign_key "order_freight_charges", "freight_rules"
   add_foreign_key "order_freight_charges", "vendors", column: "carrier_id"

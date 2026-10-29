@@ -1,0 +1,72 @@
+<%# Standard miles from each origin to this location (lanes), and the point-to-point freight rates into it. %>
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold">Lanes: standard miles</div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead class="table-light">
+            <tr><th>From</th><th>To</th><th class="text-end" style="width: 150px;">Standard miles</th><th class="text-end">GPS est.</th><th style="width: 120px;"></th></tr>
+          </thead>
+          <tbody>
+            <% @lanes.each do |lane| %>
+              <% form_id = "lane_#{lane.id}" %>
+              <tr>
+                <td><%= lane.origin_location == @location ? 'This location' : link_to(lane.origin_location.company_name, location_path(lane.origin_location, tab: 'freight')) %></td>
+                <td><%= lane.destination_location == @location ? 'This location' : link_to(lane.destination_location.company_name, location_path(lane.destination_location, tab: 'freight')) %></td>
+                <td><%= number_field_tag 'freight_lane[standard_miles]', lane.standard_miles.to_s('F').sub(/\.0\z/, ''), form: form_id, step: 'any', min: 0, class: 'form-control form-control-sm text-end' %></td>
+                <td class="text-end small text-muted">
+                  <% gps = Freight::Distance.miles(lane.origin_location, lane.destination_location) %>
+                  <%= gps ? gps.round : '—' %>
+                </td>
+                <td class="text-end text-nowrap">
+                  <%= form_with model: lane, id: form_id, method: :patch, class: 'd-inline' do %>
+                    <button type="submit" class="btn btn-sm btn-primary">Save</button>
+                  <% end %>
+                  <%= button_to '✕', freight_lane_path(lane), method: :delete, class: 'btn btn-sm btn-outline-danger', form: { class: 'd-inline' } %>
+                </td>
+              </tr>
+            <% end %>
+            <% if @lanes.empty? %>
+              <tr><td colspan="5" class="text-muted p-3">No lanes yet. Add the standard miles from each origin below.</td></tr>
+            <% end %>
+          </tbody>
+          <tfoot>
+            <tr class="table-light">
+              <td><%= select_tag 'freight_lane[origin_location_id]', options_from_collection_for_select(@lane_origins, :id, :company_name), include_blank: 'From origin…', form: 'new-lane', class: 'form-select form-select-sm js-select2', required: true %></td>
+              <td>This location<%= hidden_field_tag 'freight_lane[destination_location_id]', @location.id, form: 'new-lane', id: nil %></td>
+              <td><%= number_field_tag 'freight_lane[standard_miles]', nil, form: 'new-lane', step: 'any', min: 0, class: 'form-control form-control-sm text-end', placeholder: 'Miles', required: true %></td>
+              <td></td>
+              <td class="text-end"><button type="submit" form="new-lane" class="btn btn-sm btn-outline-primary">Add lane</button></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+    <%= form_with url: freight_lanes_path, method: :post, local: true, id: 'new-lane' do %><% end %>
+    <div class="form-text">Orders price mileage freight off these miles (unless miles are typed on the order); per-dispatch carriers use them to find the farthest stop. Bulk paste on <%= link_to 'Freight Rules → Lanes', freight_rules_path(tab: 'lanes') %>.</div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card shadow-sm">
+      <div class="card-header fw-semibold">Point-to-point rates into this location</div>
+      <ul class="list-group list-group-flush">
+        <% @freight_rates.group_by(&:freight_table).each do |table, rates| %>
+          <li class="list-group-item small">
+            <%= link_to table.name, freight_table_path(table), class: 'fw-semibold' %>
+            <% rates.each do |rate| %>
+              <div class="d-flex justify-content-between">
+                <span class="text-muted"><%= rate.origin_location&.company_name || 'Any origin' %></span>
+                <span class="font-monospace"><%= number_with_precision(rate.rate, precision: 4, strip_insignificant_zeros: true) %></span>
+              </div>
+            <% end %>
+          </li>
+        <% end %>
+        <% if @freight_rates.empty? %>
+          <li class="list-group-item small text-muted">None. Mileage tables price from the lane miles instead.</li>
+        <% end %>
+      </ul>
+    </div>
+  </div>
+</div>
+<%= render 'shared/select2_init' %>

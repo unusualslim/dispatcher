@@ -45,7 +45,11 @@
               <div><span class="badge bg-<%= payable.invoiced? ? 'success' : 'warning text-dark' %>"><%= payable.status.capitalize %></span></div>
             </td>
             <td class="small">
-              <% path = payable.source.is_a?(PurchaseOrder) ? purchase_order_path(payable.source, anchor: 'freight') : customer_order_path(payable.source, anchor: 'freight') %>
+              <% path = case payable.source
+                        when PurchaseOrder then purchase_order_path(payable.source, anchor: 'freight')
+                        when Dispatch then dispatch_path(payable.source, anchor: 'freight')
+                        else customer_order_path(payable.source, anchor: 'freight')
+                        end %>
               <%= link_to payable.source_label, path %>
               <div class="text-muted"><%= payable.created_at.strftime('%m/%d/%Y') %></div>
             </td>

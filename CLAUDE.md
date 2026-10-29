@@ -327,6 +327,13 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
   (% of that side's freight), stops, pump offs; sale markup rules price off the purchase charges. Recalculating replaces
   `calculated` charges; manual ones stay. Only products with a freight class are calculated (warehouse goods = manual).
   PDI orders' own freight lines ("Freight - DEF") are shown for comparison, not double-counted in the order total.
+- **Lanes** (`FreightLane`: origin, destination, standard_miles; location page Freight tab, Freight Rules → Lanes paste via
+  `Freight::LaneImport`). Order miles = typed `freight_miles` → lane → GPS (`Freight::Miles.between`).
+- **Per-dispatch carriers** (`freight_rules.calculation` = dispatch_farthest, purchase only; Five Points Logistics):
+  `Freight::DispatchCalculator` (Calculate freight on the dispatch) runs each order's Calculator (customers pay their own
+  lane; the order skips its own carrier cost when its carrier's rule is per dispatch), then `Freight::LoadPricer` prices the
+  load: rate at the farthest stop's lane × total gallons, + extra_stop rule × (stops − 1), + fuel surcharge; parts split over
+  the orders by gallons as charges with `dispatch_id`, one `FreightPayable` per dispatch.
 - **Purchase orders** (`PurchaseOrderFreight` concern, Freight card on the PO): `freight_allocation` quantity|value lands freight
   into `landed_unit_cost`, which `post_to_inventory!` uses (nil allocation = PDI history, line cost as before);
   `freight_source` vendor_invoice|carrier, `freight_vendor_id`, `freight_bol`, `freight_accrued`. A carrier invoice entered
@@ -400,7 +407,8 @@ file, remove it from the todo (or regenerate with the command at the top of `.ru
   to the app's; needs PDI's import layout)
 - Real GL accounts (production has placeholders 8001-01…8006-01) and PDI FTP pickup of FPST files
 - **Freight, next steps** — export freight payables to PDI AP and post freight revenue/cost/accruals to the GL; carrier
-  lanes; road-routed miles (the freight build itself shipped 2026-10-29, see Freight above)
+  carrier quote lanes; road-routed miles; Samsara actual miles written back to orders/dispatches to compare with
+  standard lane miles (the freight build itself shipped 2026-10-29, see Freight above)
 - **Sales invoicing** — if the app controls inventory it needs a formal sales invoicing process; that role moves
   away from PDI (today PDI bills and the app only reads invoice dates/numbers back)
 - **Standard cost exceptions** — an exceptions review like /quality_exceptions, for standard cost variances

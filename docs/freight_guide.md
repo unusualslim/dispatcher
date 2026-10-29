@@ -24,11 +24,20 @@ A table is a freight index: you look up a rate in it. Each table has a lookup ty
 
 | Lookup | You enter | Example |
 |---|---|---|
-| **Mileage** | Miles from / to, rate | 0–50 mi = 0.045, 50–100 mi = 0.06, over 100 mi = 0.08 |
+| **Mileage** | Miles, rate (each row = up to those miles) | 10 mi = 0.045, 20 mi = 0.05, 30 mi = 0.055 |
 | **Point to point** | Origin, destination, rate | Bainbridge terminal → Cordele Shop = 0.052 |
 | **Flat** | One rate | Fuel surcharge 12 (%), pump off 50 ($) |
 
+Mileage **rounds up** to the next mileage in the table. With rows for 10 and 20 miles, an 11-mile trip takes the 20-mile rate.
+
 Rates can be pasted straight from Excel with **Paste rates** on the table page. Pasting replaces all of the table's rates.
+
+### Lanes (standard miles)
+A lane is the standard miles from an origin (terminal or warehouse) to a destination. Every location should have a lane from each origin it's served from.
+
+- Add or edit them on a location's **Freight** tab, which also shows the point-to-point rates into that location.
+- Paste many at once on **Freight Rules → Lanes**: `origin, destination, miles` per row, using location IDs or exact names.
+- An order's miles come from the miles typed on the order, else the lane, else a GPS estimate.
 
 ### Rules
 A rule says **when** to use a table and **what its rate means**.
@@ -49,6 +58,7 @@ A rule says **when** to use a table and **what its rate means**.
   - **Purchase cost + markup**, for sale rules that mark up a third-party carrier's cost
 - **When it applies**: origin, freight class, carrier, customer, and the effective dates. A blank field matches any order.
 - **Minimum $** (optional): the charge never goes below it.
+- **Calculated** (purchase rules only): **Per order**, where each order is priced on its own lane, or **Per dispatch, farthest stop** (see below).
 
 When more than one rule matches, the most specific one wins. A rule naming the customer beats one naming the carrier. Carrier beats origin, and origin beats class. Ties go to the newest effective date.
 
@@ -78,6 +88,23 @@ Use **Add a freight charge by hand**:
 - Manual charges stay when freight is recalculated. Calculated charges are replaced each time.
 
 Carrier cost on an order creates a payable for that carrier. Five Points Logistics and Five Points Service payables are marked **intercompany**.
+
+---
+
+## Freight on a dispatch
+
+**Calculate freight** on a dispatch calculates every order on it.
+
+- **Customer charges:** each customer pays on its own lane.
+- **Carriers priced per dispatch** (a purchase rule set to **Per dispatch, farthest stop**, e.g. Five Points Logistics) are priced for the whole load:
+  1. Find the stop farthest from the origin, using lane miles.
+  2. Multiply the rate at that distance by the load's gallons.
+  3. Add the **additional stop** rule for every stop after the first (orders for the same site count as one stop), e.g. $50 each.
+  4. Add the fuel surcharge, if there's a rule for it.
+  5. Split the total back over the orders **by gallons**, as each order's carrier cost.
+- The carrier gets **one payable for the dispatch**. It's intercompany for Five Points Logistics.
+
+The dispatch's Freight card lists each order's stop, miles (lane or GPS estimate), gallons, customer freight, carrier cost and margin.
 
 ---
 
@@ -113,4 +140,5 @@ Every carrier payable, from POs and from customer orders:
 
 - Exporting freight payables to PDI AP, and GL postings for freight revenue, cost and accruals.
 - Carrier lanes (quoted rates per lane) pulled into tables.
-- Road-routed miles. Miles are a GPS estimate unless typed in.
+- Road-routed miles. Without a lane, miles are a GPS estimate unless typed in.
+- Samsara actual miles written back to orders and dispatches, to compare with standard miles.

@@ -62,6 +62,21 @@ en:
   inventory_valuations:
     opening:
       done: "Opening balances set. Inventory is now tracked at cost from today."
+  dispatch_freights:
+    create:
+      priced: "Freight calculated. Carrier cost for the load: %{total}."
+      calculated: "Freight calculated for each order."
+  freight_lanes:
+    create:
+      saved: "Lane saved."
+    update:
+      saved: "Lane saved."
+    destroy:
+      deleted: "Lane removed."
+    import:
+      imported:
+        one: "Imported 1 lane."
+        other: "Imported %{count} lanes."
   freight_rules:
     create:
       created: "Added freight rule %{name}."

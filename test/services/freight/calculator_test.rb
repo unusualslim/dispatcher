@@ -93,6 +93,15 @@ module Freight
       assert_equal 'accrued', payable.status
     end
 
+    test 'mileage rounds up to the next mileage in the table' do
+      table = FreightTable.create!(name: 'Frt steps', lookup_type: 'mileage')
+      { 10 => 0.04, 20 => 0.05, 30 => 0.06 }.each { |miles, rate| table.rates.create!(miles_to: miles, rate: rate) }
+      assert_equal 0.04.to_d, table.rate_for(miles: 10).rate
+      assert_equal 0.05.to_d, table.rate_for(miles: 11).rate
+      assert_equal 0.06.to_d, table.rate_for(miles: 29.5).rate
+      assert_nil table.rate_for(miles: 31)
+    end
+
     test 'miles fall back to a GPS estimate' do
       @order.update!(freight_miles: nil)
       assert_operator @order.freight_miles_or_estimate, :>, 10

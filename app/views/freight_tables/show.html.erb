@@ -47,11 +47,7 @@
                 <tr class="table-light">
                   <% if type == 'mileage' %>
                     <td>
-                      <div class="d-flex gap-1 align-items-center">
-                        <%= number_field_tag 'freight_table_rate[miles_from]', nil, form: 'new-rate', class: 'form-control form-control-sm', step: 'any', min: 0, placeholder: 'From' %>
-                        <span>–</span>
-                        <%= number_field_tag 'freight_table_rate[miles_to]', nil, form: 'new-rate', class: 'form-control form-control-sm', step: 'any', min: 0, placeholder: 'To (blank = over)' %>
-                      </div>
+                      <%= number_field_tag 'freight_table_rate[miles_to]', nil, form: 'new-rate', class: 'form-control form-control-sm', step: 'any', min: 0, placeholder: 'Up to miles', required: true %>
                     </td>
                   <% elsif type == 'point_to_point' %>
                     <td><%= select_tag 'freight_table_rate[origin_location_id]', options_from_collection_for_select(@locations, :id, :company_name), include_blank: 'Any origin', form: 'new-rate', class: 'form-select form-select-sm js-select2' %></td>
@@ -75,7 +71,7 @@
           <%= form_with url: import_freight_table_rates_path(@table), method: :post, local: true do %>
             <p class="small text-muted mb-2">
               One row per line, comma or tab separated (copy straight from Excel). Replaces this table's rates.
-              <% if type == 'mileage' %><br><code>from, to, rate</code> e.g. <code>0, 50, 0.045</code>; leave "to" blank on the last band.
+              <% if type == 'mileage' %><br><code>miles, rate</code> e.g. <code>10, 0.045</code> then <code>20, 0.05</code>. Miles round up to the next row: 11 miles takes the 20-mile rate.
               <% elsif type == 'point_to_point' %><br><code>origin, destination, rate</code> with location IDs or exact names; blank origin = any.
               <% else %><br>One line with the rate.
               <% end %>

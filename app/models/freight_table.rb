@@ -3,8 +3,8 @@
 class FreightTable < ApplicationRecord
   LOOKUP_TYPES = { 'mileage' => 'Mileage', 'point_to_point' => 'Point to point', 'flat' => 'Flat rate' }.freeze
 
-  has_many :rates, -> { order(:miles_from, :id) }, class_name: 'FreightTableRate', dependent: :delete_all,
-                                                   inverse_of: :freight_table
+  has_many :rates, -> { order(:miles_to, :miles_from, :id) }, class_name: 'FreightTableRate',
+                                                              dependent: :delete_all, inverse_of: :freight_table
   has_many :freight_rules, dependent: :restrict_with_error
 
   normalizes :name, with: ->(value) { value.strip.presence }
@@ -16,8 +16,9 @@ class FreightTable < ApplicationRecord
 
   def lookup_label = LOOKUP_TYPES[lookup_type]
 
-  # The matching row, or nil. Point to point prefers a row naming the origin over one that leaves it blank;
-  # mileage takes the band the miles fall in (from < miles <= to; the first band also takes 0).
+  # The matching row, or nil. Point to point prefers a row naming the origin over one that leaves it blank.
+  # Mileage rounds up to the next mileage in the table: with rows for 10 and 20 miles, 11 miles takes the 20-mile
+  # rate. Past the highest mileage only an open-ended "over" row (no "up to" miles) matches.
   def rate_for(origin_id: nil, destination_id: nil, miles: nil)
     case lookup_type
     when 'flat' then rates.first
@@ -39,9 +40,8 @@ class FreightTable < ApplicationRecord
     return unless miles
 
     miles = miles.to_d
-    rates.find do |r|
-      low = r.miles_from.to_d
-      (miles > low || (low.zero? && miles.zero?)) && (r.miles_to.nil? || miles <= r.miles_to)
-    end
+    rates.select { |r| r.miles_to && miles <= r.miles_to }.min_by(&:miles_to) || over_row(miles)
   end
+
+  def over_row(miles) = rates.find { |r| r.miles_to.nil? && miles > r.miles_from.to_d }
 end

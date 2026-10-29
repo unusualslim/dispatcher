@@ -16,6 +16,7 @@ module OrderFreight
     validates :freight_presentation, inclusion: { in: PRESENTATIONS.keys }
     validates :freight_extra_stops, :freight_pump_offs,
               numericality: { greater_than_or_equal_to: 0, only_integer: true }
+    after_save { @standard_miles = nil }
   end
 
   # Where the freight starts: set on the order, else the ship-from warehouse, the lines' PDI warehouse, or the
@@ -34,14 +35,15 @@ module OrderFreight
     Vendor.find_by(id: freight_carrier_vendor_id) if freight_carrier_vendor_id
   end
 
-  # Miles entered on the order, else an estimate from the origin's and destination's GPS.
-  def freight_miles_or_estimate
-    freight_miles || Freight::Distance.miles(freight_origin, location)
+  # Miles typed on the order, else the lane's standard miles, else a GPS estimate.
+  def freight_miles_or_estimate = freight_miles || standard_miles.first
+
+  # :order, :lane, :gps or nil.
+  def freight_miles_source
+    freight_miles ? :order : standard_miles.last
   end
 
-  def freight_miles_estimated?
-    freight_miles.nil? && freight_miles_or_estimate.present?
-  end
+  def freight_miles_estimated? = freight_miles_source == :gps
 
   def freight_purchase_total = order_freight_charges.select { |c| c.side == 'purchase' }.sum(0.to_d, &:amount)
   def freight_sale_total = order_freight_charges.select { |c| c.side == 'sale' }.sum(0.to_d, &:amount)
@@ -71,10 +73,9 @@ module OrderFreight
 
   private
 
-  def dispatch_origin_location
-    origin = dispatches.filter_map(&:origin).first
-    return unless origin
+  def dispatch_origin_location = dispatches.filter_map(&:origin_location).first
 
-    Location.where(location_category_id: 1).find { |l| l.full_address_with_company == origin }
+  def standard_miles
+    @standard_miles ||= Freight::Miles.between(freight_origin, location)
   end
 end

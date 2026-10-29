@@ -56,10 +56,18 @@
                                  title: 'Save and recalculate' %>
         </div>
       <% end %>
-      <% if order.freight_miles_estimated? %>
-        <div class="form-text mt-n2 mb-3">Miles ≈ <%= miles.round %> estimated from GPS (straight line × <%= Freight::Distance::ROAD_FACTOR %>). Type the real miles to override.</div>
+      <% if order.freight_miles_source == :lane %>
+        <div class="form-text mt-n2 mb-3">Miles: <%= miles.round %> standard lane miles from <%= origin&.company_name %>. Type miles to override.</div>
+      <% elsif order.freight_miles_source == :gps %>
+        <div class="form-text mt-n2 mb-3">Miles ≈ <%= miles.round %> estimated from GPS (straight line × <%= Freight::Distance::ROAD_FACTOR %>). <%= link_to 'Add a lane', location_path(order.location, tab: 'freight') %> or type the real miles.</div>
       <% end %>
 
+      <% if charges.any?(&:dispatch_id) %>
+        <div class="alert alert-info py-2 small">
+          The carrier prices this load per dispatch: its cost here is this order's share by gallons, from
+          <%= link_to "Dispatch ##{charges.find(&:dispatch_id).dispatch_id}", dispatch_path(charges.find(&:dispatch_id).dispatch_id, anchor: 'freight') %>.
+        </div>
+      <% end %>
       <div class="row g-4">
         <% { 'sale' => 'Charged to customer', 'purchase' => 'Carrier cost' }.each do |side, heading| %>
           <% side_charges = charges.select { |c| c.side == side } %>

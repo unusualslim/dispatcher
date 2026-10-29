@@ -1,6 +1,55 @@
 <%= render 'freight_rules/tabs', active: @tab %>
 
-<% if @tab == 'tables' %>
+<% if @tab == 'lanes' %>
+  <div class="row g-4">
+    <div class="col-lg-7">
+      <div class="card shadow-sm">
+        <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+          Lanes (<%= @lanes.total_entries %>)
+          <%= form_with url: freight_rules_path, method: :get, local: true do %>
+            <%= hidden_field_tag :tab, 'lanes' %>
+            <%= select_tag :origin_id, options_from_collection_for_select(@lane_origins, :id, :company_name, params[:origin_id]),
+                           include_blank: 'All origins', class: 'form-select form-select-sm', onchange: 'this.form.submit()' %>
+          <% end %>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead class="table-light"><tr><th>Origin</th><th>Destination</th><th class="text-end" style="width: 140px;">Standard miles</th><th></th></tr></thead>
+            <tbody>
+              <% @lanes.each do |lane| %>
+                <tr>
+                  <td><%= lane.origin_location.company_name %></td>
+                  <td><%= link_to lane.destination_location.company_name, location_path(lane.destination_location, tab: 'freight') %></td>
+                  <td class="text-end"><%= number_with_precision(lane.standard_miles, precision: 1, strip_insignificant_zeros: true) %></td>
+                  <td class="text-end"><%= button_to '✕', freight_lane_path(lane), method: :delete, class: 'btn btn-outline-danger btn-sm py-0' %></td>
+                </tr>
+              <% end %>
+              <% if @lanes.empty? %>
+                <tr><td colspan="4" class="text-muted p-3">No lanes yet. Paste them on the right, or add them on a location's Freight tab.</td></tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="mt-2"><%= will_paginate @lanes, renderer: BootstrapPaginationRenderer, params: { tab: 'lanes' } %></div>
+    </div>
+    <div class="col-lg-5">
+      <div class="card shadow-sm">
+        <div class="card-header fw-semibold">Paste lanes</div>
+        <div class="card-body">
+          <%= form_with url: import_freight_lanes_path, method: :post, local: true do %>
+            <p class="small text-muted mb-2">
+              One row per line, comma or tab separated: <code>origin, destination, miles</code>, using location IDs or
+              exact names. New lanes are added and existing ones updated.
+            </p>
+            <%= text_area_tag :rows, nil, class: 'form-control font-monospace small mb-2', rows: 10 %>
+            <%= submit_tag 'Import lanes', class: 'btn btn-outline-primary btn-sm' %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+<% elsif @tab == 'tables' %>
   <div class="card shadow-sm">
     <div class="table-responsive">
       <table class="table table-sm table-hover align-middle mb-0">
@@ -55,6 +104,7 @@
                   <%= rule.basis_label %>
                   <% if rule.markup? %><span class="text-muted">(+<%= number_with_precision(rule.markup_percent, precision: 2, strip_insignificant_zeros: true) %>%)</span><% end %>
                   <% if rule.minimum_amount %><div class="text-muted">min <%= number_to_currency(rule.minimum_amount) %></div><% end %>
+                  <% if rule.per_dispatch? %><div><span class="badge bg-info-subtle text-info-emphasis">Per dispatch, farthest stop</span></div><% end %>
                 </td>
                 <td class="small"><%= rule.freight_table ? link_to(rule.freight_table.name, freight_table_path(rule.freight_table)) : '—' %></td>
                 <td class="small text-nowrap">

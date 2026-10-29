@@ -25,11 +25,11 @@ class FreightTest < ActionDispatch::IntegrationTest
 
     post freight_tables_path, params: { freight_table: { name: 'Frti miles', lookup_type: 'mileage' } }
     table = FreightTable.find_by!(name: 'Frti miles')
-    post import_freight_table_rates_path(table), params: { rows: "From\tTo\tRate\n0\t100\t0.06\n100\t\t0.09" }
+    post import_freight_table_rates_path(table), params: { rows: "Miles\tRate\n100\t0.06\n150\t0.09" }
     assert_equal 2, table.rates.count
     get freight_table_path(table)
     assert_response :success
-    assert_select 'td', text: 'Over 100 mi'
+    assert_select 'td', text: 'Up to 150 mi'
 
     post freight_rules_path, params: { freight_rule: { name: 'Frti sale', side: 'sale', charge_type: 'freight',
                                                        basis: 'per_unit', freight_table_id: table.id,

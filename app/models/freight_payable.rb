@@ -1,4 +1,5 @@
-# What we owe a carrier for freight: from a PO's separate carrier, or the carrier cost on a customer order.
+# What we owe a carrier for freight: from a PO's separate carrier, the carrier cost on a customer order, or a
+# dispatch priced per load (farthest stop).
 # Starts accrued (the estimate) and becomes invoiced once the carrier's invoice number and amount are entered.
 # Five Points Logistics / Service payables are intercompany (FPL bills FPS for the haul).
 class FreightPayable < ApplicationRecord
@@ -43,6 +44,7 @@ class FreightPayable < ApplicationRecord
     case source
     when PurchaseOrder then "PO #{source.display_number}"
     when CustomerOrder then "Order #{source.external_order_no.presence || "##{source.id}"}"
+    when Dispatch then "Dispatch ##{source.id}"
     end
   end
 

@@ -12,7 +12,7 @@
       </div>
       <div class="col-md-3">
         <%= f.label :side, class: 'form-label' %>
-        <%= f.select :side, FreightRule::SIDES.invert, {}, class: 'form-select' %>
+        <%= f.select :side, FreightRule::SIDES.invert, {}, class: 'form-select', id: 'rule_side' %>
       </div>
       <div class="col-md-3">
         <%= f.label :charge_type, 'Charge', class: 'form-label' %>
@@ -31,6 +31,11 @@
       <div class="col-md-2" data-show-for-markup>
         <%= f.label :markup_percent, 'Markup %', class: 'form-label' %>
         <%= f.number_field :markup_percent, class: 'form-control', step: 'any' %>
+      </div>
+      <div class="col-md-4" id="rule_calculation_wrap">
+        <%= f.label :calculation, 'Calculated', class: 'form-label' %>
+        <%= f.select :calculation, FreightRule::CALCULATIONS.invert, {}, class: 'form-select' %>
+        <div class="form-text">Per dispatch: the load is priced at the farthest stop and split over the orders by gallons (carrier cost only).</div>
       </div>
       <div class="col-md-2">
         <%= f.label :minimum_amount, 'Minimum $', class: 'form-label' %>
@@ -90,14 +95,17 @@
   (function () {
     var basis = document.getElementById('rule_basis');
     var charge = document.getElementById('rule_charge_type');
+    var side = document.getElementById('rule_side');
     var defaults = <%= raw FreightRule::DEFAULT_BASIS.to_json %>;
     function toggle() {
       var markup = basis.value === 'markup';
+      document.getElementById('rule_calculation_wrap').style.display = side.value === 'purchase' ? '' : 'none';
       document.querySelectorAll('[data-show-for-markup]').forEach(function (el) { el.style.display = markup ? '' : 'none'; });
       document.querySelectorAll('[data-hide-for-markup]').forEach(function (el) { el.style.display = markup ? 'none' : ''; });
     }
     charge.addEventListener('change', function () { if (defaults[charge.value]) basis.value = defaults[charge.value]; toggle(); });
     basis.addEventListener('change', toggle);
+    side.addEventListener('change', toggle);
     toggle();
   })();
 </script>
