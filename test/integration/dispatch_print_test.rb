@@ -34,6 +34,7 @@ class DispatchPrintTest < ActionDispatch::IntegrationTest
     assert_select '.sheet .copy', 2
     assert_select '.copy-label', text: 'Driver Copy'
     assert_select '.copy-label', text: 'Dispatch Copy'
+    assert_select '.fill-line .label', text: 'BOL #', count: 2
     assert_select '.copy', text: /Albany Terminal.*1 Rack Rd.*Gate code 1234/m, count: 2
     assert_select '.copy', text: /OD-1001.*Dana Driver.*Cordele Shop/m, count: 2
     assert_select 'td', text: 'PRINT1 – Clear Diesel', count: 2
