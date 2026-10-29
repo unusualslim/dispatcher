@@ -34,6 +34,32 @@
       <div class="mt-2"><%= will_paginate @lanes, renderer: BootstrapPaginationRenderer, params: { tab: 'lanes' } %></div>
     </div>
     <div class="col-lg-5">
+      <div class="card shadow-sm mb-4">
+        <div class="card-header fw-semibold">Add a lane</div>
+        <div class="card-body">
+          <%= form_with url: freight_lanes_path, method: :post, local: true do %>
+            <%= hidden_field_tag :return_to, 'lanes' %>
+            <div class="mb-2">
+              <label class="form-label small mb-1">From (origin)</label>
+              <%= select_tag 'freight_lane[origin_location_id]', options_from_collection_for_select(@lane_origin_choices, :id, :company_name, params[:origin_id]),
+                             include_blank: 'Search origins…', class: 'form-select form-select-sm js-select2', required: true %>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small mb-1">To (destination)</label>
+              <%= select_tag 'freight_lane[destination_location_id]', options_for_select(@lane_destination_choices.map { |l| [l.picker_label, l.id] }),
+                             include_blank: 'Search locations…', class: 'form-select form-select-sm js-select2', required: true %>
+            </div>
+            <div class="d-flex gap-2 align-items-end">
+              <div style="max-width: 160px;">
+                <label class="form-label small mb-1">Standard miles</label>
+                <%= number_field_tag 'freight_lane[standard_miles]', nil, step: 'any', min: 0, class: 'form-control form-control-sm', required: true %>
+              </div>
+              <%= submit_tag 'Add lane', class: 'btn btn-primary btn-sm' %>
+            </div>
+            <div class="form-text">The origin stays picked after adding, so you can add several destinations in a row. An existing lane is updated.</div>
+          <% end %>
+        </div>
+      </div>
       <div class="card shadow-sm">
         <div class="card-header fw-semibold">Paste lanes</div>
         <div class="card-body">
@@ -49,6 +75,7 @@
       </div>
     </div>
   </div>
+  <%= render 'shared/select2_init' %>
 <% elsif @tab == 'tables' %>
   <div class="card shadow-sm">
     <div class="table-responsive">

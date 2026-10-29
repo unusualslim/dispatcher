@@ -50,8 +50,8 @@
                       <%= number_field_tag 'freight_table_rate[miles_to]', nil, form: 'new-rate', class: 'form-control form-control-sm', step: 'any', min: 0, placeholder: 'Up to miles', required: true %>
                     </td>
                   <% elsif type == 'point_to_point' %>
-                    <td><%= select_tag 'freight_table_rate[origin_location_id]', options_from_collection_for_select(@locations, :id, :company_name), include_blank: 'Any origin', form: 'new-rate', class: 'form-select form-select-sm js-select2' %></td>
-                    <td><%= select_tag 'freight_table_rate[destination_location_id]', options_from_collection_for_select(@locations, :id, :company_name), include_blank: 'Destination', form: 'new-rate', class: 'form-select form-select-sm js-select2', required: true %></td>
+                    <td><%= select_tag 'freight_table_rate[origin_location_id]', options_from_collection_for_select(@locations, :id, :picker_label), include_blank: 'Any origin', form: 'new-rate', class: 'form-select form-select-sm js-select2' %></td>
+                    <td><%= select_tag 'freight_table_rate[destination_location_id]', options_from_collection_for_select(@locations, :id, :picker_label), include_blank: 'Search destination…', form: 'new-rate', class: 'form-select form-select-sm js-select2', required: true %></td>
                   <% end %>
                   <td><%= number_field_tag 'freight_table_rate[rate]', nil, form: 'new-rate', class: 'form-control form-control-sm text-end', step: 'any', required: true, placeholder: 'Rate' %></td>
                   <td><button type="submit" form="new-rate" class="btn btn-primary btn-sm">Add</button></td>

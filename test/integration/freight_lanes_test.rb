@@ -22,12 +22,19 @@ class FreightLanesTest < ActionDispatch::IntegrationTest
     assert_select 'input[value=?]', '64'
     get freight_rules_path(tab: 'lanes')
     assert_select 'td', text: 'Frtl Terminal'
+    assert_select 'select.js-select2[name=?] option', 'freight_lane[destination_location_id]', text: 'Frtl Site'
+
+    post freight_lanes_path, params: { return_to: 'lanes', freight_lane: { origin_location_id: @terminal.id,
+                                                                           destination_location_id: @site.id,
+                                                                           standard_miles: 66 } }
+    assert_redirected_to freight_rules_path(tab: 'lanes', origin_id: @terminal.id)
+    assert_equal 66.to_d, FreightLane.miles(@terminal, @site)
 
     dispatch = Dispatch.create!(dispatch_date: Date.current, origin: @terminal.full_address_with_company)
     dispatch.customer_orders << @order
     post dispatch_freight_path(dispatch)
     assert_redirected_to dispatch_path(dispatch, anchor: 'freight')
     get dispatch_path(dispatch)
-    assert_select '#freight td', /64/
+    assert_select '#freight td', /66/
   end
 end

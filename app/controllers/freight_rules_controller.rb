@@ -59,7 +59,14 @@ class FreightRulesController < ApplicationController
                         .joins(:destination_location).order('locations.company_name')
     @lanes = @lanes.where(origin_location_id: params[:origin_id]) if params[:origin_id].present?
     @lanes = @lanes.paginate(page: params[:page], per_page: 100)
+    load_lane_pickers
+  end
+
+  def load_lane_pickers
     @lane_origins = Location.where(id: FreightLane.select(:origin_location_id)).order(:company_name)
+    @lane_origin_choices = Location.where(location_category_id: 1).or(Location.where(show_in_warehouse_dropdown: true))
+                                   .order(:company_name)
+    @lane_destination_choices = Location.order(:company_name).select(:id, :company_name, :city)
   end
 
   def load_options

@@ -26,6 +26,9 @@ class Location < ApplicationRecord
     "#{company_name} - #{city}"
   end
 
+  # "Chambers (Milledgeville)": names repeat across towns, so pickers show the city.
+  def picker_label = city.present? ? "#{company_name} (#{city})" : company_name.to_s
+
   def full_address_with_company
     "#{company_name} - #{address} #{city}, #{state} #{zip}"
   end

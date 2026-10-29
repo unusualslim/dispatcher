@@ -7,7 +7,7 @@ class FreightLanesController < ApplicationController
     lane = FreightLane.find_or_initialize_by(lane_params.slice(:origin_location_id, :destination_location_id))
     lane.assign_attributes(lane_params)
     if lane.save
-      redirect_back_or_to freight_rules_path(tab: 'lanes'), notice: t('.saved')
+      after_save_redirect(lane)
     else
       redirect_back_or_to freight_rules_path(tab: 'lanes'), alert: lane.errors.full_messages.to_sentence
     end
@@ -38,6 +38,15 @@ class FreightLanesController < ApplicationController
   end
 
   private
+
+  # From the Lanes tab, back to it with the origin still picked; from a location page, back there.
+  def after_save_redirect(lane)
+    if params[:return_to] == 'lanes'
+      redirect_to freight_rules_path(tab: 'lanes', origin_id: lane.origin_location_id), notice: t('.saved')
+    else
+      redirect_back_or_to freight_rules_path(tab: 'lanes'), notice: t('.saved')
+    end
+  end
 
   def lane_params
     params.require(:freight_lane).permit(:origin_location_id, :destination_location_id, :standard_miles, :notes)
