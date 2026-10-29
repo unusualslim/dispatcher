@@ -43,8 +43,9 @@ module Freight
              .tally.max_by { |_, n| n }&.first
     end
 
+    # The orders' carrier (PDI's carrier on the order, else the dispatch's), most common first.
     def carrier_id
-      @dispatch.vendor_id.presence || @orders.filter_map(&:freight_carrier_vendor_id).first
+      @orders.filter_map(&:freight_carrier_vendor_id).tally.max_by { |_, n| n }&.first
     end
 
     def rule(charge_type)

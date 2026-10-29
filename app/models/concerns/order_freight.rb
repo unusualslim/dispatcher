@@ -4,6 +4,8 @@ module OrderFreight
   extend ActiveSupport::Concern
 
   PRESENTATIONS = { 'line' => 'Separate line item', 'in_price' => 'Rolled into the price' }.freeze
+  # Five Points Logistics hauls for Five Points Service: the carrier for app-entered orders on our own trucks.
+  OWN_FLEET_CARRIER_ID = '1514'.freeze
 
   included do
     belongs_to :freight_origin_location, class_name: 'Location', optional: true
@@ -26,9 +28,10 @@ module OrderFreight
       dispatch_origin_location
   end
 
-  # The carrier hauling it: set on the order, else PDI's carrier on the order.
+  # The carrier hauling it: set on the order, else PDI's carrier on the order, else Five Points Logistics for
+  # app-entered orders (they have no PDI carrier). A dispatch's Vendor is not its carrier.
   def freight_carrier_vendor_id
-    freight_carrier_id.presence || pdi_carrier_id.presence
+    freight_carrier_id.presence || pdi_carrier_id.presence || (OWN_FLEET_CARRIER_ID if external_order_no.blank?)
   end
 
   def freight_carrier_vendor

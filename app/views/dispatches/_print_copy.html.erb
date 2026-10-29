@@ -28,9 +28,13 @@
     <dt>Truck</dt><dd><%= dispatch.truck&.name || '—' %></dd>
     <dt>Customer</dt><dd><%= order.customer&.name || '—' %></dd>
     <dt>Trailer</dt><dd><%= dispatch.trailer&.name || '—' %></dd>
-    <% if order.salesperson.present? || order.carrier.present? || dispatch.vendor %>
+    <% carrier = order.freight_carrier_vendor&.name || order.carrier.presence %>
+    <% if order.salesperson.present? || carrier %>
       <dt>Salesperson</dt><dd><%= order.salesperson.presence || '—' %></dd>
-      <dt>Carrier</dt><dd><%= dispatch.vendor&.name || order.carrier.presence || '—' %></dd>
+      <dt>Carrier</dt><dd><%= carrier || '—' %></dd>
+    <% end %>
+    <% if dispatch.vendor %>
+      <dt>Vendor</dt><dd><%= dispatch.vendor.name %></dd>
     <% end %>
   </dl>
 

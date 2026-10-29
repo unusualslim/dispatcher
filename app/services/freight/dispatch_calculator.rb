@@ -63,7 +63,7 @@ module Freight
     def carrier_vendor_id
       return @carrier_vendor_id if defined?(@carrier_vendor_id)
 
-      carrier = dispatch.vendor_id.presence || orders.filter_map(&:freight_carrier_vendor_id).first
+      carrier = orders.filter_map(&:freight_carrier_vendor_id).tally.max_by { |_, n| n }&.first
       @carrier_vendor_id = Vendor.where(id: carrier).pick(:id)
     end
 

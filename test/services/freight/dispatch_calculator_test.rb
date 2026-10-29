@@ -61,6 +61,12 @@ module Freight
       assert_equal 176.67.to_d, @orders.first.order_freight_charges.purchase.sum(:amount)
     end
 
+    test "the dispatch's vendor is not its carrier" do
+      @dispatch.update!(vendor_id: Vendor.create!(id: 'DFC-FPS', name: 'Dfc Service').id)
+      assert_equal 530.to_d, DispatchCalculator.new(@dispatch).apply!.summary[:total]
+      assert_equal @fpl.id, @dispatch.freight_payables.sole.vendor_id
+    end
+
     test 'a stop without a lane or GPS is reported' do
       FreightLane.find_by(destination_location: @far).destroy!
       result = DispatchCalculator.new(@dispatch).apply!

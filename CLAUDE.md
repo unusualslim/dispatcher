@@ -321,7 +321,8 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
   pump_off, basis per_unit / per_load / per_stop / per_pump_off / percent / flat / markup, selectors origin, class, carrier
   (vendor), customer, effective dates, minimum). `FreightRule.best` = most specific match (customer > carrier > origin > class).
 - **Customer orders** (`OrderFreight` concern, Freight card on the order): inputs `freight_origin_location_id` (else ship-from,
-  line warehouse, dispatch terminal), `freight_carrier_id` (else `pdi_carrier_id`), `freight_miles` (else GPS estimate
+  line warehouse, dispatch terminal), `freight_carrier_id` (else `pdi_carrier_id`, else 1514 Five Points Logistics for
+  app-entered orders; a dispatch's "Vendor" is separate from the carrier and never used for freight), `freight_miles` (else GPS estimate
   `Freight::Distance`, straight line × 1.2), extra stops, pump offs, `freight_presentation` line|in_price.
   `Freight::Calculator` (+ `Freight::Pricer`) builds `OrderFreightCharge`s per side and class: base freight, then fuel surcharge
   (% of that side's freight), stops, pump offs; sale markup rules price off the purchase charges. Recalculating replaces

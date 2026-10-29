@@ -31,7 +31,7 @@
         <div class="col-md-3">
           <label class="form-label small mb-1">Carrier</label>
           <%= f.collection_select :freight_carrier_id, @carriers, :id, :label,
-                                  { include_blank: carrier ? "#{carrier.name} (from PDI)" : 'Not set' },
+                                  { include_blank: carrier ? "#{carrier.name} (default)" : 'Not set' },
                                   class: 'form-select form-select-sm js-select2' %>
         </div>
         <div class="col-md-1">

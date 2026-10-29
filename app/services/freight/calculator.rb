@@ -116,9 +116,15 @@ module Freight
     end
 
     def missing(side, charge_type, freight_class)
-      class_text = freight_class ? " for class #{freight_class.code}" : ''
       label = FreightRule::CHARGE_TYPES[charge_type].downcase
-      @pricer.warn("No #{side} #{label} rule matches this order#{class_text}.")
+      @pricer.warn("No #{side} #{label} rule matches this order (#{situation(freight_class)}).")
+    end
+
+    # What the rules were matched on, so a mismatch (e.g. the carrier) is easy to spot.
+    def situation(freight_class)
+      carrier = order.freight_carrier_vendor&.name || order.freight_carrier_vendor_id
+      { 'class' => freight_class&.code, 'carrier' => carrier, 'origin' => order.freight_origin&.company_name }
+        .map { |label, value| "#{label} #{value || 'none'}" }.join(', ')
     end
 
     def order_date
