@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_29_160000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_29_200000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -244,7 +244,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_29_160000) do
     t.string "samsara_route_id"
     t.datetime "samsara_sent_at"
     t.datetime "freight_calculated_at"
+    t.bigint "origin_location_id"
     t.index ["asset_id"], name: "index_dispatches_on_asset_id"
+    t.index ["origin_location_id"], name: "index_dispatches_on_origin_location_id"
   end
 
   create_table "dispatches_things", id: false, force: :cascade do |t|
@@ -1022,6 +1024,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_29_160000) do
   add_foreign_key "dispatch_customer_orders", "dispatches"
   add_foreign_key "dispatch_messages", "dispatches"
   add_foreign_key "dispatch_messages", "users"
+  add_foreign_key "dispatches", "locations", column: "origin_location_id"
   add_foreign_key "dispatches", "things", column: "asset_id"
   add_foreign_key "dispatches", "vendors"
   add_foreign_key "freight_lanes", "locations", column: "destination_location_id"

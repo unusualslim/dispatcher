@@ -1,5 +1,6 @@
 class Dispatch < ApplicationRecord
   before_validation :set_default_status, on: :create
+  before_validation :link_origin_location, if: -> { origin_changed? || (origin_location_id.nil? && origin.present?) }
   before_save :set_full_destination_address
   # belongs_to :customer_order
   has_many :dispatch_customer_order, dependent: :destroy
@@ -12,6 +13,8 @@ class Dispatch < ApplicationRecord
   belongs_to :trailer, class_name: 'Thing', optional: true
   has_many :things
   belongs_to :destination_location, class_name: 'Location', optional: true
+  # The origin terminal. `origin` keeps the text picked on the form (a snapshot of the terminal's name and address).
+  belongs_to :origin_location, class_name: 'Location', optional: true
   has_many :order_freight_charges, dependent: :nullify
   has_many :freight_payables, as: :source, dependent: :destroy
   # Not a database column (the real status lives in `status`); declared so Rails 7.1+
@@ -24,14 +27,11 @@ class Dispatch < ApplicationRecord
     customer_orders.exists?(freight_only: true)
   end
 
-  # The origin terminal (stored as its full address text).
-  def origin_location
-    return if origin.blank?
-
-    @origin_location ||= Location.where(location_category_id: 1).find { |l| l.full_address_with_company == origin }
-  end
-
   private
+
+  def link_origin_location
+    self.origin_location = DispatchOrigin.resolve(origin)
+  end
 
   def set_full_destination_address
     return unless destination_location.present?

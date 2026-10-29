@@ -71,7 +71,8 @@
                   @origin_locations,
                   :full_address_with_company,
                   :full_address_with_company,
-                  { include_blank: "— Select an origin —" },
+                  { include_blank: "— Select an origin —",
+                    selected: dispatch.origin_location&.full_address_with_company || dispatch.origin },
                   class: "form-select" %>
           </div>
 

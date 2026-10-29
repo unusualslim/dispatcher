@@ -84,7 +84,7 @@ class DispatchesController < ApplicationController
     @origin_locations = Location.where(location_category_id: 1)
     @destination_locations = Location.where(location_category_id: 2)
 
-    origin = @origin_locations.find { |l| l.full_address_with_company == @dispatch.origin }
+    origin = @dispatch.origin_location
     dest = @customer_orders.first&.location
 
     return unless origin&.latitude && origin.longitude && dest&.latitude && dest.longitude
@@ -107,9 +107,7 @@ class DispatchesController < ApplicationController
       return
     end
 
-    origins = Location.where(location_category_id: 1)
-    @origin_location = origins.find { |l| l.full_address_with_company == @dispatch.origin } ||
-                       origins.find { |l| l.city == @dispatch.origin }
+    @origin_location = @dispatch.origin_location
     @customer_orders = @dispatch.customer_orders
                                 .includes(:customer, :ship_from_location, location: :location_contacts,
                                                                           customer_order_products: :product)
@@ -249,12 +247,9 @@ class DispatchesController < ApplicationController
     # Pagination (LAST)
     @dispatches = dispatches.paginate(page: params[:page], per_page: 25)
 
-    origin_locations = Location.where.not(latitude: nil, longitude: nil)
-                               .index_by(&:full_address_with_company)
-
-    @map_data = @dispatches.filter_map do |dispatch|
-      origin = origin_locations[dispatch.origin]
-      next unless origin
+    @map_data = @dispatches.includes(:origin_location).filter_map do |dispatch|
+      origin = dispatch.origin_location
+      next unless origin&.latitude && origin.longitude
 
       dest = dispatch.customer_orders.map(&:location).find { |l| l&.latitude && l.longitude }
       next unless dest

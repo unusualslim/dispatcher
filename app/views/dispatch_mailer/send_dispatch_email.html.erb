@@ -18,7 +18,7 @@
         <td style="border: 1px solid black; padding: 10px;"><%= @dispatch.customer_orders.first.product %></td>
         <td style="border: 1px solid black; padding: 10px;"><%= @dispatch.customer_orders.first.approximate_product_amount %></td>
         <td style="border: 1px solid black; padding: 10px;">
-          <% origin_location = @origin_locations.find_by(city: @dispatch.origin) %>
+          <% origin_location = @dispatch.origin_location %>
           <% if origin_location %>
             <%= "#{origin_location.address} #{origin_location.city}, #{origin_location.state} #{origin_location.zip}" %>
           <% else %>

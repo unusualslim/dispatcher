@@ -1,5 +1,5 @@
 <%
-  origin_location = @origin_locations.find { |l| l.full_address_with_company == @dispatch.origin }
+  origin_location = @dispatch.origin_location
   destination_location = @dispatch.customer_orders.first&.location
 %>
 
@@ -328,8 +328,7 @@
 <%# ── Send Notification Modal ─────────────────────────────────────────────── %>
 <% if @dispatch.driver_id && @dispatch.dispatch_customer_order.any? %>
   <%
-    origin_loc = @origin_locations.find { |l| l.full_address_with_company == @dispatch.origin } ||
-                 @origin_locations.find { |l| l.city == @dispatch.origin }
+    origin_loc = @dispatch.origin_location
     dest_loc = @dispatch.customer_orders.first&.location
     order_lines = @dispatch.customer_orders.each_with_index.map do |order, i|
       products = order.customer_order_products.map { |cop|

@@ -128,15 +128,12 @@ class LocationsController < ApplicationController
                          .where.not(latitude: nil, longitude: nil)
 
     active_dispatches = Dispatch.where(status: 'Sent to Driver')
-                                .includes(customer_orders: :location)
-
-    origin_locations = Location.where.not(latitude: nil, longitude: nil)
-                               .index_by(&:full_address_with_company)
+                                .includes(:origin_location, customer_orders: :location)
 
     # Straight-line routes only — OSRM routing loaded async after page paint
     @dispatch_routes = active_dispatches.filter_map do |dispatch|
-      origin = origin_locations[dispatch.origin]
-      next unless origin
+      origin = dispatch.origin_location
+      next unless origin&.latitude && origin.longitude
 
       dest = dispatch.customer_orders.map(&:location).find { |l| l&.latitude && l.longitude }
       next unless dest
@@ -170,14 +167,11 @@ class LocationsController < ApplicationController
                         else
                           Dispatch.where(status: 'Sent to Driver')
                         end
-    active_dispatches = active_dispatches.includes(customer_orders: :location)
-
-    origin_locations = Location.where.not(latitude: nil, longitude: nil)
-                               .index_by(&:full_address_with_company)
+    active_dispatches = active_dispatches.includes(:origin_location, customer_orders: :location)
 
     routes = active_dispatches.filter_map do |dispatch|
-      origin = origin_locations[dispatch.origin]
-      next unless origin
+      origin = dispatch.origin_location
+      next unless origin&.latitude && origin.longitude
 
       dest = dispatch.customer_orders.map(&:location).find { |l| l&.latitude && l.longitude }
       next unless dest

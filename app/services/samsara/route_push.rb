@@ -45,13 +45,7 @@ module Samsara
         stops: schedule(stops_for(home_for(driver), orders)) }
     end
 
-    def origin
-      @origin ||= begin
-        terminals = Location.where(location_category_id: 1)
-        terminals.find { |l| l.full_address_with_company == @dispatch.origin } ||
-          terminals.find { |l| l.city == @dispatch.origin }
-      end
-    end
+    def origin = @dispatch.origin_location
 
     private
 
