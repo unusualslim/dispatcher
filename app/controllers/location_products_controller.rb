@@ -11,7 +11,7 @@ class LocationProductsController < ApplicationController
   def create
     @location_product = @location.location_products.build(location_product_params)
     if @location_product.save
-      redirect_to @location, notice: 'Product was successfully added to the location.'
+      redirect_to location_path(@location, tab: 'products'), notice: 'Product was successfully added to the location.'
     else
       render :new
     end
@@ -21,7 +21,7 @@ class LocationProductsController < ApplicationController
 
   def update
     if @location_product.update(location_product_params)
-      redirect_to @location, notice: 'Product was successfully updated.'
+      redirect_to location_path(@location, tab: 'products'), notice: 'Product was successfully updated.'
     else
       render :edit
     end
@@ -29,7 +29,7 @@ class LocationProductsController < ApplicationController
 
   def destroy
     @location_product.destroy
-    redirect_to @location, notice: 'Product was successfully removed from the location.'
+    redirect_to location_path(@location, tab: 'products'), notice: 'Product was successfully removed from the location.'
   end
 
   private

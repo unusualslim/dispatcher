@@ -1,4 +1,5 @@
 class WorkOrdersController < ApplicationController
+  include ListNeighbors
   permission_area :production
   before_action :set_work_order, only: %i[show edit update destroy change_status]
 
@@ -8,6 +9,7 @@ class WorkOrdersController < ApplicationController
 
   def show
     @work_order = WorkOrder.find(params[:id])
+    find_list_neighbors(@work_order, WorkOrder.order(:id).pluck(:id))
   end
 
   def new

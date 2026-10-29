@@ -55,6 +55,9 @@ Primary contact: John (admin@perrybrothersoil.com)
 - All manual importers are listed once in `ImportsController::IMPORTS` (hub at `/imports`, Admin → Data Imports);
   add new importers there.
 - Styling: `--sidebar-*` variables and group/link rules in `app/assets/stylesheets/custom.css`.
+- Show pages put their actions at the top with `render layout: 'shared/page_header'` (title, subtitle, previous_path /
+  next_path; the block holds Edit / Back / Delete etc.). `ListNeighbors#find_list_neighbors` sets `@previous_id` /
+  `@next_id` in list order (customers/products follow the user's remembered list filters, else alphabetical).
 
 ---
 

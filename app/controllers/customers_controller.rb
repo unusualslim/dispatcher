@@ -1,6 +1,7 @@
 class CustomersController < ApplicationController
   include CsvRoundTrip
   include RemembersListFilters
+  include ListNeighbors
   permission_area :sales, lookups: %i[search select2]
   before_action :set_customer, only: %i[edit update destroy]
 
@@ -16,6 +17,9 @@ class CustomersController < ApplicationController
 
   def show
     @customer = Customer.find(params[:id])
+    find_list_neighbors(@customer, CustomerListQuery.new(remembered_list_params('customers')).relation
+                                                    .pluck('customers.id').uniq,
+                        fallback: -> { Customer.order(:name, :id).pluck(:id) })
   end
 
   # GET /customers/new

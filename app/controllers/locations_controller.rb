@@ -1,6 +1,7 @@
 require 'net/http'
 
 class LocationsController < ApplicationController
+  include ListNeighbors
   include CsvRoundTrip
   permission_area :sales, lookups: %i[search select2],
                           areas: { map: :dispatch, vehicles: :dispatch, dispatch_routes: :dispatch }
@@ -19,8 +20,25 @@ class LocationsController < ApplicationController
     )
   end
 
+  SHOW_TABS = %w[orders products customers].freeze
+
+  # Orders, products and customers sit in tabs; only the open tab is loaded, and each is paginated.
   def show
     @location = Location.find(params[:id])
+    find_list_neighbors(@location, Location.order(:company_name, :id).pluck(:id))
+    @tab = SHOW_TABS.include?(params[:tab]) ? params[:tab] : 'orders'
+    @counts = { 'orders' => @location.customer_orders.count, 'products' => @location.location_products.count,
+                'customers' => @location.customers.count }
+    case @tab
+    when 'orders'
+      @orders = @location.customer_orders.includes(customer_order_products: :product)
+                         .order(created_at: :desc).paginate(page: params[:page], per_page: 25)
+    when 'products'
+      @location_products = @location.location_products.includes(:product).left_joins(:product)
+                                    .order('products.name').paginate(page: params[:page], per_page: 50)
+    else
+      @customers = @location.customers.order(:name).paginate(page: params[:page], per_page: 50)
+    end
   end
 
   def new

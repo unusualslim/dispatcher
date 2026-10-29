@@ -1,6 +1,7 @@
 class ProductsController < ApplicationController
   include CsvRoundTrip
   include RemembersListFilters
+  include ListNeighbors
   permission_area :inventory, lookups: %i[search bom]
   before_action :set_product, only: %i[show edit update destroy components]
 
@@ -109,6 +110,9 @@ class ProductsController < ApplicationController
   def show
     @product.product_components.build if @product.product_components.empty?
     load_show_data
+    find_list_neighbors(@product, ProductListQuery.new(remembered_list_params('products'), warehouse: current_warehouse)
+                                                  .relation.pluck('products.id').uniq,
+                        fallback: -> { Product.order(:name, :id).pluck(:id) })
 
     respond_to do |format|
       format.html

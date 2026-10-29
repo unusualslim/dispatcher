@@ -1,6 +1,7 @@
 require 'csv'
 
 class PurchaseOrdersController < ApplicationController
+  include ListNeighbors
   permission_area :purchasing, approve: %i[approve submit post_to_inventory]
   before_action :set_purchase_order, only: %i[show edit update approve submit receive post_to_inventory void]
   before_action :require_admin!, only: :void
@@ -120,7 +121,12 @@ class PurchaseOrdersController < ApplicationController
     end
   end
 
-  def show; end
+  # Previous / Next follow the list: newest first, at the current warehouse.
+  def show
+    newest_first = PurchaseOrder.order(created_at: :desc, id: :desc)
+    list = current_warehouse ? newest_first.where(location_id: current_warehouse.id) : newest_first
+    find_list_neighbors(@purchase_order, list.pluck(:id), fallback: -> { newest_first.pluck(:id) })
+  end
 
   def edit
     unless %w[draft pending_approval].include?(@purchase_order.status)
