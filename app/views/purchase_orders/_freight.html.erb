@@ -1,0 +1,92 @@
+<%# Freight card: amount, how it lands into line costs, who bills it, accrual, and the carrier invoice. %>
+<% po = @purchase_order %>
+<% payable = po.freight_payable %>
+<div class="card shadow-sm mb-4" id="freight">
+  <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+    <span>Freight</span>
+    <span class="small fw-normal">
+      <% if po.freight_accrued? %><span class="badge bg-warning text-dark">Accrued estimate</span><% end %>
+      <% if payable %>
+        <%= link_to freight_payables_path(status: 'all', vendor_id: payable.vendor_id), class: 'text-decoration-none' do %>
+          <span class="badge bg-<%= payable.invoiced? ? 'success' : 'secondary' %>">Payable <%= payable.status %></span>
+        <% end %>
+      <% end %>
+    </span>
+  </div>
+  <div class="card-body">
+    <% if po.voided? %>
+      <p class="text-muted mb-0">Voided: freight can't be changed.</p>
+    <% else %>
+      <%= form_with model: po, url: purchase_order_freight_path(po), method: :patch, local: true, data: { turbo: false } do |f| %>
+        <div class="row g-2 align-items-end">
+          <div class="col-md-3">
+            <label class="form-label small mb-1">Freight amount</label>
+            <div class="input-group input-group-sm">
+              <span class="input-group-text">$</span>
+              <%= f.number_field :freight_amount, class: 'form-control', step: '0.01', min: 0 %>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small mb-1">Spread over lines</label>
+            <%= f.select :freight_allocation, PurchaseOrderFreight::ALLOCATIONS.invert,
+                         { include_blank: "Don't land into cost" }, class: 'form-select form-select-sm' %>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small mb-1">Billed by</label>
+            <%= f.select :freight_source, PurchaseOrderFreight::SOURCES.invert, {}, class: 'form-select form-select-sm', id: 'po_freight_source' %>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small mb-1">BOL #</label>
+            <%= f.text_field :freight_bol, class: 'form-control form-control-sm' %>
+          </div>
+          <div class="col-md-5" data-carrier-only>
+            <label class="form-label small mb-1">Carrier</label>
+            <%= f.collection_select :freight_vendor_id, @carriers, :id, :label, { include_blank: '— Select carrier —' },
+                                    class: 'form-select form-select-sm js-select2' %>
+          </div>
+          <div class="col-md-2" data-carrier-only>
+            <label class="form-label small mb-1">Carrier invoice #</label>
+            <%= text_field_tag 'freight_invoice[invoice_no]', payable&.invoice_no, class: 'form-control form-control-sm' %>
+          </div>
+          <div class="col-md-2" data-carrier-only>
+            <label class="form-label small mb-1">Invoice date</label>
+            <%= date_field_tag 'freight_invoice[invoice_date]', payable&.invoice_date, class: 'form-control form-control-sm' %>
+          </div>
+          <div class="col-md-2" data-carrier-only>
+            <label class="form-label small mb-1">Invoice amount</label>
+            <%= number_field_tag 'freight_invoice[amount]', payable&.amount, step: '0.01', class: 'form-control form-control-sm' %>
+          </div>
+          <div class="col-md-3">
+            <div class="form-check mt-2">
+              <%= f.check_box :freight_accrued, class: 'form-check-input' %>
+              <%= f.label :freight_accrued, 'Amount is an estimate (accrue)', class: 'form-check-label small' %>
+            </div>
+          </div>
+          <div class="col-md-2 ms-auto d-grid"><%= f.submit 'Save freight', class: 'btn btn-primary btn-sm' %></div>
+        </div>
+      <% end %>
+      <div class="form-text mt-2">
+        Landed freight is added to each line's cost when the PO posts to inventory.
+        A separate carrier gets its own payable; the carrier's invoice replaces the estimate until the PO is posted,
+        after that the difference shows as a variance on <%= link_to 'Freight Payables', freight_payables_path %>.
+        <% if payable&.variance&.nonzero? %>
+          <strong class="text-danger">Invoice variance: <%= number_to_currency(payable.variance) %></strong>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>
+<%= render 'shared/select2_init' %>
+<script>
+  (function () {
+    var source = document.getElementById('po_freight_source');
+    if (!source) return;
+    function toggle() {
+      document.querySelectorAll('[data-carrier-only]').forEach(function (el) {
+        el.style.display = source.value === 'carrier' ? '' : 'none';
+      });
+    }
+    source.addEventListener('change', toggle);
+    toggle();
+  })();
+</script>

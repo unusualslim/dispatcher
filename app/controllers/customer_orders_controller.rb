@@ -120,6 +120,9 @@ class CustomerOrdersController < ApplicationController
   def show
     @customer_order = CustomerOrder.find(params[:id])
     @locations = Location.where(location_category_id: 2)
+    @freight_origins = Location.where(location_category_id: 1).or(Location.where(show_in_warehouse_dropdown: true))
+                               .order(:company_name)
+    @carriers = Vendor.order(:name)
   end
 
   def new

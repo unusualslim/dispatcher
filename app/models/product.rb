@@ -14,6 +14,8 @@ class Product < ApplicationRecord
   has_many :quality_specs, -> { order(:position, :id) }, dependent: :destroy
   # PDI's reporting group for the product, matched by category name (fuel or warehouse).
   belongs_to :reporting_group, foreign_key: :category, primary_key: :name, optional: true, inverse_of: :products
+  # Bulk products: how much fits on a full load, for per-load freight.
+  belongs_to :freight_class, optional: true
 
   has_many :production_order_components
   has_many :inventory_transactions
@@ -59,9 +61,7 @@ class Product < ApplicationRecord
   end
 
   # Order line item type for this product (customer_order_products.item_type).
-  def order_item_type
-    produced? ? 'production' : 'buy'
-  end
+  def order_item_type = produced? ? 'production' : 'buy'
 
   # Whether stock and value are tracked: anything not in a non-inventory reporting group.
   def inventory_item?

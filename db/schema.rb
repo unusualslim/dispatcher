@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_28_200000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_29_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -162,8 +162,16 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_28_200000) do
     t.string "salesperson"
     t.string "pdi_carrier_id"
     t.bigint "ship_from_location_id"
+    t.bigint "freight_origin_location_id"
+    t.string "freight_carrier_id"
+    t.decimal "freight_miles", precision: 10, scale: 1
+    t.integer "freight_extra_stops", default: 0, null: false
+    t.integer "freight_pump_offs", default: 0, null: false
+    t.string "freight_presentation", default: "line", null: false
+    t.datetime "freight_calculated_at"
     t.index ["customer_id"], name: "index_customer_orders_on_customer_id"
     t.index ["external_order_no"], name: "index_customer_orders_on_external_order_no"
+    t.index ["freight_origin_location_id"], name: "index_customer_orders_on_freight_origin_location_id"
     t.index ["location_id"], name: "index_customer_orders_on_location_id"
     t.index ["pdi_carrier_id"], name: "index_customer_orders_on_pdi_carrier_id"
     t.index ["ship_from_location_id"], name: "index_customer_orders_on_ship_from_location_id"
@@ -243,6 +251,84 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_28_200000) do
     t.bigint "thing_id", null: false
     t.index ["dispatch_id"], name: "index_dispatches_things_on_dispatch_id"
     t.index ["thing_id"], name: "index_dispatches_things_on_thing_id"
+  end
+
+  create_table "freight_classes", force: :cascade do |t|
+    t.string "code", null: false
+    t.string "name"
+    t.decimal "full_load_quantity", precision: 14, scale: 3, null: false
+    t.string "unit", default: "gal", null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["code"], name: "index_freight_classes_on_code", unique: true
+  end
+
+  create_table "freight_payables", force: :cascade do |t|
+    t.string "source_type", null: false
+    t.bigint "source_id", null: false
+    t.string "vendor_id", null: false
+    t.decimal "accrued_amount", precision: 12, scale: 2
+    t.decimal "amount", precision: 12, scale: 2
+    t.string "invoice_no"
+    t.date "invoice_date"
+    t.string "bol_number"
+    t.string "status", default: "accrued", null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["source_type", "source_id", "vendor_id"], name: "index_freight_payables_on_source_and_vendor", unique: true
+    t.index ["source_type", "source_id"], name: "index_freight_payables_on_source"
+    t.index ["status"], name: "index_freight_payables_on_status"
+  end
+
+  create_table "freight_rules", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "side", null: false
+    t.string "charge_type", default: "freight", null: false
+    t.string "basis", null: false
+    t.bigint "freight_table_id"
+    t.bigint "origin_location_id"
+    t.bigint "freight_class_id"
+    t.string "carrier_id"
+    t.bigint "customer_id"
+    t.decimal "markup_percent", precision: 8, scale: 3
+    t.decimal "minimum_amount", precision: 12, scale: 2
+    t.date "effective_from", null: false
+    t.date "effective_to"
+    t.boolean "active", default: true, null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["carrier_id"], name: "index_freight_rules_on_carrier_id"
+    t.index ["customer_id"], name: "index_freight_rules_on_customer_id"
+    t.index ["freight_class_id"], name: "index_freight_rules_on_freight_class_id"
+    t.index ["freight_table_id"], name: "index_freight_rules_on_freight_table_id"
+    t.index ["origin_location_id"], name: "index_freight_rules_on_origin_location_id"
+    t.index ["side", "charge_type", "active"], name: "index_freight_rules_on_side_and_charge_type_and_active"
+  end
+
+  create_table "freight_table_rates", force: :cascade do |t|
+    t.bigint "freight_table_id", null: false
+    t.bigint "origin_location_id"
+    t.bigint "destination_location_id"
+    t.decimal "miles_from", precision: 10, scale: 2
+    t.decimal "miles_to", precision: 10, scale: 2
+    t.decimal "rate", precision: 12, scale: 4, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["destination_location_id"], name: "index_freight_table_rates_on_destination_location_id"
+    t.index ["freight_table_id"], name: "index_freight_table_rates_on_freight_table_id"
+    t.index ["origin_location_id"], name: "index_freight_table_rates_on_origin_location_id"
+  end
+
+  create_table "freight_tables", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "lookup_type", default: "mileage", null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_freight_tables_on_name", unique: true
   end
 
   create_table "inventory_cost_histories", force: :cascade do |t|
@@ -438,6 +524,26 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_28_200000) do
     t.index ["product_id"], name: "index_locations_products_on_product_id"
   end
 
+  create_table "order_freight_charges", force: :cascade do |t|
+    t.bigint "customer_order_id", null: false
+    t.string "side", null: false
+    t.string "charge_type", default: "freight", null: false
+    t.string "description"
+    t.bigint "freight_rule_id"
+    t.bigint "freight_class_id"
+    t.string "carrier_id"
+    t.string "basis"
+    t.decimal "quantity", precision: 14, scale: 3
+    t.decimal "rate", precision: 12, scale: 4
+    t.decimal "amount", precision: 12, scale: 2, null: false
+    t.boolean "calculated", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["customer_order_id"], name: "index_order_freight_charges_on_customer_order_id"
+    t.index ["freight_class_id"], name: "index_order_freight_charges_on_freight_class_id"
+    t.index ["freight_rule_id"], name: "index_order_freight_charges_on_freight_rule_id"
+  end
+
   create_table "pdi_carriers", force: :cascade do |t|
     t.string "pdi_carrier_id", null: false
     t.string "name", null: false
@@ -600,6 +706,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_28_200000) do
     t.boolean "active", default: true, null: false
     t.integer "lead_time_days"
     t.integer "production_days"
+    t.bigint "freight_class_id"
+    t.index ["freight_class_id"], name: "index_products_on_freight_class_id"
   end
 
   create_table "purchase_order_line_items", force: :cascade do |t|
@@ -639,6 +747,11 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_28_200000) do
     t.bigint "voided_by_id"
     t.text "void_reason"
     t.string "pdi_po_key"
+    t.string "freight_allocation"
+    t.string "freight_source", default: "vendor_invoice", null: false
+    t.string "freight_vendor_id"
+    t.string "freight_bol"
+    t.boolean "freight_accrued", default: false, null: false
     t.index ["pdi_po_key"], name: "index_purchase_orders_on_pdi_po_key", unique: true
     t.index ["pdi_reference"], name: "index_purchase_orders_on_pdi_reference"
     t.index ["status"], name: "index_purchase_orders_on_status"
@@ -886,6 +999,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_28_200000) do
   add_foreign_key "customer_order_products", "products"
   add_foreign_key "customer_order_products", "quote_products", on_delete: :nullify
   add_foreign_key "customer_orders", "customers"
+  add_foreign_key "customer_orders", "locations", column: "freight_origin_location_id"
   add_foreign_key "customer_orders", "locations", column: "ship_from_location_id"
   add_foreign_key "customer_orders", "locations", on_delete: :cascade
   add_foreign_key "dispatch_customer_orders", "customer_orders", on_delete: :cascade
@@ -894,6 +1008,15 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_28_200000) do
   add_foreign_key "dispatch_messages", "users"
   add_foreign_key "dispatches", "things", column: "asset_id"
   add_foreign_key "dispatches", "vendors"
+  add_foreign_key "freight_payables", "vendors"
+  add_foreign_key "freight_rules", "customers"
+  add_foreign_key "freight_rules", "freight_classes"
+  add_foreign_key "freight_rules", "freight_tables"
+  add_foreign_key "freight_rules", "locations", column: "origin_location_id"
+  add_foreign_key "freight_rules", "vendors", column: "carrier_id"
+  add_foreign_key "freight_table_rates", "freight_tables"
+  add_foreign_key "freight_table_rates", "locations", column: "destination_location_id"
+  add_foreign_key "freight_table_rates", "locations", column: "origin_location_id"
   add_foreign_key "inventory_cost_layers", "inventory_transactions"
   add_foreign_key "inventory_cost_layers", "locations"
   add_foreign_key "inventory_layer_draws", "inventory_cost_layers"
@@ -915,6 +1038,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_28_200000) do
   add_foreign_key "location_products", "locations", on_delete: :cascade
   add_foreign_key "location_products", "products"
   add_foreign_key "locations", "location_categories"
+  add_foreign_key "order_freight_charges", "customer_orders"
+  add_foreign_key "order_freight_charges", "freight_classes"
+  add_foreign_key "order_freight_charges", "freight_rules"
+  add_foreign_key "order_freight_charges", "vendors", column: "carrier_id"
   add_foreign_key "phone_numbers", "customers"
   add_foreign_key "product_components", "products"
   add_foreign_key "product_components", "products", column: "component_product_id"
@@ -929,6 +1056,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_28_200000) do
   add_foreign_key "production_orders", "locations"
   add_foreign_key "production_orders", "products"
   add_foreign_key "production_orders", "users", column: "voided_by_id"
+  add_foreign_key "products", "freight_classes"
   add_foreign_key "purchase_order_line_items", "purchase_orders"
   add_foreign_key "purchase_orders", "users", column: "voided_by_id"
   add_foreign_key "purchase_orders", "vendors"

@@ -1,0 +1,80 @@
+<%= render 'freight_rules/tabs', active: 'classes' %>
+
+<div class="card shadow-sm mb-4">
+  <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th style="width: 90px;">Class</th><th>Name</th><th style="width: 160px;" class="text-end">Full load</th>
+          <th style="width: 90px;">Unit</th><th>Notes</th><th class="text-end" style="width: 90px;">Products</th><th style="width: 150px;"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @classes.each do |fc| %>
+          <% form_id = "freight_class_#{fc.id}" %>
+          <tr>
+            <td><%= text_field_tag 'freight_class[code]', fc.code, form: form_id, class: 'form-control form-control-sm', required: true %></td>
+            <td><%= text_field_tag 'freight_class[name]', fc.name, form: form_id, class: 'form-control form-control-sm' %></td>
+            <td><%= number_field_tag 'freight_class[full_load_quantity]', fc.full_load_quantity.to_s('F').sub(/\.0\z/, ''), form: form_id, step: 'any', min: 0, class: 'form-control form-control-sm text-end', required: true %></td>
+            <td><%= text_field_tag 'freight_class[unit]', fc.unit, form: form_id, class: 'form-control form-control-sm' %></td>
+            <td><%= text_field_tag 'freight_class[notes]', fc.notes, form: form_id, class: 'form-control form-control-sm' %></td>
+            <td class="text-end">
+              <% count = @product_counts[fc.id].to_i %>
+              <% if count.positive? %>
+                <a href="#class-products-<%= fc.id %>" data-bs-toggle="collapse"><%= count %></a>
+              <% else %>0<% end %>
+            </td>
+            <td class="text-end text-nowrap">
+              <%= form_with model: fc, id: form_id, method: :patch, class: 'd-inline' do %>
+                <button type="submit" class="btn btn-sm btn-primary">Save</button>
+              <% end %>
+              <%= button_to 'Delete', freight_class_path(fc), method: :delete, class: 'btn btn-sm btn-outline-danger',
+                            form: { class: 'd-inline', data: { turbo_confirm: "Delete class #{fc.code}? Its products lose their class." } } %>
+            </td>
+          </tr>
+          <% if (products = @products_by_class[fc.id]) %>
+            <tr class="collapse" id="class-products-<%= fc.id %>">
+              <td colspan="7" class="small bg-light">
+                <%= safe_join(products.map { |p| link_to("#{p.id} #{p.name}", product_path(p)) }, ' · ') %>
+              </td>
+            </tr>
+          <% end %>
+        <% end %>
+      </tbody>
+      <tfoot>
+        <tr class="table-light">
+          <td><%= text_field_tag 'freight_class[code]', nil, form: 'new-class', class: 'form-control form-control-sm', placeholder: 'A', required: true %></td>
+          <td><%= text_field_tag 'freight_class[name]', nil, form: 'new-class', class: 'form-control form-control-sm', placeholder: 'e.g. Bulk DEF' %></td>
+          <td><%= number_field_tag 'freight_class[full_load_quantity]', nil, form: 'new-class', step: 'any', min: 0, class: 'form-control form-control-sm text-end', placeholder: '8500', required: true %></td>
+          <td><%= text_field_tag 'freight_class[unit]', 'gal', form: 'new-class', class: 'form-control form-control-sm' %></td>
+          <td><%= text_field_tag 'freight_class[notes]', nil, form: 'new-class', class: 'form-control form-control-sm' %></td>
+          <td></td>
+          <td class="text-end"><button type="submit" form="new-class" class="btn btn-sm btn-outline-primary">Add class</button></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+<%= form_with url: freight_classes_path, method: :post, local: true, id: 'new-class' do %><% end %>
+
+<div class="card shadow-sm" style="max-width: 900px;">
+  <div class="card-header fw-semibold">Put products in a class</div>
+  <div class="card-body">
+    <%= form_with url: assign_freight_classes_path, method: :post, local: true, class: 'row g-2 align-items-end' do %>
+      <div class="col-md-4">
+        <label class="form-label small">Every product in category</label>
+        <%= select_tag :category, options_for_select(@categories), include_blank: '— or list product IDs —', class: 'form-select form-select-sm' %>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small">Product IDs</label>
+        <%= text_field_tag :product_ids, nil, class: 'form-control form-control-sm', placeholder: '901, 10011219' %>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small">Class</label>
+        <%= select_tag :freight_class_id, options_from_collection_for_select(@classes, :id, :code), include_blank: 'None', class: 'form-select form-select-sm' %>
+      </div>
+      <div class="col-md-2"><%= submit_tag 'Apply', class: 'btn btn-primary btn-sm w-100' %></div>
+    <% end %>
+    <div class="form-text">A product's class can also be set on its edit page. Only products with a class get calculated freight.</div>
+  </div>
+</div>

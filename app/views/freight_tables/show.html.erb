@@ -1,0 +1,105 @@
+<% type = @table.lookup_type %>
+<div class="container-fluid" style="max-width: 1100px;">
+  <%= render layout: 'shared/page_header', locals: { title: @table.name, subtitle: "#{@table.lookup_label} freight table" } do %>
+    <%= link_to 'Edit', edit_freight_table_path(@table), class: 'btn btn-outline-secondary btn-sm' %>
+    <%= link_to 'All tables', freight_rules_path(tab: 'tables'), class: 'btn btn-outline-secondary btn-sm' %>
+    <% if @rules.empty? %>
+      <%= button_to 'Delete', freight_table_path(@table), method: :delete, class: 'btn btn-outline-danger btn-sm',
+                    form: { data: { turbo_confirm: "Delete #{@table.name} and its rates?" } } %>
+    <% end %>
+  <% end %>
+
+  <% if @table.notes.present? %><p class="text-muted"><%= @table.notes %></p><% end %>
+
+  <div class="row g-4">
+    <div class="col-lg-7">
+      <div class="card shadow-sm">
+        <div class="card-header fw-semibold">Rates (<%= @rates.size %>)</div>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <% if type == 'mileage' %><th>Miles</th><% elsif type == 'point_to_point' %><th>Origin</th><th>Destination</th><% end %>
+                <th class="text-end">Rate</th><th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @rates.each do |rate| %>
+                <tr>
+                  <% if type == 'mileage' %>
+                    <td><%= rate.band_label %></td>
+                  <% elsif type == 'point_to_point' %>
+                    <td><%= rate.origin_location&.company_name || content_tag(:span, 'Any origin', class: 'text-muted') %></td>
+                    <td><%= rate.destination_location&.company_name %></td>
+                  <% end %>
+                  <td class="text-end font-monospace"><%= number_with_precision(rate.rate, precision: 4, strip_insignificant_zeros: true) %></td>
+                  <td class="text-end">
+                    <%= button_to '✕', freight_table_rate_path(@table, rate), method: :delete, class: 'btn btn-outline-danger btn-sm py-0' %>
+                  </td>
+                </tr>
+              <% end %>
+              <% if @rates.empty? %>
+                <tr><td colspan="4" class="text-muted p-3">No rates yet. Add one below or paste the table on the right.</td></tr>
+              <% end %>
+            </tbody>
+            <% if type != 'flat' || @rates.empty? %>
+              <tfoot>
+                <tr class="table-light">
+                  <% if type == 'mileage' %>
+                    <td>
+                      <div class="d-flex gap-1 align-items-center">
+                        <%= number_field_tag 'freight_table_rate[miles_from]', nil, form: 'new-rate', class: 'form-control form-control-sm', step: 'any', min: 0, placeholder: 'From' %>
+                        <span>–</span>
+                        <%= number_field_tag 'freight_table_rate[miles_to]', nil, form: 'new-rate', class: 'form-control form-control-sm', step: 'any', min: 0, placeholder: 'To (blank = over)' %>
+                      </div>
+                    </td>
+                  <% elsif type == 'point_to_point' %>
+                    <td><%= select_tag 'freight_table_rate[origin_location_id]', options_from_collection_for_select(@locations, :id, :company_name), include_blank: 'Any origin', form: 'new-rate', class: 'form-select form-select-sm js-select2' %></td>
+                    <td><%= select_tag 'freight_table_rate[destination_location_id]', options_from_collection_for_select(@locations, :id, :company_name), include_blank: 'Destination', form: 'new-rate', class: 'form-select form-select-sm js-select2', required: true %></td>
+                  <% end %>
+                  <td><%= number_field_tag 'freight_table_rate[rate]', nil, form: 'new-rate', class: 'form-control form-control-sm text-end', step: 'any', required: true, placeholder: 'Rate' %></td>
+                  <td><button type="submit" form="new-rate" class="btn btn-primary btn-sm">Add</button></td>
+                </tr>
+              </tfoot>
+            <% end %>
+          </table>
+        </div>
+      </div>
+      <%= form_with url: freight_table_rates_path(@table), method: :post, local: true, id: 'new-rate' do %><% end %>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="card shadow-sm mb-4">
+        <div class="card-header fw-semibold">Paste rates</div>
+        <div class="card-body">
+          <%= form_with url: import_freight_table_rates_path(@table), method: :post, local: true do %>
+            <p class="small text-muted mb-2">
+              One row per line, comma or tab separated (copy straight from Excel). Replaces this table's rates.
+              <% if type == 'mileage' %><br><code>from, to, rate</code> e.g. <code>0, 50, 0.045</code>; leave "to" blank on the last band.
+              <% elsif type == 'point_to_point' %><br><code>origin, destination, rate</code> with location IDs or exact names; blank origin = any.
+              <% else %><br>One line with the rate.
+              <% end %>
+            </p>
+            <%= text_area_tag :rows, nil, class: 'form-control font-monospace small mb-2', rows: 8 %>
+            <%= submit_tag 'Replace rates', class: 'btn btn-outline-primary btn-sm',
+                           data: { turbo_confirm: 'Replace all of this table\'s rates with the pasted rows?' } %>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="card shadow-sm">
+        <div class="card-header fw-semibold">Rules using this table</div>
+        <ul class="list-group list-group-flush">
+          <% @rules.each do |rule| %>
+            <li class="list-group-item small">
+              <%= link_to rule.name, edit_freight_rule_path(rule) %>
+              <div class="text-muted"><%= rule.side_label %> · <%= rule.charge_label %> · <%= rule.basis_label %> · <%= rule.selector_summary %></div>
+            </li>
+          <% end %>
+          <% if @rules.empty? %><li class="list-group-item small text-muted">None yet. <%= link_to 'Add a rule', new_freight_rule_path %>.</li><% end %>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+<%= render 'shared/select2_init' %>

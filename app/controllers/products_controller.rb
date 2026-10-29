@@ -199,6 +199,7 @@ class ProductsController < ApplicationController
       :category,
       :pdi_repack_fee,
       :coa_note,
+      :freight_class_id,
       product_components_attributes: %i[
         id
         component_product_id

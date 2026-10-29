@@ -27,6 +27,14 @@ class DocsController < ApplicationController
       icon: 'bi-graph-up-arrow',
       color: 'warning',
       path: '/docs/mrp-guide'
+    },
+    {
+      slug: 'freight',
+      title: 'Freight',
+      description: 'Freight classes, tables and rules; freight on orders and POs; carrier payables.',
+      icon: 'bi-truck-flatbed',
+      color: 'info',
+      path: '/docs/freight-guide'
     }
   ].freeze
 
@@ -44,6 +52,10 @@ class DocsController < ApplicationController
 
   def mrp_guide
     render_guide('mrp_user_guide.md')
+  end
+
+  def freight_guide
+    render_guide('freight_guide.md')
   end
 
   def changelog; end

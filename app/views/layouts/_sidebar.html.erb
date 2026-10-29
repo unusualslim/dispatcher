@@ -2,12 +2,12 @@
 <% action  = action_name %>
 
 <%# ── Active-section detection ──────────────────────────────────────────── %>
-<% sales_active      = %w[customer_orders quotes customers pricing_rules price_exceptions quote_margin_reviews].include?(current) ||
+<% sales_active      = %w[customer_orders quotes customers pricing_rules price_exceptions quote_margin_reviews freight_rules freight_tables freight_classes].include?(current) ||
                        (current == 'locations' && action != 'map') %>
 <% dispatch_active   = %w[dispatches calendar dispatch_messages].include?(current) ||
                        (current == 'locations' && action == 'map') %>
 <% production_active = %w[production_orders jobs warehouse work_orders quality_exceptions].include?(current) %>
-<% purchasing_active = %w[purchase_orders purchasing_report mrp vendors].include?(current) %>
+<% purchasing_active = %w[purchase_orders purchasing_report mrp vendors freight_payables].include?(current) %>
 <% inventory_active  = %w[inventory_intelligence products inventory_adjustments inventory_transactions inventory_valuations].include?(current) %>
 <% imports_active    = %w[imports customer_order_imports inventory_imports pdi_inventory_imports pdi_invoice_date_imports warehouse_transaction_imports
                           bom_imports min_max_imports vendor_freight_term_imports pdi_product_imports
@@ -97,6 +97,7 @@
           <%= nav_item 'Customers',           customers_path,                 'bi-people',              active: current == 'customers' %>
           <%= nav_item 'Locations',           locations_path,                 'bi-geo-alt',             active: current == 'locations' && action != 'map' %>
           <%= nav_item 'Pricing Rules',       pricing_rules_path,             'bi-tag',                 active: current == 'pricing_rules', keywords: 'prices' %>
+          <%= nav_item 'Freight Rules',       freight_rules_path,             'bi-truck-flatbed',       active: %w[freight_rules freight_tables freight_classes].include?(current), keywords: 'freight class table mileage point to point surcharge pump off stop lane' %>
           <%= nav_item 'Price Exceptions',    price_exceptions_path,          'bi-exclamation-diamond', active: current == 'price_exceptions', keywords: 'price check mismatch' %>
           <%= nav_item 'Quote Margin Review', quote_margin_review_path,       'bi-graph-down-arrow',    active: current == 'quote_margin_reviews', keywords: 're-price requote' %>
         <% end %>
@@ -134,6 +135,7 @@
           <%= nav_item 'Purchasing Report', purchasing_report_path,         'bi-cart-check',      active: current == 'purchasing_report', keywords: 'buy reorder' %>
           <%= nav_item 'MRP',               mrp_path,                       'bi-graph-up-arrow',  active: current == 'mrp', keywords: 'requirements raw materials' %>
           <%= nav_item 'Vendors',           vendors_path,                   'bi-building',        active: current == 'vendors' %>
+          <%= nav_item 'Freight Payables',  freight_payables_path,          'bi-receipt',         active: current == 'freight_payables', keywords: 'carrier invoice accrual bol freight ap' %>
         <% end %>
         <% end %>
 

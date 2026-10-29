@@ -102,6 +102,10 @@ Rails.application.routes.draw do
   resources :customer_orders do
     post 'create_dispatch', on: :member
     resources :customer_order_products, only: %i[create update destroy]
+    resource :freight, only: :update, controller: 'order_freights' do
+      post :calculate
+    end
+    resources :freight_charges, only: %i[create destroy], controller: 'order_freight_charges'
     collection do
       get  :dashboard
       post :bulk_close
@@ -172,9 +176,11 @@ Rails.application.routes.draw do
   get 'docs/dispatch-guide',   to: 'docs#dispatch_guide', as: :docs_dispatch
   get 'docs/manufacturing',    to: 'docs#manufacturing',  as: :docs_manufacturing
   get 'docs/mrp-guide',        to: 'docs#mrp_guide',     as: :docs_mrp_guide
+  get 'docs/freight-guide',    to: 'docs#freight_guide', as: :docs_freight_guide
   get 'docs/changelog',        to: 'docs#changelog',     as: :docs_changelog
 
   resources :purchase_orders, only: %i[index new create show edit update] do
+    resource :freight, only: :update, controller: 'purchase_order_freights'
     member do
       patch :approve
       patch :submit
@@ -201,6 +207,16 @@ Rails.application.routes.draw do
     post :recheck, on: :collection
   end
 
+  resources :freight_rules, except: :show
+  resources :freight_tables, except: :index do
+    resources :rates, only: %i[create destroy], controller: 'freight_table_rates' do
+      post :import, on: :collection
+    end
+  end
+  resources :freight_classes, only: %i[index create update destroy] do
+    post :assign, on: :collection
+  end
+  resources :freight_payables, only: %i[index update]
   resources :pricing_rules do
     collection do
       get :lookup

@@ -1,0 +1,26 @@
+<%= form_with model: @table, local: true do |f| %>
+  <% if @table.errors.any? %>
+    <div class="alert alert-danger"><%= @table.errors.full_messages.to_sentence %></div>
+  <% end %>
+  <div class="card shadow-sm mb-3">
+    <div class="card-body row g-3">
+      <div class="col-md-7">
+        <%= f.label :name, class: 'form-label' %>
+        <%= f.text_field :name, class: 'form-control', required: true, placeholder: 'e.g. DEF bulk mileage (sell)' %>
+      </div>
+      <div class="col-md-5">
+        <%= f.label :lookup_type, 'Look up the rate by', class: 'form-label' %>
+        <%= f.select :lookup_type, FreightTable::LOOKUP_TYPES.invert, {}, class: 'form-select', disabled: @table.rates.any? %>
+        <% if @table.rates.any? %><div class="form-text">Remove the rates to change the lookup.</div><% end %>
+      </div>
+      <div class="col-12">
+        <%= f.label :notes, class: 'form-label' %>
+        <%= f.text_area :notes, class: 'form-control', rows: 2 %>
+      </div>
+    </div>
+  </div>
+  <div class="d-flex gap-2 mb-4">
+    <%= f.submit 'Save table', class: 'btn btn-primary' %>
+    <%= link_to 'Cancel', @table.persisted? ? freight_table_path(@table) : freight_rules_path(tab: 'tables'), class: 'btn btn-outline-secondary' %>
+  </div>
+<% end %>

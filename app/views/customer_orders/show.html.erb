@@ -276,7 +276,14 @@
                       </div>
                       <%= render 'price_check', line: cop %>
                     </td>
-                    <td class="text-nowrap small"><%= number_to_currency((cop.quantity || 0) * (cop.price || 0.0)) %></td>
+                    <td class="text-nowrap small">
+                      <%= number_to_currency((cop.quantity || 0) * (cop.price || 0.0)) %>
+                      <% if @customer_order.freight_in_price? && cop.price && @customer_order.freight_sale_total.positive? %>
+                        <div class="text-muted" title="Price with freight rolled in">
+                          <%= number_to_currency(@customer_order.delivered_price(cop), precision: 4) %>/unit delivered
+                        </div>
+                      <% end %>
+                    </td>
                     <td>
                       <div class="d-flex gap-1">
                         <%= f.submit "Save", class: "btn btn-success btn-sm" %>
@@ -292,9 +299,17 @@
               <% end %>
             </tbody>
             <tfoot>
+              <% freight_sale = @customer_order.billed_freight_lines.any? ? 0 : @customer_order.freight_sale_total %>
+              <% if freight_sale.nonzero? %>
+                <tr class="small">
+                  <td colspan="5" class="text-end"><%= @customer_order.freight_in_price? ? 'Freight (rolled into prices)' : 'Freight' %></td>
+                  <td><%= number_to_currency(freight_sale) %></td>
+                  <td></td>
+                </tr>
+              <% end %>
               <tr class="fw-semibold table-light">
                 <td colspan="5" class="text-end">Order Total</td>
-                <td><%= number_to_currency(total_sum) %></td>
+                <td><%= number_to_currency(total_sum + freight_sale) %></td>
                 <td></td>
               </tr>
             </tfoot>
@@ -307,6 +322,8 @@
       <% end %>
     </div>
   </div>
+
+  <%= render 'freight' %>
 
   <%# ── Associated Dispatches ──────────────────────────────────────────────── %>
   <div class="col-12">

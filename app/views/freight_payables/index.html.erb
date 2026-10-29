@@ -1,0 +1,72 @@
+<div class="d-flex justify-content-between align-items-center mb-2">
+  <h1 class="mb-0">Freight Payables</h1>
+</div>
+<p class="text-muted" style="max-width: 900px;">
+  What we owe carriers: purchase orders whose freight is billed by a separate carrier, and the carrier cost on customer
+  orders. Each starts <strong>accrued</strong> at the estimate; enter the carrier's invoice number and amount to mark
+  it <strong>invoiced</strong>. Five Points Logistics and Five Points Service payables are intercompany.
+</p>
+
+<div class="d-flex flex-wrap gap-3 align-items-center mb-3">
+  <ul class="nav nav-pills">
+    <% FreightPayablesController::FILTERS.each do |f| %>
+      <li class="nav-item">
+        <%= link_to freight_payables_path(status: f, vendor_id: params[:vendor_id]), class: "nav-link py-1 #{'active' if @filter == f}" do %>
+          <%= f.capitalize %>
+          <% if @totals[f] %><span class="small opacity-75"><%= number_to_currency(@totals[f]) %></span><% end %>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+  <%= form_with url: freight_payables_path, method: :get, local: true, class: 'd-flex gap-2' do %>
+    <%= hidden_field_tag :status, @filter %>
+    <%= select_tag :vendor_id, options_from_collection_for_select(@vendors, :id, :label, params[:vendor_id]),
+                   include_blank: 'All carriers', class: 'form-select form-select-sm', onchange: 'this.form.submit()' %>
+  <% end %>
+</div>
+
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Carrier</th><th>For</th><th class="text-end">Accrued</th><th style="width: 140px;">Invoice #</th>
+          <th style="width: 150px;">Invoice date</th><th style="width: 130px;" class="text-end">Invoice amount</th>
+          <th style="width: 120px;">BOL</th><th class="text-end">Variance</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @payables.each do |payable| %>
+          <% form_id = "payable_#{payable.id}" %>
+          <tr>
+            <td>
+              <%= payable.vendor.name %>
+              <% if payable.intercompany? %><span class="badge bg-info-subtle text-info-emphasis ms-1">Intercompany</span><% end %>
+              <div><span class="badge bg-<%= payable.invoiced? ? 'success' : 'warning text-dark' %>"><%= payable.status.capitalize %></span></div>
+            </td>
+            <td class="small">
+              <% path = payable.source.is_a?(PurchaseOrder) ? purchase_order_path(payable.source, anchor: 'freight') : customer_order_path(payable.source, anchor: 'freight') %>
+              <%= link_to payable.source_label, path %>
+              <div class="text-muted"><%= payable.created_at.strftime('%m/%d/%Y') %></div>
+            </td>
+            <td class="text-end"><%= number_to_currency(payable.accrued_amount) %></td>
+            <td><%= text_field_tag 'freight_payable[invoice_no]', payable.invoice_no, form: form_id, class: 'form-control form-control-sm' %></td>
+            <td><%= date_field_tag 'freight_payable[invoice_date]', payable.invoice_date, form: form_id, class: 'form-control form-control-sm' %></td>
+            <td><%= number_field_tag 'freight_payable[amount]', payable.amount, form: form_id, step: '0.01', class: 'form-control form-control-sm text-end' %></td>
+            <td><%= text_field_tag 'freight_payable[bol_number]', payable.bol_number, form: form_id, class: 'form-control form-control-sm' %></td>
+            <td class="text-end <%= 'text-danger' if payable.variance.to_d.positive? %>"><%= payable.variance ? number_to_currency(payable.variance) : '—' %></td>
+            <td class="text-end">
+              <%= form_with model: payable, id: form_id, method: :patch, class: 'd-inline' do %>
+                <button type="submit" class="btn btn-sm btn-primary">Save</button>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+        <% if @payables.empty? %>
+          <tr><td colspan="9" class="text-muted p-3">No <%= @filter == 'all' ? '' : @filter %> freight payables.</td></tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<div class="mt-3"><%= will_paginate @payables, renderer: BootstrapPaginationRenderer %></div>

@@ -3,6 +3,7 @@ class CustomerOrder < ApplicationRecord
   belongs_to :customer, optional: true
   # The warehouse an order entered in the app ships from; PDI orders carry theirs per line.
   belongs_to :ship_from_location, class_name: 'Location', optional: true
+  include OrderFreight
 
   has_many :dispatch_customer_orders, dependent: :destroy
   has_many :dispatches, through: :dispatch_customer_orders

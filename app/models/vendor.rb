@@ -4,6 +4,7 @@ class Vendor < ApplicationRecord
   has_many :product_vendors, dependent: :destroy
   has_many :products, through: :product_vendors
   has_many :vendor_freight_terms, dependent: :destroy
+  has_many :freight_payables, dependent: :restrict_with_error
 
   # Not unique: PDI has separate vendors with the same name (e.g. KM Solutions 1570 product, 1571 freight).
   # The PDI vendor ID tells them apart.

@@ -1,0 +1,103 @@
+<%= form_with model: @rule, local: true do |f| %>
+  <% if @rule.errors.any? %>
+    <div class="alert alert-danger"><%= @rule.errors.full_messages.to_sentence %></div>
+  <% end %>
+
+  <div class="card shadow-sm mb-3">
+    <div class="card-header fw-semibold">Rule</div>
+    <div class="card-body row g-3">
+      <div class="col-md-6">
+        <%= f.label :name, class: 'form-label' %>
+        <%= f.text_field :name, class: 'form-control', required: true, placeholder: 'e.g. DEF Class A – Bainbridge (sale)' %>
+      </div>
+      <div class="col-md-3">
+        <%= f.label :side, class: 'form-label' %>
+        <%= f.select :side, FreightRule::SIDES.invert, {}, class: 'form-select' %>
+      </div>
+      <div class="col-md-3">
+        <%= f.label :charge_type, 'Charge', class: 'form-label' %>
+        <%= f.select :charge_type, FreightRule::CHARGE_TYPES.invert, {}, class: 'form-select', id: 'rule_charge_type' %>
+      </div>
+      <div class="col-md-4">
+        <%= f.label :basis, class: 'form-label' %>
+        <%= f.select :basis, FreightRule::BASES.invert, {}, class: 'form-select', id: 'rule_basis' %>
+        <div class="form-text">What the table's rate means. Percent = percent of that side's freight (fuel surcharge).</div>
+      </div>
+      <div class="col-md-4" data-hide-for-markup>
+        <%= f.label :freight_table_id, 'Table', class: 'form-label' %>
+        <%= f.collection_select :freight_table_id, @tables, :id, :name, { include_blank: '— Select —' }, class: 'form-select' %>
+        <div class="form-text"><%= link_to 'New table', new_freight_table_path, target: '_blank', rel: 'noopener' %></div>
+      </div>
+      <div class="col-md-2" data-show-for-markup>
+        <%= f.label :markup_percent, 'Markup %', class: 'form-label' %>
+        <%= f.number_field :markup_percent, class: 'form-control', step: 'any' %>
+      </div>
+      <div class="col-md-2">
+        <%= f.label :minimum_amount, 'Minimum $', class: 'form-label' %>
+        <%= f.number_field :minimum_amount, class: 'form-control', step: '0.01', min: 0 %>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-3">
+    <div class="card-header fw-semibold">When it applies <span class="text-muted fw-normal small">(blank = any)</span></div>
+    <div class="card-body row g-3">
+      <div class="col-md-6">
+        <%= f.label :origin_location_id, 'Origin', class: 'form-label' %>
+        <%= f.collection_select :origin_location_id, @origins, :id, :company_name, { include_blank: 'Any origin' }, class: 'form-select js-select2' %>
+      </div>
+      <div class="col-md-6">
+        <%= f.label :freight_class_id, 'Freight class', class: 'form-label' %>
+        <%= f.collection_select :freight_class_id, @classes, :id, :label, { include_blank: 'Any class' }, class: 'form-select' %>
+      </div>
+      <div class="col-md-6">
+        <%= f.label :carrier_id, 'Carrier', class: 'form-label' %>
+        <%= f.collection_select :carrier_id, @carriers, :id, :label, { include_blank: 'Any carrier' }, class: 'form-select js-select2' %>
+      </div>
+      <div class="col-md-6">
+        <%= f.label :customer_id, 'Customer', class: 'form-label' %>
+        <%= f.collection_select :customer_id, @customers, :id, :name, { include_blank: 'Any customer' }, class: 'form-select js-select2' %>
+      </div>
+      <div class="col-md-3">
+        <%= f.label :effective_from, class: 'form-label' %>
+        <%= f.date_field :effective_from, class: 'form-control', required: true %>
+      </div>
+      <div class="col-md-3">
+        <%= f.label :effective_to, 'Effective through', class: 'form-label' %>
+        <%= f.date_field :effective_to, class: 'form-control' %>
+      </div>
+      <div class="col-md-3 d-flex align-items-end">
+        <div class="form-check">
+          <%= f.check_box :active, class: 'form-check-input' %>
+          <%= f.label :active, class: 'form-check-label' %>
+        </div>
+      </div>
+      <div class="col-12">
+        <%= f.label :notes, class: 'form-label' %>
+        <%= f.text_area :notes, class: 'form-control', rows: 2 %>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2 mb-4">
+    <%= f.submit 'Save rule', class: 'btn btn-primary' %>
+    <%= link_to 'Cancel', freight_rules_path, class: 'btn btn-outline-secondary' %>
+  </div>
+<% end %>
+
+<%= render 'shared/select2_init' %>
+<script>
+  (function () {
+    var basis = document.getElementById('rule_basis');
+    var charge = document.getElementById('rule_charge_type');
+    var defaults = <%= raw FreightRule::DEFAULT_BASIS.to_json %>;
+    function toggle() {
+      var markup = basis.value === 'markup';
+      document.querySelectorAll('[data-show-for-markup]').forEach(function (el) { el.style.display = markup ? '' : 'none'; });
+      document.querySelectorAll('[data-hide-for-markup]').forEach(function (el) { el.style.display = markup ? 'none' : ''; });
+    }
+    charge.addEventListener('change', function () { if (defaults[charge.value]) basis.value = defaults[charge.value]; toggle(); });
+    basis.addEventListener('change', toggle);
+    toggle();
+  })();
+</script>

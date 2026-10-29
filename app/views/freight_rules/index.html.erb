@@ -1,0 +1,76 @@
+<%= render 'freight_rules/tabs', active: @tab %>
+
+<% if @tab == 'tables' %>
+  <div class="card shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr><th>Table</th><th>Lookup</th><th class="text-end">Rates</th><th class="text-end">Rules using it</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <% @tables.each do |table| %>
+            <tr>
+              <td><%= link_to table.name, freight_table_path(table), class: 'fw-semibold' %></td>
+              <td><%= table.lookup_label %></td>
+              <td class="text-end"><%= table.rates.size %></td>
+              <td class="text-end"><%= @rule_counts[table.id].to_i %></td>
+              <td class="small text-muted"><%= truncate(table.notes, length: 80) %></td>
+            </tr>
+          <% end %>
+          <% if @tables.empty? %>
+            <tr><td colspan="5" class="text-muted p-3">No freight tables yet. <%= link_to 'Add one', new_freight_table_path %>.</td></tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% else %>
+  <div class="d-flex justify-content-end mb-2">
+    <%= form_with url: freight_rules_path, method: :get, local: true do %>
+      <label class="form-check-label small">
+        <%= check_box_tag :show_inactive, '1', params[:show_inactive].present?, class: 'form-check-input', onchange: 'this.form.submit()' %>
+        Show inactive
+      </label>
+    <% end %>
+  </div>
+  <% FreightRule::SIDES.each do |side, side_label| %>
+    <% rules = @rules.select { |r| r.side == side } %>
+    <div class="card shadow-sm mb-4">
+      <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+        <%= side_label %>
+        <%= link_to '+ Add', new_freight_rule_path(side: side), class: 'btn btn-outline-primary btn-sm' %>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr><th>Rule</th><th>Charge</th><th>Applies to</th><th>Basis</th><th>Table</th><th>Effective</th><th></th></tr>
+          </thead>
+          <tbody>
+            <% rules.each do |rule| %>
+              <tr class="<%= 'text-muted' unless rule.active? %>">
+                <td class="fw-semibold"><%= rule.name %><%= ' (inactive)' unless rule.active? %></td>
+                <td><%= rule.charge_label %></td>
+                <td class="small"><%= rule.selector_summary %></td>
+                <td class="small">
+                  <%= rule.basis_label %>
+                  <% if rule.markup? %><span class="text-muted">(+<%= number_with_precision(rule.markup_percent, precision: 2, strip_insignificant_zeros: true) %>%)</span><% end %>
+                  <% if rule.minimum_amount %><div class="text-muted">min <%= number_to_currency(rule.minimum_amount) %></div><% end %>
+                </td>
+                <td class="small"><%= rule.freight_table ? link_to(rule.freight_table.name, freight_table_path(rule.freight_table)) : '—' %></td>
+                <td class="small text-nowrap">
+                  <%= rule.effective_from.strftime('%m/%d/%Y') %><%= " – #{rule.effective_to.strftime('%m/%d/%Y')}" if rule.effective_to %>
+                </td>
+                <td class="text-end text-nowrap">
+                  <%= link_to 'Edit', edit_freight_rule_path(rule), class: 'btn btn-outline-secondary btn-sm' %>
+                </td>
+              </tr>
+            <% end %>
+            <% if rules.empty? %>
+              <tr><td colspan="7" class="text-muted p-3">No <%= side %> rules.</td></tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% end %>
+<% end %>

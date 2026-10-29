@@ -62,6 +62,64 @@ en:
   inventory_valuations:
     opening:
       done: "Opening balances set. Inventory is now tracked at cost from today."
+  freight_rules:
+    create:
+      created: "Added freight rule %{name}."
+    update:
+      updated: "Saved %{name}."
+    destroy:
+      deleted: "Deleted freight rule %{name}."
+  freight_tables:
+    create:
+      created: "Added freight table %{name}. Add its rates below."
+    update:
+      updated: "Saved %{name}."
+    destroy:
+      deleted: "Deleted freight table %{name}."
+  freight_table_rates:
+    create:
+      created: "Rate added."
+    destroy:
+      deleted: "Rate removed."
+    import:
+      imported:
+        one: "Imported 1 rate."
+        other: "Imported %{count} rates."
+  freight_classes:
+    create:
+      created: "Freight class added."
+    update:
+      updated: "Freight class saved."
+    destroy:
+      deleted: "Deleted class %{code}."
+    assign:
+      assigned:
+        one: "Updated 1 product."
+        other: "Updated %{count} products."
+  freight_payables:
+    update:
+      updated: "Saved the %{vendor} payable."
+  order_freights:
+    update:
+      saved: "Freight details saved."
+      calculated_count:
+        zero: "Freight calculated: no charges."
+        one: "Freight calculated: 1 charge."
+        other: "Freight calculated: %{count} charges."
+    calculate:
+      calculated: "Freight calculated."
+      calculated_count:
+        zero: "Freight calculated: no charges."
+        one: "Freight calculated: 1 charge."
+        other: "Freight calculated: %{count} charges."
+  order_freight_charges:
+    create:
+      created: "Freight charge added."
+    destroy:
+      deleted: "Freight charge removed."
+  purchase_order_freights:
+    update:
+      saved: "Freight saved."
   cost_items:
     create:
       created: "Added cost item %{name}."

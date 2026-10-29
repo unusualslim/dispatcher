@@ -1,0 +1,16 @@
+<%# Turns .js-select2 selects into searchable Select2 boxes (the library is loaded in the layout). %>
+<script>
+  (function () {
+    function init() {
+      if (!window.$ || !$.fn.select2) return;
+      $('.js-select2').each(function () {
+        var $el = $(this);
+        if ($el.hasClass('select2-hidden-accessible')) return;
+        var blank = $el.find('option[value=""]').first().text();
+        $el.select2({ theme: 'bootstrap-5', width: '100%', placeholder: blank || 'Select…', allowClear: !!blank });
+      });
+    }
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); } else { init(); }
+    document.addEventListener('turbo:load', init, { once: true });
+  })();
+</script>

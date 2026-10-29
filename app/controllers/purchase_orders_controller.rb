@@ -126,6 +126,7 @@ class PurchaseOrdersController < ApplicationController
     newest_first = PurchaseOrder.order(created_at: :desc, id: :desc)
     list = current_warehouse ? newest_first.where(location_id: current_warehouse.id) : newest_first
     find_list_neighbors(@purchase_order, list.pluck(:id), fallback: -> { newest_first.pluck(:id) })
+    @carriers = Vendor.order(:name)
   end
 
   def edit

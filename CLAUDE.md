@@ -314,6 +314,27 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
 - `Samsara::Client` wraps the API (`SAMSARA_API_KEY`). The token needs Read/Write Routes, Read Drivers and Read/Write
   Addresses for routing; the map's vehicle feed still has its own call in LocationsController.
 
+## Freight
+- **Setup** (Sales → Freight Rules, `FreightRulesController` with Tables / Classes tabs): `FreightClass` (code, full-load quantity;
+  `products.freight_class_id`), `FreightTable` (lookup mileage / point_to_point / flat) + `FreightTableRate` rows (paste from
+  Excel: `Freight::TableImport`), `FreightRule` (side purchase|sale, charge_type freight / fuel_surcharge / extra_stop /
+  pump_off, basis per_unit / per_load / per_stop / per_pump_off / percent / flat / markup, selectors origin, class, carrier
+  (vendor), customer, effective dates, minimum). `FreightRule.best` = most specific match (customer > carrier > origin > class).
+- **Customer orders** (`OrderFreight` concern, Freight card on the order): inputs `freight_origin_location_id` (else ship-from,
+  line warehouse, dispatch terminal), `freight_carrier_id` (else `pdi_carrier_id`), `freight_miles` (else GPS estimate
+  `Freight::Distance`, straight line × 1.2), extra stops, pump offs, `freight_presentation` line|in_price.
+  `Freight::Calculator` (+ `Freight::Pricer`) builds `OrderFreightCharge`s per side and class: base freight, then fuel surcharge
+  (% of that side's freight), stops, pump offs; sale markup rules price off the purchase charges. Recalculating replaces
+  `calculated` charges; manual ones stay. Only products with a freight class are calculated (warehouse goods = manual).
+  PDI orders' own freight lines ("Freight - DEF") are shown for comparison, not double-counted in the order total.
+- **Purchase orders** (`PurchaseOrderFreight` concern, Freight card on the PO): `freight_allocation` quantity|value lands freight
+  into `landed_unit_cost`, which `post_to_inventory!` uses (nil allocation = PDI history, line cost as before);
+  `freight_source` vendor_invoice|carrier, `freight_vendor_id`, `freight_bol`, `freight_accrued`. A carrier invoice entered
+  before posting replaces the estimate; after posting the difference is the payable's variance.
+- **Payables** (`FreightPayable`, Purchasing → Freight Payables): one per source (PO / customer order) and carrier, accrued →
+  invoiced when invoice # + amount are entered; FPL/FPS carriers flagged intercompany. Not yet exported to PDI AP or the GL.
+- User guide: docs/freight_guide.md (/docs/freight-guide).
+
 ## Map
 - Leaflet.js + OpenStreetMap tiles, centered on Georgia
 - Location markers: blue=origin terminal, red=destination, green=has active order
@@ -378,7 +399,8 @@ file, remove it from the todo (or regenerate with the command at the top of `.ru
 - Production order export to PDI at completion (waiting on a PDI change so PDI's production order can link back
   to the app's; needs PDI's import layout)
 - Real GL accounts (production has placeholders 8001-01…8006-01) and PDI FTP pickup of FPST files
-- **Freight on purchases and sales** — bring freight into PO costs and customer order/sales pricing (design to come from the user)
+- **Freight, next steps** — export freight payables to PDI AP and post freight revenue/cost/accruals to the GL; carrier
+  lanes; road-routed miles (the freight build itself shipped 2026-10-29, see Freight above)
 - **Sales invoicing** — if the app controls inventory it needs a formal sales invoicing process; that role moves
   away from PDI (today PDI bills and the app only reads invoice dates/numbers back)
 - **Standard cost exceptions** — an exceptions review like /quality_exceptions, for standard cost variances

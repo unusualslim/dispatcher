@@ -1,0 +1,18 @@
+<div class="d-flex justify-content-between align-items-center mb-2">
+  <h1 class="mb-0">Freight</h1>
+  <div class="d-flex gap-2">
+    <%= link_to 'New rule', new_freight_rule_path, class: 'btn btn-primary btn-sm' %>
+    <%= link_to 'New table', new_freight_table_path, class: 'btn btn-outline-secondary btn-sm' %>
+  </div>
+</div>
+<p class="text-muted" style="max-width: 900px;">
+  A <strong>rule</strong> says when to use a <strong>table</strong>: this side (what the carrier charges us, or what we
+  charge the customer), charge type, origin, class, carrier and customer, from its effective date. The most specific
+  matching rule wins. <strong>Classes</strong> say how much fits on a full load, for per-load freight.
+  <strong>Calculate freight</strong> on a customer order applies them.
+</p>
+<ul class="nav nav-tabs mb-3">
+  <li class="nav-item"><%= link_to 'Rules', freight_rules_path, class: "nav-link #{'active' if active == 'rules'}" %></li>
+  <li class="nav-item"><%= link_to 'Tables', freight_rules_path(tab: 'tables'), class: "nav-link #{'active' if active == 'tables'}" %></li>
+  <li class="nav-item"><%= link_to 'Classes', freight_classes_path, class: "nav-link #{'active' if active == 'classes'}" %></li>
+</ul>
