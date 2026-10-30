@@ -1,0 +1,105 @@
+# Major features by era, shown on What's New (/docs/changelog). Dates are commit dates on main.
+# Each item: date, title, note (optional), area (Dispatch / Sales / Production / Inventory / Purchasing /
+# Accounting / PDI / Platform), major: true for the biggest milestones.
+- name: Dispatcher v1
+  span: Nov 2023 – Mar 2024
+  summary: The original app — orders, dispatches and drivers, hosted on Render, with drivers notified by email and text.
+  items:
+    - { date: 2023-11-07, title: Initial models and first commit, note: "Locations, customer orders, dispatches, drivers.", area: Platform, major: true }
+    - { date: 2023-11-27, title: Core dispatch features, note: Order entry and dispatch assignment., area: Dispatch, major: true }
+    - { date: 2023-12-06, title: Deployed to Render, note: "Production hosting, SMTP email.", area: Platform }
+    - { date: 2023-12-07, title: Twilio SMS notifications, note: Drivers get dispatches by text., area: Dispatch, major: true }
+    - { date: 2024-03-21, title: Detailed dispatch emails, note: "Customer order details, destination and a link in each notification.", area: Dispatch }
+
+- name: The remake
+  span: Aug 2024 – Dec 2024
+  summary: A rebuild around customers, order products and a live map of terminals and delivery sites.
+  items:
+    - { date: 2024-08-28, title: Initial remake, note: Rebuilt models and views., area: Platform, major: true }
+    - { date: 2024-09-23, title: Customers, note: Customer model tied to locations and orders., area: Sales }
+    - { date: 2024-09-24, title: Order and dispatch filtering, area: Dispatch }
+    - { date: 2024-10-30, title: Map, note: "Leaflet map of terminals and customer sites; Sent to Driver dispatches on the home screen.", area: Dispatch, major: true }
+    - { date: 2024-10-31, title: Prospective locations, area: Sales }
+    - { date: 2024-12-11, title: Products on customer orders, note: Order lines with quantities and prices., area: Sales, major: true }
+    - { date: 2024-12-23, title: Freight-only orders, area: Dispatch }
+    - { date: 2024-12-27, title: Sortable order and dispatch lists, area: Dispatch }
+
+- name: Dispatch operations
+  span: Jan 2025 – Aug 2025
+  summary: "Day-to-day dispatch tools: message logs, statuses, calendar, kanban, equipment and shop work orders."
+  items:
+    - { date: 2025-01-16, title: User registration revamp, area: Platform }
+    - { date: 2025-01-28, title: Message log, note: "Every SMS and email sent, per dispatch.", area: Dispatch }
+    - { date: 2025-01-30, title: Dispatch status flow, note: "Sent to Driver, On Hold, Complete, Billed.", area: Dispatch }
+    - { date: 2025-02-04, title: File attachments on dispatches, area: Dispatch }
+    - { date: 2025-02-06, title: Active orders on the map, note: Map key and order markers., area: Dispatch }
+    - { date: 2025-02-07, title: Vendors, area: Purchasing }
+    - { date: 2025-02-26, title: Location notes on orders and notifications, note: Origin and destination notes reach the driver., area: Dispatch }
+    - { date: 2025-03-06, title: Announcements, area: Platform }
+    - { date: 2025-03-13, title: Calendar and dispatch kanban, area: Dispatch, major: true }
+    - { date: 2025-04-10, title: "Assets (trucks, trailers, equipment)", note: Assignable to dispatches from May., area: Dispatch }
+    - { date: 2025-05-16, title: Work orders, note: Shop work orders with comments and email notifications., area: Production, major: true }
+    - { date: 2025-07-25, title: Dispatch CSV export, area: Dispatch }
+
+- name: Production and MRP arrive
+  span: Dec 2025 – May 2026
+  summary: "DEF manufacturing comes into the app, followed by live trucks and the first MRP and purchasing system."
+  items:
+    - { date: 2025-12-17, title: Production orders, note: Components and quantities added in January., area: Production, major: true }
+    - { date: 2026-04-07, title: Road routes on the map, note: OSRM road routing and dispatch route lines., area: Dispatch }
+    - { date: 2026-04-23, title: Samsara live GPS, note: Trucks on the map in real time., area: Dispatch, major: true }
+    - { date: 2026-04-23, title: MRP system, note: "Inventory tracking, purchase orders, BOM planning, batch QC.", area: Inventory, major: true }
+    - { date: 2026-04-24, title: Sidebar navigation, note: Replaced the top navbar., area: Platform }
+    - { date: 2026-05-07, title: Products keyed by PDI item IDs, area: PDI }
+    - { date: 2026-05-07, title: Drillable dashboard home page, area: Platform }
+    - { date: 2026-05-08, title: PO export to PDI over FTP, note: CSV uploaded when a PO is submitted., area: PDI, major: true }
+    - { date: 2026-05-19, title: Driver logins, note: Restricted driver access and file uploads., area: Dispatch }
+
+- name: Wired into PDI
+  span: Jun 2026 – Sep 2026
+  summary: "Scheduled FTP syncs with PDI, quotes, multi-line purchasing, line-worker time clocks and per-warehouse stock."
+  items:
+    - { date: 2026-06-11, title: QR batch labels, note: Encrypted label links behind a password gate., area: Production }
+    - { date: 2026-06-15, title: Cloudflare Turnstile on sign-up, area: Platform }
+    - { date: 2026-06-24, title: PDI vendor and product syncs, note: Files are picked up over FTP and deleted after import., area: PDI, major: true }
+    - { date: 2026-06-24, title: Automated Processes scheduler, note: "One scheduler cron driven by editable schedules, with sync logs.", area: Platform, major: true }
+    - { date: 2026-06-25, title: BOM and min/max imports; Help & Guides, area: Inventory }
+    - { date: 2026-07-07, title: Customer order import from PDI, note: "ODOR PDF, later XLS.", area: PDI }
+    - { date: 2026-07-09, title: Quotes, note: "Auto-pricing, email, convert to order. Warehouse kanban the same day.", area: Sales, major: true }
+    - { date: 2026-07-14, title: Multi-line purchase orders, note: PDI warehouse transaction import., area: Purchasing, major: true }
+    - { date: 2026-07-16, title: Preview step on imports, note: Dry run before every import., area: Platform }
+    - { date: 2026-07-21, title: Purchasing report, note: "Multi-vendor products, PO editing.", area: Purchasing }
+    - { date: 2026-07-24, title: Vendor freight terms, note: Freight and other charges on POs., area: Purchasing }
+    - { date: 2026-07-29, title: Sidebar favorites, area: Platform }
+    - { date: 2026-08-06, title: Line time tracking (/line), note: Line workers clock in and out on production jobs., area: Production, major: true }
+    - { date: 2026-08-21, title: Order statuses match PDI, area: PDI }
+    - { date: 2026-08-31, title: PO dashboard; production dashboard sections, area: Purchasing }
+    - { date: 2026-09-08, title: BOM cost report, note: CSV for gross profit analysis., area: Production }
+    - { date: 2026-09-09, title: Per-warehouse inventory, note: PDI site codes map stock to warehouses., area: Inventory, major: true }
+    - { date: 2026-09-25, title: Automated PDI order sync, note: Every 15 minutes., area: PDI, major: true }
+
+- name: October 2026
+  span: Oct 1 – Oct 29, 2026
+  summary: "131 commits in one month: pricing, costing and the GL, the PDI web service, time-phased MRP, reports, Samsara routes and freight."
+  items:
+    - { date: 2026-10-09, title: Pricing rules, note: "Auto-price customer order lines; FI fuel inventory import.", area: Sales, major: true }
+    - { date: 2026-10-16, title: Standard cost history, note: "Mass CSV export and re-import for products, customers, vendors, locations.", area: Accounting }
+    - { date: 2026-10-19, title: Inventory intelligence emails, note: Daily and weekly stock reports., area: Inventory }
+    - { date: 2026-10-20, title: "PDI product, repack and PO imports", area: PDI }
+    - { date: 2026-10-22, title: Quotes lock customer pricing, note: "Price check on PDI orders, price exceptions, Quote Margin Review.", area: Sales, major: true }
+    - { date: 2026-10-23, title: "Sidebar by workflow, quick-jump search, Data Imports hub", area: Platform }
+    - { date: 2026-10-23, title: "Rails 7.2, Ruby 3.4.11, security hardening", note: "Lint checks, admin-only sign-up, HTTPS, Twilio signatures, DigitalOcean file storage.", area: Platform, major: true }
+    - { date: 2026-10-23, title: Rebrand to FPS Team, note: "team.fivepointsservice.com, new sidebar colors.", area: Platform }
+    - { date: 2026-10-24, title: Production costing and GL ledger, note: "Reporting groups, FPST journal entries, scheduled PDI GL export.", area: Accounting, major: true }
+    - { date: 2026-10-24, title: Area permissions and voids, note: "View/edit/approve per area; void production orders and POs; deactivate users.", area: Platform, major: true }
+    - { date: 2026-10-24, title: Quality checks and certificates, note: "Specs, results, exceptions, printable certificate.", area: Production, major: true }
+    - { date: 2026-10-26, title: PDI Enterprise Web Service, note: "Order API sync becomes the order source; master data; credit checks.", area: PDI, major: true }
+    - { date: 2026-10-26, title: Merge Customers and Merge Locations, area: Sales }
+    - { date: 2026-10-26, title: Time-phased MRP per warehouse, note: "Transfers, lead times, material readiness dots.", area: Inventory, major: true }
+    - { date: 2026-10-27, title: Costed inventory, note: "Weighted average, standard or FIFO per group; sales from PDI orders; inventory GL.", area: Accounting, major: true }
+    - { date: 2026-10-27, title: Financial Dashboard and Reports hub, note: "Ten reports; PDI invoice date import.", area: Accounting, major: true }
+    - { date: 2026-10-27, title: Cost Items and the pricing matrix, note: "48 standard costs, kit cost lines on 216 products.", area: Accounting }
+    - { date: 2026-10-28, title: Test suite green, note: Fixed 29 long-standing test failures., area: Platform }
+    - { date: 2026-10-28, title: Printable dispatch sheet, note: "Two copies per page, BOL line for the driver.", area: Dispatch }
+    - { date: 2026-10-28, title: Send to Samsara, note: Driver routes built from a dispatch., area: Dispatch, major: true }
+    - { date: 2026-10-29, title: Freight, note: "Rules, tables, lanes, per-dispatch carrier pricing, PO landed cost, freight payables.", area: Sales, major: true }

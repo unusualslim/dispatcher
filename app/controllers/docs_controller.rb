@@ -58,7 +58,11 @@ class DocsController < ApplicationController
     render_guide('freight_guide.md')
   end
 
-  def changelog; end
+  TIMELINE_AREAS = %w[Dispatch Sales Production Inventory Purchasing Accounting PDI Platform].freeze
+
+  def changelog
+    @timeline = YAML.safe_load_file(Rails.root.join('docs/feature_timeline.yml'), permitted_classes: [Date])
+  end
 
   private
 

@@ -3,13 +3,55 @@
   <div class="d-flex justify-content-between align-items-start mb-4">
     <div>
       <h1 class="h3 mb-1">What's New in FPS Team</h1>
-      <p class="text-muted mb-0">A summary of recent updates and improvements.</p>
-      <p class="text-muted small mb-0 mt-1">Last updated: July 23, 2026</p>
+      <p class="text-muted mb-0">Major features since the app began, followed by detailed release notes.</p>
+      <p class="text-muted small mb-0 mt-1">Last updated: October 30, 2026</p>
     </div>
     <button onclick="window.print()" class="btn btn-outline-secondary btn-sm d-print-none">
       <i class="bi bi-printer"></i> Print / Save PDF
     </button>
   </div>
+
+  <%# ── Feature timeline (docs/feature_timeline.yml) ── %>
+  <div class="mb-5" id="feature-timeline">
+    <h4 class="fw-bold mb-1">Feature Timeline</h4>
+    <p class="text-muted small mb-3">
+      <span class="timeline-dot"></span> marks the biggest milestones.
+    </p>
+
+    <div class="d-flex flex-wrap gap-2 mb-3 d-print-none" role="toolbar" aria-label="Filter by area">
+      <% (['All'] + DocsController::TIMELINE_AREAS).each do |area| %>
+        <button type="button" class="btn btn-sm rounded-pill <%= area == 'All' ? 'btn-dark' : 'btn-outline-secondary' %>"
+                data-timeline-area="<%= area %>"><%= area %></button>
+      <% end %>
+    </div>
+
+    <% @timeline.each do |era| %>
+      <section class="timeline-era mb-4">
+        <div class="d-flex flex-wrap align-items-baseline gap-2 border-bottom border-2 border-dark pb-1">
+          <h5 class="fw-semibold mb-0"><%= era['name'] %></h5>
+          <span class="small fw-semibold timeline-span"><%= era['span'] %></span>
+        </div>
+        <p class="text-muted small mt-2 mb-1"><%= era['summary'] %></p>
+        <ul class="list-unstyled mb-0">
+          <% era['items'].each do |item| %>
+            <li class="timeline-item d-flex gap-3 py-2 border-bottom" data-area="<%= item['area'] %>">
+              <span class="text-muted small text-nowrap timeline-date">
+                <% if item['major'] %><span class="timeline-dot"></span><% end %><%= item['date'].strftime('%b %-d, %Y') %>
+              </span>
+              <span class="flex-grow-1 small">
+                <span class="<%= item['major'] ? 'fw-bold' : 'fw-semibold' %>"><%= item['title'] %></span>
+                <% if item['note'].present? %><span class="d-block text-muted"><%= item['note'] %></span><% end %>
+              </span>
+              <span><span class="badge text-bg-light border text-uppercase"><%= item['area'] %></span></span>
+            </li>
+          <% end %>
+          <li class="timeline-empty text-muted small py-2" hidden>Nothing in this area during this period.</li>
+        </ul>
+      </section>
+    <% end %>
+  </div>
+
+  <h4 class="fw-bold mb-3">Release Notes</h4>
 
   <%# ── July 2026 ── %>
   <div class="mb-5">
@@ -184,7 +226,35 @@
 
 </div>
 
+<script>
+  (function () {
+    const root = document.getElementById('feature-timeline');
+    if (!root) return;
+    root.querySelectorAll('[data-timeline-area]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        const area = button.dataset.timelineArea;
+        root.querySelectorAll('[data-timeline-area]').forEach(function (b) {
+          b.classList.toggle('btn-dark', b === button);
+          b.classList.toggle('btn-outline-secondary', b !== button);
+        });
+        root.querySelectorAll('.timeline-era').forEach(function (era) {
+          let shown = 0;
+          era.querySelectorAll('.timeline-item').forEach(function (item) {
+            item.hidden = area !== 'All' && item.dataset.area !== area;
+            if (!item.hidden) shown++;
+          });
+          era.querySelector('.timeline-empty').hidden = shown > 0;
+        });
+      });
+    });
+  })();
+</script>
+
 <style>
+  .timeline-date { width: 7.5rem; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+  .timeline-span { color: var(--sidebar-active); }
+  .timeline-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--sidebar-accent); margin-right: 6px; vertical-align: 1px; }
+  .timeline-item[hidden] { display: none !important; }
   @media print {
     #sidebar, .sidebar, nav, .sidebar-overlay, .navbar, footer { display: none !important; }
     .main-content { margin-left: 0 !important; }
