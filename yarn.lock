@@ -257,10 +257,10 @@
   dependencies:
     spark-md5 "^3.0.1"
 
-"@types/sortablejs@^1.15.5":
-  version "1.15.5"
-  resolved "https://registry.yarnpkg.com/@types/sortablejs/-/sortablejs-1.15.5.tgz#c59e51765bc53c920192de0d0202f75b7ce4cb3f"
-  integrity sha512-qqqbEFbB1EZt08I1Ok2BA3Sx0zlI8oizdIguMsajk4Yo/iHgXhCb3GM6N09JOJqT9xIMYM9LTFy8vit3RNY71Q==
+"@types/sortablejs@^1.15.9":
+  version "1.15.9"
+  resolved "https://registry.yarnpkg.com/@types/sortablejs/-/sortablejs-1.15.9.tgz#82d2337f54d4db827914d80dee5cf65539ae3c8b"
+  integrity sha512-7HP+rZGE2p886PKV9c9OJzLBI6BBJu1O7lJGYnPyG3fS4/duUCcngkNCjsLwIMV+WMqANe3tt4irrXHSIe68OQ==
 
 "@types/trusted-types@^2.0.7":
   version "2.0.7"
@@ -747,10 +747,10 @@ slash@^5.0.0:
   resolved "https://registry.npmjs.org/slash/-/slash-5.1.0.tgz"
   integrity sha512-ZA6oR3T/pEyuqwMgAKT0/hAv8oAXckzbkmR0UkUosQ+Mc4RxGoJkRmwHgHufaenlyAgE1Mxgpdcrf75y6XcnDg==
 
-sortablejs@^1.15.0:
-  version "1.15.0"
-  resolved "https://registry.npmjs.org/sortablejs/-/sortablejs-1.15.0.tgz"
-  integrity sha512-bv9qgVMjUMf89wAvM6AxVvS/4MX3sPeN0+agqShejLU5z5GX4C75ow1O2e5k4L6XItUyAK3gH6AxSbXrOM5e8w==
+sortablejs@^1.15.7:
+  version "1.15.7"
+  resolved "https://registry.yarnpkg.com/sortablejs/-/sortablejs-1.15.7.tgz#83a0bddc472117ee328dea20b2e6f490fed20f86"
+  integrity sha512-Kk8wLQPlS+yi1ZEf48a4+fzHa4yxjC30M/Sr2AnQu+f/MPwvvX9XjZ6OWejiz8crBsLwSq8GHqaxaET7u6ux0A==
 
 "source-map-js@>=0.6.2 <2.0.0", source-map-js@^1.2.2:
   version "1.2.2"
