@@ -26,7 +26,7 @@ class ThingsController < ApplicationController
     if @thing.update(thing_params)
       redirect_to @thing, notice: 'Thing was successfully updated.'
     else
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
   end
 
@@ -35,7 +35,7 @@ class ThingsController < ApplicationController
     if @thing.save
       redirect_to @thing, notice: 'Thing was successfully created.'
     else
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   end
 

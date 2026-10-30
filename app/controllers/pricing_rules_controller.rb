@@ -21,7 +21,7 @@ class PricingRulesController < ApplicationController
       redirect_to pricing_rules_path, notice: "Pricing rule \"#{@rule.name}\" created."
     else
       load_form_data
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   end
 
@@ -35,7 +35,7 @@ class PricingRulesController < ApplicationController
       redirect_to edit_pricing_rule_path(@rule), notice: "Pricing rule \"#{@rule.name}\" updated."
     else
       load_form_data
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
   end
 

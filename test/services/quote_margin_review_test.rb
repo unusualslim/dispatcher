@@ -2,6 +2,7 @@ require 'test_helper'
 
 class QuoteMarginReviewTest < ActiveSupport::TestCase
   include ActiveSupport::Testing::TimeHelpers
+
   fixtures :products, :product_components, :customers, :users
 
   setup do

@@ -183,8 +183,8 @@ class DispatchesController < ApplicationController
         format.html { redirect_to dispatch_url(@dispatch), notice: 'Dispatch was successfully created.' }
         format.json { render :show, status: :created, location: @dispatch }
       else
-        format.html { render :new, status: :unprocessable_entity }
-        format.json { render json: @dispatch.errors, status: :unprocessable_entity }
+        format.html { render :new, status: :unprocessable_content }
+        format.json { render json: @dispatch.errors, status: :unprocessable_content }
       end
     end
   end
@@ -206,8 +206,8 @@ class DispatchesController < ApplicationController
         format.html { redirect_to dispatch_url(@dispatch), notice: 'Dispatch was successfully updated.' }
         format.json { render :show, status: :ok, location: @dispatch }
       else
-        format.html { render :edit, status: :unprocessable_entity }
-        format.json { render json: @dispatch.errors, status: :unprocessable_entity }
+        format.html { render :edit, status: :unprocessable_content }
+        format.json { render json: @dispatch.errors, status: :unprocessable_content }
       end
     end
   end

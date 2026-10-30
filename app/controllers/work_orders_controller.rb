@@ -1,5 +1,6 @@
 class WorkOrdersController < ApplicationController
   include ListNeighbors
+
   permission_area :production
   before_action :set_work_order, only: %i[show edit update destroy change_status]
 
@@ -37,7 +38,7 @@ class WorkOrdersController < ApplicationController
 
       redirect_to @work_order, notice: 'Work order was successfully updated.'
     else
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
   end
 

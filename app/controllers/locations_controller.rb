@@ -3,6 +3,7 @@ require 'net/http'
 class LocationsController < ApplicationController
   include ListNeighbors
   include CsvRoundTrip
+
   permission_area :sales, lookups: %i[search select2],
                           areas: { map: :dispatch, vehicles: :dispatch, dispatch_routes: :dispatch }
   before_action :set_location, only: %i[show edit update destroy]
@@ -64,8 +65,8 @@ class LocationsController < ApplicationController
           render json: { id: @location.id, city_with_company: @location.city_with_company }, status: :created
         end
       else
-        format.html { render :new, status: :unprocessable_entity }
-        format.json { render json: @location.errors, status: :unprocessable_entity }
+        format.html { render :new, status: :unprocessable_content }
+        format.json { render json: @location.errors, status: :unprocessable_content }
       end
     end
   end
@@ -79,8 +80,8 @@ class LocationsController < ApplicationController
         format.json { render :show, status: :ok, location: @location }
       end
     else
-      format.html { render :new, status: :unprocessable_entity }
-      format.json { render json: @location.errors, status: :unprocessable_entity }
+      format.html { render :new, status: :unprocessable_content }
+      format.json { render json: @location.errors, status: :unprocessable_content }
     end
   end
 

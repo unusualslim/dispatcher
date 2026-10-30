@@ -2,6 +2,7 @@ require 'test_helper'
 
 class ProductionOrderFormTest < ActionDispatch::IntegrationTest
   include Devise::Test::IntegrationHelpers
+
   fixtures :products, :customers, :locations, :location_categories
 
   setup do

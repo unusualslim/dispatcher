@@ -65,7 +65,7 @@ class UserRegistrationSecurityTest < ActionDispatch::IntegrationTest
     params.delete('cf-turnstile-response')
 
     assert_no_difference('User.count') { post user_registration_path, params: params }
-    assert_response :unprocessable_entity
+    assert_response :unprocessable_content
     assert_match 'security check didn&#39;t load', response.body
   end
 end

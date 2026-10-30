@@ -2,6 +2,7 @@ require 'base64'
 
 class PdiPurchaseOrderSyncJob < ApplicationJob
   include PdiFtpConcern
+
   queue_as :default
 
   PROCESS_NAME = 'PDI Purchase Order Sync'

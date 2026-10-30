@@ -2,6 +2,7 @@ require 'csv'
 
 class PurchaseOrdersController < ApplicationController
   include ListNeighbors
+
   permission_area :purchasing, approve: %i[approve submit post_to_inventory]
   before_action :set_purchase_order, only: %i[show edit update approve submit receive post_to_inventory void]
   before_action :require_admin!, only: :void
@@ -117,7 +118,7 @@ class PurchaseOrdersController < ApplicationController
     else
       @vendors  = Vendor.order(:name)
       @products = po_products
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   end
 
@@ -148,7 +149,7 @@ class PurchaseOrdersController < ApplicationController
     else
       @vendors  = Vendor.order(:name)
       @products = po_products
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
   end
 

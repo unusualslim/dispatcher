@@ -29,7 +29,7 @@ class BatchController < ActionController::Base
       redirect_to safe_return_path || labels_path
     else
       flash.now[:alert] = 'Incorrect password.'
-      render :gate, status: :unprocessable_entity
+      render :gate, status: :unprocessable_content
     end
   end
 
@@ -58,7 +58,7 @@ class BatchController < ActionController::Base
     @notes   = data['n']
   rescue ActiveSupport::MessageEncryptor::InvalidMessage,
          ActiveSupport::MessageVerifier::InvalidSignature
-    render :invalid, status: :unprocessable_entity
+    render :invalid, status: :unprocessable_content
   end
 
   private

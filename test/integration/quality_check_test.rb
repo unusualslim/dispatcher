@@ -2,6 +2,7 @@ require 'test_helper'
 
 class QualityCheckTest < ActionDispatch::IntegrationTest
   include Devise::Test::IntegrationHelpers
+
   fixtures :products, :product_components, :locations, :location_categories
 
   setup do

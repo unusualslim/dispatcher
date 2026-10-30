@@ -3,6 +3,7 @@ require 'base64'
 # Daily: pulls PDI's FI (fuel) Inventory Report from FTP and syncs tank stock by product and site.
 class PdiFuelInventorySyncJob < ApplicationJob
   include PdiFtpConcern
+
   queue_as :default
 
   PROCESS_NAME  = 'PDI Fuel Inventory Sync'.freeze

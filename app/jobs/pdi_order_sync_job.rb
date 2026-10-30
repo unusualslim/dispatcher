@@ -2,6 +2,7 @@ require 'net/ftp'
 
 class PdiOrderSyncJob < ApplicationJob
   include PdiFtpConcern
+
   queue_as :default
 
   PROCESS_NAME = 'PDI Order Sync'

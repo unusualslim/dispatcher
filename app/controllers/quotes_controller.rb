@@ -30,7 +30,7 @@ class QuotesController < ApplicationController
       redirect_to @quote, notice: "Quote #{@quote.quote_number} created."
     else
       load_form_data
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   end
 
@@ -43,7 +43,7 @@ class QuotesController < ApplicationController
       redirect_to @quote, notice: 'Quote updated.'
     else
       load_form_data
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
   end
 

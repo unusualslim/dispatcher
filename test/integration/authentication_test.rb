@@ -22,7 +22,7 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
 
   test 'a wrong password is refused' do
     post user_session_path, params: { user: { email: @user.email, password: 'wrong-password' } }
-    assert_response :unprocessable_entity
+    assert_response :unprocessable_content
     get dispatches_path
     assert_redirected_to new_user_session_path
   end

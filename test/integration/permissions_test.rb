@@ -2,6 +2,7 @@ require 'test_helper'
 
 class PermissionsTest < ActionDispatch::IntegrationTest
   include Devise::Test::IntegrationHelpers
+
   fixtures :products
 
   def staff(permissions)

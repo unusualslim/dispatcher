@@ -2,6 +2,7 @@ require 'test_helper'
 
 class PdiPurchaseOrderImportServiceTest < ActiveSupport::TestCase
   include ActiveJob::TestHelper
+
   fixtures :products, :locations, :location_categories, :vendors
 
   setup do

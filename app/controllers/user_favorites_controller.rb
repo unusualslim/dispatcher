@@ -15,7 +15,7 @@ class UserFavoritesController < ApplicationController
 
     render json: { id: fav.id, label: fav.label, path: fav.path }
   rescue ActiveRecord::RecordInvalid => e
-    render json: { error: e.message }, status: :unprocessable_entity
+    render json: { error: e.message }, status: :unprocessable_content
   end
 
   def destroy

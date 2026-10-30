@@ -4,6 +4,7 @@ module Freight
   # rate (blank origin = from anywhere). Flat: rate.
   class TableImport
     include PastedRows
+
     Result = Struct.new(:imported, :errors, keyword_init: true)
 
     def initialize(table, text)

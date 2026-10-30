@@ -423,8 +423,9 @@ file, remove it from the todo (or regenerate with the command at the top of `.ru
 - **Rails 8.1** — Brakeman flags Rails 7.2's security support as ended (2026-08-09)
 - Turbo 7 → 8 (navigation behavior changes; its one low Dependabot alert stays open until then)
 - Skip `@rails/actiontext` 8.x Dependabot PRs while on Rails 7.2
-- Done 2026-10-30: Devise 5, roo 3 + rubyzip 3 (webdrivers gem dropped), build tools (esbuild 0.28, sass, postcss-cli 12)
-- Flip `load_defaults` stepwise; Rack `:unprocessable_entity` → `:unprocessable_content`
+- Done 2026-10-30: Devise 5, roo 3 + rubyzip 3 (webdrivers gem dropped), build tools (esbuild 0.28, sass, postcss-cli 12);
+  RuboCop 1.92 (new offenses baselined), pg 1.7, Bootstrap 5.3.8, `:unprocessable_entity` → `:unprocessable_content`
+- Flip `load_defaults` stepwise
 
 ### Known issues / notes
 - `Dispatch#dispatch_status` is a declared, non-persisted attribute (the real column is `status`), but the

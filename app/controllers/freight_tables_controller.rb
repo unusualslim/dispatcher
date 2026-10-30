@@ -22,7 +22,7 @@ class FreightTablesController < ApplicationController
     if @table.save
       redirect_to freight_table_path(@table), notice: t('.created', name: @table.name)
     else
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   end
 
@@ -30,7 +30,7 @@ class FreightTablesController < ApplicationController
     if @table.update(table_params)
       redirect_to freight_table_path(@table), notice: t('.updated', name: @table.name)
     else
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
   end
 

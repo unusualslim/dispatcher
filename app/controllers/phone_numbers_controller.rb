@@ -10,7 +10,7 @@ class PhoneNumbersController < ApplicationController
       end
     else
       respond_to do |format|
-        format.json { render json: @phone_number.errors, status: :unprocessable_entity }
+        format.json { render json: @phone_number.errors, status: :unprocessable_content }
         format.html { redirect_back fallback_location: root_path, alert: 'Failed to remove phone number.' }
       end
     end

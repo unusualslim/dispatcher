@@ -1,5 +1,6 @@
 class PdiVendorSyncJob < ApplicationJob
   include PdiFtpConcern
+
   queue_as :default
 
   PROCESS_NAME = 'PDI Vendor Sync'

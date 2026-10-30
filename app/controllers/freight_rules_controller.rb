@@ -26,7 +26,7 @@ class FreightRulesController < ApplicationController
     if @rule.save
       redirect_to freight_rules_path, notice: t('.created', name: @rule.name)
     else
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   end
 
@@ -34,7 +34,7 @@ class FreightRulesController < ApplicationController
     if @rule.update(rule_params)
       redirect_to freight_rules_path, notice: t('.updated', name: @rule.name)
     else
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
   end
 

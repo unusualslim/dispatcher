@@ -54,17 +54,17 @@ class Users::RegistrationsController < Devise::RegistrationsController
     if params['cf-turnstile-response'].blank?
       Rails.logger.warn '[Turnstile] No token submitted; the widget did not load or was not completed'
       flash.now[:alert] = t('users.registrations.turnstile_missing')
-      return render :new, status: :unprocessable_entity
+      return render :new, status: :unprocessable_content
     end
     unless verify_turnstile
       flash.now[:alert] = t('users.registrations.turnstile_failed')
-      return render :new, status: :unprocessable_entity
+      return render :new, status: :unprocessable_content
     end
 
     if @user.save
       redirect_to users_path, notice: "Created #{@user.email}."
     else
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   end
 

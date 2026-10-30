@@ -158,8 +158,8 @@ class CustomerOrdersController < ApplicationController
     if @customer_order.location&.disabled?
       @customer_order.errors.add(:location, 'is currently disabled and cannot be used')
       respond_to do |format|
-        format.html { render :new, status: :unprocessable_entity }
-        format.json { render json: @customer_order.errors, status: :unprocessable_entity }
+        format.html { render :new, status: :unprocessable_content }
+        format.json { render json: @customer_order.errors, status: :unprocessable_content }
       end
       return
     end
@@ -169,8 +169,8 @@ class CustomerOrdersController < ApplicationController
         format.html { redirect_to customer_order_url(@customer_order), notice: 'Order was successfully created.' }
         format.json { render :show, status: :created, location: @customer_order }
       else
-        format.html { render :new, status: :unprocessable_entity }
-        format.json { render json: @customer_order.errors, status: :unprocessable_entity }
+        format.html { render :new, status: :unprocessable_content }
+        format.json { render json: @customer_order.errors, status: :unprocessable_content }
       end
     end
   end
@@ -183,8 +183,8 @@ class CustomerOrdersController < ApplicationController
         format.html { redirect_to @customer_order, notice: 'Customer Order was successfully updated.' }
         format.json { render :show, status: :ok, location: @customer_order }
       else
-        format.html { render :edit, status: :unprocessable_entity }
-        format.json { render json: @customer_order.errors, status: :unprocessable_entity }
+        format.html { render :edit, status: :unprocessable_content }
+        format.json { render json: @customer_order.errors, status: :unprocessable_content }
       end
     end
   end

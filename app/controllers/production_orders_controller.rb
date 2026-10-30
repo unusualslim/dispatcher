@@ -218,7 +218,7 @@ class ProductionOrdersController < ApplicationController
       end
       redirect_to kanban_production_orders_path, notice: 'Production order created.'
     else
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   end
 
@@ -250,7 +250,7 @@ class ProductionOrdersController < ApplicationController
       # The status buttons on the order page: say why instead of opening the edit form.
       redirect_to @production_order, alert: @production_order.errors.full_messages.to_sentence
     else
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
   end
 

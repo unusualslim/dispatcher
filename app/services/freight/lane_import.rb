@@ -3,6 +3,7 @@ module Freight
   # checked before anything is saved.
   class LaneImport
     include PastedRows
+
     Result = Struct.new(:imported, :errors, keyword_init: true)
 
     def initialize(text)

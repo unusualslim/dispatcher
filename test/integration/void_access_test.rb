@@ -2,6 +2,7 @@ require 'test_helper'
 
 class VoidAccessTest < ActionDispatch::IntegrationTest
   include Devise::Test::IntegrationHelpers
+
   fixtures :products
 
   test 'only admins can void production orders' do

@@ -1,5 +1,6 @@
 class VendorsController < ApplicationController
   include CsvRoundTrip
+
   permission_area :purchasing
   before_action :set_vendor, only: %i[show edit update destroy]
 
@@ -16,7 +17,7 @@ class VendorsController < ApplicationController
       @vendor.sync_freight_terms!(params.dig(:vendor, :freight_term_names))
       redirect_to @vendor, notice: 'Vendor updated.'
     else
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
   end
 

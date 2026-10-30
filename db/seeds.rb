@@ -65,7 +65,7 @@ products = {
   uls: Product.create!(id: 'ULS001', name: 'ULS', unit_of_measurement: 'gallons', weight: 7.05),
   dyed_uls: Product.create!(id: 'DULS001', name: 'Dyed ULS', unit_of_measurement: 'gallons', weight: 7.05),
   reg_e10: Product.create!(id: 'E10001', name: 'Reg-E10', unit_of_measurement: 'gallons', weight: 6.10),
-  eth_regular: Product.create!(id: 'ETH001',  name: 'Eth-Regular', unit_of_measurement: 'gallons', weight: 6.10)
+  eth_regular: Product.create!(id: 'ETH001', name: 'Eth-Regular', unit_of_measurement: 'gallons', weight: 6.10)
 }
 
 # ---------------------------------------------------------------------------
@@ -84,18 +84,18 @@ vendors = [
 # ---------------------------------------------------------------------------
 puts 'Seeding fleet...'
 trucks = [
-  Thing.create!(name: 'Truck 101 – Kenworth T680',   category: 'truck'),
-  Thing.create!(name: 'Truck 102 – Peterbilt 389',   category: 'truck'),
+  Thing.create!(name: 'Truck 101 – Kenworth T680', category: 'truck'),
+  Thing.create!(name: 'Truck 102 – Peterbilt 389', category: 'truck'),
   Thing.create!(name: 'Truck 103 – Freightliner Cascadia', category: 'truck'),
   Thing.create!(name: 'Truck 104 – Kenworth W900', category: 'truck'),
   Thing.create!(name: 'Truck 105 – International LT', category: 'truck')
 ]
 
 trailers = [
-  Thing.create!(name: 'Trailer 201 – 9000 gal Tanker',  category: 'trailer'),
-  Thing.create!(name: 'Trailer 202 – 7500 gal Tanker',  category: 'trailer'),
-  Thing.create!(name: 'Trailer 203 – 9000 gal Tanker',  category: 'trailer'),
-  Thing.create!(name: 'Trailer 204 – 6000 gal Tanker',  category: 'trailer')
+  Thing.create!(name: 'Trailer 201 – 9000 gal Tanker', category: 'trailer'),
+  Thing.create!(name: 'Trailer 202 – 7500 gal Tanker', category: 'trailer'),
+  Thing.create!(name: 'Trailer 203 – 9000 gal Tanker', category: 'trailer'),
+  Thing.create!(name: 'Trailer 204 – 6000 gal Tanker', category: 'trailer')
 ]
 
 # ---------------------------------------------------------------------------
@@ -850,11 +850,11 @@ raw = {
   urea: Product.create!(id: 'UREA001', name: 'Urea (prilled)', unit_of_measurement: 'lb', is_raw_material: true,
                         cost_per_unit: 0.335, current_stock: 42_000, reorder_point: 15_000),
   water: Product.create!(id: 'DIW001', name: 'Deionized Water', unit_of_measurement: 'gal', is_raw_material: true,
-                         cost_per_unit: 0.021, current_stock: 9_000,  reorder_point: 2_000),
+                         cost_per_unit: 0.021, current_stock: 9_000, reorder_point: 2_000),
   jug: Product.create!(id: 'JUG25', name: 'Jug, 2.5 gal', unit_of_measurement: 'ea', is_raw_material: true,
                        cost_per_unit: 0.880, current_stock: 1_200, reorder_point: 400),
   label: Product.create!(id: 'LBL25', name: 'Label, DEF 2.5 gal', unit_of_measurement: 'ea', is_raw_material: true,
-                         cost_per_unit: 0.060, current_stock: 3_000,  reorder_point: 500),
+                         cost_per_unit: 0.060, current_stock: 3_000, reorder_point: 500),
   tote: Product.create!(id: 'TOTE275', name: 'IBC Tote, 275 gal', unit_of_measurement: 'ea', is_raw_material: true,
                         cost_per_unit: 182.00, current_stock: 24, reorder_point: 10)
 }

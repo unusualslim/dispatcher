@@ -11,7 +11,7 @@ class CostingSettingsController < ApplicationController
     load_submitted_settings
     if (error = validation_error(@labor_rate, @gl_accounts) || start_date_error)
       flash.now[:alert] = error
-      return render :edit, status: :unprocessable_entity
+      return render :edit, status: :unprocessable_content
     end
 
     AppSetting.set('labor_rate', @labor_rate)

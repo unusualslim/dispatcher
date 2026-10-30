@@ -2,6 +2,7 @@ class ProductsController < ApplicationController
   include CsvRoundTrip
   include RemembersListFilters
   include ListNeighbors
+
   permission_area :inventory, lookups: %i[search bom]
   before_action :set_product, only: %i[show edit update destroy components]
 
@@ -75,7 +76,7 @@ class ProductsController < ApplicationController
       @vendors = Vendor.order(:name)
       @product.product_components.build if @product.product_components.empty?
       load_show_data
-      render :show, status: :unprocessable_entity
+      render :show, status: :unprocessable_content
     end
   end
 

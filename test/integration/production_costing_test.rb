@@ -2,6 +2,7 @@ require 'test_helper'
 
 class ProductionCostingTest < ActionDispatch::IntegrationTest
   include Devise::Test::IntegrationHelpers
+
   fixtures :products, :product_components
 
   setup do
@@ -86,7 +87,7 @@ class ProductionCostingTest < ActionDispatch::IntegrationTest
     assert_equal 27.5, AppSetting.labor_rate
 
     patch costing_settings_path, params: { labor_rate: 'abc' }
-    assert_response :unprocessable_entity
+    assert_response :unprocessable_content
     assert_equal 27.5, AppSetting.labor_rate
   end
 
@@ -116,7 +117,7 @@ class ProductionCostingTest < ActionDispatch::IntegrationTest
     assert_equal '6110-01', ProductionOrderJournal.account_for('repack_clearing')
 
     patch costing_settings_path, params: { labor_rate: '25', gl_accounts: { repack_clearing: '1234-6110-01' } }
-    assert_response :unprocessable_entity
+    assert_response :unprocessable_content
     assert_match 'GL accounts must be Major-Sub, e.g. 1410-02: Repack fee clearing', response.body
     assert_equal '6110-01', ProductionOrderJournal.account_for('repack_clearing')
   end

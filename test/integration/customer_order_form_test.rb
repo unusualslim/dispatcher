@@ -2,6 +2,7 @@ require 'test_helper'
 
 class CustomerOrderFormTest < ActionDispatch::IntegrationTest
   include Devise::Test::IntegrationHelpers
+
   fixtures :users, :customers, :products, :locations, :location_categories
 
   setup do
@@ -22,7 +23,7 @@ class CustomerOrderFormTest < ActionDispatch::IntegrationTest
       } }
     end
 
-    assert_response :unprocessable_entity
+    assert_response :unprocessable_content
     assert_includes response.body, 'Location must exist'
     assert_includes response.body, %(value="#{@line.id}" class="price-source-quote"), 'quote link is kept'
   end
@@ -34,7 +35,7 @@ class CustomerOrderFormTest < ActionDispatch::IntegrationTest
     assert_no_difference -> { CustomerOrder.count } do
       post customer_orders_path, params: { customer_order: { customer_id: @customer.id, location_id: location.id } }
     end
-    assert_response :unprocessable_entity
+    assert_response :unprocessable_content
     assert_includes response.body, 'currently disabled'
   end
 
@@ -42,7 +43,7 @@ class CustomerOrderFormTest < ActionDispatch::IntegrationTest
     order = CustomerOrder.create!(customer: @customer, location: locations(:terminal), order_status: 'Open Order')
 
     patch customer_order_path(order), params: { customer_order: { location_id: '' } }
-    assert_response :unprocessable_entity
+    assert_response :unprocessable_content
     assert_includes response.body, 'Location must exist'
   end
 

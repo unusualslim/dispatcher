@@ -2,6 +2,7 @@ require 'test_helper'
 
 class GlLedgerTest < ActionDispatch::IntegrationTest
   include Devise::Test::IntegrationHelpers
+
   fixtures :products, :locations, :location_categories
 
   setup do
@@ -54,6 +55,6 @@ class GlLedgerTest < ActionDispatch::IntegrationTest
     assert_equal Date.new(2026, 11, 1), ProductionGlPosting.start_date
 
     patch costing_settings_path, params: { labor_rate: '25', gl_posting_start_date: 'soon' }
-    assert_response :unprocessable_entity
+    assert_response :unprocessable_content
   end
 end
