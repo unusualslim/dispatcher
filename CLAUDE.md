@@ -226,7 +226,8 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
 - **PDI Purchase Orders import** (`PdiPurchaseOrderImportService`, manual on Data Imports for now — the user is working on
   automating the PDI SQL export): 56-column CSV, no header, one row per PO line (col 0 PDI PO key, 1 PO number, 7/34
   site, 9 status). Matches on `purchase_orders.pdi_po_key`, else (POs imported before keys) PO number. `pdi_reference` is not
-  unique (PDI numbers repeat: "TODD"…); numberless POs received before tracking aren't re-imported. Refreshes PDI POs not yet posted;
+  unique (PDI numbers repeat: "TODD"…); numberless POs received before tracking aren't re-imported. Refreshes PDI POs not yet posted
+  (keeps the app's freight amount once the PO's Freight card is in use: `freight_managed_in_app?`);
   Invoiced/Inventoried POs received on/after the inventory start date at one of our warehouses post receipts at line
   cost, older/dropship ones are only stamped `posted_at`. POs with no warehouse (dropship 7777/1331) can't be posted to
   inventory, and PDI-imported POs are never sent back to PDI by `PdiExportJob`.

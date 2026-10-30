@@ -126,6 +126,8 @@ When the carrier's invoice arrives:
 - **Before** the PO is posted to inventory, the invoice amount replaces the estimate.
 - **After** posting, the estimate stays in inventory and the difference shows as a **variance** on the payable.
 
+On a PO from PDI, freight entered here is kept when the PDI Purchase Orders import updates the PO, and it lands into the receipt cost when PDI marks the PO Invoiced or Inventoried.
+
 ---
 
 ## Freight Payables (Purchasing → Freight Payables)

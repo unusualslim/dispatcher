@@ -196,7 +196,9 @@ class PdiPurchaseOrderImportService
 
   def save_po!(order, rows)
     first = rows.first
-    order.assign_attributes(po_attributes(first))
+    attributes = po_attributes(first)
+    attributes.delete(:freight_amount) if order.persisted? && order.freight_managed_in_app?
+    order.assign_attributes(attributes)
     order.line_items.destroy_all if order.persisted?
     rows.uniq { |r| r[COL_LINE_KEY] }.each { |row| order.line_items.build(line_attributes(row)) }
     order.save!(validate: false) # Skip freight_terms validation for historical data

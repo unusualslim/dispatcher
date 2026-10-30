@@ -21,6 +21,9 @@ module PurchaseOrderFreight
   end
 
   def freight_from_carrier? = freight_source == 'carrier'
+
+  # Freight set up on the PO's Freight card. The PDI PO import keeps the app's amount for these.
+  def freight_managed_in_app? = freight_allocation.present? || freight_from_carrier? || freight_accrued?
   def freight_landed? = freight_allocation.present? && freight_amount.to_d.positive?
 
   def freight_payable

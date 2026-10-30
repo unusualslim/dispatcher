@@ -55,6 +55,30 @@ class PdiPurchaseOrderImportServiceTest < ActiveSupport::TestCase
     assert_equal 1, import(line('FPS2002', 'Invoiced')).skipped_exists, 'in inventory: left alone'
   end
 
+  test 'freight entered in the app survives a refresh and lands into the receipt cost' do
+    import(line('FPS2005', 'Ordered', received: 'NULL'))
+    po = PurchaseOrder.find_by!(pdi_reference: 'FPS2005')
+    po.update!(freight_amount: 30, freight_allocation: 'quantity', freight_source: 'carrier',
+               freight_vendor_id: vendors(:chem_supply).id, freight_accrued: true)
+    po.sync_freight_payable!
+
+    import(line('FPS2005', 'Ordered', received: 'NULL'))
+    assert_equal 30, po.reload.freight_amount.to_i, 'PDI freight-on-invoice does not overwrite it'
+
+    import(line('FPS2005', 'Invoiced'))
+    receipt = InventoryTransaction.find_by!(movement_type: 'receipt')
+    assert_equal 155.0, receipt.total_cost.to_f, '100 × 1.25 + 30 freight'
+    assert_equal 30, po.freight_payable.accrued_amount.to_i
+  end
+
+  test 'PDI freight still refreshes on POs without app freight' do
+    import(line('FPS2006', 'Ordered', received: 'NULL'))
+    PurchaseOrder.find_by!(pdi_reference: 'FPS2006').update!(freight_amount: 12)
+
+    import(line('FPS2006', 'Ordered', received: 'NULL'))
+    assert_equal 0, PurchaseOrder.find_by!(pdi_reference: 'FPS2006').freight_amount.to_i
+  end
+
   test 'older and dropship POs are only marked posted' do
     import(line('FPS2003', 'Invoiced', received: '2026-09-15 10:00:00'), line('FPS2004', 'Invoiced', site: '7777'))
 
