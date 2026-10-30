@@ -19,6 +19,7 @@ Primary contact: John (admin@perrybrothersoil.com)
 - Ruby 3.4.11, Rails 7.2 (`config.load_defaults 7.0` — newer framework defaults not yet enabled), PostgreSQL 15, Puma 7
 - Bootstrap 5 + jQuery + Select2 + FullCalendar 5 (all from CDN in the layout), Leaflet.js (maps)
 - jsbundling-rails (esbuild) + cssbundling-rails (sass via yarn); Turbo 7, Trix 2.1 / Action Text
+- Node 24 (`.node-version`, read by Render; the build tools need Node 22+)
 - Devise authentication. Sign-up (`/users/sign_up`) is **admin-only** — it's how admins add users
   (Users → New user), with **Cloudflare Turnstile**. Users can't change their own role (only admins, on /users).
 - Active Storage: **DigitalOcean Space `loadntrucks` (nyc3)** in production (`:digitalocean` in storage.yml,
@@ -420,8 +421,9 @@ file, remove it from the todo (or regenerate with the command at the top of `.ru
 
 ### Upgrades / security still open (as of Oct 2026)
 - **Rails 8.1** — Brakeman flags Rails 7.2's security support as ended (2026-08-09)
-- Turbo 7 → 8 (navigation behavior changes), Devise 5, rubyzip 3 (needs `roo` + `roo-xls` upgraded together)
-- Build-tool npm alerts via Dependabot yarn PRs (skip `@rails/actiontext` 8.x while on Rails 7.2)
+- Turbo 7 → 8 (navigation behavior changes; its one low Dependabot alert stays open until then)
+- Skip `@rails/actiontext` 8.x Dependabot PRs while on Rails 7.2
+- Done 2026-10-30: Devise 5, roo 3 + rubyzip 3 (webdrivers gem dropped), build tools (esbuild 0.28, sass, postcss-cli 12)
 - Flip `load_defaults` stepwise; Rack `:unprocessable_entity` → `:unprocessable_content`
 
 ### Known issues / notes
