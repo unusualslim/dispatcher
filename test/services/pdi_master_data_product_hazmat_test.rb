@@ -21,7 +21,8 @@ class PdiMasterDataProductHazmatTest < ActiveSupport::TestCase
     # PDI sends no hazmat data for fuel products, so the app's stays.
     assert_equal [true, 'UN1203, Gasoline, 3, PG II'], Product.find('101').values_at(:hazmat, :hazmat_description)
 
+    # A product flagged in the app stays flagged when PDI says No.
     PdiMasterDataImportService.call(xml.sub('<HazardousMaterial>Yes', '<HazardousMaterial>No'))
-    assert_not Product.find('DEF25').hazmat
+    assert Product.find('DEF25').hazmat
   end
 end

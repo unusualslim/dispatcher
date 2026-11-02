@@ -47,9 +47,10 @@ module PdiMasterData
 
     # Fuel products have no package or hazmat data; warehouse products use their first package. PDI's hazmat
     # notes ("UN1230, Hazard Class 3, Packing Group II") become the BOL description; blank notes keep the app's.
+    # PDI can turn the flag on but not off: most hazmat products are flagged in the app only.
     def product_attrs(node)
       attrs = { name: text(node, 'Description'), category: text(node, 'ReportingGroup'),
-                hazmat: text(node, 'HazardousMaterial')&.then { |flag| flag == 'Yes' },
+                hazmat: (true if text(node, 'HazardousMaterial') == 'Yes'),
                 hazmat_description: node.at_xpath('HazardousMaterialNotes')&.text&.strip.presence }
       package = node.at_xpath('ProductPackage')
       return attrs.compact unless package
