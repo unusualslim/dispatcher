@@ -400,6 +400,9 @@
             <% if order.freight_only? %>
               <p><span class="badge bg-warning text-dark" style="font-size:.7rem;">Freight Only</span></p>
             <% end %>
+            <% if order.hazmat_products.any? %>
+              <p><span class="badge bg-danger" style="font-size:.7rem;" title="<%= order.hazmat_products.map(&:name).join(', ') %>">Hazmat</span></p>
+            <% end %>
           <% end %>
         <% end %>
       </div>
@@ -439,7 +442,12 @@
 
               <div class="card-header-row">
                 <span class="card-dispatch-id">Dispatch #<%= dispatch.id %></span>
-                <span class="card-status-badge badge-<%= status_key %>"><%= status_key.tr('_', ' ') %></span>
+                <span>
+                  <% if dispatch.hazmat_products.any? %>
+                    <span class="badge bg-danger" style="font-size:.65rem;" title="<%= dispatch.hazmat_products.map(&:name).join(', ') %>">Hazmat</span>
+                  <% end %>
+                  <span class="card-status-badge badge-<%= status_key %>"><%= status_key.tr('_', ' ') %></span>
+                </span>
               </div>
 
               <div class="card-row">

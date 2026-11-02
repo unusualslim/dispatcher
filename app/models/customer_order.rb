@@ -97,4 +97,9 @@ class CustomerOrder < ApplicationRecord
   def total_weight
     products.sum(&:weight)
   end
+
+  # Hazardous products on the order's lines (uses preloaded lines when present).
+  def hazmat_products
+    customer_order_products.filter_map(&:product).select(&:hazmat).uniq
+  end
 end

@@ -1,0 +1,15 @@
+<%# Warning for an order or dispatch carrying hazardous products. Locals: products (hazmat products), noun ("order"/"load"). %>
+<% if products.any? %>
+  <div class="alert alert-danger d-flex gap-3 mb-4">
+    <i class="bi bi-exclamation-triangle-fill fs-4"></i>
+    <div>
+      <strong>Hazardous materials on this <%= noun %>.</strong>
+      Bulk loads, or 1,001 lb or more of drums and totes, need placards and a driver with a hazmat endorsement.
+      <ul class="mb-0 mt-1 small">
+        <% products.each do |product| %>
+          <li><strong><%= product.name %></strong> — <%= product.hazmat_description.presence || 'DOT description missing' %></li>
+        <% end %>
+      </ul>
+    </div>
+  </div>
+<% end %>

@@ -27,6 +27,11 @@ class Dispatch < ApplicationRecord
     customer_orders.exists?(freight_only: true)
   end
 
+  # Hazardous products on the load (uses preloaded order lines when present).
+  def hazmat_products
+    customer_orders.flat_map(&:hazmat_products).uniq
+  end
+
   private
 
   def link_origin_location

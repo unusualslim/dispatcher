@@ -59,6 +59,8 @@
   </div>
 <% end %>
 
+<%= render 'shared/hazmat_alert', products: @dispatch.hazmat_products, noun: 'load' %>
+
 <div class="row g-4">
 
   <%# ── Left column: Driver, Equipment, Vendor ────────────────────────────── %>
@@ -209,7 +211,7 @@
                         <% line_total = (cop.quantity || 0) * (cop.price || 0) %>
                         <% order_total += line_total %>
                         <tr>
-                          <td><%= product&.name || "Unknown" %></td>
+                          <td><%= product&.name || "Unknown" %> <%= hazmat_badge(product) %></td>
                           <td class="text-muted"><%= product&.unit_of_measurement || "—" %></td>
                           <td><%= number_with_delimiter(cop.quantity) %></td>
                           <td><%= cop.price ? number_to_currency(cop.price) : "—" %></td>

@@ -68,6 +68,8 @@
   </div>
 <% end %>
 
+<%= render 'shared/hazmat_alert', products: @customer_order.hazmat_products, noun: 'order' %>
+
 <div class="row g-4">
 
   <%# ── Order details ──────────────────────────────────────────────────────── %>
@@ -256,6 +258,7 @@
                               { selected: cop.product_id, include_blank: "— Select —" },
                               class: "form-select form-select-sm" %>
                       <% end %>
+                      <%= hazmat_badge(cop.product) %>
                     </td>
                     <td style="width:130px;">
                       <%= f.select :item_type,

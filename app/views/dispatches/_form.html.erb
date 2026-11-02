@@ -12,6 +12,10 @@
     </div>
   <% end %>
 
+  <% if dispatch.persisted? %>
+    <%= render 'shared/hazmat_alert', products: dispatch.hazmat_products, noun: 'load' %>
+  <% end %>
+
   <div class="row g-4">
 
     <%# ── Left column: Driver & Equipment ───────────────────────────────────── %>

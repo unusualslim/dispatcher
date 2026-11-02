@@ -95,6 +95,14 @@ module ApplicationHelper
     tag.span('Credit', class: 'badge bg-danger', style: 'font-size:.65rem;', title: details.compact.join(' · '))
   end
 
+  # Small "Hazmat" badge for a hazardous product, its DOT description on hover.
+  def hazmat_badge(product)
+    return unless product&.hazmat
+
+    tag.span('Hazmat', class: 'badge bg-danger', style: 'font-size:.65rem;',
+                       title: product.hazmat_description.presence || 'DOT description missing')
+  end
+
   # Column header that sorts the current list by `column` ("name" → name_asc / name_desc), keeping the
   # filters. Loads the whole page so the filter form's hidden sort field stays in step.
   def sort_header(label, column)
