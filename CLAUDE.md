@@ -74,7 +74,8 @@ Locations also act as warehouses/tanks for inventory (`show_in_warehouse_dropdow
 Printables (`DispatchesController#print` / `#bol`, layout-less): the delivery order (landscape, driver + dispatch copies)
 and the straight **Bill of Lading** (portrait, one page per order; BOL # = `<dispatch id>-<order id>`). Hazmat lines come from
 `products.hazmat` / `hazmat_description` (DOT shipping description) / `hazmat_emergency_phone`; PDI master data sets the
-flag and description for warehouse products only (fuel products are entered in the app).
+flag (on only, never off) and description for warehouse products only (fuel products are entered in the app).
+Orders, dispatches (show + edit) and the dispatch kanban warn about hazmat products (`shared/_hazmat_alert`, `hazmat_badge`).
 **CustomerOrder** = `order_status` enum mirrors **PDI order statuses** (Open Order, Quote, Pending,
 Released for Dispatch, Dispatched, Released for Picking, Picking in Progress, Shipped,
 Released for Billing, Billed, Delivered, Accepted/Rejected by Site, Expired, Expired Quote,
