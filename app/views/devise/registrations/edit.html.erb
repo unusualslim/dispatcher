@@ -51,6 +51,16 @@
   </div>
 <% end %>
 
+<% if HomePage.choosable?(resource) %>
+  <h3>Home page</h3>
+  <p>The page you land on after signing in and when you click the logo. You can also right-click any sidebar link
+    and choose <em>Set as Home Page</em>.</p>
+  <%= form_with url: home_page_path, method: :patch, local: true do |f| %>
+    <%= f.select :path, HomePage.choices(resource), { selected: resource.home_page, include_blank: 'Default for my role' } %>
+    <%= f.submit 'Save home page' %>
+  <% end %>
+<% end %>
+
 <h3>Cancel my account</h3>
 
 <div>Unhappy? <%= button_to "Cancel my account", registration_path(resource_name), data: { confirm: "Are you sure?", turbo_confirm: "Are you sure?" }, method: :delete %></div>

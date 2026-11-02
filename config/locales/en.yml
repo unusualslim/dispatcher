@@ -42,8 +42,15 @@ en:
           attributes:
             location_id:
               warehouse_required: "is required: choose the warehouse it is made in"
+        user:
+          attributes:
+            home_page:
+              invalid: "must be a page in this app (starting with /)"
   access:
     denied: "You don't have access to that page."
+  home_pages:
+    update:
+      updated: "Home page saved."
   costing_settings:
     update:
       invalid_rate: "Labor rate must be a positive number."

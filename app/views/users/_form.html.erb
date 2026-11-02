@@ -60,6 +60,13 @@
             <%= form.select :employment_type, User::EMPLOYMENT_TYPES.invert, {}, class: "form-select" %>
             <div class="form-text">Sets which wage account /line labor posts to.</div>
           </div>
+          <% if @user.persisted? && HomePage.choosable?(@user) %>
+            <div class="col-sm-6">
+              <%= form.label :home_page, "Home page", class: "form-label mb-1" %>
+              <%= form.select :home_page, HomePage.choices(@user), { include_blank: "Default for their role" }, class: "form-select" %>
+              <div class="form-text">Where they land after signing in. They can change it on My Account.</div>
+            </div>
+          <% end %>
         </div>
       </div>
 

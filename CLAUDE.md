@@ -53,6 +53,10 @@ Primary contact: John (admin@perrybrothersoil.com)
   get short navs. Open/closed state is remembered per browser (localStorage).
 - Links use the `nav_item(label, path, icon, active:, keywords:)` helper; `keywords` feed the quick-jump
   search box (press `/`). `nav_search_item` adds search-only entries (used for each importer).
+- **Home page per user** (`users.home_page`, a path; blank = role default from `default_home_path`): `/` (HomeController),
+  sign-in and the logo go to `home_path`. Set by right-clicking a sidebar link → Set as Home Page (`PATCH /home_page`),
+  on My Account, or by an admin on the Users form; choices in `HomePage::OPTIONS` + the user's favorites. Admin/staff
+  only. `deny_access` sends users to the role default so a home page they lost access to can't loop.
 - All manual importers are listed once in `ImportsController::IMPORTS` (hub at `/imports`, Admin → Data Imports);
   add new importers there.
 - Styling: `--sidebar-*` variables and group/link rules in `app/assets/stylesheets/custom.css`.

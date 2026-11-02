@@ -11,6 +11,8 @@ class User < ApplicationRecord
   # Validations
   validates :email, presence: true, uniqueness: true
   validates :employment_type, inclusion: { in: EMPLOYMENT_TYPES.keys }
+  normalizes :home_page, with: ->(path) { path.strip.presence }
+  validates :home_page, format: { with: HomePage::FORMAT }, length: { maximum: 500 }, allow_nil: true
 
   has_many :dispatches, foreign_key: :driver_id, dependent: :nullify
   belongs_to :home_location, class_name: 'Location', optional: true # where this driver's Samsara routes start/end

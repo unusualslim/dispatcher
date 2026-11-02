@@ -36,6 +36,7 @@ Rails.application.routes.draw do
       post :create_line_worker
     end
   end
+  resource :home_page, only: :update
   resources :user_favorites, only: %i[create destroy] do
     collection { patch :reorder }
   end
@@ -349,7 +350,7 @@ Rails.application.routes.draw do
 
   devise_scope :user do
     authenticated :user do
-      root to: 'dispatches#index', as: :authenticated_root
+      root to: 'home#show', as: :authenticated_root
     end
 
     unauthenticated do

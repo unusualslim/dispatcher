@@ -90,13 +90,22 @@ class ApplicationController < ActionController::Base
       # A denied button press goes back to the page it came from; a denied page goes home.
       format.html do
         alert = t('access.denied')
-        request.get? ? redirect_to(home_path, alert: alert) : redirect_back_or_to(home_path, alert: alert)
+        # The role's default, not the chosen home page: a home page the user lost access to would loop.
+        home = default_home_path
+        request.get? ? redirect_to(home, alert: alert) : redirect_back_or_to(home, alert: alert)
       end
       format.any { head :forbidden }
     end
   end
 
+  # The user's chosen home page, else their role's default.
   def home_path
+    return default_home_path unless user_signed_in? && HomePage.choosable?(current_user)
+
+    current_user.home_page.presence || default_home_path
+  end
+
+  def default_home_path
     return new_user_session_path unless user_signed_in?
     return line_path if line_worker?
     return dispatches_path if driver? || admin?
@@ -105,10 +114,8 @@ class ApplicationController < ActionController::Base
     area ? send(AREA_HOME[area]) : edit_user_registration_path
   end
 
-  def after_sign_in_path_for(resource)
-    return home_path if resource.staff?
-
-    resource.role == 'line_worker' ? line_path : dispatches_path
+  def after_sign_in_path_for(_resource)
+    home_path
   end
 
   protected

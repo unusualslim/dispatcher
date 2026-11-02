@@ -82,18 +82,28 @@
       <div id="favContextRemove" style="padding:8px 16px; cursor:pointer; font-size:0.9rem; display:none;" onmouseenter="this.style.background='#f0f0f0'" onmouseleave="this.style.background=''">
         <i class="bi bi-star-fill text-warning me-2"></i>Remove from Favorites
       </div>
+      <% if user_signed_in? && HomePage.choosable?(current_user) %>
+        <div style="border-top:1px solid #eee; margin:4px 0;"></div>
+        <div id="homeContextSet" style="padding:8px 16px; cursor:pointer; font-size:0.9rem;" onmouseenter="this.style.background='#f0f0f0'" onmouseleave="this.style.background=''">
+          <i class="bi bi-house me-2"></i>Set as Home Page
+        </div>
+        <div id="homeContextReset" style="padding:8px 16px; cursor:pointer; font-size:0.9rem; display:none;" onmouseenter="this.style.background='#f0f0f0'" onmouseleave="this.style.background=''">
+          <i class="bi bi-house-fill me-2"></i>Home Page (reset to default)
+        </div>
+      <% end %>
     </div>
 
     <% if user_signed_in? %>
     <script>
       var favoritedPaths = <%= raw current_user.user_favorites.pluck(:path).to_json %>;
       var favIdsByPath   = <%= raw current_user.user_favorites.pluck(:path, :id).to_h.to_json %>;
+      var homePagePath   = <%= raw current_user.home_page.to_json %>;
       var csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
       var contextTargetPath  = null;
       var contextTargetLabel = null;
       var menu = document.getElementById('favContextMenu');
 
-      document.getElementById('sidebarAccordion')?.addEventListener('contextmenu', function(e) {
+      function openLinkMenu(e) {
         var link = e.target.closest('a[href]');
         if (!link) return;
         e.preventDefault();
@@ -104,11 +114,33 @@
         var alreadyFav = favoritedPaths.includes(contextTargetPath);
         document.getElementById('favContextAdd').style.display    = alreadyFav ? 'none' : '';
         document.getElementById('favContextRemove').style.display = alreadyFav ? '' : 'none';
+        var isHome = contextTargetPath === homePagePath;
+        var homeSet = document.getElementById('homeContextSet');
+        if (homeSet) {
+          homeSet.style.display = isHome ? 'none' : '';
+          document.getElementById('homeContextReset').style.display = isHome ? '' : 'none';
+        }
 
         menu.style.left    = e.clientX + 'px';
         menu.style.top     = e.clientY + 'px';
         menu.style.display = 'block';
+      }
+      document.getElementById('sidebarAccordion')?.addEventListener('contextmenu', openLinkMenu);
+      document.getElementById('favoritesSidebarList')?.addEventListener('contextmenu', openLinkMenu);
+
+      // Home page: right-click a sidebar link → Set as Home Page (blank path resets to the role's default).
+      function saveHomePage(path) {
+        menu.style.display = 'none';
+        fetch('<%= home_page_path %>', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-Token': csrfToken },
+          body: JSON.stringify({ path: path })
+        }).then(function(r) { if (r.ok) homePagePath = path || null; });
+      }
+      document.getElementById('homeContextSet')?.addEventListener('click', function() {
+        if (contextTargetPath) saveHomePage(contextTargetPath);
       });
+      document.getElementById('homeContextReset')?.addEventListener('click', function() { saveHomePage(''); });
 
       document.getElementById('favContextNewTab')?.addEventListener('click', function() {
         menu.style.display = 'none';
