@@ -1,16 +1,17 @@
 require 'test_helper'
 require 'minitest/mock'
 
-# PdiOrders::Feed, PdiOrders::StatusCheck and PdiOrderApiSyncJob against a fake PDI client.
+# PdiOrders::Feed, PdiOrders::StatusCheck, PdiOrderApiSyncJob and PdiOrderApiFullSyncJob against a fake PDI client.
 class PdiOrderApiSyncTest < ActiveSupport::TestCase
   class FakePdi
-    attr_reader :calls
-
     def initialize(statuses: {}, fail_on: nil)
       @statuses = statuses
       @fail_on = fail_on
       @calls = []
+      @status_checks = []
     end
+
+    attr_reader :calls, :status_checks
 
     def warehouse_orders(**filter)
       orders('PDIWarehouseOrders', 'PDIWarehouseOrder', :warehouse, filter)
@@ -21,6 +22,7 @@ class PdiOrderApiSyncTest < ActiveSupport::TestCase
     end
 
     def order_status(order_no)
+      @status_checks << order_no
       @statuses.fetch(order_no, 99)
     end
 
@@ -53,7 +55,7 @@ class PdiOrderApiSyncTest < ActiveSupport::TestCase
 
   test 'feed asks warehouse one status at a time, dates only finished statuses, and survives a failed call' do
     pdi = FakePdi.new(fail_on: [:warehouse, [6]])
-    feed = PdiOrders::Feed.new(pdi, today: Date.new(2026, 10, 26))
+    feed = PdiOrders::Feed.new(pdi, today: Date.new(2026, 10, 26), mode: :changes)
     doc = Nokogiri::XML(feed.fetch)
 
     warehouse = pdi.calls.select { |type, _| type == :warehouse }
@@ -65,9 +67,20 @@ class PdiOrderApiSyncTest < ActiveSupport::TestCase
       f[:from]
     }.last.values_at(:from, :to)
 
+    assert_equal [PdiWebService::RECORDS_NEW_AND_CHANGED], pdi.calls.map { |_, f| f[:records] }.uniq
+
     assert_equal ['warehouse orders (status 6): HTTP 409'], feed.errors
     assert_equal %w[OD-W1 OD-F1], doc.xpath('//OrderNo').map(&:text)
     assert_equal '1', doc.at('//PDIWarehouseOrder').parent.parent['status']
+    assert_equal 'changes', doc.root['mode']
+  end
+
+  test 'full feed asks for every record, finished statuses only for the last week' do
+    pdi = FakePdi.new
+    PdiOrders::Feed.new(pdi, today: Date.new(2026, 10, 26), mode: :full).fetch
+
+    assert_equal [PdiWebService::RECORDS_ALL], pdi.calls.map { |_, f| f[:records] }.uniq
+    assert_equal Date.new(2026, 10, 19), pdi.calls.find { |_, f| f[:from] }.last[:from]
   end
 
   test 'status check updates open orders PDI did not send, skipping the ones it did' do
@@ -86,34 +99,55 @@ class PdiOrderApiSyncTest < ActiveSupport::TestCase
     assert_equal 'open_order', sent.reload.order_status
   end
 
-  test 'job imports the feed and records the run, keeping the file only when something failed' do
+  test 'changes job imports only the changes, keeps the feed and skips the status check' do
+    location = Location.create!(company_name: 'Yard', location_category_id: 2)
+    CustomerOrder.create!(external_order_no: 'OD-9', order_status: 'open_order', location: location)
     pdi = FakePdi.new
     with_env('PDI_API_PARTNER_ID' => 'p', 'PDI_API_PASSWORD' => 'x') do
       PdiWebService.stub(:new, pdi) { PdiOrderApiSyncJob.perform_now }
     end
 
     log = SyncLog.for_process(PdiOrderApiSyncJob::PROCESS_NAME).first
-    assert_equal ['success', 2, nil], [log.status, log.records_created, log.file_content]
+    assert_equal ['success', 2], [log.status, log.records_created]
+    assert_includes Zlib.gunzip(Base64.strict_decode64(log.file_content)), '<OrderNo>OD-F1</OrderNo>'
     assert_equal 'released_for_billing', CustomerOrder.find_by!(external_order_no: 'OD-F1').order_status
     assert_equal 'open_order', CustomerOrder.find_by!(external_order_no: 'OD-W1').order_status
+    assert_empty pdi.status_checks
+    assert_equal [PdiWebService::RECORDS_NEW_AND_CHANGED], pdi.calls.map { |_, f| f[:records] }.uniq
   end
 
-  test 'a run with a failed call keeps its feed file on the log' do
+  test 'full job fetches everything, checks open orders PDI did not send and drops a clean feed' do
+    location = Location.create!(company_name: 'Yard', location_category_id: 2)
+    CustomerOrder.create!(external_order_no: 'OD-9', order_status: 'open_order', location: location)
+    pdi = FakePdi.new(statuses: { 'OD-9' => 6 })
     with_env('PDI_API_PARTNER_ID' => 'p', 'PDI_API_PASSWORD' => 'x') do
-      PdiWebService.stub(:new, FakePdi.new(fail_on: [:warehouse, [6]])) { PdiOrderApiSyncJob.perform_now }
+      PdiWebService.stub(:new, pdi) { PdiOrderApiFullSyncJob.perform_now }
     end
 
-    log = SyncLog.for_process(PdiOrderApiSyncJob::PROCESS_NAME).first
+    log = SyncLog.for_process(PdiOrderApiFullSyncJob::PROCESS_NAME).first
+    assert_equal ['success', 2, nil], [log.status, log.records_created, log.file_content]
+    assert_equal ['OD-9'], pdi.status_checks
+    assert_equal 'billed', CustomerOrder.find_by!(external_order_no: 'OD-9').order_status
+    assert_equal [PdiWebService::RECORDS_ALL], pdi.calls.map { |_, f| f[:records] }.uniq
+  end
+
+  test 'a full run with a failed call keeps its feed file on the log' do
+    with_env('PDI_API_PARTNER_ID' => 'p', 'PDI_API_PASSWORD' => 'x') do
+      PdiWebService.stub(:new, FakePdi.new(fail_on: [:warehouse, [6]])) { PdiOrderApiFullSyncJob.perform_now }
+    end
+
+    log = SyncLog.for_process(PdiOrderApiFullSyncJob::PROCESS_NAME).first
     assert_includes Zlib.gunzip(Base64.strict_decode64(log.file_content)), '<OrderNo>OD-F1</OrderNo>'
     assert_match(/Fetch failed: warehouse orders \(status 6\): HTTP 409/, log.warnings)
   end
 
   test 'order filter matches PDI schema layout' do
     xml = PdiWebService::OrderFilter.xml('PDIGetFuelOrders', statuses: [6, 7], from: Date.new(2026, 9, 1),
-                                                             to: Date.new(2026, 9, 30), order_no: 'OD-1&2')
+                                                             to: Date.new(2026, 9, 30), order_no: 'OD-1&2',
+                                                             records: PdiWebService::RECORDS_NEW_AND_CHANGED)
 
     assert_equal '<PDIGetFuelOrdersFilter><PDIGetFuelOrdersInput xmlns=""><StatusToInclude><Status>6</Status>' \
-                 '<Status>7</Status></StatusToInclude><RecordsToInclude>3</RecordsToInclude>' \
+                 '<Status>7</Status></StatusToInclude><RecordsToInclude>1</RecordsToInclude>' \
                  '<SchedDelivDateTimeFrom>2026-09-01T00:00:00</SchedDelivDateTimeFrom>' \
                  '<SchedDelivDateTimeTo>2026-09-30T23:59:59</SchedDelivDateTimeTo><OrderNo>OD-1&amp;2</OrderNo>' \
                  '</PDIGetFuelOrdersInput></PDIGetFuelOrdersFilter>', xml

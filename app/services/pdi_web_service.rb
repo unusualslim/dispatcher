@@ -12,6 +12,10 @@ class PdiWebService
   FAILURES = [Error, Net::OpenTimeout, Net::ReadTimeout, SocketError, SystemCallError, OpenSSL::SSL::SSLError].freeze
 
   NAMESPACE = 'http://profdata.com.Petronet'.freeze
+
+  # RecordsToInclude on the order calls (see OrderFilter).
+  RECORDS_NEW_AND_CHANGED = 1
+  RECORDS_ALL = 3
   DEFAULT_URL = 'https://account.fivepointsservice.com/PDIEnterpriseWeb.asmx'.freeze
 
   # CreditStatus 0 = OK, 1 = Credit Hold (checked against PDI's order screen).

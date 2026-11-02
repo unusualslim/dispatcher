@@ -22,9 +22,13 @@ class AutomatedProcessesController < ApplicationController
                    'Off until scheduled; review the first run at Data Imports → PDI Master Data.',
       default_schedule: '' },
     { slug: 'pdi-order-api-sync', name: PdiOrderApiSyncJob::PROCESS_NAME, job: 'PdiOrderApiSyncJob',
-      description: 'Imports fuel and warehouse orders from the PDI web service and re-checks open orders\' ' \
-                   'status (replaces the FTP orders.xls sync). Off until scheduled.',
-      default_schedule: '' }
+      description: 'Imports fuel and warehouse orders that are new or changed in PDI since the last fetch ' \
+                   '(replaces the FTP orders.xls sync). Off until scheduled.',
+      default_schedule: '' },
+    { slug: 'pdi-order-api-full-sync', name: PdiOrderApiFullSyncJob::PROCESS_NAME, job: 'PdiOrderApiFullSyncJob',
+      description: 'Nightly: imports every open PDI order and the last week\'s finished ones, then re-checks ' \
+                   'open orders PDI didn\'t send. Catches anything the changes sync missed.',
+      default_schedule: '0 2 * * * America/New_York' }
   ].freeze
 
   # A process's schedule; new configs start at its default_schedule (blank = off), else hourly.

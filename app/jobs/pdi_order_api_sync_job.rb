@@ -1,13 +1,15 @@
 require 'base64'
 require 'zlib'
 
-# Pulls fuel and warehouse orders from the PDI web service (PdiOrders::Feed), imports them
-# (PdiOrderApiImportService), then re-checks open orders PDI didn't send (PdiOrders::StatusCheck).
-# Replaces PdiOrderSyncJob's FTP orders.xls. Off until scheduled.
+# Pulls the orders that are new or changed in PDI since it last sent them (PdiOrders::Feed :changes) and
+# imports them (PdiOrderApiImportService). Runs every 15 minutes; PdiOrderApiFullSyncJob fetches everything
+# nightly. Asking PDI for only the changes keeps its order audit logs from filling with a "fetched" line
+# per order per run. Replaces PdiOrderSyncJob's FTP orders.xls.
 class PdiOrderApiSyncJob < ApplicationJob
   queue_as :default
 
   PROCESS_NAME = 'PDI Order API Sync'.freeze
+  MODE = :changes
   FILE_NAME = 'pdi_orders.xml.gz'.freeze
 
   # Imports a saved feed (job, or `rake pdi:reimport_orders`) and records the outcome on its SyncLog.
@@ -37,7 +39,7 @@ class PdiOrderApiSyncJob < ApplicationJob
   end
 
   def perform
-    log = SyncLog.create!(process_name: PROCESS_NAME, status: 'running', started_at: Time.current)
+    log = SyncLog.create!(process_name: self.class::PROCESS_NAME, status: 'running', started_at: Time.current)
     unless PdiWebService.configured?
       return log.update!(status: 'skipped', completed_at: Time.current,
                          error_message: 'PDI web service credentials are not set')
@@ -52,14 +54,24 @@ class PdiOrderApiSyncJob < ApplicationJob
 
   private
 
-  # The feed is saved before importing so a failed import can be inspected or re-run from its SyncLog;
-  # clean runs drop it (every run fetches everything again, ~300 KB gzipped).
+  # The feed is saved before importing so a failed import can be inspected or re-run from its SyncLog
+  # (`rake pdi:reimport_orders`). PDI sends a change only once, so changes runs keep it; clean full runs
+  # drop it (they fetch everything again, ~300 KB gzipped).
   def sync(log)
     client = PdiWebService.new
-    feed = PdiOrders::Feed.new(client)
+    feed = PdiOrders::Feed.new(client, mode: self.class::MODE)
     xml = feed.fetch
+    save_feed(log, xml)
+    result = self.class.import(xml, log, client: (client if full?), fetch_errors: feed.errors)
+    log.update!(file_name: nil, file_content: nil) if full? && result.errors.empty? && feed.errors.empty?
+  end
+
+  def save_feed(log, xml)
     log.update!(file_name: FILE_NAME, file_content: Base64.strict_encode64(Zlib.gzip(xml)), file_binary: true)
-    result = self.class.import(xml, log, client: client, fetch_errors: feed.errors)
-    log.update!(file_name: nil, file_content: nil) if result.errors.empty? && feed.errors.empty?
+  end
+
+  # Only a full run knows which open orders PDI no longer sends, so only it runs the status check.
+  def full?
+    self.class::MODE == :full
   end
 end
