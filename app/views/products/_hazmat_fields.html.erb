@@ -1,0 +1,24 @@
+<div class="card shadow-sm mb-3">
+  <div class="card-header fw-semibold">Hazardous Materials (Bill of Lading)</div>
+  <div class="card-body row g-3">
+    <div class="col-12">
+      <div class="form-check form-switch">
+        <%= form.check_box :hazmat, class: 'form-check-input', role: 'switch' %>
+        <%= form.label :hazmat, 'Hazardous material (marked X in the BOL\'s HM column)', class: 'form-check-label' %>
+      </div>
+    </div>
+    <div class="col-12">
+      <%= form.label :hazmat_description, 'DOT shipping description', class: 'form-label' %>
+      <%= form.text_area :hazmat_description, rows: 2, class: 'form-control',
+                                              placeholder: 'e.g. UN1203, Gasoline, 3, PG II' %>
+      <div class="form-text">ID number, proper shipping name, hazard class, packing group. Printed on the BOL.
+        PDI master data sets the flag and this description for warehouse products.</div>
+    </div>
+    <div class="col-6">
+      <%= form.label :hazmat_emergency_phone, 'Emergency response phone', class: 'form-label' %>
+      <%= form.text_field :hazmat_emergency_phone, class: 'form-control', placeholder: 'e.g. CHEMTREC 800-424-9300' %>
+      <div class="form-text">24-hour number, printed on the BOL.</div>
+    </div>
+  </div>
+</div>
+

@@ -43,6 +43,38 @@ class DispatchPrintTest < ActionDispatch::IntegrationTest
     assert_select '.notes', text: /Call ahead/, count: 2
   end
 
+  test 'prints a portrait bill of lading per order with shipper, consignee and weights' do
+    sign_in User.create!(email: 'admin-bol@example.com', password: 'password123', role: 'admin')
+    Product.find('PRINT1').update!(weight: 7.1)
+
+    get bol_dispatch_path(@dispatch)
+
+    assert_response :success
+    assert_select '.page', 1
+    assert_select '.refs', text: /#{@dispatch.id}-#{@order.id}.*OD-1001/m
+    assert_select '.box', text: /Ship From.*Albany Terminal.*1 Rack Rd/m
+    assert_select '.box', text: /Ship To.*Cordele Shop.*9 Main St/m
+    assert_select '.carrier', text: /Dana Driver/
+    assert_select 'td', text: 'PRINT1 – Clear Diesel'
+    assert_select 'td', text: '53,250', count: 2 # line weight and total
+    assert_select '.notes', text: /Call ahead/
+  end
+
+  test 'BOL marks hazardous lines with their DOT description and emergency phone' do
+    sign_in User.create!(email: 'admin-bol-hm@example.com', password: 'password123', role: 'admin')
+
+    get bol_dispatch_path(@dispatch)
+    assert_select 'td.hm', text: 'X', count: 0
+    assert_select '.emergency', text: %r{N/A}
+
+    Product.find('PRINT1').update!(hazmat: true, hazmat_description: 'UN1202, Diesel Fuel, 3, PG III',
+                                   hazmat_emergency_phone: 'CHEMTREC 800-424-9300')
+    get bol_dispatch_path(@dispatch)
+    assert_select 'td.hm', text: 'X', count: 1
+    assert_select '.hazmat-desc', text: 'UN1202, Diesel Fuel, 3, PG III'
+    assert_select '.emergency', text: /CHEMTREC 800-424-9300/
+  end
+
   test 'drivers can print only their own dispatches' do
     sign_in @driver
     get print_dispatch_path(@dispatch)
@@ -50,6 +82,8 @@ class DispatchPrintTest < ActionDispatch::IntegrationTest
 
     sign_in User.create!(email: 'other-driver@example.com', password: 'password123', role: 'worker')
     get print_dispatch_path(@dispatch)
+    assert_redirected_to dispatches_path
+    get bol_dispatch_path(@dispatch)
     assert_redirected_to dispatches_path
   end
 end

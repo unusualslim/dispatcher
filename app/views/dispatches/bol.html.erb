@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Dispatch #<%= @dispatch.id %> Bill of Lading</title>
+  <style>
+    :root { --ink: #1c1917; --muted: #57534e; --rule: #a8a29e; --accent: #f26722; }
+    * { box-sizing: border-box; }
+    body { font: 11px/1.35 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: var(--ink); background: #e7e5e4;
+           margin: 0; padding: 16px; }
+    .toolbar { display: flex; justify-content: flex-end; gap: 12px; max-width: 8.5in; margin: 0 auto 12px; font-size: 13px; }
+    .toolbar button { font: inherit; padding: 6px 14px; border: 1px solid var(--rule); background: #fff; border-radius: 4px; cursor: pointer; }
+    .empty { max-width: 8.5in; margin: 0 auto; background: #fff; padding: 24px; font-size: 14px; }
+    /* One letter-portrait page per order. */
+    .page { width: 8.5in; min-height: 11in; margin: 0 auto 16px; background: #fff; padding: 0.4in 0.45in;
+            display: flex; flex-direction: column; }
+    header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid var(--accent);
+             padding-bottom: 6px; margin-bottom: 10px; }
+    header h1 { font-size: 22px; margin: 0; letter-spacing: .02em; }
+    header .sub { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+    header .company { text-align: right; color: var(--muted); font-size: 10px; }
+    header .company strong { color: var(--ink); font-size: 12px; display: block; }
+    .refs { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--ink); margin-bottom: 10px; }
+    .refs div { padding: 4px 6px; border-left: 1px solid var(--rule); }
+    .refs div:first-child { border-left: none; }
+    .label { font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); display: block; }
+    .refs .value { font-size: 13px; font-weight: 700; }
+    .parties { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+    .box { border: 1px solid var(--ink); padding: 5px 8px; min-height: 1.05in; }
+    .box .name { font-weight: 700; font-size: 12px; }
+    .box .muted { color: var(--muted); }
+    .carrier { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; border: 1px solid var(--ink); margin-bottom: 10px; }
+    .carrier div { padding: 4px 6px; border-left: 1px solid var(--rule); }
+    .carrier div:first-child { border-left: none; }
+    .terms { display: flex; gap: 18px; align-items: center; margin-bottom: 10px; }
+    .check { display: inline-block; width: 11px; height: 11px; border: 1px solid var(--ink); vertical-align: -2px; margin-right: 4px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+    th { font-size: 8.5px; text-transform: uppercase; letter-spacing: .04em; text-align: left; background: #f5f5f4;
+         border: 1px solid var(--ink); padding: 4px; }
+    td { border: 1px solid var(--rule); border-left-color: var(--ink); border-right-color: var(--ink); padding: 14px 4px 4px; vertical-align: bottom; }
+    tbody tr:last-child td { border-bottom-color: var(--ink); }
+    tfoot td { border: 1px solid var(--ink); font-weight: 700; padding-top: 4px; }
+    .num { text-align: right; white-space: nowrap; }
+    .hm { width: 0.35in; text-align: center; font-weight: 700; }
+    .hazmat-desc { font-weight: 700; }
+    .notes { border: 1px solid var(--ink); padding: 5px 8px; margin-bottom: 10px; white-space: pre-line; min-height: 0.55in; }
+    .fill { display: inline-block; border-bottom: 1px solid var(--ink); min-width: 1.6in; }
+    .emergency { margin-bottom: 10px; }
+    .legal { font-size: 8px; color: var(--muted); text-align: justify; margin-bottom: 8px; }
+    .sign { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: auto; }
+    .sign > div { border: 1px solid var(--ink); padding: 5px 8px; }
+    .sign .line { border-bottom: 1px solid var(--ink); height: 0.38in; margin-bottom: 2px; }
+    .sign .small { font-size: 8px; color: var(--muted); }
+    @page { size: letter portrait; margin: 0; }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .toolbar { display: none; }
+      .page { margin: 0; height: 11in; break-after: page; }
+      .page:last-child { break-after: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button type="button" onclick="window.print()">Print</button>
+  </div>
+
+  <% if @customer_orders.empty? %>
+    <div class="empty">No customer orders are assigned to Dispatch #<%= @dispatch.id %>.</div>
+  <% end %>
+
+  <%
+    dispatch = @dispatch
+    fmt_date = ->(d) { d&.strftime('%m/%d/%Y') || '' }
+    city_line = ->(loc) { [loc.city, [loc.state, loc.zip].compact_blank.join(' ')].compact_blank.join(', ') }
+  %>
+  <% @customer_orders.each do |order| %>
+    <%
+      lines   = order.customer_order_products.sort_by(&:id)
+      # Where the load leaves from: the order's ship-from, else a line's warehouse, else the dispatch's terminal.
+      shipper = order.ship_from_location || lines.filter_map(&:location).first || @origin_location
+      ship_to = order.location
+      carrier = order.freight_carrier_vendor&.name || order.carrier.presence
+      weights = lines.map { |l| l.product&.weight && (l.quantity || 0) * l.product.weight }
+      hazmat  = lines.filter_map(&:product).select(&:hazmat)
+      phones  = hazmat.filter_map { |p| p.hazmat_emergency_phone.presence }.uniq
+    %>
+    <section class="page">
+      <header>
+        <div>
+          <div class="sub">Straight Bill of Lading — Not Negotiable</div>
+          <h1>Bill of Lading</h1>
+        </div>
+        <div class="company"><strong>Five Points Service, Inc.</strong>Perry Brothers Oil · Americus, GA</div>
+      </header>
+
+      <div class="refs">
+        <div><span class="label">BOL Number</span><span class="value"><%= dispatch.id %>-<%= order.id %></span></div>
+        <div><span class="label">Ship Date</span><span class="value"><%= fmt_date.(dispatch.dispatch_date) %></span></div>
+        <div><span class="label">Order</span><span class="value"><%= order.external_order_no.presence || "##{order.id}" %></span></div>
+        <div><span class="label">Dispatch</span><span class="value">#<%= dispatch.id %></span></div>
+      </div>
+
+      <div class="parties">
+        <div class="box">
+          <span class="label">Ship From (Shipper)</span>
+          <div class="name">Five Points Service, Inc.</div>
+          <% if shipper %>
+            <div><%= shipper.company_name %></div>
+            <div><%= shipper.address %></div>
+            <div><%= city_line.(shipper) %></div>
+            <% if shipper.phone_number.present? %><div><%= shipper.phone_number %></div><% end %>
+          <% elsif dispatch.origin.present? %>
+            <div><%= dispatch.origin %></div>
+          <% end %>
+        </div>
+        <div class="box">
+          <span class="label">Ship To (Consignee)</span>
+          <div class="name"><%= order.customer&.name || ship_to.company_name %></div>
+          <% if order.customer && order.customer.name != ship_to.company_name %><div><%= ship_to.company_name %></div><% end %>
+          <div><%= ship_to.address %></div>
+          <div><%= city_line.(ship_to) %></div>
+          <% if ship_to.phone_number.present? %><div><%= ship_to.phone_number %></div><% end %>
+          <% ship_to.location_contacts.first(2).each do |contact| %>
+            <div class="muted"><%= [contact.name, contact.phone].compact_blank.join(' · ') %></div>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="carrier">
+        <div><span class="label">Carrier</span><%= carrier || '' %></div>
+        <div><span class="label">Driver</span><%= dispatch.driver&.full_name %></div>
+        <div><span class="label">Truck</span><%= dispatch.truck&.name %></div>
+        <div><span class="label">Trailer</span><%= dispatch.trailer&.name %></div>
+      </div>
+
+      <div class="terms">
+        <span class="label" style="display:inline">Freight charges</span>
+        <span><span class="check"></span>Prepaid</span>
+        <span><span class="check"></span>Collect</span>
+        <span><span class="check"></span>3rd Party</span>
+        <span style="margin-left:auto"><span class="label" style="display:inline">Seal #</span> <span class="fill" style="min-width:1.2in"></span></span>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th class="num" style="width:.75in">Handling Units</th>
+            <th class="num" style="width:.75in">Quantity</th>
+            <th style="width:.6in">Unit</th>
+            <th class="hm">HM</th>
+            <th>Description of Articles</th>
+            <th class="num" style="width:.9in">Weight (lbs)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if lines.empty? %>
+            <tr><td colspan="6">No products on this order.</td></tr>
+          <% end %>
+          <% lines.zip(weights).each do |line, weight| %>
+            <tr>
+              <td></td>
+              <td class="num"><%= number_with_delimiter(line.quantity) %></td>
+              <td><%= line.product&.unit_of_measurement %></td>
+              <td class="hm"><%= 'X' if line.product&.hazmat %></td>
+              <td>
+                <% if line.product&.hazmat %>
+                  <div class="hazmat-desc"><%= line.product.hazmat_description.presence || 'HAZARDOUS MATERIAL: DOT description missing' %></div>
+                <% end %>
+                <%= [line.product_id, line.product&.name || line.product_name].compact_blank.join(' – ').presence || 'Unknown' %>
+              </td>
+              <td class="num"><%= number_with_delimiter(weight.round) if weight %></td>
+            </tr>
+          <% end %>
+          <% [4 - lines.size, 0].max.times do %>
+            <tr><td></td><td></td><td></td><td class="hm"></td><td></td><td></td></tr>
+          <% end %>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td></td>
+            <td colspan="4" class="num">Total<%= ' (weight incomplete: some products have no weight)' if weights.any?(&:nil?) && weights.any? %></td>
+            <td class="num"><%= number_with_delimiter(weights.compact.sum.round) if weights.compact.any? %></td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <div class="notes"><span class="label">Special Instructions</span><%= [order.notes, dispatch.notes].compact_blank.join("\n") %></div>
+
+      <div class="emergency">
+        <span class="label" style="display:inline">Emergency response phone (hazardous materials)</span>
+        <% if phones.any? %>
+          <strong><%= phones.join(' · ') %></strong>
+        <% elsif hazmat.any? %>
+          <span class="fill" style="min-width:2.2in"></span>
+        <% else %>
+          <span>N/A — no hazardous materials</span>
+        <% end %>
+      </div>
+
+      <p class="legal">
+        RECEIVED, subject to the classifications and lawfully filed tariffs in effect on the date of issue of this Bill of
+        Lading, the property described above in apparent good order, except as noted (contents and condition of contents
+        of packages unknown), marked, consigned and destined as indicated above, which said carrier agrees to carry to its
+        usual place of delivery at said destination. This is to certify that the above named materials are properly
+        classified, packaged, marked and labeled, and are in proper condition for transportation according to the
+        applicable regulations of the Department of Transportation.
+      </p>
+
+      <div class="sign">
+        <div>
+          <span class="label">Shipper</span>
+          <div class="line"></div><div class="small">Signature / Date</div>
+        </div>
+        <div>
+          <span class="label">Carrier — Driver</span>
+          <div class="line"></div><div class="small">Signature / Date · Property received in good order</div>
+        </div>
+        <div>
+          <span class="label">Consignee</span>
+          <div class="line"></div><div class="small">Signature / Date · Received ____ units in good order</div>
+        </div>
+      </div>
+    </section>
+  <% end %>
+</body>
+</html>

@@ -3,11 +3,11 @@ require 'net/http'
 
 class DispatchesController < ApplicationController
   before_action :set_dispatch,
-                only: %i[show print edit update destroy mark_as_complete mark_as_billed send_notification upload_files
+                only: %i[show print bol edit update destroy mark_as_complete mark_as_billed send_notification upload_files
                          send_to_samsara]
   # Drivers only see and upload to their own dispatches (checked in those actions); everything else is the
   # Dispatch area.
-  DRIVER_ACTIONS = %w[index show print upload_files].freeze
+  DRIVER_ACTIONS = %w[index show print bol upload_files].freeze
   permission_area :dispatch, approve: %i[mark_as_billed],
                              unless: -> { driver? && DRIVER_ACTIONS.include?(action_name) }
 
@@ -102,17 +102,14 @@ class DispatchesController < ApplicationController
 
   # GET /dispatches/1/print — landscape sheet per order, two identical halves to cut (driver copy + dispatch copy)
   def print
-    if driver? && @dispatch.driver_id != current_user.id
-      redirect_to dispatches_path, alert: 'You can only view your own dispatches.'
-      return
-    end
+    load_printable_orders
+    render layout: false unless performed?
+  end
 
-    @origin_location = @dispatch.origin_location
-    @customer_orders = @dispatch.customer_orders
-                                .includes(:customer, :ship_from_location, location: :location_contacts,
-                                                                          customer_order_products: :product)
-                                .order(:id)
-    render layout: false
+  # GET /dispatches/1/bol — straight bill of lading, one portrait letter page per order
+  def bol
+    load_printable_orders
+    render layout: false unless performed?
   end
 
   # POST /dispatches/1/upload_files
@@ -483,6 +480,20 @@ class DispatchesController < ApplicationController
   end
 
   private
+
+  # Shared by the printable order and the BOL. Drivers may only print their own dispatches.
+  def load_printable_orders
+    if driver? && @dispatch.driver_id != current_user.id
+      redirect_to dispatches_path, alert: 'You can only view your own dispatches.'
+      return
+    end
+
+    @origin_location = @dispatch.origin_location
+    @customer_orders = @dispatch.customer_orders
+                                .includes(:customer, :ship_from_location, location: :location_contacts,
+                                                                          customer_order_products: %i[product location])
+                                .order(:id)
+  end
 
   def boot_twilio
     account_sid = ENV.fetch('TWILIO_SID', nil)

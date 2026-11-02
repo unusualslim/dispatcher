@@ -1,5 +1,6 @@
 <div class="container mt-4">
-  <% title = safe_join([@product.name, (tag.span('Inactive', class: 'badge bg-secondary fs-6 align-middle') unless @product.active)].compact, ' ') %>
+  <% title = safe_join([@product.name, (tag.span('Inactive', class: 'badge bg-secondary fs-6 align-middle') unless @product.active),
+                          (tag.span('Hazmat', class: 'badge bg-danger fs-6 align-middle') if @product.hazmat)].compact, ' ') %>
   <%= render layout: 'shared/page_header',
              locals: { title: title,
                        subtitle: safe_join(["Product ID: #{@product.id}", tag.br,
@@ -8,6 +9,13 @@
                        next_path: (product_path(@next_id) if @next_id) } do %>
     <%= link_to 'Edit', edit_product_path(@product), class: 'btn btn-warning btn-sm' %>
     <%= link_to 'Back', products_path, class: 'btn btn-outline-secondary btn-sm' %>
+  <% end %>
+
+  <% if @product.hazmat %>
+    <div class="alert alert-danger py-2 small">
+      <strong>Hazardous material:</strong> <%= @product.hazmat_description.presence || 'no DOT shipping description yet (Edit to add one for the BOL)' %>
+      <% if @product.hazmat_emergency_phone.present? %> · Emergency: <%= @product.hazmat_emergency_phone %><% end %>
+    </div>
   <% end %>
 
   <%# MRP inventory card %>

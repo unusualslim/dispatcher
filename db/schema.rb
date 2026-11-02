@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_30_120000) do
+ActiveRecord::Schema[7.2].define(version: 2026_11_02_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -726,6 +726,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_30_120000) do
     t.integer "lead_time_days"
     t.integer "production_days"
     t.bigint "freight_class_id"
+    t.boolean "hazmat", default: false, null: false
+    t.text "hazmat_description"
+    t.string "hazmat_emergency_phone"
     t.index ["freight_class_id"], name: "index_products_on_freight_class_id"
   end
 

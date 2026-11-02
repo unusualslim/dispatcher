@@ -49,6 +49,7 @@ Rails.application.routes.draw do
       patch :mark_as_sent_to_driver
       post :upload_files
       get :print
+      get :bol
       post :send_to_samsara
     end
     collection do
