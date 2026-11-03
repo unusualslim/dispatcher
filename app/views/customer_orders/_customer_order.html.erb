@@ -28,7 +28,7 @@
     <strong>Location Notes:</strong>
     <% location = Location.find_by(id: @customer_order.location_id) %>
     <% if location.notes %>
-      <%= location.notes %>
+      <span class="pre-line"><%= location.notes %></span>
     <% else %>
       No location notes
     <% end %>

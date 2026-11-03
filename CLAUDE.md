@@ -23,7 +23,9 @@ Primary contact: John (admin@perrybrothersoil.com)
 - Devise authentication. Sign-up (`/users/sign_up`) is **admin-only** — it's how admins add users
   (Users → New user), with **Cloudflare Turnstile**. Users can't change their own role (only admins, on /users).
 - Active Storage: **DigitalOcean Space `loadntrucks` (nyc3)** in production (`:digitalocean` in storage.yml,
-  keys from env); local disk in dev/test. Action Text rich text on Location notes and Announcements.
+  keys from env); local disk in dev/test. Action Text rich text on Announcements. Location `notes` is plain text
+  (printed sheets, driver texts, Samsara stop notes); its breaks show via the `.pre-line` class. The model's
+  `location_notes` / `dispatch_notes` rich-text fields were never put on a form.
 - Samsara Fleet API for live GPS truck tracking
 - Twilio for SMS (dispatch notifications / messages)
 - roo / roo-xls for spreadsheet imports, net-ftp for PDI, fugit for cron parsing

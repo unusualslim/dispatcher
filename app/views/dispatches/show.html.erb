@@ -121,7 +121,7 @@
           <% if origin_location %>
             <%= link_to origin_location.full_address_with_company, location_path(origin_location), class: "fw-semibold text-decoration-none d-block" %>
             <% if origin_location.notes.present? %>
-              <div class="text-muted small mt-1"><%= origin_location.notes %></div>
+              <div class="text-muted small mt-1 pre-line"><%= origin_location.notes %></div>
             <% end %>
           <% else %>
             <span class="text-muted">No origin set</span>
@@ -133,7 +133,7 @@
           <% if destination_location %>
             <%= link_to destination_location.full_address_with_company, location_path(destination_location), class: "fw-semibold text-decoration-none d-block" %>
             <% if destination_location.notes.present? %>
-              <div class="text-muted small mt-1"><%= destination_location.notes %></div>
+              <div class="text-muted small mt-1 pre-line"><%= destination_location.notes %></div>
             <% end %>
           <% else %>
             <span class="text-muted">No destination found</span>

@@ -99,7 +99,7 @@
             <% end %>
             <div class="text-muted small"><%= [location.address, location.city, location.state, location.zip].compact_blank.join(", ") %></div>
             <% if location.notes.present? %>
-              <div class="text-muted small mt-1"><em><%= location.notes %></em></div>
+              <div class="text-muted small mt-1 pre-line"><em><%= location.notes %></em></div>
             <% end %>
           <% else %>
             <span class="text-muted">No destination set</span>

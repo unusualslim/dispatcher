@@ -438,3 +438,6 @@ html, body {
   .main-wrapper { margin-left: 0 !important; }
   .card { box-shadow: none !important; }
 }
+
+/* Plain-text notes typed with line breaks (location notes): keep the breaks on screen. */
+.pre-line { white-space: pre-line; }

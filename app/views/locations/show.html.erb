@@ -34,6 +34,15 @@
           <p><strong>Address:</strong> <%= @location.address.presence || "N/A" %></p>
           <p><strong>State:</strong> <%= @location.state.presence || "N/A" %></p>
           <p><strong>Phone:</strong> <%= @location.phone_number.presence || "N/A" %></p>
+          <div class="mb-3">
+            <strong>Notes:</strong>
+            <% if @location.notes.present? %>
+              <div class="pre-line border rounded bg-light px-2 py-1 mt-1"><%= @location.notes %></div>
+            <% else %>
+              <span class="text-muted">None</span>
+            <% end %>
+            <div class="form-text">Printed on dispatch sheets and sent to drivers.</div>
+          </div>
           <p><strong>Category:</strong> <%= @location.location_category_id.presence || "N/A" %></p>
           <p><strong>Marker Color:</strong> <%= @location.marker_color.presence || "N/A" %></p>
           <p><strong>Latitude:</strong> <%= @location.latitude.presence || "N/A" %></p>

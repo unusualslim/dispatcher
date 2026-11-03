@@ -56,7 +56,7 @@
     <strong>Origin Notes:</strong>
     <% origin_location = @dispatch.origin_location %>
     <% if origin_location&.notes %>
-      <%= origin_location.notes %>
+      <span class="pre-line"><%= origin_location.notes %></span>
     <% else %>
       No notes found
     <% end %>
@@ -81,7 +81,7 @@
     <% if @dispatch.customer_orders.any? %>
       <% destination_location = @dispatch.customer_orders.first.location %>
       <% if destination_location && destination_location.notes.present? %>
-        <%= destination_location.notes %>
+        <span class="pre-line"><%= destination_location.notes %></span>
       <% else %>
         No notes found
       <% end %>
