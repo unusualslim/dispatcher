@@ -439,5 +439,5 @@ html, body {
   .card { box-shadow: none !important; }
 }
 
-/* Plain-text notes typed with line breaks (location notes): keep the breaks on screen. */
+/* Plain-text notes typed with line breaks (location notes, order and dispatch pages): keep the breaks on screen. */
 .pre-line { white-space: pre-line; }
