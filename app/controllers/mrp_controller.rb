@@ -8,8 +8,9 @@ class MrpController < ApplicationController
     @horizon = horizon
     @result = Mrp::Plan.new(horizon_days: @horizon).run
     @warehouse_id = params.key?(:warehouse) ? params[:warehouse].presence&.to_i : current_warehouse&.id
-    @draft_pos   = PurchaseOrder.includes(:vendor, line_items: :product).draft.order(created_at: :desc)
-    @pending_pos = PurchaseOrder.includes(:vendor, line_items: :product).pending_approval.order(created_at: :desc)
+    @draft_pos   = PurchaseOrder.inventory_type.includes(:vendor, line_items: :product).draft.order(created_at: :desc)
+    @pending_pos = PurchaseOrder.inventory_type.includes(:vendor, line_items: :product).pending_approval
+                                .order(created_at: :desc)
   end
 
   # One product's projected stock at each warehouse, day by day.

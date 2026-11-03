@@ -1,10 +1,50 @@
-<div>
-  <h2>Name: <%= @thing.name %></h2>
-  <h2>Category: <%= @thing.category %></h2>
-</div>
+<div class="container mt-4" style="max-width: 900px;">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0"><%= @thing.name %></h1>
+    <div class="d-flex gap-2">
+      <%= link_to "Edit", edit_thing_path(@thing), class: 'btn btn-outline-secondary btn-sm' %>
+      <%= link_to "All assets", things_path, class: 'btn btn-outline-secondary btn-sm' %>
+      <%= button_to "Delete", @thing, method: :delete, class: "btn btn-outline-danger btn-sm",
+                                      form: { data: { turbo_confirm: "Delete #{@thing.name}?" } } %>
+    </div>
+  </div>
 
-<div>
-  <%= link_to "Edit this asset", edit_thing_path(@thing), class: 'btn btn-warning' %>
-  <%= link_to "Back to assets", things_path, class: 'btn btn-secondary', data: { turbo: false } %>
-  <%= button_to "Destroy this asset", @thing, method: :delete, data: { confirm: 'Are you sure you want to delete this asset?', turbo: false }, class: "btn btn-danger" %>
+  <dl class="row">
+    <dt class="col-3">Category</dt>
+    <dd class="col-9"><%= Thing::CATEGORIES[@thing.category] || @thing.category %></dd>
+    <% if @thing.location %>
+      <dt class="col-3">Location</dt>
+      <dd class="col-9"><%= link_to @thing.location.company_name, location_path(@thing.location) %></dd>
+    <% end %>
+  </dl>
+
+  <% lines = @thing.expense_lines.joins(:purchase_order).where(purchase_orders: { voided_at: nil })
+                   .includes(:expense_account, :location, purchase_order: :vendor).order('purchase_orders.created_at DESC') %>
+  <% if @thing.category == 'equipment' || lines.any? %>
+    <h5 class="mt-4">Expense purchases</h5>
+    <% if lines.empty? %>
+      <p class="text-muted small">No expense PO lines for this equipment yet.</p>
+    <% else %>
+      <table class="table table-sm table-bordered">
+        <thead class="table-light">
+          <tr><th>PO</th><th>Date</th><th>Vendor</th><th>Description</th><th>GL Account</th><th class="text-end">Amount</th></tr>
+        </thead>
+        <tbody>
+          <% lines.each do |line| %>
+            <tr>
+              <td><%= link_to line.purchase_order.display_number, purchase_order_path(line.purchase_order) %></td>
+              <td class="text-nowrap"><%= line.purchase_order.created_at.strftime('%m/%d/%Y') %></td>
+              <td><%= line.purchase_order.vendor&.name %></td>
+              <td><%= line.product_name %><% if line.vendor_part_number.present? %> <span class="text-muted small font-monospace"><%= line.vendor_part_number %></span><% end %></td>
+              <td class="font-monospace small"><%= line.gl_account_code %></td>
+              <td class="text-end"><%= number_to_currency(line.total_cost) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+        <tfoot>
+          <tr class="fw-semibold"><td colspan="5" class="text-end">Total</td><td class="text-end"><%= number_to_currency(lines.sum { |l| l.total_cost.to_d }) %></td></tr>
+        </tfoot>
+      </table>
+    <% end %>
+  <% end %>
 </div>

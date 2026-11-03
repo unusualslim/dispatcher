@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<%
+  po = @purchase_order
+  vendor = po.vendor
+  ship_to = po.location
+  expense = po.expense?
+  lines = po.line_items.includes(:product, :expense_account, :equipment, :location).sort_by(&:id)
+  fmt_date = ->(d) { d&.strftime('%m/%d/%Y') || '' }
+  money = ->(n) { n.nil? ? '' : number_to_currency(n) }
+  terms = VendorFreightTerm::TERMS.to_h[po.freight_terms] || po.freight_terms
+%>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Purchase Order <%= po.display_number %></title>
+  <style>
+    :root { --ink: #1c1917; --muted: #57534e; --rule: #a8a29e; --accent: #f26722; }
+    * { box-sizing: border-box; }
+    body { font: 11px/1.4 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: var(--ink); background: #e7e5e4;
+           margin: 0; padding: 16px; }
+    .toolbar { display: flex; justify-content: flex-end; align-items: center; gap: 12px; max-width: 8.5in;
+               margin: 0 auto 12px; font-size: 13px; }
+    .toolbar button { font: inherit; padding: 6px 14px; border: 1px solid var(--rule); background: #fff; border-radius: 4px; cursor: pointer; }
+    .page { width: 8.5in; min-height: 11in; margin: 0 auto; background: #fff; padding: 0.45in 0.5in; display: flex; flex-direction: column; }
+    header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid var(--accent);
+             padding-bottom: 6px; margin-bottom: 12px; }
+    header h1 { font-size: 24px; margin: 0; letter-spacing: .02em; }
+    header .company { text-align: right; color: var(--muted); font-size: 10px; }
+    header .company strong { color: var(--ink); font-size: 13px; display: block; }
+    .refs { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--ink); margin-bottom: 12px; }
+    .refs div { padding: 4px 6px; border-left: 1px solid var(--rule); }
+    .refs div:first-child { border-left: none; }
+    .label { font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); display: block; }
+    .refs .value { font-size: 13px; font-weight: 700; }
+    .parties { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    .box { border: 1px solid var(--ink); padding: 6px 8px; min-height: 1in; }
+    .box .name { font-weight: 700; font-size: 12px; }
+    .box .muted { color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+    th { font-size: 8.5px; text-transform: uppercase; letter-spacing: .04em; text-align: left; background: #f5f5f4;
+         border: 1px solid var(--ink); padding: 4px; }
+    td { border: 1px solid var(--rule); padding: 5px 4px; vertical-align: top; }
+    tfoot td { border: none; padding: 3px 4px; }
+    tfoot tr.total td { font-weight: 700; font-size: 12px; border-top: 2px solid var(--ink); }
+    .num { text-align: right; white-space: nowrap; }
+    .mono { font-family: ui-monospace, Menlo, Consolas, monospace; }
+    .gl { font-size: 9px; color: var(--muted); }
+    body:not(.show-gl) .gl { display: none; }
+    .notes { border: 1px solid var(--ink); padding: 6px 8px; margin-bottom: 12px; white-space: pre-line; }
+    .sign { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: auto; padding-top: 24px; }
+    .sign .line { border-bottom: 1px solid var(--ink); height: 0.35in; margin-bottom: 2px; font-size: 12px;
+                  display: flex; align-items: flex-end; padding-bottom: 2px; }
+    .fine { font-size: 9px; color: var(--muted); margin-top: 10px; }
+    @page { size: letter portrait; margin: 0; }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .toolbar { display: none; }
+      .page { margin: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <% if expense %>
+      <label><input type="checkbox" id="show-gl" onchange="document.body.classList.toggle('show-gl', this.checked)"> Show GL accounts (internal copy)</label>
+    <% end %>
+    <button type="button" onclick="window.print()">Print</button>
+  </div>
+
+  <section class="page">
+    <header>
+      <h1>Purchase Order</h1>
+      <div class="company"><strong>Five Points Service, Inc.</strong>Perry Brothers Oil · Americus, GA</div>
+    </header>
+
+    <div class="refs">
+      <div><span class="label">PO Number</span><span class="value"><%= po.display_number %></span></div>
+      <div><span class="label">Order Date</span><span class="value"><%= fmt_date.(po.submitted_at || po.created_at) %></span></div>
+      <div><span class="label">Requested Delivery</span><span class="value"><%= fmt_date.(po.expected_delivery_date) %></span></div>
+      <div><span class="label">Freight Terms</span><span class="value"><%= terms %></span></div>
+    </div>
+
+    <div class="parties">
+      <div class="box">
+        <span class="label">Vendor</span>
+        <div class="name"><%= vendor.name %></div>
+        <% if vendor.address_1.present? %><div><%= vendor.address_1 %></div><% end %>
+        <% if vendor.address_2.present? %><div><%= vendor.address_2 %></div><% end %>
+        <% city = [vendor.city, [vendor.state, vendor.zip].compact_blank.join(' ')].compact_blank.join(', ') %>
+        <% if city.present? %><div><%= city %></div><% end %>
+        <% contact = [vendor.contact_name, vendor.phone, vendor.email].compact_blank.join(' · ') %>
+        <% if contact.present? %><div class="muted"><%= contact %></div><% end %>
+        <div class="muted">Vendor # <%= vendor.id %></div>
+      </div>
+      <div class="box">
+        <span class="label">Ship To</span>
+        <div class="name">Five Points Service, Inc.</div>
+        <% if ship_to %>
+          <div><%= ship_to.company_name %></div>
+          <% if ship_to.address.present? %><div><%= ship_to.address %></div><% end %>
+          <div><%= [ship_to.city, [ship_to.state, ship_to.zip].compact_blank.join(' ')].compact_blank.join(', ') %></div>
+          <% if ship_to.phone_number.present? %><div><%= ship_to.phone_number %></div><% end %>
+        <% end %>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 30px;">#</th>
+          <% if expense %>
+            <th style="width: 1.3in;">Part #</th>
+            <th>Description</th>
+          <% else %>
+            <th style="width: 1in;">Item</th>
+            <th>Description</th>
+          <% end %>
+          <th class="num" style="width: 0.7in;">Qty</th>
+          <th style="width: 0.55in;">Unit</th>
+          <th class="num" style="width: 0.9in;">Unit Price</th>
+          <th class="num" style="width: 0.95in;">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% lines.each_with_index do |line, i| %>
+          <tr>
+            <td><%= i + 1 %></td>
+            <% if expense %>
+              <td class="mono"><%= line.vendor_part_number %></td>
+              <td>
+                <%= line.product_name %>
+                <% if line.gl_account_code || line.equipment %>
+                  <div class="gl"><%= [line.gl_account_code, line.expense_account&.name, line.equipment&.name].compact.join(' · ') %></div>
+                <% end %>
+              </td>
+            <% else %>
+              <td class="mono"><%= line.product_id %></td>
+              <td><%= line.display_name %></td>
+            <% end %>
+            <td class="num"><%= number_with_precision(line.quantity, precision: 3, strip_insignificant_zeros: true) %></td>
+            <td><%= line.package_code.presence || line.product&.pdi_package_code %></td>
+            <td class="num"><%= money.(line.unit_cost) %></td>
+            <td class="num"><%= money.(line.total_cost) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+      <tfoot>
+        <% if po.freight_amount.to_f > 0 || po.other_charges.to_f > 0 %>
+          <tr><td colspan="5"></td><td class="num">Subtotal</td><td class="num"><%= money.(po.subtotal) %></td></tr>
+          <% if po.freight_amount.to_f > 0 %>
+            <tr><td colspan="5"></td><td class="num"><%= expense ? 'Shipping' : 'Freight' %></td><td class="num"><%= money.(po.freight_amount) %></td></tr>
+          <% end %>
+          <% if po.other_charges.to_f > 0 %>
+            <tr><td colspan="5"></td><td class="num"><%= po.other_charges_description.presence || 'Other' %></td><td class="num"><%= money.(po.other_charges) %></td></tr>
+          <% end %>
+        <% end %>
+        <tr class="total"><td colspan="5" style="border-top: none;"></td><td class="num">Total</td><td class="num"><%= money.(po.total_cost) %></td></tr>
+      </tfoot>
+    </table>
+
+    <% if po.notes.present? %>
+      <div class="notes"><span class="label">Notes</span><%= po.notes %></div>
+    <% end %>
+
+    <div class="fine">
+      Please reference PO <strong><%= po.display_number %></strong> on all packing slips and invoices.
+    </div>
+
+    <div class="sign">
+      <div>
+        <div class="line"><%= po.approved_by&.full_name %></div>
+        <span class="label">Authorized by</span>
+      </div>
+      <div>
+        <div class="line"></div>
+        <span class="label">Date</span>
+      </div>
+    </div>
+  </section>
+</body>
+</html>

@@ -1,12 +1,24 @@
 <%= form_with(model: @thing, local: true) do |form| %>
-  <div class="form-group">
-    <%= form.label :name, "Thing Name" %>
+  <% if @thing.errors.any? %>
+    <div class="alert alert-danger"><%= @thing.errors.full_messages.to_sentence %></div>
+  <% end %>
+
+  <div class="form-group mb-2">
+    <%= form.label :name, "Name" %>
     <%= form.text_field :name, class: "form-control" %>
   </div>
 
-  <div class="form-group">
+  <div class="form-group mb-2">
     <%= form.label :category, "Category" %>
-    <%= form.select :category, [["Truck", "truck"], ["Trailer", "trailer"]], {}, class: "form-control" %>
+    <%= form.select :category, Thing::CATEGORIES.invert, {}, class: "form-control" %>
+    <small class="text-muted">Equipment (packaging lines, fillers...) can be charged on expense purchase orders.</small>
+  </div>
+
+  <div class="form-group mb-3">
+    <%= form.label :location_id, "Location" %>
+    <%= form.collection_select :location_id, Location.where.not(pdi_site_code: [nil, '']).or(Location.where(id: @thing.location_id)).order(:company_name),
+                               :id, :company_name, { include_blank: '—' }, class: "form-control" %>
+    <small class="text-muted">Where it is. Expense PO lines for this equipment default to this site.</small>
   </div>
 
   <div class="actions">

@@ -4,7 +4,7 @@ class PurchaseOrdersController < ApplicationController
   include ListNeighbors
 
   permission_area :purchasing, approve: %i[approve submit post_to_inventory]
-  before_action :set_purchase_order, only: %i[show edit update approve submit receive post_to_inventory void]
+  before_action :set_purchase_order, only: %i[show edit update approve submit receive post_to_inventory void print]
   before_action :require_admin!, only: :void
   before_action :keep_voided_read_only, only: %i[edit update approve submit receive post_to_inventory]
 
@@ -16,7 +16,7 @@ class PurchaseOrdersController < ApplicationController
     @needs_action = PurchaseOrder.includes(:vendor, :line_items)
                                  .where(status: %w[draft received])
                                  .order(created_at: :asc)
-    @needs_action = @needs_action.select { |po| po.status == 'draft' || (po.status == 'received' && !po.posted?) }
+    @needs_action = @needs_action.select { |po| po.status == 'draft' || po.postable? }
 
     @overdue = PurchaseOrder.includes(:vendor, :line_items)
                             .where(status: 'submitted')
@@ -37,15 +37,18 @@ class PurchaseOrdersController < ApplicationController
 
   def index
     @status_filter = params[:status].presence
+    @type_filter   = params[:type].presence_in(PurchaseOrder::PO_TYPES.keys)
     @search        = params[:q].to_s.strip
     @status_counts = PurchaseOrder::STATUSES.index_with { |s| PurchaseOrder.where(status: s).count }
-    scope = PurchaseOrder.includes(:vendor, :line_items).order(created_at: :desc)
+    scope = PurchaseOrder.includes(:vendor, :line_items, :location).order(created_at: :desc)
     scope = scope.where(location_id: current_warehouse.id) if current_warehouse
     scope = scope.where(status: @status_filter) if @status_filter
+    scope = scope.where(po_type: @type_filter) if @type_filter
     if @search.present?
       scope = scope.joins(:vendor).left_joins(:line_items)
                    .where(
-                     'vendors.name ILIKE :q OR purchase_orders.pdi_reference ILIKE :q OR purchase_order_line_items.product_name ILIKE :q',
+                     'vendors.name ILIKE :q OR purchase_orders.pdi_reference ILIKE :q OR ' \
+                     'purchase_order_line_items.product_name ILIKE :q OR purchase_order_line_items.vendor_part_number ILIKE :q',
                      q: "%#{@search}%"
                    ).distinct
     end
@@ -53,8 +56,8 @@ class PurchaseOrdersController < ApplicationController
   end
 
   def new
-    @purchase_order = PurchaseOrder.new(location_id: current_warehouse&.id)
-    @warehouses = Location.where(location_category_id: 1).order(:company_name)
+    @purchase_order = PurchaseOrder.new(location_id: current_warehouse&.id,
+                                        po_type: params[:type].presence_in(PurchaseOrder::PO_TYPES.keys) || 'inventory')
     if params[:vendor_id].present?
       @purchase_order.vendor_id = params[:vendor_id]
       vendor = Vendor.find_by(id: params[:vendor_id])
@@ -62,13 +65,12 @@ class PurchaseOrdersController < ApplicationController
     end
     @purchase_order.expected_delivery_date = params[:expected_delivery_date].presence
     @purchase_order.notes = params[:notes].presence
-    @vendors  = Vendor.includes(:vendor_freight_terms).order(:name)
-    @products = po_products
+    load_form_lookups
 
     product_ids = Array(params[:product_ids]).select(&:present?)
     product_ids = [params[:product_id]] if product_ids.empty? && params[:product_id].present?
 
-    if product_ids.any?
+    if product_ids.any? && !@purchase_order.expense?
       products = Product.where(id: product_ids).index_by(&:id)
 
       on_order_map = PurchaseOrderLineItem
@@ -114,10 +116,9 @@ class PurchaseOrdersController < ApplicationController
     @purchase_order.trigger_type = 'manual' if @purchase_order.trigger_type.blank?
 
     if @purchase_order.save
-      redirect_to purchase_orders_path, notice: 'Purchase order created.'
+      redirect_to @purchase_order, notice: "#{@purchase_order.po_type_label} purchase order created."
     else
-      @vendors  = Vendor.order(:name)
-      @products = po_products
+      load_form_lookups
       render :new, status: :unprocessable_content
     end
   end
@@ -131,12 +132,11 @@ class PurchaseOrdersController < ApplicationController
   end
 
   def edit
-    unless %w[draft pending_approval].include?(@purchase_order.status)
+    if %w[draft pending_approval].include?(@purchase_order.status)
+      load_form_lookups
+    else
       redirect_to @purchase_order, alert: 'Only draft or pending approval POs can be edited.'
     end
-    @vendors    = Vendor.includes(:vendor_freight_terms).order(:name)
-    @products   = po_products
-    @warehouses = Location.where(location_category_id: 1).order(:company_name)
   end
 
   def update
@@ -144,11 +144,10 @@ class PurchaseOrdersController < ApplicationController
       redirect_to @purchase_order, alert: 'Only draft or pending approval POs can be edited.' and return
     end
 
-    if @purchase_order.update(purchase_order_params)
+    if @purchase_order.update(purchase_order_params.except(:po_type))
       redirect_to @purchase_order, notice: 'Purchase order updated.'
     else
-      @vendors  = Vendor.order(:name)
-      @products = po_products
+      load_form_lookups
       render :edit, status: :unprocessable_content
     end
   end
@@ -156,7 +155,7 @@ class PurchaseOrdersController < ApplicationController
   PDI_SITE_ID = 2
 
   def export_pdi
-    pos = PurchaseOrder.includes(:vendor, line_items: :product)
+    pos = PurchaseOrder.inventory_type.includes(:vendor, line_items: :product)
                        .where(status: %w[approved submitted])
                        .order(:id)
 
@@ -187,18 +186,27 @@ class PurchaseOrdersController < ApplicationController
   def approve
     @purchase_order.approve!(current_user)
     redirect_to @purchase_order, notice: 'Purchase order approved.'
+  rescue ArgumentError, ActiveRecord::RecordInvalid => e
+    redirect_to @purchase_order, alert: e.message
   end
 
+  # Inventory POs go to PDI; expense POs are just marked as sent to the vendor.
   def submit
     @purchase_order.update!(status: 'submitted', submitted_at: Time.current)
-    redirect_to @purchase_order, notice: 'Purchase order submitted — PDI export queued.'
+    notice = @purchase_order.expense? ? 'Marked as sent to the vendor.' : 'Purchase order submitted — PDI export queued.'
+    redirect_to @purchase_order, notice: notice
   rescue StandardError => e
     redirect_to @purchase_order, alert: "Could not submit: #{e.message}"
   end
 
   def receive
     @purchase_order.mark_received!(current_user)
-    redirect_to @purchase_order, notice: 'Marked as received. Post to inventory when ready.'
+    notice = if @purchase_order.expense?
+               'Marked as received. AP enters the vendor bill in PDI against the GL accounts on the lines.'
+             else
+               'Marked as received. Post to inventory when ready.'
+             end
+    redirect_to @purchase_order, notice: notice
   rescue StandardError => e
     redirect_to @purchase_order, alert: "Could not mark received: #{e.message}"
   end
@@ -221,7 +229,26 @@ class PurchaseOrdersController < ApplicationController
     redirect_to @purchase_order, alert: e.message
   end
 
+  # GET /purchase_orders/:id/print — the copy sent to the vendor (layout-less, print from the browser).
+  def print
+    render layout: false
+  end
+
   private
+
+  def load_form_lookups
+    @vendors    = Vendor.includes(:vendor_freight_terms).order(:name)
+    @products   = po_products
+    @warehouses = Location.where(location_category_id: 1).order(:company_name)
+    return unless @purchase_order.expense?
+
+    lines = @purchase_order.line_items
+    @expense_accounts = ExpenseAccount.selectable(lines.map(&:expense_account_id))
+    @equipment = Thing.equipment.or(Thing.where(id: lines.map(&:equipment_id).compact)).includes(:location).order(:name)
+    @sites = Location.where.not(pdi_site_code: [nil, ''])
+                     .or(Location.where(id: [@purchase_order.location_id, *lines.map(&:location_id)].compact))
+                     .order(:company_name)
+  end
 
   # Active products plus the ones already on this PO's lines.
   def po_products
@@ -238,9 +265,10 @@ class PurchaseOrdersController < ApplicationController
 
   def purchase_order_params
     params.require(:purchase_order).permit(
-      :vendor_id, :location_id, :trigger_type, :notes, :expected_delivery_date, :freight_terms, :freight_amount,
-      :other_charges, :other_charges_description,
-      line_items_attributes: %i[id product_id quantity unit_cost package_code _destroy]
+      :po_type, :vendor_id, :location_id, :trigger_type, :notes, :expected_delivery_date, :freight_terms,
+      :freight_amount, :other_charges, :other_charges_description,
+      line_items_attributes: %i[id product_id product_name vendor_part_number expense_account_id equipment_id
+                                location_id quantity unit_cost package_code _destroy]
     )
   end
 end

@@ -1,0 +1,25 @@
+<tr class="line-item-row">
+  <td>
+    <%= f.hidden_field :id if f.object.persisted? %>
+    <%= f.hidden_field :_destroy, value: '0' %>
+    <%= f.text_field :product_name, class: 'form-control form-control-sm', placeholder: 'e.g. Capper chuck insert 38mm' %>
+  </td>
+  <td><%= f.text_field :vendor_part_number, class: 'form-control form-control-sm' %></td>
+  <td>
+    <%= f.select :equipment_id,
+          options_for_select(@equipment.map { |e| [e.name, e.id, { 'data-site-id' => e.location_id }] }, f.object.equipment_id),
+          { include_blank: '—' }, class: 'form-select form-select-sm' %>
+  </td>
+  <td>
+    <%= f.collection_select :expense_account_id, @expense_accounts, :id, :label,
+          { include_blank: 'Select account...' }, class: 'form-select form-select-sm' %>
+  </td>
+  <td>
+    <%= f.collection_select :location_id, @sites, :id, :company_name,
+          { include_blank: 'PO ship-to' }, class: 'form-select form-select-sm' %>
+  </td>
+  <td><%= f.number_field :quantity, step: 0.001, class: 'form-control form-control-sm', placeholder: '0' %></td>
+  <td><%= f.text_field :package_code, class: 'form-control form-control-sm', placeholder: 'EA' %></td>
+  <td><%= f.number_field :unit_cost, step: 0.0001, class: 'form-control form-control-sm', placeholder: '0.00' %></td>
+  <td><button type="button" class="btn btn-outline-danger btn-sm remove-line-item">✕</button></td>
+</tr>

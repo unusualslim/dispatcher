@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_11_02_140000) do
+ActiveRecord::Schema[7.2].define(version: 2026_11_03_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -254,6 +254,16 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_02_140000) do
     t.bigint "thing_id", null: false
     t.index ["dispatch_id"], name: "index_dispatches_things_on_dispatch_id"
     t.index ["thing_id"], name: "index_dispatches_things_on_thing_id"
+  end
+
+  create_table "expense_accounts", force: :cascade do |t|
+    t.string "account", null: false
+    t.string "name", null: false
+    t.boolean "active", default: true, null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account"], name: "index_expense_accounts_on_account", unique: true
   end
 
   create_table "freight_classes", force: :cascade do |t|
@@ -741,6 +751,13 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_02_140000) do
     t.string "package_code"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "vendor_part_number"
+    t.bigint "expense_account_id"
+    t.bigint "equipment_id"
+    t.bigint "location_id"
+    t.index ["equipment_id"], name: "index_purchase_order_line_items_on_equipment_id"
+    t.index ["expense_account_id"], name: "index_purchase_order_line_items_on_expense_account_id"
+    t.index ["location_id"], name: "index_purchase_order_line_items_on_location_id"
     t.index ["product_id"], name: "index_purchase_order_line_items_on_product_id"
     t.index ["purchase_order_id"], name: "index_purchase_order_line_items_on_purchase_order_id"
   end
@@ -774,8 +791,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_02_140000) do
     t.string "freight_vendor_id"
     t.string "freight_bol"
     t.boolean "freight_accrued", default: false, null: false
+    t.string "po_type", default: "inventory", null: false
     t.index ["pdi_po_key"], name: "index_purchase_orders_on_pdi_po_key", unique: true
     t.index ["pdi_reference"], name: "index_purchase_orders_on_pdi_reference"
+    t.index ["po_type"], name: "index_purchase_orders_on_po_type"
     t.index ["status"], name: "index_purchase_orders_on_status"
     t.index ["trigger_type"], name: "index_purchase_orders_on_trigger_type"
     t.index ["voided_by_id"], name: "index_purchase_orders_on_voided_by_id"
@@ -929,7 +948,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_02_140000) do
     t.datetime "updated_at", null: false
     t.string "category", default: "truck", null: false
     t.bigint "dispatch_id"
+    t.bigint "location_id"
     t.index ["dispatch_id"], name: "index_things_on_dispatch_id"
+    t.index ["location_id"], name: "index_things_on_location_id"
   end
 
   create_table "user_favorites", force: :cascade do |t|
@@ -1084,7 +1105,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_02_140000) do
   add_foreign_key "production_orders", "products"
   add_foreign_key "production_orders", "users", column: "voided_by_id"
   add_foreign_key "products", "freight_classes"
+  add_foreign_key "purchase_order_line_items", "expense_accounts"
+  add_foreign_key "purchase_order_line_items", "locations"
   add_foreign_key "purchase_order_line_items", "purchase_orders"
+  add_foreign_key "purchase_order_line_items", "things", column: "equipment_id"
   add_foreign_key "purchase_orders", "users", column: "voided_by_id"
   add_foreign_key "purchase_orders", "vendors"
   add_foreign_key "quality_results", "production_orders"
@@ -1100,6 +1124,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_02_140000) do
   add_foreign_key "quotes", "users", column: "accepted_by_id"
   add_foreign_key "quotes", "users", column: "lock_ended_by_id"
   add_foreign_key "things", "dispatches"
+  add_foreign_key "things", "locations"
   add_foreign_key "user_favorites", "users"
   add_foreign_key "users", "locations", column: "home_location_id"
   add_foreign_key "work_orders", "vendors"

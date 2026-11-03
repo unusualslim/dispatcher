@@ -103,3 +103,9 @@
     - { date: 2026-10-28, title: Printable dispatch sheet, note: "Two copies per page, BOL line for the driver.", area: Dispatch }
     - { date: 2026-10-28, title: Send to Samsara, note: Driver routes built from a dispatch., area: Dispatch, major: true }
     - { date: 2026-10-29, title: Freight, note: "Rules, tables, lanes, per-dispatch carrier pricing, PO landed cost, freight payables.", area: Sales, major: true }
+
+- name: November 2026
+  span: Nov 1 – Nov 3, 2026
+  summary: "Expense purchasing."
+  items:
+    - { date: 2026-11-03, title: Expense purchase orders, note: "Parts and supplies charged to GL expense accounts and equipment; printable vendor copy; Expense PO spend report.", area: Purchasing }

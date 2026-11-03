@@ -9,6 +9,7 @@ class PurchaseOrder < ApplicationRecord
   belongs_to :received_by, class_name: 'User', optional: true
   belongs_to :voided_by, class_name: 'User', optional: true
   include PurchaseOrderFreight
+  include PurchaseOrderExpense
 
   has_many :line_items, class_name: 'PurchaseOrderLineItem', dependent: :destroy
   has_many :inventory_transactions, as: :transactable
@@ -27,8 +28,8 @@ class PurchaseOrder < ApplicationRecord
     errors.add(:freight_terms, 'is not an allowed freight term for this vendor') unless allowed.include?(freight_terms)
   end
 
-  # POs that came from PDI are already there; only app-entered POs are sent.
-  after_update_commit :enqueue_pdi_export, if: :submitted?, unless: :from_pdi?
+  # POs that came from PDI are already there; only app-entered inventory POs are sent.
+  after_update_commit :enqueue_pdi_export, if: :submitted?, unless: -> { from_pdi? || expense? }
 
   def submitted?
     status == 'submitted' && saved_change_to_status?
@@ -38,9 +39,9 @@ class PurchaseOrder < ApplicationRecord
     trigger_type == 'pdi_import'
   end
 
-  # Stock goes to a warehouse; dropship POs (no warehouse) never enter inventory.
+  # Stock goes to a warehouse; dropship POs (no warehouse) and expense POs never enter inventory.
   def postable?
-    status == 'received' && !posted? && location.present?
+    status == 'received' && !posted? && location.present? && !expense?
   end
 
   scope :pending_approval, -> { where(status: 'pending_approval') }
@@ -75,6 +76,8 @@ class PurchaseOrder < ApplicationRecord
   end
 
   def approve!(user)
+    raise ArgumentError, "Can't approve yet: #{approval_problems.join('; ')}" if approval_problems.any?
+
     update!(
       status: 'approved',
       approved_by: user,
@@ -88,6 +91,7 @@ class PurchaseOrder < ApplicationRecord
 
   def post_to_inventory!(user)
     return false if posted?
+    raise ArgumentError, 'Expense POs are not posted to inventory' if expense?
     raise ArgumentError, 'This PO has no warehouse (dropship), so it does not go into inventory' unless location
 
     transaction do

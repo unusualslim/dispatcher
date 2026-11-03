@@ -3,7 +3,7 @@ class ThingsController < ApplicationController
   before_action :set_thing, only: %i[show edit update destroy]
 
   def index
-    @things = Thing.all
+    @things = Thing.includes(:location).order(:category, :name)
   end
 
   def show; end
@@ -13,10 +13,10 @@ class ThingsController < ApplicationController
   end
 
   def destroy
-    @thing.destroy
-    respond_to do |format|
-      format.html { redirect_to things_path, notice: 'Thing was successfully deleted.' }
-      format.json { head :no_content }
+    if @thing.destroy
+      redirect_to things_path, notice: "#{@thing.name} was deleted."
+    else
+      redirect_to @thing, alert: "#{@thing.name} can't be deleted: #{@thing.errors.full_messages.to_sentence}"
     end
   end
 
@@ -51,6 +51,6 @@ class ThingsController < ApplicationController
   end
 
   def thing_params
-    params.require(:thing).permit(:name, :category)
+    params.require(:thing).permit(:name, :category, :location_id)
   end
 end

@@ -1,0 +1,68 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="mb-0">Expense Accounts</h1>
+</div>
+
+<p class="text-muted" style="max-width: 900px;">
+  GL expense accounts that <%= link_to 'expense purchase orders', purchase_orders_path(type: 'expense') %> charge to
+  (equipment parts, repairs, supplies). Enter Major-Sub, e.g. <code>6150-01</code>; each PO line adds its site, so it
+  shows as Site-Major-Sub. Expense POs aren't sent to PDI: AP keys the vendor bill into PDI against these accounts.
+</p>
+
+<div class="card shadow-sm" style="max-width: 1000px;">
+  <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th style="width: 120px;">Account</th>
+          <th>Name</th>
+          <th>Notes</th>
+          <th class="text-center" style="width: 60px;">Active</th>
+          <th class="text-end" style="width: 70px;" title="PO lines charged to this account">Lines</th>
+          <th style="width: 140px;"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @expense_accounts.each do |account| %>
+          <% form_id = "expense_account_#{account.id}" %>
+          <% in_use = @line_counts[account.id].to_i %>
+          <tr class="<%= 'text-muted' unless account.active? %>">
+            <td><%= text_field_tag 'expense_account[account]', account.account, form: form_id, class: 'form-control form-control-sm font-monospace', required: true, pattern: '\d{4}-\d{2}' %></td>
+            <td><%= text_field_tag 'expense_account[name]', account.name, form: form_id, class: 'form-control form-control-sm', required: true %></td>
+            <td><%= text_field_tag 'expense_account[notes]', account.notes, form: form_id, class: 'form-control form-control-sm' %></td>
+            <td class="text-center">
+              <%= hidden_field_tag 'expense_account[active]', '0', form: form_id, id: nil %>
+              <%= check_box_tag 'expense_account[active]', '1', account.active?, form: form_id, class: 'form-check-input', id: "active_#{account.id}" %>
+            </td>
+            <td class="text-end"><%= in_use %></td>
+            <td class="text-end text-nowrap">
+              <%= form_with model: account, id: form_id, method: :patch, class: 'd-inline' do %>
+                <button type="submit" class="btn btn-sm btn-primary">Save</button>
+              <% end %>
+              <% if in_use.zero? && admin? %>
+                <%= button_to 'Delete', expense_account_path(account), method: :delete, class: 'btn btn-sm btn-outline-danger',
+                                                                       form: { class: 'd-inline', data: { turbo_confirm: "Delete #{account.account}?" } } %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+        <% if @expense_accounts.empty? %>
+          <tr><td colspan="6" class="text-muted small py-3">No expense accounts yet. Add the first one below.</td></tr>
+        <% end %>
+      </tbody>
+      <tfoot>
+        <tr class="table-light">
+          <td><%= text_field_tag 'expense_account[account]', nil, form: 'new_expense_account', class: 'form-control form-control-sm font-monospace', placeholder: '6150-01', required: true, pattern: '\d{4}-\d{2}' %></td>
+          <td><%= text_field_tag 'expense_account[name]', nil, form: 'new_expense_account', class: 'form-control form-control-sm', placeholder: 'Repairs & Maintenance – Packaging', required: true %></td>
+          <td><%= text_field_tag 'expense_account[notes]', nil, form: 'new_expense_account', class: 'form-control form-control-sm' %></td>
+          <td></td>
+          <td></td>
+          <td class="text-end">
+            <%= form_with model: ExpenseAccount.new, id: 'new_expense_account', class: 'd-inline' do %>
+              <button type="submit" class="btn btn-sm btn-success">Add</button>
+            <% end %>
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>

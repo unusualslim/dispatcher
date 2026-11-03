@@ -17,6 +17,7 @@ Rails.application.routes.draw do
   end
   resources :reporting_groups, only: %i[index create update destroy]
   resources :cost_items, only: %i[index create update destroy]
+  resources :expense_accounts, only: %i[index create update destroy]
   get 'calendar', to: 'calendar#index'
   get 'calendar/events', to: 'calendar#events'
   get 'messages/reply'
@@ -190,6 +191,7 @@ Rails.application.routes.draw do
       patch :receive
       patch :post_to_inventory
       post  :void
+      get   :print
     end
     collection do
       get :export_pdi

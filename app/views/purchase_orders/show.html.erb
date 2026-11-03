@@ -1,6 +1,6 @@
 <div class="container mt-4" style="max-width: 800px;">
   <%= render layout: 'shared/page_header',
-             locals: { title: "Purchase Order #{@purchase_order.display_number}",
+             locals: { title: "#{'Expense ' if @purchase_order.expense?}Purchase Order #{@purchase_order.display_number}",
                        previous_path: (purchase_order_path(@previous_id) if @previous_id),
                        next_path: (purchase_order_path(@next_id) if @next_id) } do %>
     <% if %w[draft pending_approval].include?(@purchase_order.status) %>
@@ -11,7 +11,11 @@
             method: :patch, class: 'btn btn-success btn-sm',
             form: { data: { turbo_confirm: 'Approve this purchase order?' } } %>
     <% end %>
-    <% if @purchase_order.status == 'approved' %>
+    <% if @purchase_order.status == 'approved' && @purchase_order.expense? %>
+      <%= button_to 'Mark Sent to Vendor', submit_purchase_order_path(@purchase_order),
+            method: :patch, class: 'btn btn-info btn-sm',
+            form: { data: { turbo_confirm: 'Mark this PO as sent to the vendor? (Expense POs are not sent to PDI.)' } } %>
+    <% elsif @purchase_order.status == 'approved' %>
       <%= button_to 'Submit to PDI', submit_purchase_order_path(@purchase_order),
             method: :patch, class: 'btn btn-info btn-sm',
             form: { data: { turbo_confirm: 'Submit this PO? A PDI import file will be sent to the FTP server.' } } %>
@@ -21,13 +25,16 @@
             method: :patch, class: 'btn btn-primary btn-sm',
             form: { data: { turbo_confirm: 'Confirm physical receipt of this order?' } } %>
     <% end %>
-    <% if @purchase_order.status == 'received' && !@purchase_order.posted? && !@purchase_order.postable? %>
+    <% if @purchase_order.status == 'received' && !@purchase_order.posted? && !@purchase_order.postable? && !@purchase_order.expense? %>
       <span class="text-muted small align-self-center">No warehouse (dropship): not posted to inventory</span>
     <% end %>
     <% if @purchase_order.postable? %>
       <%= button_to 'Post to Inventory', post_to_inventory_purchase_order_path(@purchase_order),
             method: :patch, class: 'btn btn-success btn-sm',
             form: { data: { turbo_confirm: 'Post this PO to inventory? This will update stock levels for all matched products.' } } %>
+    <% end %>
+    <%= link_to print_purchase_order_path(@purchase_order), class: 'btn btn-outline-secondary btn-sm', target: '_blank', rel: 'noopener' do %>
+      <i class="bi bi-printer"></i> Print
     <% end %>
     <% if admin? && !@purchase_order.voided? %>
       <button class="btn btn-outline-dark btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#po-void-form">Void</button>
@@ -43,7 +50,7 @@
           <p class="small text-muted mb-2">
             Reverses anything it posted to inventory and takes it out of active purchasing. It stays for history but
             can't be changed.
-            <% if @purchase_order.submitted_at.present? || %w[submitted received].include?(@purchase_order.status) %>
+            <% if !@purchase_order.expense? && (@purchase_order.submitted_at.present? || %w[submitted received].include?(@purchase_order.status)) %>
               <strong class="text-danger">It was already sent to PDI; void it in PDI as well.</strong>
             <% end %>
           </p>
@@ -67,14 +74,22 @@
                     'submitted' => 'info', 'received' => 'success', 'cancelled' => 'danger',
                     'voided' => 'dark' }
              color = bg[@purchase_order.status] || 'secondary' %>
-          <span class="badge bg-<%= color %>"><%= @purchase_order.status.humanize %></span>
+          <span class="badge bg-<%= color %>"><%= @purchase_order.expense? && @purchase_order.status == 'submitted' ? 'Sent to vendor' : @purchase_order.status.humanize %></span>
+          <% if @purchase_order.expense? %>
+            <span class="badge text-bg-light border ms-1">Expense PO</span>
+          <% end %>
           <% if @purchase_order.posted? %>
             <span class="badge bg-success ms-1">Inventory Posted</span>
           <% end %>
         </dd>
 
         <dt class="col-4">Vendor</dt>
-        <dd class="col-8"><%= @purchase_order.vendor.name %></dd>
+        <dd class="col-8"><%= @purchase_order.vendor.label %></dd>
+
+        <% if @purchase_order.location %>
+          <dt class="col-4"><%= @purchase_order.expense? ? 'Ship To' : 'Warehouse' %></dt>
+          <dd class="col-8"><%= @purchase_order.location.company_name %></dd>
+        <% end %>
 
         <dt class="col-4">Total Cost</dt>
         <dd class="col-8">
@@ -144,6 +159,9 @@
   </div>
 
   <h5 class="mb-2">Line Items</h5>
+  <% if @purchase_order.expense? %>
+    <%= render 'expense_lines' %>
+  <% else %>
   <table class="table table-sm table-bordered mb-4">
     <thead class="table-light">
       <tr>
@@ -207,6 +225,7 @@
   </table>
 
   <%= render 'freight' %>
+  <% end %>
 
   <% if @purchase_order.inventory_transactions.any? %>
     <h5 class="mb-2">Inventory History</h5>

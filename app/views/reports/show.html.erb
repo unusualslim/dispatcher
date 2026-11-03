@@ -42,9 +42,16 @@
                                                                                              class: 'form-select form-select-sm report-select2' %>
           </div>
         <% end %>
+        <% if filters.offers?(:vendor_id) %>
+          <div style="min-width: 240px;">
+            <label class="form-label small mb-0">Vendor</label>
+            <%= select_tag :vendor_id, options_for_select(@vendors, filters[:vendor_id]), include_blank: 'All vendors',
+                                                                                          class: 'form-select form-select-sm report-select2' %>
+          </div>
+        <% end %>
         <% if filters.offers?(:location_id) %>
           <div>
-            <label class="form-label small mb-0">Warehouse</label>
+            <label class="form-label small mb-0"><%= @report_class.respond_to?(:location_label) ? @report_class.location_label : 'Warehouse' %></label>
             <%= select_tag :location_id, options_for_select(@locations, filters[:location_id]), include_blank: 'All',
                                                                                                 class: 'form-select form-select-sm' %>
           </div>

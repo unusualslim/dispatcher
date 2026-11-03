@@ -31,6 +31,7 @@ class ReportsController < ApplicationController
     @customers = Customer.order(:name).pluck(:name, :id) if filters.offers?(:customer_id)
     @products = Product.order(:name).pluck(:name, :id) if filters.offers?(:product_id)
     @locations = warehouses if filters.offers?(:location_id)
+    @vendors = Vendor.order(:name).map { |vendor| [vendor.label, vendor.id] } if filters.offers?(:vendor_id)
   end
 
   # Locations that hold stock or are PDI sites.

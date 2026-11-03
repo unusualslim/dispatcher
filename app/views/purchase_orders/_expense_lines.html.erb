@@ -1,0 +1,93 @@
+<%# Expense PO lines, plus the totals per GL account that AP keys into PDI with the vendor bill. %>
+<% po = @purchase_order %>
+<% lines = po.line_items.includes(:expense_account, :equipment, :location).sort_by(&:id) %>
+<div class="table-responsive">
+  <table class="table table-sm table-bordered mb-4">
+    <thead class="table-light">
+      <tr>
+        <th>Description</th>
+        <th>Vendor Part #</th>
+        <th>Equipment</th>
+        <th>GL Account</th>
+        <th class="text-end">Qty</th>
+        <th>Unit</th>
+        <th class="text-end">Unit Cost</th>
+        <th class="text-end">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% lines.each do |line| %>
+        <tr>
+          <td><%= line.product_name %></td>
+          <td class="font-monospace small"><%= line.vendor_part_number.presence || '—' %></td>
+          <td><%= line.equipment ? link_to(line.equipment.name, thing_path(line.equipment)) : '—' %></td>
+          <td>
+            <% if line.gl_account_code %>
+              <span class="font-monospace"><%= line.gl_account_code %></span>
+              <div class="small text-muted"><%= [line.expense_account&.name, line.location&.company_name].compact.join(' · ') %></div>
+            <% end %>
+            <% unless line.expense_account && line.location %>
+              <span class="badge text-bg-warning">Needs <%= [('account' unless line.expense_account), ('site' unless line.location)].compact.join(' + ') %></span>
+            <% end %>
+          </td>
+          <td class="text-end"><%= number_with_precision(line.quantity, precision: 2, strip_insignificant_zeros: true) %></td>
+          <td><%= line.package_code.presence || '—' %></td>
+          <td class="text-end"><%= line.unit_cost ? number_to_currency(line.unit_cost) : '—' %></td>
+          <td class="text-end"><%= line.total_cost ? number_to_currency(line.total_cost) : '—' %></td>
+        </tr>
+      <% end %>
+    </tbody>
+    <tfoot>
+      <% if po.freight_amount.to_f > 0 || po.other_charges.to_f > 0 %>
+        <tr class="text-muted small">
+          <td colspan="7" class="text-end">Subtotal</td>
+          <td class="text-end"><%= number_to_currency(po.subtotal) %></td>
+        </tr>
+        <% if po.freight_amount.to_f > 0 %>
+          <tr class="text-muted small">
+            <td colspan="7" class="text-end">Shipping</td>
+            <td class="text-end"><%= number_to_currency(po.freight_amount) %></td>
+          </tr>
+        <% end %>
+        <% if po.other_charges.to_f > 0 %>
+          <tr class="text-muted small">
+            <td colspan="7" class="text-end"><%= po.other_charges_description.presence || 'Other Charges' %></td>
+            <td class="text-end"><%= number_to_currency(po.other_charges) %></td>
+          </tr>
+        <% end %>
+      <% end %>
+      <tr class="fw-semibold">
+        <td colspan="7" class="text-end">Total</td>
+        <td class="text-end"><%= number_to_currency(po.total_cost) %></td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+
+<% by_account = lines.select(&:total_cost).group_by(&:gl_account_code) %>
+<% if by_account.any? %>
+  <div class="card shadow-sm mb-4" style="max-width: 560px;">
+    <div class="card-header fw-semibold">For AP: distribution by GL account</div>
+    <table class="table table-sm mb-0">
+      <tbody>
+        <% by_account.each do |code, account_lines| %>
+          <tr>
+            <td class="font-monospace"><%= code || 'Not assigned' %></td>
+            <td class="small text-muted"><%= account_lines.first.expense_account&.name %></td>
+            <td class="text-end"><%= number_to_currency(account_lines.sum(&:total_cost)) %></td>
+          </tr>
+        <% end %>
+        <% charges = po.freight_amount.to_d + po.other_charges.to_d %>
+        <% if charges.positive? %>
+          <tr class="text-muted">
+            <td colspan="2">Shipping / other charges</td>
+            <td class="text-end"><%= number_to_currency(charges) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <div class="card-footer small text-muted">
+      Expense POs aren't sent to PDI. Enter the vendor bill in PDI AP with these accounts (Site-Major-Sub).
+    </div>
+  </div>
+<% end %>

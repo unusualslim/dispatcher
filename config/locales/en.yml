@@ -42,6 +42,14 @@ en:
           attributes:
             location_id:
               warehouse_required: "is required: choose the warehouse it is made in"
+        purchase_order:
+          attributes:
+            base:
+              expense_line_description: "Each expense line needs a description"
+        expense_account:
+          attributes:
+            account:
+              account_format: "should look like 6150-01 (Major-Sub)"
         user:
           attributes:
             home_page:

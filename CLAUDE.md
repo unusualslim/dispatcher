@@ -210,6 +210,14 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
 - `PurchaseOrder` — lifecycle: draft → pending_approval → approved → submitted → received → cancelled; admins can
   void (`PurchaseOrderVoid`: reverses posted receipts via `InventoryReversal`, read-only after, voided status);
   `pdi_reference` (shown via `display_number`), `posted_at`, optional `location_id`
+- **Expense POs** (`po_type` expense vs inventory, `PurchaseOrderExpense` concern; "New Expense PO" on /purchase_orders):
+  parts/supplies that never touch inventory (packaging equipment parts). Lines: description (`product_name`),
+  `vendor_part_number`, `expense_account_id` (Accounting → Expense Accounts, Major-Sub), `equipment_id` (a `Thing` with
+  category equipment, on Equipment & Assets) and `location_id` = site (defaults to the equipment's location, then the PO
+  ship-to) → `gl_account_code` Site-Major-Sub. Approval needs an account + site on every line. "Submit" just marks it sent
+  to the vendor: never exported to PDI, never posted to inventory, excluded from MRP. AP hand-keys the bill into PDI
+  (the user may look for a PDI AP import later). Printable vendor copy at /purchase_orders/:id/print (any PO type);
+  Reports → Expense PO spend.
 - `InventoryTransaction` — polymorphic audit trail (direction: 'in'/'out'), `location_id`; costed rows carry
   `movement_type` (opening/receipt/sale/production_use/production_output/adjustment/pdi_sync/revaluation),
   `occurred_on`, `unit_cost`, `total_cost`, `variance_amount` (PPV on standard receipts) and the location's balance after.
