@@ -15,6 +15,7 @@ gem 'twilio-ruby'
 
 gem 'dotenv-rails'
 
+gem 'benchmark' # mini_magick needs it; leaves Ruby's default gems in 4.0 and Rails 8 no longer pulls it in
 gem 'csv' # not a default gem since Ruby 3.4; used by the CSV import/export code
 gem 'net-ftp'
 gem 'pdf-reader'
@@ -28,7 +29,7 @@ gem 'will_paginate'
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem 'fugit'
-gem 'rails', '~> 7.2.4'
+gem 'rails', '~> 8.1.4'
 
 # The original asset pipeline for Rails [https://github.com/rails/sprockets-rails]
 gem 'sprockets-rails'

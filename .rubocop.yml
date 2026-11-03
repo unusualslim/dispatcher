@@ -36,3 +36,8 @@ Metrics/BlockLength:
     - "config/environments/*.rb"
     - "lib/tasks/**/*.rake"
     - "test/**/*.rb"
+
+# Rails 8's params.expect: switch controllers over by hand (nested *_attributes need the [[...]] form, which
+# autocorrect can't know), not in bulk.
+Rails/StrongParametersExpect:
+  Enabled: false

@@ -5,7 +5,7 @@
     "@hotwired/stimulus": "^3.2.2",
     "@hotwired/turbo-rails": "^7.3.0",
     "@popperjs/core": "^2.11.8",
-    "@rails/actiontext": "~7.2.400",
+    "@rails/actiontext": "~8.1.400",
     "@types/sortablejs": "^1.15.9",
     "autoprefixer": "^10.6.2",
     "bootstrap": "^5.3.8",

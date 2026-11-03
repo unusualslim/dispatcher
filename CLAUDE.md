@@ -1,7 +1,7 @@
 # FPS Team (formerly LoadNTrucks) — Claude Code Context
 
 ## What this app is
-Ruby on Rails 7.2 + PostgreSQL app for **Perry Brothers Oil** (Five Points Service),
+Ruby on Rails 8.1 + PostgreSQL app for **Perry Brothers Oil** (Five Points Service),
 Americus/Albany GA area. Manages petroleum product dispatch, customer orders,
 driver/truck tracking, vendor management, location/terminal management, production
 orders (DEF manufacturing), MRP/inventory, purchasing, and pricing. Integrates with
@@ -16,7 +16,7 @@ Primary contact: John (admin@perrybrothersoil.com)
 ---
 
 ## Stack
-- Ruby 3.4.11, Rails 7.2 (`config.load_defaults 7.0` — newer framework defaults not yet enabled), PostgreSQL 15, Puma 7
+- Ruby 3.4.11, Rails 8.1 (`config.load_defaults 7.0` — newer framework defaults not yet enabled), PostgreSQL 15, Puma 7
 - Bootstrap 5 + jQuery + Select2 + FullCalendar 5 (all from CDN in the layout), Leaflet.js (maps)
 - jsbundling-rails (esbuild) + cssbundling-rails (sass via yarn); Turbo 7, Trix 2.1 / Action Text
 - Node 24 (`.node-version`, read by Render; the build tools need Node 22+)
@@ -38,7 +38,7 @@ Primary contact: John (admin@perrybrothersoil.com)
 - Run everything: `bin/dev` (Procfile.dev: rails server + `yarn build --watch` + `yarn watch:css`)
 - Or just the server: `bundle exec rails server` (run `yarn build && yarn build:css` first if assets are missing)
 - Ruby version comes from `.ruby-version` (**3.4.11**; the Gemfile reads it) — make sure rbenv has it installed
-- **libvips is required** (`brew install vips`): Rails 7.2's Active Storage loads ruby-vips at boot and
+- **libvips is required** (`brew install vips`): Active Storage (Rails 7.2+) loads ruby-vips at boot and
   refuses to start without libvips >= 8.13 (Render's Debian 12 image ships it)
 - Tests use the `:test` Active Job adapter; jobs are enqueued, not run
 - Windows quirks (from earlier dev on Windows 10): Puma workers/threads limited via
@@ -406,7 +406,7 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
   Cloudflare Single Redirect in the **loadntrucks.com** zone (path + query preserved for QR labels).
 - production.rb: `force_ssl` (HSTS, secure cookies) and the `config.hosts` allowlist both skip requests
   without `X-Forwarded-Proto` — that's Render's internal health check (`HEAD /`).
-- Render's image provides libvips 8.14 (Debian 12); Rails 7.2.4 needs >= 8.13 and ruby-vips >= 2.2.1 to boot.
+- Render's image provides libvips 8.14 (Debian 12); Rails (7.2.4+) needs >= 8.13 and ruby-vips >= 2.2.1 to boot.
 
 ---
 
@@ -447,12 +447,12 @@ file, remove it from the todo (or regenerate with the command at the top of `.ru
   (fluid lot → bottle lot, entered by hand; PDI doesn't track lots)
 
 ### Upgrades / security still open (as of Oct 2026)
-- **Rails 8.1** — Brakeman flags Rails 7.2's security support as ended (2026-08-09)
 - Turbo 7 → 8 (navigation behavior changes; its one low Dependabot alert stays open until then)
-- Skip `@rails/actiontext` 8.x Dependabot PRs while on Rails 7.2
 - Done 2026-10-30: Devise 5, roo 3 + rubyzip 3 (webdrivers gem dropped), build tools (esbuild 0.28, sass, postcss-cli 12);
   RuboCop 1.92 (new offenses baselined), pg 1.7, Bootstrap 5.3.8, `:unprocessable_entity` → `:unprocessable_content`
-- Flip `load_defaults` stepwise
+- Done 2026-11-03: Rails 8.1.4 + `@rails/actiontext` 8.1 (no app code changes needed; `benchmark` gem added for
+  mini_magick). `Rails/StrongParametersExpect` is disabled: move controllers to `params.expect` by hand
+- Flip `load_defaults` stepwise (still 7.0 on Rails 8.1)
 - `package.json` `resolutions` pins minimatch ^11.0.4 (2026-11-03, GHSA-g3hv-75wg-m249): only nodemon (`yarn watch:css`)
   uses it and nodemon 3.1.14 still asks for ^10.2.1. Drop the resolution once nodemon depends on 11+
 
