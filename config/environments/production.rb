@@ -1,7 +1,13 @@
 require 'active_support/core_ext/integer/time'
 require_relative '../../lib/middleware/no_store_asset_misses'
 
+# Staging (STAGING=1) runs this same production config on its own Render service and database, a copy of
+# production refreshed by bin/staging-refresh. It gets none of production's PDI, Samsara, Twilio, SendGrid or
+# DigitalOcean keys, so it can't reach them; mail is captured, files go to local disk, and a banner shows.
+staging = ENV['STAGING'].present?
+
 Rails.application.configure do
+  config.x.staging = staging
   # Settings specified here will take precedence over those in config/application.rb.
 
   # Code is not reloaded between requests.
@@ -40,8 +46,8 @@ Rails.application.configure do
   # config.action_dispatch.x_sendfile_header = "X-Sendfile" # for Apache
   # config.action_dispatch.x_sendfile_header = "X-Accel-Redirect" # for NGINX
 
-  # Store uploaded files in the DigitalOcean Space (see config/storage.yml).
-  config.active_storage.service = :digitalocean
+  # Store uploaded files in the DigitalOcean Space (see config/storage.yml). Staging keeps its own on local disk.
+  config.active_storage.service = staging ? :local : :digitalocean
 
   # Mount Action Cable outside main process or domain.
   # config.action_cable.mount_path = nil
@@ -61,8 +67,9 @@ Rails.application.configure do
     'team.fivepointsservice.com',
     'www.loadntrucks.com',
     'loadntrucks.com',
-    'dispatcher2.onrender.com'
-  ]
+    'dispatcher2.onrender.com',
+    ENV.fetch('STAGING_HOST', nil)
+  ].compact
   config.host_authorization = { exclude: ->(request) { request.get_header('HTTP_X_FORWARDED_PROTO').blank? } }
 
   # Include generic and useful information about system operation, but avoid logging too much
@@ -86,7 +93,8 @@ Rails.application.configure do
   config.action_mailer.default_url_options = { host: ENV.fetch('HOSTNAME', 'team.fivepointsservice.com'),
                                                protocol: 'https' }
 
-  config.action_mailer.delivery_method = :smtp
+  # Staging never sends mail: messages are kept in memory and logged, not delivered.
+  config.action_mailer.delivery_method = staging ? :test : :smtp
 
   config.action_mailer.smtp_settings = {
     user_name: ENV.fetch('SENDGRID_USERNAME', nil),

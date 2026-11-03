@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# Replaces the STAGING database with a fresh copy of production, then runs db/staging/sanitize.sql.
+# Run from your Mac (needs the Render CLI logged in, pg_dump/pg_restore/psql 17+, jq):
+#   bin/staging-refresh
+# Production is only read (pg_dump in a read-only session). Afterwards, the staging web service is restarted.
+set -euo pipefail
+
+PROD_DB_ID="dpg-clo9e14jtl8s73am9b8g-a"
+STAGING_DB_ID="${STAGING_DB_ID:-dpg-dbl645dbedkc73elmblg-a}"
+STAGING_SERVICE_ID="${STAGING_SERVICE_ID:-__STAGING_SERVICE_ID__}"
+cd "$(dirname "$0")/.."
+export PGCONNECT_TIMEOUT=20  # fail fast instead of hanging if the network drops
+
+token="${RENDER_API_KEY:-$(awk '/^    key:/{print $2}' ~/.render/cli.yaml 2>/dev/null)}"
+[ -n "$token" ] || { echo "Log in first: render login"; exit 1; }
+api() { curl -fsS -H "Authorization: Bearer $token" "https://api.render.com/v1/$1"; }
+
+prod_url=$(api "postgres/$PROD_DB_ID/connection-info" | jq -r .externalConnectionString)
+staging_url=$(api "postgres/$STAGING_DB_ID/connection-info" | jq -r .externalConnectionString)
+staging_name=$(api "postgres/$STAGING_DB_ID" | jq -r .databaseName)
+
+# Never restore into production.
+if [ "$STAGING_DB_ID" = "$PROD_DB_ID" ] || [ "$staging_url" = "$prod_url" ] || [ "$staging_name" = "dispatcher_production" ]; then
+  echo "Refusing: the target looks like production."; exit 1
+fi
+
+echo "This REPLACES everything in the staging database ($staging_name) with a copy of production."
+read -r -p "Type 'staging' to continue: " answer
+[ "$answer" = "staging" ] || { echo "Cancelled."; exit 1; }
+
+# The staging database only accepts connections from allow-listed IPs; let this machine in.
+my_ip=$(curl -fsS -m 10 https://api.ipify.org)
+if ! render postgres get "$STAGING_DB_ID" -o json --confirm | jq -e --arg c "$my_ip/32" '(.data // .).ipAllowList | any(.cidrBlock == $c)' >/dev/null; then
+  echo "Allowing $my_ip on the staging database..."
+  render postgres update "$STAGING_DB_ID" --ip-allow-list "cidr=$my_ip/32,description=staging refresh" -o json --confirm >/dev/null
+  sleep 15
+fi
+
+dump="tmp/staging-refresh-$(date +%Y%m%d%H%M%S).dump"
+mkdir -p tmp
+trap 'rm -f "$dump"' EXIT
+
+echo "Dumping production (read-only)..."
+PGOPTIONS='-c default_transaction_read_only=on' pg_dump --format=custom --no-owner --no-acl --file="$dump" "$prod_url"
+
+echo "Restoring into staging..."
+# Restore as SQL so a newer pg_restore's settings unknown to Postgres 15 (transaction_timeout) can be dropped.
+pg_restore --clean --if-exists --no-owner --no-acl --file=- "$dump" \
+  | grep -v '^SET transaction_timeout' \
+  | psql "$staging_url" -v ON_ERROR_STOP=1 --single-transaction -q -o /dev/null
+
+echo "Sanitizing..."
+psql "$staging_url" -v ON_ERROR_STOP=1 -q -f db/staging/sanitize.sql
+
+if [[ "$STAGING_SERVICE_ID" == srv-* ]]; then
+  echo "Restarting the staging web service..."
+  render restart "$STAGING_SERVICE_ID" --confirm >/dev/null
+fi
+
+echo "Done: staging now matches production as of $(date '+%Y-%m-%d %H:%M')."

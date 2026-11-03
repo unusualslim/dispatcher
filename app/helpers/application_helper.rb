@@ -2,6 +2,11 @@
 
 # View helpers shared across the app: cron labels, sidebar nav links and badges.
 module ApplicationHelper
+  # The staging copy of the app (STAGING=1 on its Render service).
+  def staging?
+    Rails.configuration.x.staging == true
+  end
+
   CRON_PRESETS = {
     'Off' => '',
     'Every 1 minute' => '* * * * *',
