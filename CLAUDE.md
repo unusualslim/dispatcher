@@ -453,6 +453,8 @@ file, remove it from the todo (or regenerate with the command at the top of `.ru
 - Done 2026-10-30: Devise 5, roo 3 + rubyzip 3 (webdrivers gem dropped), build tools (esbuild 0.28, sass, postcss-cli 12);
   RuboCop 1.92 (new offenses baselined), pg 1.7, Bootstrap 5.3.8, `:unprocessable_entity` → `:unprocessable_content`
 - Flip `load_defaults` stepwise
+- `package.json` `resolutions` pins minimatch ^11.0.4 (2026-11-03, GHSA-g3hv-75wg-m249): only nodemon (`yarn watch:css`)
+  uses it and nodemon 3.1.14 still asks for ^10.2.1. Drop the resolution once nodemon depends on 11+
 
 ### Known issues / notes
 - `Dispatch#dispatch_status` is a declared, non-persisted attribute (the real column is `status`), but the
