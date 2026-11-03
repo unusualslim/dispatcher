@@ -1,4 +1,5 @@
 require 'active_support/core_ext/integer/time'
+require_relative '../../lib/middleware/no_store_asset_misses'
 
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
@@ -23,6 +24,8 @@ Rails.application.configure do
   # Disable serving static files from the `/public` folder by default since
   # Apache or NGINX already handles this.
   config.public_file_server.enabled = ENV['RAILS_SERVE_STATIC_FILES'].present?
+  # Missing /assets/ files must never be cached by Cloudflare (see the middleware).
+  config.middleware.insert_before 0, Middleware::NoStoreAssetMisses
 
   # Compress CSS using a preprocessor.
   # config.assets.css_compressor = :sass
