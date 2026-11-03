@@ -1,28 +1,48 @@
-<h1>Equipment &amp; Assets</h1>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="mb-0">Equipment &amp; Assets</h1>
+  <%= link_to "New Asset", new_thing_path(thing: { category: @category }), class: "btn btn-success btn-sm" %>
+</div>
 
-<%= link_to "New Asset", new_thing_path, class: "btn btn-success mb-3" %>
-
-<table class="table">
-  <thead>
-    <tr>
-      <th>ID</th>
-      <th>Name</th>
-      <th>Category</th>
-      <th>Location</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @things.each do |thing| %>
-      <tr>
-        <td><%= thing.id %></td>
-        <td><%= thing.name %></td>
-        <td><%= Thing::CATEGORIES[thing.category] || thing.category %></td>
-        <td><%= thing.location&.company_name %></td>
-        <td>
-          <%= link_to 'View', thing_path(thing), class: 'btn btn-primary btn-sm' %>
-        </td>
-      </tr>
+<ul class="nav nav-tabs mb-3">
+  <li class="nav-item">
+    <%= link_to things_path, class: "nav-link #{'active' unless @category}" do %>
+      All <span class="badge bg-secondary ms-1"><%= @counts.values.sum %></span>
     <% end %>
-  </tbody>
-</table>
+  </li>
+  <% Thing::CATEGORIES.each do |key, label| %>
+    <li class="nav-item">
+      <%= link_to things_path(category: key), class: "nav-link #{'active' if @category == key}" do %>
+        <%= label %> <span class="badge bg-secondary ms-1"><%= @counts[key].to_i %></span>
+      <% end %>
+    </li>
+  <% end %>
+</ul>
+
+<div class="table-responsive">
+  <table class="table table-sm table-hover align-middle">
+    <thead class="table-light">
+      <tr>
+        <th>Name</th>
+        <th>Category</th>
+        <th>Serial #</th>
+        <th>Location</th>
+        <th>Line / project</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @things.each do |thing| %>
+        <tr>
+          <td><%= link_to thing.name, thing_path(thing) %></td>
+          <td><%= Thing::CATEGORIES[thing.category] || thing.category %></td>
+          <td class="font-monospace small"><%= thing.serial_number %></td>
+          <td><%= thing.location&.company_name %></td>
+          <td class="small"><%= thing.production_line %></td>
+          <td class="small"><%= thing.install_status %></td>
+          <td class="text-end"><%= link_to 'Edit', edit_thing_path(thing), class: 'btn btn-outline-secondary btn-sm' %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

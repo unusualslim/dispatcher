@@ -20,7 +20,7 @@
         <tr>
           <td><%= line.product_name %></td>
           <td class="font-monospace small"><%= line.vendor_part_number.presence || '—' %></td>
-          <td><%= line.equipment ? link_to(line.equipment.name, thing_path(line.equipment)) : '—' %></td>
+          <td><%= line.equipment ? link_to(line.equipment.label, thing_path(line.equipment)) : '—' %></td>
           <td>
             <% if line.gl_account_code %>
               <span class="font-monospace"><%= line.gl_account_code %></span>

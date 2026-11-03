@@ -7,12 +7,13 @@
   <td><%= f.text_field :vendor_part_number, class: 'form-control form-control-sm' %></td>
   <td>
     <%= f.select :equipment_id,
-          options_for_select(@equipment.map { |e| [e.name, e.id, { 'data-site-id' => e.location_id }] }, f.object.equipment_id),
+          options_for_select(@equipment.map { |e| [e.label, e.id, { 'data-site-id' => e.location_id }] }, f.object.equipment_id),
           { include_blank: '—' }, class: 'form-select form-select-sm' %>
   </td>
   <td>
-    <%= f.collection_select :expense_account_id, @expense_accounts, :id, :label,
-          { include_blank: 'Select account...' }, class: 'form-select form-select-sm' %>
+    <%= f.select :expense_account_id,
+          grouped_options_for_select(ExpenseAccount.grouped_options(@expense_accounts), f.object.expense_account_id),
+          { include_blank: 'Select account...' }, class: 'form-select form-select-sm account-select' %>
   </td>
   <td>
     <%= f.collection_select :location_id, @sites, :id, :company_name,

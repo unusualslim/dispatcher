@@ -218,6 +218,12 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
   to the vendor: never exported to PDI, never posted to inventory, excluded from MRP. AP hand-keys the bill into PDI
   (the user may look for a PDI AP import later). Printable vendor copy at /purchase_orders/:id/print (any PO type);
   Reports → Expense PO spend.
+  Equipment details on `things` (serial_number, production_line, install_status, power, purchased_from, invoice_number,
+  year_made); 44 assets loaded 2026-11-03 by `LoadEquipmentList`. Dispatch truck/trailer pickers must use
+  `Thing.trucks` / `Thing.trailers` / `Thing.vehicles` so equipment never shows there.
+  Expense Accounts were loaded 2026-11-03 from PDI's chart of accounts (`LoadExpenseChartOfAccounts`): Expense-type
+  accounts only, without inventory-related ones (Cost of Sales / Fuel Cost of Sales groups, over/short); PDI-disabled
+  accounts load inactive. `account_group` (PDI group) groups the searchable picker.
 - `InventoryTransaction` — polymorphic audit trail (direction: 'in'/'out'), `location_id`; costed rows carry
   `movement_type` (opening/receipt/sale/production_use/production_output/adjustment/pdi_sync/revaluation),
   `occurred_on`, `unit_cost`, `total_cost`, `variance_amount` (PPV on standard receipts) and the location's balance after.

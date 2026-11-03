@@ -150,7 +150,7 @@ class DispatchesController < ApplicationController
                               .where(order_status: CustomerOrder::ACTIVE_STATUSES)
                               .order(created_at: :desc)
     @origin_locations = Location.where(location_category_id: 1)
-    @available_things = Thing.all
+    @available_things = Thing.vehicles
     @selected_thing_ids = [] # Pre-select none
   end
 
@@ -162,7 +162,7 @@ class DispatchesController < ApplicationController
                               .where(order_status: CustomerOrder::ACTIVE_STATUSES)
                               .order(created_at: :desc)
     @origin_locations = Location.where(location_category_id: 1)
-    @available_things = Thing.all
+    @available_things = Thing.vehicles
     @selected_thing_ids = [] # Pre-select none
   end
 

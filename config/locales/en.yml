@@ -49,7 +49,7 @@ en:
         expense_account:
           attributes:
             account:
-              account_format: "should look like 6150-01 (Major-Sub)"
+              account_format: "should look like 6810-10 (Major-Sub)"
         user:
           attributes:
             home_page:

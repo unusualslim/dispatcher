@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_11_03_120000) do
+ActiveRecord::Schema[7.2].define(version: 2026_11_03_140100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -263,6 +263,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_03_120000) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "account_group"
     t.index ["account"], name: "index_expense_accounts_on_account", unique: true
   end
 
@@ -949,6 +950,13 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_03_120000) do
     t.string "category", default: "truck", null: false
     t.bigint "dispatch_id"
     t.bigint "location_id"
+    t.string "serial_number"
+    t.string "production_line"
+    t.string "install_status"
+    t.string "power"
+    t.string "purchased_from"
+    t.string "invoice_number"
+    t.integer "year_made"
     t.index ["dispatch_id"], name: "index_things_on_dispatch_id"
     t.index ["location_id"], name: "index_things_on_location_id"
   end

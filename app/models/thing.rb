@@ -12,4 +12,13 @@ class Thing < ApplicationRecord
   validates :category, inclusion: { in: CATEGORIES.keys, message: '%{value} is not a valid category' }
 
   scope :equipment, -> { where(category: 'equipment').order(:name) }
+  # Dispatch pickers only ever list these, never equipment.
+  scope :trucks,    -> { where(category: 'truck').order(:name) }
+  scope :trailers,  -> { where(category: 'trailer').order(:name) }
+  scope :vehicles,  -> { where(category: %w[truck trailer]).order(:category, :name) }
+
+  # Name plus serial number, for pickers and the vendor copy of a PO.
+  def label
+    serial_number.present? ? "#{name} (S/N #{serial_number})" : name
+  end
 end

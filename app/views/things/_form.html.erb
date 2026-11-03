@@ -3,25 +3,59 @@
     <div class="alert alert-danger"><%= @thing.errors.full_messages.to_sentence %></div>
   <% end %>
 
-  <div class="form-group mb-2">
-    <%= form.label :name, "Name" %>
-    <%= form.text_field :name, class: "form-control" %>
+  <div class="row g-3" style="max-width: 900px;">
+    <div class="col-md-6">
+      <%= form.label :name, "Name", class: 'form-label' %>
+      <%= form.text_field :name, class: "form-control" %>
+    </div>
+    <div class="col-md-3">
+      <%= form.label :category, "Category", class: 'form-label' %>
+      <%= form.select :category, Thing::CATEGORIES.invert, {}, class: "form-select" %>
+    </div>
+    <div class="col-md-3">
+      <%= form.label :serial_number, "Serial #", class: 'form-label' %>
+      <%= form.text_field :serial_number, class: "form-control font-monospace" %>
+    </div>
+
+    <div class="col-md-6">
+      <%= form.label :location_id, "Location", class: 'form-label' %>
+      <%= form.collection_select :location_id, Location.where.not(pdi_site_code: [nil, '']).or(Location.where(id: @thing.location_id)).order(:company_name),
+                                 :id, :company_name, { include_blank: '—' }, class: "form-select" %>
+      <div class="form-text">Expense PO lines for this equipment default to this site.</div>
+    </div>
+    <div class="col-md-6">
+      <%= form.label :production_line, "Line / project", class: 'form-label' %>
+      <%= form.text_field :production_line, class: "form-control", list: 'production-lines', placeholder: 'e.g. South-Oil-Gallon Line' %>
+      <datalist id="production-lines">
+        <% Thing.where.not(production_line: [nil, '']).distinct.order(:production_line).pluck(:production_line).each do |line| %>
+          <option value="<%= line %>"></option>
+        <% end %>
+      </datalist>
+    </div>
+
+    <div class="col-md-3">
+      <%= form.label :install_status, "Status", class: 'form-label' %>
+      <%= form.select :install_status, ['In Progress', 'Complete'], { include_blank: '—' }, class: "form-select" %>
+    </div>
+    <div class="col-md-3">
+      <%= form.label :power, "Power", class: 'form-label' %>
+      <%= form.text_field :power, class: "form-control", placeholder: 'e.g. 220V 3 phase' %>
+    </div>
+    <div class="col-md-3">
+      <%= form.label :purchased_from, "Purchased from", class: 'form-label' %>
+      <%= form.text_field :purchased_from, class: "form-control" %>
+    </div>
+    <div class="col-md-2">
+      <%= form.label :invoice_number, "Invoice #", class: 'form-label' %>
+      <%= form.text_field :invoice_number, class: "form-control" %>
+    </div>
+    <div class="col-md-1">
+      <%= form.label :year_made, "Year", class: 'form-label' %>
+      <%= form.number_field :year_made, class: "form-control", min: 1950, max: 2100 %>
+    </div>
   </div>
 
-  <div class="form-group mb-2">
-    <%= form.label :category, "Category" %>
-    <%= form.select :category, Thing::CATEGORIES.invert, {}, class: "form-control" %>
-    <small class="text-muted">Equipment (packaging lines, fillers...) can be charged on expense purchase orders.</small>
-  </div>
-
-  <div class="form-group mb-3">
-    <%= form.label :location_id, "Location" %>
-    <%= form.collection_select :location_id, Location.where.not(pdi_site_code: [nil, '']).or(Location.where(id: @thing.location_id)).order(:company_name),
-                               :id, :company_name, { include_blank: '—' }, class: "form-control" %>
-    <small class="text-muted">Where it is. Expense PO lines for this equipment default to this site.</small>
-  </div>
-
-  <div class="actions">
+  <div class="actions mt-3">
     <%= form.submit class: "btn btn-primary" %>
     <%= link_to "Cancel", things_path, class: "btn btn-secondary" %>
   </div>

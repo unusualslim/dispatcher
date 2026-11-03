@@ -4,7 +4,11 @@ class ExpenseAccountsController < ApplicationController
   before_action :set_expense_account, only: %i[update destroy]
 
   def index
-    @expense_accounts = ExpenseAccount.ordered
+    @show_inactive = params[:inactive] == '1'
+    @expense_accounts = ExpenseAccount.grouped
+    @expense_accounts = @expense_accounts.active unless @show_inactive
+    @inactive_count = ExpenseAccount.where(active: false).count
+    @groups = ExpenseAccount.where.not(account_group: [nil, '']).distinct.order(:account_group).pluck(:account_group)
     @line_counts = PurchaseOrderLineItem.where.not(expense_account_id: nil).group(:expense_account_id).count
   end
 
@@ -34,7 +38,7 @@ class ExpenseAccountsController < ApplicationController
   end
 
   def expense_account_params
-    params.require(:expense_account).permit(:account, :name, :active, :notes)
+    params.require(:expense_account).permit(:account, :name, :account_group, :active, :notes)
   end
 
   def save_and_redirect(account, notice)

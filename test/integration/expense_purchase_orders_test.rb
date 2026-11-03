@@ -8,8 +8,8 @@ class ExpensePurchaseOrdersTest < ActionDispatch::IntegrationTest
     @vendor = Vendor.create!(id: 'EXPI-V', name: 'Filler Parts Inc', city: 'Macon', state: 'GA')
     @vendor.update!('address_1' => '1 Gear St')
     @plant = Location.create!(company_name: 'EXPI Plant', pdi_site_code: '0002', location_category_id: 1)
-    @filler = Thing.create!(name: 'Filler 2', category: 'equipment', location: @plant)
-    @account = ExpenseAccount.create!(account: '6150-01', name: 'R&M Packaging')
+    @filler = Thing.create!(name: 'Filler 2', category: 'equipment', location: @plant, serial_number: 'SN-77')
+    @account = ExpenseAccount.create!(account: '6150-01', name: 'R&M Packaging', account_group: 'Operating Expenses')
     sign_in User.create!(email: 'expense-po-admin@example.com', password: 'password123', role: 'admin')
   end
 
@@ -20,7 +20,8 @@ class ExpensePurchaseOrdersTest < ActionDispatch::IntegrationTest
     assert_select 'input[name="purchase_order[po_type]"][value="expense"]'
     new_line = 'template#line-item-template [name^="purchase_order[line_items_attributes][NEW_INDEX]"]'
     assert_select "#{new_line}[name$='[product_name]']"
-    assert_select "#{new_line}[name$='[equipment_id]'] option[data-site-id='#{@plant.id}']", text: 'Filler 2'
+    assert_select "#{new_line}[name$='[equipment_id]'] option[data-site-id='#{@plant.id}']",
+                  text: 'Filler 2 (S/N SN-77)'
 
     post purchase_orders_path, params: { purchase_order: {
       po_type: 'expense', vendor_id: @vendor.id, location_id: @plant.id, notes: 'Rush please',
@@ -36,6 +37,9 @@ class ExpensePurchaseOrdersTest < ActionDispatch::IntegrationTest
     get purchase_order_path(po)
     assert_response :success
     assert_select 'td', text: '0002-6150-01'
+    get edit_purchase_order_path(po)
+    assert_select 'select.account-select optgroup[label="Operating Expenses"] option', text: '6150-01 R&M Packaging'
+    get purchase_order_path(po)
     assert_select 'button', text: 'Approve'
 
     get print_purchase_order_path(po)
@@ -44,6 +48,7 @@ class ExpensePurchaseOrdersTest < ActionDispatch::IntegrationTest
     assert_select 'td', text: 'NS-100'
     assert_select '.box', text: /Filler Parts Inc.*1 Gear St/m
     assert_select '.notes', text: /Rush please/
+    assert_select '.for', text: 'For: Filler 2 (S/N SN-77)'
 
     get edit_purchase_order_path(po)
     assert_response :success
@@ -72,8 +77,12 @@ class ExpensePurchaseOrdersTest < ActionDispatch::IntegrationTest
 
     post expense_accounts_path, params: { expense_account: { account: '6160-02', name: 'Shop supplies' } }
     assert_redirected_to expense_accounts_path
+    ExpenseAccount.create!(account: '6999-01', name: 'Old account', active: false)
     get expense_accounts_path
     assert_select 'input[value="6160-02"]'
+    assert_select 'input[value="6999-01"]', count: 0
+    get expense_accounts_path(inactive: 1)
+    assert_select 'input[value="6999-01"]'
 
     get report_path('expense_po_spend')
     assert_response :success
@@ -82,6 +91,14 @@ class ExpensePurchaseOrdersTest < ActionDispatch::IntegrationTest
     get thing_path(@filler)
     assert_response :success
     assert_select 'td', text: /Belt/
+    assert_select 'dd', text: 'SN-77'
+
+    get things_path(category: 'equipment')
+    assert_response :success
+    assert_select 'td', text: 'SN-77'
+
+    patch thing_path(@filler), params: { thing: { production_line: 'South-Oil-Gallon Line', year_made: 2016 } }
+    assert_equal [2016, 'South-Oil-Gallon Line'], [@filler.reload.year_made, @filler.production_line]
   end
 
   test 'a failed inventory PO save re-renders the form' do

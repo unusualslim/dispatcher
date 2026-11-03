@@ -45,7 +45,7 @@
     tfoot tr.total td { font-weight: 700; font-size: 12px; border-top: 2px solid var(--ink); }
     .num { text-align: right; white-space: nowrap; }
     .mono { font-family: ui-monospace, Menlo, Consolas, monospace; }
-    .gl { font-size: 9px; color: var(--muted); }
+    .gl, .for { font-size: 9px; color: var(--muted); }
     body:not(.show-gl) .gl { display: none; }
     .notes { border: 1px solid var(--ink); padding: 6px 8px; margin-bottom: 12px; white-space: pre-line; }
     .sign { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: auto; padding-top: 24px; }
@@ -130,8 +130,9 @@
               <td class="mono"><%= line.vendor_part_number %></td>
               <td>
                 <%= line.product_name %>
-                <% if line.gl_account_code || line.equipment %>
-                  <div class="gl"><%= [line.gl_account_code, line.expense_account&.name, line.equipment&.name].compact.join(' · ') %></div>
+                <% if line.equipment %><div class="for">For: <%= line.equipment.label %></div><% end %>
+                <% if line.gl_account_code %>
+                  <div class="gl"><%= [line.gl_account_code, line.expense_account&.name].compact.join(' · ') %></div>
                 <% end %>
               </td>
             <% else %>

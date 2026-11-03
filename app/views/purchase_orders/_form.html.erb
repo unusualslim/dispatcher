@@ -166,6 +166,16 @@
       $v.select2({ placeholder: 'Select vendor...', width: '100%' });
       $v.on('change', function() { rebuildFreightTerms($(this).val()); });
       rebuildFreightTerms($v.val());
+      searchableAccounts(document);
+    }
+
+    // The GL account pickers are long (the whole expense chart), so make them searchable.
+    function searchableAccounts(root) {
+      $(root).find('select.account-select').each(function() {
+        if (!$(this).hasClass('select2-hidden-accessible')) {
+          $(this).select2({ placeholder: 'Select account...', width: '100%', dropdownAutoWidth: true });
+        }
+      });
     }
     document.addEventListener('turbo:load', init, { once: true });
     if (document.readyState !== 'loading' && window.Turbo === undefined) init();
@@ -176,6 +186,7 @@
     document.getElementById('add-line-item').addEventListener('click', function() {
       const html = document.getElementById('line-item-template').innerHTML.replace(/NEW_INDEX/g, lineItemIndex++);
       body.insertAdjacentHTML('beforeend', html);
+      searchableAccounts(body.lastElementChild);
     });
 
     // Removing a saved line marks it for deletion; a new one just goes.

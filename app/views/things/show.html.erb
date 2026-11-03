@@ -16,6 +16,12 @@
       <dt class="col-3">Location</dt>
       <dd class="col-9"><%= link_to @thing.location.company_name, location_path(@thing.location) %></dd>
     <% end %>
+    <% { 'Serial #' => @thing.serial_number, 'Line / project' => @thing.production_line, 'Status' => @thing.install_status,
+         'Power' => @thing.power, 'Purchased from' => @thing.purchased_from, 'Invoice #' => @thing.invoice_number,
+         'Year made' => @thing.year_made }.compact_blank.each do |label, value| %>
+      <dt class="col-3"><%= label %></dt>
+      <dd class="col-9 <%= 'font-monospace' if label == 'Serial #' %>"><%= value %></dd>
+    <% end %>
   </dl>
 
   <% lines = @thing.expense_lines.joins(:purchase_order).where(purchase_orders: { voided_at: nil })
