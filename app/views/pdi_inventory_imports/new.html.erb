@@ -24,6 +24,11 @@
             product and site; cost per unit becomes PDI's average.
           </div>
         </div>
+        <div class="mb-3" style="max-width: 260px;">
+          <%= label_tag :as_of, 'Report date', class: 'form-label fw-semibold' %>
+          <%= date_field_tag :as_of, Date.current, max: Date.current, class: 'form-control' %>
+          <div class="form-text">The day PDI's report is for. Stock changes are dated that day.</div>
+        </div>
         <%= f.submit "Import & Update Stock", class: 'btn btn-primary' %>
       </div>
     </div>

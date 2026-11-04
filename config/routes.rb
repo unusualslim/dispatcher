@@ -236,6 +236,8 @@ Rails.application.routes.draw do
   resources :reports, only: %i[index show]
   resource :inventory_valuation, only: [:show] do
     post :opening
+    post :reset_tracking # staging only
+    post :replay
   end
   get 'imports', to: 'imports#index', as: :imports
   resource :pdi_inventory_import, only: %i[new create]

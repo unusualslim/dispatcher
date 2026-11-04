@@ -56,6 +56,7 @@ module ProductionOrderInventory
     InventoryPosting.post!(product: product, location: order.location, quantity: qty,
                            movement_type: qty.positive? ? 'production_output' : 'production_use',
                            unit_cost: unit_cost, source: order, reference: order.number, user: user,
+                           occurred_on: order.date_completed,
                            notes: "#{qty.positive? ? 'Produced' : 'Consumed'} in #{order.number}")
   end
 end

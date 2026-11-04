@@ -15,9 +15,11 @@ class PdiInventoryImportService
 
   Row = Struct.new(:site_code, :site_name, :tank, :product_id, :ending, :extended, keyword_init: true)
 
-  def initialize(file, user = nil)
+  # as_of: the report's date (the movement date of what it changes); today by default.
+  def initialize(file, user = nil, as_of: nil)
     @file = file
     @user = user
+    @as_of = as_of || Date.current
   end
 
   # Returns { updated:, skipped:, unmatched_products: [...], unmatched_sites: [...], errors: [...] }
@@ -73,7 +75,7 @@ class PdiInventoryImportService
   def set_location_stock!(product, location, ending)
     current = LocationProduct.find_by(location_id: location.id, product_id: product.id)&.quantity.to_d
     InventoryPosting.post!(product: product, location: location, quantity: ending - current, movement_type: 'pdi_sync',
-                           reference: "PDI-FI-#{Time.zone.today.strftime('%Y%m%d')}", user: @user,
+                           reference: "PDI-FI-#{@as_of.strftime('%Y%m%d')}", user: @user, occurred_on: @as_of,
                            notes: "PDI FI Inventory Report sync — ending #{ending}")
     true
   end

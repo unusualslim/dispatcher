@@ -12,7 +12,7 @@ class PdiInventoryImportsController < ApplicationController
     redirect_to new_pdi_inventory_import_path, alert: 'Please select a file.' and return unless file.present?
 
     log = start_log(file)
-    results = PdiInventoryImportService.new(file, current_user).import
+    results = PdiInventoryImportService.new(file, current_user, as_of: report_date).import
     log.update!(status: 'success', completed_at: Time.current, records_updated: results[:updated],
                 records_skipped: results[:skipped], warnings: PdiFuelInventorySyncJob.warnings(results))
 
@@ -23,6 +23,13 @@ class PdiInventoryImportsController < ApplicationController
   end
 
   private
+
+  # The report's date, never later than today.
+  def report_date
+    [Date.iso8601(params[:as_of].to_s), Date.current].min
+  rescue Date::Error
+    Date.current
+  end
 
   def start_log(file)
     log = SyncLog.create!(process_name: PROCESS_NAME, status: 'running', started_at: Time.current,

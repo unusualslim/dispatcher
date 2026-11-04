@@ -76,7 +76,9 @@ en:
       unavailable: "File not available."
   inventory_valuations:
     opening:
-      done: "Opening balances set. Inventory is now tracked at cost from today."
+      done: "Opening balances set. Inventory is tracked at cost from %{date}."
+    require_reset_allowed:
+      staging_only: "Inventory reset only runs on staging."
   dispatch_freights:
     create:
       priced: "Freight calculated. Carrier cost for the load: %{total}."

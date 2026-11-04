@@ -249,8 +249,14 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
   on every PDI order write — shipped statuses (shipped … billed, delivered, credited) take `shipped_quantity` (PDI lifted /
   invoiced / picked; falls back to ordered) out of the line's warehouse, re-posting when lines change or the order cancels.
   Dropship and non-inventory lines are skipped.
-- `InventoryRevaluation`: one-time `opening!` (admin button on /inventory_valuation; sets AppSetting
+- `InventoryRevaluation`: one-time `opening!` (admin button on /inventory_valuation, with a start date; sets AppSetting
   `inventory_tracking_start_date`; sales before it are ignored), revalues on standard-cost change and method change.
+- **Back-dated start**: the inventory and FI imports take a **report date** (`as_of`, the movements' date). Import PDI's
+  on-hand for the day before the start → opening as of the start → **Replay** (`InventoryReplay`, /inventory_valuation):
+  posts PO receipts, completed production (dated `date_completed`) and shipped PDI orders already in the app for a
+  period, oldest first, skipping anything already posted (manual adjustments aren't replayed) → import PDI's period-end
+  report to compare (the differences are the `pdi_sync` movements). **Reset** (`InventoryReset`, staging/dev only)
+  deletes costed movements, layers and inventory GL entries, zeroes all stock and clears the start date.
 - /inventory_valuation (`InventoryValuation`): value as of a date (today's balance minus later movements), movements
   by type, PPV, PDI sync differences (how much movement the app missed).
 - **PDI Purchase Orders import** (`PdiPurchaseOrderImportService`, manual on Data Imports for now — the user is working on
@@ -409,7 +415,9 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
   striped banner + "STAGING ·" title (`staging?` helper). Its env has **no** PDI, Samsara, Twilio, SendGrid, DigitalOcean
   or master key, and there is no staging scheduler: never add them. `bin/staging-refresh` (run on the Mac) replaces its
   database with a read-only dump of production, runs `db/staging/sanitize.sql` (all schedules Off, blobs → local,
-  `staging_refreshed_at`) and restarts the service. Staging uses production's logins; uploaded files from production don't open there.
+  `staging_refreshed_at`) and restarts the service. Staging uses production's logins; uploaded files from production
+  don't open there. Inventory testing loop on staging: Reset inventory → import PDI on-hand (report date = day before
+  the start) → opening → Replay → import the period-end report.
 - db:migrate runs automatically on deploy (web build). Seeds are guarded: `return if Rails.env.production?`
 - Cloudflare proxies both domains (same account). loadntrucks.com → team.fivepointsservice.com is a
   Cloudflare Single Redirect in the **loadntrucks.com** zone (path + query preserved for QR labels).

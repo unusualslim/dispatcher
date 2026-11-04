@@ -81,7 +81,8 @@ class InventoryImportService
   #   Products with no site mapping only update product attrs (category, cost).
   # selected_part_numbers: optional allowlist of part numbers to import.
   # Returns { updated: N, created: N, skipped: N }
-  def import(selected_part_numbers: nil, site_location_map: {})
+  # as_of: the report's date (the movement date of what it changes); today by default.
+  def import(selected_part_numbers: nil, site_location_map: {}, as_of: Date.current)
     rows   = preview
     counts = { updated: 0, created: 0, skipped: 0 }
 
@@ -140,8 +141,8 @@ class InventoryImportService
       # PDI's quantity wins; the difference posts as a "PDI sync" movement at the app's cost.
       current = LocationProduct.find_by(location_id: location.id, product_id: product.id)&.quantity.to_d
       InventoryPosting.post!(product: product, location: location, quantity: total_qty.to_d - current,
-                             movement_type: 'pdi_sync', reference: "PDI-INV-#{Time.zone.today.strftime('%Y%m%d')}",
-                             notes: "PDI inventory sync — ending #{total_qty}")
+                             movement_type: 'pdi_sync', reference: "PDI-INV-#{as_of.strftime('%Y%m%d')}",
+                             occurred_on: as_of, notes: "PDI inventory sync — ending #{total_qty}")
       products_to_sync << product.id
     end
 

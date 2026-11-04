@@ -19,12 +19,56 @@
     numbers) at each product's basis: the standard cost for Standard categories, PDI's weighted average for the rest.
     From then on every receipt, production, adjustment and shipped PDI order moves stock at cost, and each PDI
     inventory sync posts only the difference it finds.
+    <div class="small mt-1">
+      To start on an earlier day, first import PDI's on-hand for the day before it (set the import's report date),
+      pick that start day here, then use <strong>Replay</strong> to post what happened since.
+    </div>
     <% if admin? %>
-      <%= button_to 'Set opening balances now', opening_inventory_valuation_path, class: 'btn btn-warning btn-sm mt-2',
-                                                                               form: { data: { turbo_confirm: 'Value all stock on hand and start costed tracking from today? This runs once.' } } %>
+      <%= form_with url: opening_inventory_valuation_path, method: :post, local: true,
+                    class: 'd-flex gap-2 align-items-end mt-2',
+                    data: { turbo_confirm: 'Value all stock on hand and start costed tracking on this day? This runs once.' } do %>
+        <div>
+          <label class="form-label small mb-0" for="opening_as_of">Tracking starts on</label>
+          <%= date_field_tag :as_of, Date.current, max: Date.current, id: 'opening_as_of', class: 'form-control form-control-sm' %>
+        </div>
+        <button type="submit" class="btn btn-warning btn-sm">Set opening balances</button>
+      <% end %>
     <% else %>
       An admin can set them here.
     <% end %>
+  </div>
+<% end %>
+
+<% if admin? && (@start_date || InventoryReset.allowed?) %>
+  <div class="card shadow-sm mb-3" style="max-width: 900px;">
+    <div class="card-body py-2 small">
+      <% if @start_date %>
+        <strong>Replay a period.</strong> Posts the stock movements of PO receipts, completed production orders and
+        shipped PDI orders already in the app for these days, oldest first. Anything already posted is skipped.
+        Manual adjustments aren't replayed.
+        <%= form_with url: replay_inventory_valuation_path, method: :post, local: true,
+                      class: 'd-flex gap-2 align-items-end mt-2 flex-wrap',
+                      data: { turbo_confirm: 'Post every receipt, production order and shipped order in this period?' } do %>
+          <div>
+            <label class="form-label small mb-0" for="replay_from">From</label>
+            <%= date_field_tag :from, @start_date, min: @start_date, id: 'replay_from', class: 'form-control form-control-sm' %>
+          </div>
+          <div>
+            <label class="form-label small mb-0" for="replay_to">Through</label>
+            <%= date_field_tag :to, [@start_date.end_of_month, Date.current].min, id: 'replay_to', class: 'form-control form-control-sm' %>
+          </div>
+          <button type="submit" class="btn btn-outline-primary btn-sm">Replay</button>
+        <% end %>
+      <% end %>
+      <% if InventoryReset.allowed? %>
+        <div class="<%= 'border-top pt-2 mt-2' if @start_date %>">
+          <strong>Staging: reset inventory.</strong> Deletes every costed movement and FIFO layer, zeroes stock at
+          every location and clears the start date. Orders, POs and production orders stay.
+          <%= button_to 'Reset inventory', reset_tracking_inventory_valuation_path, class: 'btn btn-outline-danger btn-sm mt-1',
+                                                                                 form: { data: { turbo_confirm: 'Delete all costed inventory movements and zero all stock?' } } %>
+        </div>
+      <% end %>
+    </div>
   </div>
 <% end %>
 

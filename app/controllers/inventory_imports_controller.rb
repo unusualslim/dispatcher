@@ -42,7 +42,8 @@ class InventoryImportsController < ApplicationController
 
     counts = InventoryImportService.new(file).import(
       selected_part_numbers: selected,
-      site_location_map: site_location_map
+      site_location_map: site_location_map,
+      as_of: report_date
     )
     file.close
     File.delete(session[:import_tmp_path]) rescue nil
@@ -54,5 +55,14 @@ class InventoryImportsController < ApplicationController
     notice += " Warehouses: #{mapped_labels}." if mapped_labels.present?
 
     redirect_to new_inventory_import_path, notice: notice
+  end
+
+  private
+
+  # The report's date, never later than today.
+  def report_date
+    [Date.iso8601(params[:as_of].to_s), Date.current].min
+  rescue Date::Error
+    Date.current
   end
 end
