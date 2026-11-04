@@ -403,6 +403,13 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
 - Two services deploy from `main`: web **Dispatcher** (`srv-cloa2b0gqk6s73860dmg`, build `bin/render-build.sh`)
   and cron **Automated Processes Scheduler** (`crn-d8u1kjbtqb8s73anodag`, `rake scheduler:tick` every minute;
   its build command is set in the Render dashboard). The Render CLI is installed (workspace "PerryBrothers").
+- **Staging**: web **dispatcher-staging** (`srv-dbl78ivf3r2c73dpvjn0`, https://dispatcher-staging.onrender.com, Starter,
+  also deploys from `main`) on its own Postgres **dbDispatcherStaging** (`dpg-dbl645dbedkc73elmblg-a`, external access
+  allow-listed by IP). `STAGING=1` (production.rb) = uploads on local disk, mail captured (`:test`), `STAGING_HOST` allowed,
+  striped banner + "STAGING ·" title (`staging?` helper). Its env has **no** PDI, Samsara, Twilio, SendGrid, DigitalOcean
+  or master key, and there is no staging scheduler: never add them. `bin/staging-refresh` (run on the Mac) replaces its
+  database with a read-only dump of production, runs `db/staging/sanitize.sql` (all schedules Off, blobs → local,
+  `staging_refreshed_at`) and restarts the service. Staging uses production's logins; uploaded files from production don't open there.
 - db:migrate runs automatically on deploy (web build). Seeds are guarded: `return if Rails.env.production?`
 - Cloudflare proxies both domains (same account). loadntrucks.com → team.fivepointsservice.com is a
   Cloudflare Single Redirect in the **loadntrucks.com** zone (path + query preserved for QR labels).

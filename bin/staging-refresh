@@ -7,7 +7,7 @@ set -euo pipefail
 
 PROD_DB_ID="dpg-clo9e14jtl8s73am9b8g-a"
 STAGING_DB_ID="${STAGING_DB_ID:-dpg-dbl645dbedkc73elmblg-a}"
-STAGING_SERVICE_ID="${STAGING_SERVICE_ID:-__STAGING_SERVICE_ID__}"
+STAGING_SERVICE_ID="${STAGING_SERVICE_ID:-srv-dbl78ivf3r2c73dpvjn0}"
 cd "$(dirname "$0")/.."
 export PGCONNECT_TIMEOUT=20  # fail fast instead of hanging if the network drops
 
