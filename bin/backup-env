@@ -1,0 +1,13 @@
+# Sourced by bin/staging-refresh --from-backup: the off-site backup Space (github repo render-db-backups,
+# ~/Sites/render-db-backups). Settings live in ~/.config/render-db-backups/env; see that repo's README.
+config="${RENDER_DB_BACKUPS_ENV:-$HOME/.config/render-db-backups/env}"
+[ -f "$config" ] || { echo "Missing $config (see the render-db-backups README)"; exit 1; }
+# shellcheck disable=SC1090
+. "$config"
+: "${SPACES_KEY:?}" "${SPACES_SECRET:?}" "${SPACES_BUCKET:?}"
+SPACES_REGION="${SPACES_REGION:-nyc3}"
+command -v aws >/dev/null || { echo "Install the AWS CLI first: brew install awscli"; exit 1; }
+export AWS_ACCESS_KEY_ID="$SPACES_KEY" AWS_SECRET_ACCESS_KEY="$SPACES_SECRET" AWS_DEFAULT_REGION=us-east-1
+s3() { aws --endpoint-url "https://$SPACES_REGION.digitaloceanspaces.com" "$@"; }
+# Backups are made by pg_dump 18: use the Postgres 18 client tools (Homebrew keeps them off the PATH).
+[ -d /opt/homebrew/opt/postgresql@18/bin ] && PATH="/opt/homebrew/opt/postgresql@18/bin:$PATH"

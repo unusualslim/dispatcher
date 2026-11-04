@@ -2,13 +2,24 @@
 # Replaces the STAGING database with a fresh copy of production, then runs db/staging/sanitize.sql.
 # Run from your Mac (needs the Render CLI logged in, pg_dump/pg_restore/psql 17+, jq):
 #   bin/staging-refresh
+#   bin/staging-refresh --from-backup [dispatcher/daily/FILE]   (latest hourly backup when no file is given)
 # Production is only read (pg_dump in a read-only session). Afterwards, the staging web service is restarted.
+# --from-backup restores the off-site backup instead (render-db-backups settings, age and AGE_KEY_FILE),
+# which also proves the backups restore (uses the Postgres 18 client tools: brew install postgresql@18).
 set -euo pipefail
 
 PROD_DB_ID="dpg-clo9e14jtl8s73am9b8g-a"
 STAGING_DB_ID="${STAGING_DB_ID:-dpg-dbl645dbedkc73elmblg-a}"
 STAGING_SERVICE_ID="${STAGING_SERVICE_ID:-srv-dbl78ivf3r2c73dpvjn0}"
 cd "$(dirname "$0")/.."
+from_backup=""
+if [ "${1:-}" = "--from-backup" ]; then
+  . bin/backup-env
+  : "${AGE_KEY_FILE:?Set AGE_KEY_FILE (the age private key) in the backup env file}"
+  command -v age >/dev/null || { echo "Install age first: brew install age"; exit 1; }
+  from_backup="${2:-dispatcher/hourly/$(s3 s3 ls "s3://$SPACES_BUCKET/dispatcher/hourly/" | sort | awk 'END {print $4}')}"
+  [[ "$from_backup" == *.dump.age ]] || { echo "No dispatcher backups in the Space yet."; exit 1; }
+fi
 export PGCONNECT_TIMEOUT=20  # fail fast instead of hanging if the network drops
 
 token="${RENDER_API_KEY:-$(awk '/^    key:/{print $2}' ~/.render/cli.yaml 2>/dev/null)}"
@@ -38,10 +49,17 @@ fi
 
 dump="tmp/staging-refresh-$(date +%Y%m%d%H%M%S).dump"
 mkdir -p tmp
-trap 'rm -f "$dump"' EXIT
+trap 'rm -f "$dump" "$dump.age"' EXIT
 
-echo "Dumping production (read-only)..."
-PGOPTIONS='-c default_transaction_read_only=on' pg_dump --format=custom --no-owner --no-acl --file="$dump" "$prod_url"
+if [ -n "$from_backup" ]; then
+  echo "Downloading and decrypting $from_backup..."
+  s3 s3 cp --only-show-errors "s3://$SPACES_BUCKET/$from_backup" "$dump.age"
+  age -d -i "${AGE_KEY_FILE/#\~/$HOME}" -o "$dump" "$dump.age"
+  rm -f "$dump.age"
+else
+  echo "Dumping production (read-only)..."
+  PGOPTIONS='-c default_transaction_read_only=on' pg_dump --format=custom --no-owner --no-acl --file="$dump" "$prod_url"
+fi
 
 echo "Restoring into staging..."
 # Restore as SQL so a newer pg_restore's settings unknown to Postgres 15 (transaction_timeout) can be dropped.
@@ -57,4 +75,4 @@ if [[ "$STAGING_SERVICE_ID" == srv-* ]]; then
   render restart "$STAGING_SERVICE_ID" --confirm >/dev/null
 fi
 
-echo "Done: staging now matches production as of $(date '+%Y-%m-%d %H:%M')."
+echo "Done: staging now matches ${from_backup:-production} as of $(date "+%Y-%m-%d %H:%M")."
