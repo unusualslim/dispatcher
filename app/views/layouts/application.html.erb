@@ -44,15 +44,16 @@
   </head>
 
   <body class="app-layout<%= ' is-staging' if staging? %>">
-    <% if staging? %>
-      <div class="staging-banner">
-        STAGING: a copy of production<% if (copied = AppSetting.get('staging_refreshed_at')) %> from <%= copied %><% end %>
-        for testing. Nothing here reaches PDI, Samsara, drivers or email.
-      </div>
-    <% end %>
     <%= render 'layouts/sidebar' %>
 
     <div class="main-wrapper">
+      <% if staging? %>
+        <div class="staging-banner">
+          <span>STAGING: a copy of production<% if (copied = AppSetting.get('staging_refreshed_at')) %> from <%= copied %><% end %>
+          for testing. Nothing here reaches PDI, Samsara, drivers or email.</span>
+          <button type="button" class="staging-banner-close" aria-label="Hide" onclick="this.parentElement.remove()">&times;</button>
+        </div>
+      <% end %>
       <%= render 'layouts/header' %>
 
       <!-- Flash Messages -->

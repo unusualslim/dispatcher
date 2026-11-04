@@ -442,6 +442,9 @@ html, body {
 /* Plain-text notes typed with line breaks (location notes, order and dispatch pages): keep the breaks on screen. */
 .pre-line { white-space: pre-line; }
 
-/* Staging copy of the app: a banner that can't be missed. */
-.staging-banner { position: sticky; top: 0; z-index: 2000; background: repeating-linear-gradient(45deg, #b45309, #b45309 12px, #92400e 12px, #92400e 24px);
+/* Staging copy of the app: a striped strip above the top bar (inside .main-wrapper, which stacks vertically;
+   .app-layout is a flex row, so the banner must not sit directly in it). The × hides it until the next page. */
+.staging-banner { display: flex; align-items: center; justify-content: center; gap: 12px; flex-shrink: 0;
+                  background: repeating-linear-gradient(45deg, #b45309, #b45309 12px, #92400e 12px, #92400e 24px);
                   color: #fff; font-weight: 700; text-align: center; padding: 4px 8px; font-size: 13px; letter-spacing: .02em; }
+.staging-banner-close { background: none; border: 0; color: #fff; font-size: 18px; line-height: 1; padding: 0 4px; cursor: pointer; }

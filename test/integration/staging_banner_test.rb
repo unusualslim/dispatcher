@@ -17,7 +17,7 @@ class StagingBannerTest < ActionDispatch::IntegrationTest
     Rails.configuration.x.staging = true
     AppSetting.set('staging_refreshed_at', '2026-11-03 21:00')
     get expense_accounts_path
-    assert_select '.staging-banner', text: /copy of production from 2026-11-03 21:00/
+    assert_select '.main-wrapper > .staging-banner', text: /copy of production from 2026-11-03 21:00/
     assert_select 'title', text: 'STAGING · FPS Team'
   end
 end
