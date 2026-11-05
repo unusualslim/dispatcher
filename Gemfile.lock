@@ -102,7 +102,7 @@ GEM
       aws-sigv4 (~> 1.5)
     aws-sigv4 (1.12.1)
       aws-eventstream (~> 1, >= 1.0.2)
-    base64 (0.2.0)
+    base64 (0.3.0)
     bcrypt (3.1.22)
     benchmark (0.5.0)
     bigdecimal (4.1.2)
@@ -148,11 +148,12 @@ GEM
     et-orbi (1.4.0)
       tzinfo
     execjs (2.9.1)
-    faraday (2.15.0)
+    faraday (2.15.1)
       faraday-net_http (>= 2.0, < 3.6)
       json
       logger
-    faraday-net_http (3.0.2)
+    faraday-net_http (3.5.0)
+      net-http (~> 0.5)
     ffi (1.16.3)
     ffi (1.16.3-x64-mingw-ucrt)
     fugit (1.14.0)
@@ -178,8 +179,8 @@ GEM
     jmespath (1.6.2)
     jsbundling-rails (1.2.1)
       railties (>= 6.0.0)
-    json (2.21.2)
-    jwt (2.10.3)
+    json (3.1.0)
+    jwt (3.3.0)
       base64
     language_server-protocol (3.17.0.6)
     lint_roller (1.1.0)
@@ -203,6 +204,8 @@ GEM
     net-ftp (0.3.9)
       net-protocol
       time
+    net-http (0.9.1)
+      uri (>= 0.11.1)
     net-imap (0.5.15)
       date
       net-protocol
@@ -213,12 +216,12 @@ GEM
     net-smtp (0.4.0)
       net-protocol
     nio4r (2.7.5)
-    nokogiri (1.19.4)
+    nokogiri (1.19.7)
       mini_portile2 (~> 2.8.2)
       racc (~> 1.4)
-    nokogiri (1.19.4-x64-mingw-ucrt)
+    nokogiri (1.19.7-x64-mingw-ucrt)
       racc (~> 1.4)
-    nokogiri (1.19.4-x86_64-linux-gnu)
+    nokogiri (1.19.7-x86_64-linux-gnu)
       racc (~> 1.4)
     orm_adapter (0.5.0)
     parallel (1.28.0)
@@ -243,7 +246,7 @@ GEM
     puma (7.2.1)
       nio4r (~> 2.0)
     raabro (1.4.0)
-    racc (1.7.3)
+    racc (1.8.1)
     rack (3.2.7)
     rack-session (2.1.2)
       base64 (>= 0.1.0)
@@ -378,9 +381,9 @@ GEM
       actionpack (>= 6.0.0)
       activejob (>= 6.0.0)
       railties (>= 6.0.0)
-    twilio-ruby (6.8.3)
-      faraday (>= 0.9, < 3.0)
-      jwt (>= 1.5, < 3.0)
+    twilio-ruby (7.12.0)
+      faraday (>= 2.0, < 3.0)
+      jwt (>= 1.5, < 4.0)
       nokogiri (>= 1.6, < 2.0)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
