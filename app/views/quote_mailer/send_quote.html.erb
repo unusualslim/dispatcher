@@ -72,7 +72,9 @@
   </div>
 
   <div class="footer">
-    Five Points Service, Inc. &nbsp;|&nbsp; Americus, GA &nbsp;|&nbsp; This quote is valid until <%= @quote.expiry_date&.strftime("%B %-d, %Y") || "further notice" %>.
+    <% company = AppSetting.company %>
+    <%= safe_join([company['name'], [company['address'], company['city_state_zip']].compact_blank.join(', '), company['phone']].compact_blank, raw(' &nbsp;|&nbsp; ')) %>
+    &nbsp;|&nbsp; This quote is valid until <%= @quote.expiry_date&.strftime("%B %-d, %Y") || "further notice" %>.
   </div>
 </body>
 </html>

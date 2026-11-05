@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<%
+  quote    = @quote
+  company  = @company
+  customer = quote.customer
+  site     = quote.location
+  lines    = quote.quote_products.includes(:product).sort_by(&:id)
+  long     = ->(d) { d&.strftime('%B %-d, %Y') }
+  qty      = ->(n) { n.nil? ? '' : number_with_precision(n, precision: 3, strip_insignificant_zeros: true, delimiter: ',') }
+  has_qty  = lines.any? { |l| l.quantity.to_f.positive? }
+  contact  = [company['phone'], company['email'], company['website']].compact_blank
+%>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Quote <%= quote.quote_number %> · <%= customer.name %></title>
+  <style>
+    :root { --ink: #1c1917; --muted: #57534e; --rule: #d6d3d1; --accent: #f26722; --tint: #fff4ee; }
+    * { box-sizing: border-box; }
+    body { font: 11px/1.45 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: var(--ink); background: #e7e5e4;
+           margin: 0; padding: 16px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .toolbar { display: flex; justify-content: flex-end; gap: 12px; max-width: 8.5in; margin: 0 auto 12px; font-size: 13px; }
+    .toolbar button, .toolbar a { font: inherit; padding: 6px 14px; border: 1px solid #a8a29e; background: #fff; border-radius: 4px;
+                                  cursor: pointer; color: inherit; text-decoration: none; }
+    .page { width: 8.5in; min-height: 11in; margin: 0 auto; background: #fff; padding: 0.5in 0.55in 0.45in;
+            display: flex; flex-direction: column; position: relative; }
+
+    header { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
+    .brand img { height: 52px; display: block; margin-bottom: 8px; }
+    .brand .name { font-size: 14px; font-weight: 700; }
+    .brand .muted { color: var(--muted); }
+    .title { text-align: right; }
+    .title h1 { margin: 0; font-size: 30px; letter-spacing: .14em; color: var(--accent); font-weight: 800; }
+    .title .number { font-size: 13px; font-weight: 700; margin-top: 2px; }
+    .stripe { height: 4px; background: var(--accent); margin: 14px 0 16px; border-radius: 2px; }
+
+    .label { font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); display: block;
+             margin-bottom: 2px; }
+    .meta { display: grid; grid-template-columns: 1.3fr 1.3fr 1fr; gap: 18px; margin-bottom: 18px; }
+    .meta .name { font-weight: 700; font-size: 12.5px; }
+    .meta .muted { color: var(--muted); }
+    .facts div { display: flex; justify-content: space-between; gap: 8px; padding: 2px 0; border-bottom: 1px dotted var(--rule); }
+    .facts div span:first-child { color: var(--muted); }
+    .facts div span:last-child { font-weight: 600; text-align: right; }
+
+    .lock { background: var(--tint); border-left: 3px solid var(--accent); padding: 7px 10px; margin-bottom: 14px; }
+
+    table { width: 100%; border-collapse: collapse; }
+    thead th { font-size: 8.5px; text-transform: uppercase; letter-spacing: .06em; text-align: left; color: #fff;
+               background: var(--ink); padding: 6px 6px; }
+    tbody td { padding: 7px 6px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+    tbody tr:nth-child(even) td { background: #fafaf9; }
+    .num { text-align: right; white-space: nowrap; }
+    .mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 10.5px; }
+    .totals { display: flex; justify-content: flex-end; margin-top: 8px; }
+    .totals table { width: 2.8in; }
+    .totals td { padding: 5px 6px; border: none; }
+    .totals .grand td { font-size: 13px; font-weight: 800; border-top: 2px solid var(--ink); }
+
+    .notes, .terms { margin-top: 18px; }
+    .notes p, .terms p { margin: 0; white-space: pre-line; }
+    .terms p { color: var(--muted); font-size: 9.5px; }
+
+    .accept { display: grid; grid-template-columns: 2fr 1.4fr 1fr; gap: 20px; margin-top: auto; padding-top: 28px; }
+    .accept .line { border-bottom: 1px solid var(--ink); height: 0.38in; }
+    .thanks { text-align: center; color: var(--muted); font-size: 9.5px; margin-top: 18px; padding-top: 8px;
+              border-top: 1px solid var(--rule); }
+    .watermark { position: absolute; top: 42%; left: 0; right: 0; text-align: center; font-size: 110px; font-weight: 800;
+                 letter-spacing: .2em; color: rgba(28, 25, 23, .06); transform: rotate(-24deg); pointer-events: none; }
+
+    @page { size: letter portrait; margin: 0; }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .toolbar { display: none; }
+      .page { margin: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <%= link_to 'Back to quote', quote_path(quote) %>
+    <button type="button" onclick="window.print()">Print</button>
+  </div>
+
+  <section class="page">
+    <% if quote.draft? %><div class="watermark">DRAFT</div><% end %>
+
+    <header>
+      <div class="brand">
+        <%= image_tag 'fps-logo.png', alt: company['name'] %>
+        <div class="name"><%= company['name'] %></div>
+        <% if company['address'].present? %><div class="muted"><%= company['address'] %></div><% end %>
+        <% if company['city_state_zip'].present? %><div class="muted"><%= company['city_state_zip'] %></div><% end %>
+        <% if contact.any? %><div class="muted"><%= contact.join(' · ') %></div><% end %>
+      </div>
+      <div class="title">
+        <h1>QUOTE</h1>
+        <div class="number"><%= quote.quote_number %></div>
+      </div>
+    </header>
+
+    <div class="stripe"></div>
+
+    <div class="meta">
+      <div>
+        <span class="label">Prepared for</span>
+        <div class="name"><%= customer.name %></div>
+        <% if customer.phone.present? %><div class="muted"><%= customer.phone %></div><% end %>
+        <% if customer.email.present? %><div class="muted"><%= customer.email %></div><% end %>
+      </div>
+      <div>
+        <% if site %>
+          <span class="label">Delivery location</span>
+          <div class="name"><%= site.company_name %></div>
+          <% if site.address.present? %><div><%= site.address %></div><% end %>
+          <% city = [site.city, [site.state, site.zip].compact_blank.join(' ')].compact_blank.join(', ') %>
+          <% if city.present? %><div><%= city %></div><% end %>
+        <% end %>
+      </div>
+      <div class="facts">
+        <div><span>Quote date</span><span><%= (quote.sent_at || quote.created_at).strftime('%m/%d/%Y') %></span></div>
+        <% if quote.valid_from %>
+          <div><span>Prices from</span><span><%= quote.valid_from.strftime('%m/%d/%Y') %></span></div>
+        <% end %>
+        <div><span>Valid until</span><span><%= quote.expiry_date&.strftime('%m/%d/%Y') || 'Further notice' %></span></div>
+      </div>
+    </div>
+
+    <% if quote.locks_pricing? && quote.valid_from && quote.expiry_date %>
+      <div class="lock">
+        Once accepted, these prices are held for <strong><%= customer.name %></strong> on orders from
+        <strong><%= long.(quote.valid_from) %></strong> through <strong><%= long.(quote.expiry_date) %></strong>.
+      </div>
+    <% end %>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 0.95in;">Item #</th>
+          <th>Description</th>
+          <% if has_qty %><th class="num" style="width: 0.8in;">Qty</th><% end %>
+          <th style="width: 0.6in;">Unit</th>
+          <th class="num" style="width: 1in;">Unit Price</th>
+          <% if has_qty %><th class="num" style="width: 1in;">Amount</th><% end %>
+        </tr>
+      </thead>
+      <tbody>
+        <% lines.each do |line| %>
+          <tr>
+            <td class="mono"><%= line.product_id %></td>
+            <td><%= line.product&.name || line.product_name %></td>
+            <% if has_qty %><td class="num"><%= qty.(line.quantity) %></td><% end %>
+            <td><%= line.product&.pdi_package_code.presence || line.product&.unit_of_measurement %></td>
+            <td class="num"><%= number_to_currency(line.price, precision: 4) %></td>
+            <% if has_qty %><td class="num"><%= number_to_currency(line.line_total) %></td><% end %>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+
+    <% if has_qty %>
+      <div class="totals">
+        <table>
+          <tr class="grand"><td>Total</td><td class="num"><%= number_to_currency(quote.total) %></td></tr>
+        </table>
+      </div>
+    <% end %>
+
+    <% if quote.notes.present? %>
+      <div class="notes"><span class="label">Notes</span><p><%= quote.notes %></p></div>
+    <% end %>
+
+    <% if company['quote_terms'].present? %>
+      <div class="terms"><span class="label">Terms</span><p><%= company['quote_terms'] %></p></div>
+    <% end %>
+
+    <div class="accept">
+      <div><div class="line"></div><span class="label">Accepted by (signature)</span></div>
+      <div><div class="line"></div><span class="label">Printed name</span></div>
+      <div><div class="line"></div><span class="label">Date</span></div>
+    </div>
+
+    <div class="thanks">Thank you for the opportunity to quote your business. — <%= company['name'] %></div>
+  </section>
+</body>
+</html>

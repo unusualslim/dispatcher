@@ -100,9 +100,11 @@ Rails.application.routes.draw do
       post :reject
       patch :end_lock
       get  :margin_review
+      get  :print
       post :requote
     end
   end
+  resource :company_settings, only: %i[edit update]
 
   resources :customer_orders do
     post 'create_dispatch', on: :member

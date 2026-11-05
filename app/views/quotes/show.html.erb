@@ -42,9 +42,10 @@
           <i class="bi bi-unlock"></i> <%= @quote.lock_ended_on ? 'Change Lock End' : 'End Lock Early' %>
         </button>
       <% end %>
-      <button onclick="window.print()" class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-printer"></i>
-      </button>
+      <%= link_to print_quote_path(@quote), class: "btn btn-outline-secondary btn-sm", target: '_blank', rel: 'noopener',
+            title: 'Print customer copy' do %>
+        <i class="bi bi-printer"></i> Print
+      <% end %>
       <% if @quote.draft? %>
         <%= button_to quote_path(@quote), method: :delete, class: "btn btn-outline-danger btn-sm",
               data: { confirm: "Delete this quote?" } do %>

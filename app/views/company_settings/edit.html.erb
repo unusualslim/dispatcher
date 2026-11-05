@@ -1,0 +1,31 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="mb-0">Company Info</h1>
+</div>
+
+<%= form_with url: company_settings_path, method: :patch, local: true do %>
+  <div class="card shadow-sm" style="max-width: 720px;">
+    <div class="card-body">
+      <p class="text-muted small">Printed with the logo at the top of customer-facing documents (quotes).</p>
+      <% fields = { 'name' => 'Company name', 'address' => 'Street address', 'city_state_zip' => 'City, state ZIP',
+                    'phone' => 'Phone', 'email' => 'Email', 'website' => 'Website' } %>
+      <div class="row g-3">
+        <% fields.each do |key, label| %>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold" for="company_<%= key %>"><%= label %></label>
+            <%= text_field_tag "company[#{key}]", @company[key], id: "company_#{key}", class: 'form-control',
+                  required: key == 'name' %>
+          </div>
+        <% end %>
+        <div class="col-12">
+          <label class="form-label fw-semibold" for="company_quote_terms">Quote terms</label>
+          <%= text_area_tag 'company[quote_terms]', @company['quote_terms'], id: 'company_quote_terms', rows: 4,
+                class: 'form-control' %>
+          <div class="form-text">Printed at the bottom of every quote. Leave blank to print none.</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-footer bg-white">
+      <%= submit_tag 'Save', class: 'btn btn-primary' %>
+    </div>
+  </div>
+<% end %>

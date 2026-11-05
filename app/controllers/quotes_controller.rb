@@ -1,7 +1,7 @@
 class QuotesController < ApplicationController
   permission_area :sales, approve: %i[accept reject end_lock], feature: :quotes, flag: :customer_pricing
   before_action :set_quote,
-                only: %i[show edit update destroy send_quote accept reject end_lock margin_review requote]
+                only: %i[show print edit update destroy send_quote accept reject end_lock margin_review requote]
   before_action :require_editable, only: %i[edit update]
 
   def index
@@ -12,6 +12,12 @@ class QuotesController < ApplicationController
   end
 
   def show; end
+
+  # Customer copy: logo, company details, lines and terms (layout-less, like the PO print).
+  def print
+    @company = AppSetting.company
+    render layout: false
+  end
 
   def new
     @quote = Quote.new(

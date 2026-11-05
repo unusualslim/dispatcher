@@ -59,6 +59,10 @@ en:
   home_pages:
     update:
       updated: "Home page saved."
+  company_settings:
+    update:
+      name_required: "Company name can't be blank."
+      updated: "Company info saved."
   costing_settings:
     update:
       invalid_rate: "Labor rate must be a positive number."
