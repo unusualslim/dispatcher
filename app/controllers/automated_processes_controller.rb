@@ -15,6 +15,13 @@ class AutomatedProcessesController < ApplicationController
     { slug: 'pdi-fuel-inventory-sync', name: PdiFuelInventorySyncJob::PROCESS_NAME, job: 'PdiFuelInventorySyncJob',
       description: 'Syncs fuel tank stock by product and site from PDI FTP (FI Inventory Report.xls)',
       default_schedule: '0 6 * * *' },
+    { slug: 'pdi-po-lines-sync', name: PdiPoLinesSyncJob::PROCESS_NAME, job: 'PdiPoLinesSyncJob',
+      description: 'Imports PO lines from the nightly PDI SQL export (FPS_PO_LINES_*.csv on PDI FTP)',
+      default_schedule: '' },
+    { slug: 'pdi-invoice-dates-sync', name: PdiInvoiceDatesSyncJob::PROCESS_NAME, job: 'PdiInvoiceDatesSyncJob',
+      description: 'Updates invoice dates, numbers and salespeople from the nightly PDI SQL export ' \
+                   '(FPS_INVOICE_DATES_*.csv on PDI FTP)',
+      default_schedule: '' },
     { slug: 'pdi-gl-export', name: PdiGlExport::PROCESS_NAME, job: 'PdiGlExportJob',
       description: 'Posts completed production orders\' FPST journals and uploads pending GL entries to PDI FTP' },
     { slug: 'pdi-master-data-sync', name: PdiMasterDataSyncJob::PROCESS_NAME, job: 'PdiMasterDataSyncJob',

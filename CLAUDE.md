@@ -170,6 +170,10 @@ download the file, delete it from FTP, run an import service, and record a `Sync
   the user's PDI SQL query (columns found by header: order number, invoice date, optional invoice # / salesperson) and
   bulk-updates orders by `external_order_no`. Big `orders.xls` files time out (Cloudflare ~100s, roo memory), so this is
   the route for history.
+- **Nightly PDI SQL export** (docs/pdi_sql_export.md): the user's SQL Server job uploads `FPS_PO_LINES_<date>.csv` (56-col,
+  no header) and `FPS_INVOICE_DATES_<date>.csv` to FTP `/Imports` (`PDI_FTP_SQL_EXPORT_DIR`); `PdiPoLinesSyncJob` /
+  `PdiInvoiceDatesSyncJob` (`PdiCsvPickup`: all waiting files oldest first, SyncLog per file, delete on success, failed files stay)
+  run the same services as the manual imports. Schedules start Off.
 - Manual imports (each with a preview step, and downloadable source file via SyncLog):
   customer orders, PDI products, PDI inventory, PDI purchase orders, purchase orders,
   repack batches, warehouse transactions, inventory, BOMs, min/max, vendor freight terms.
@@ -408,7 +412,7 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
 - `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` — registration captcha (also readable from credentials)
 - `PDI_API_PARTNER_ID`, `PDI_API_PASSWORD` (+ optional `PDI_API_URL`) — PDI Enterprise Web Service
 - `PDI_FTP_HOST`, `PDI_FTP_USER`, `PDI_FTP_PASSWORD` (+ optional `PDI_FTP_ORDER_DIR`,
-  `PDI_FTP_VENDOR_DIR`, `PDI_FTP_PRODUCT_DIR`, `PDI_FTP_PO_DIR`, `PDI_FTP_FUEL_DIR`, `PDI_FTP_GL_DIR`, `PDI_FTP_PATH`)
+  `PDI_FTP_VENDOR_DIR`, `PDI_FTP_PRODUCT_DIR`, `PDI_FTP_PO_DIR`, `PDI_FTP_FUEL_DIR`, `PDI_FTP_GL_DIR`, `PDI_FTP_SQL_EXPORT_DIR`, `PDI_FTP_PATH`)
 - `SENDGRID_USERNAME`, `SENDGRID_PASSWORD`
 - `TWILIO_SID`, `TWILIO_TOKEN`, `TWILIO_NUMBER` (MessagesController reads Twilio creds from Rails credentials)
 - `BATCH_QR_PASSWORD`, `BATCH_QR_SECRET` — batch label/QR gate (/gate, /labels, /l)
