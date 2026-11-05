@@ -24,6 +24,18 @@ class QuotePrintTest < ActionDispatch::IntegrationTest
     assert_includes response.body, 'DRAFT'
   end
 
+  test 'an accepted quote says its prices are held, not "once accepted"' do
+    @quote.update!(status: 'accepted', locks_pricing: true, valid_from: Date.new(2026, 11, 1),
+                   expiry_date: Date.new(2026, 12, 31), accepted_at: Time.zone.local(2026, 11, 5, 9))
+    sign_in @admin
+    get print_quote_path(@quote)
+
+    assert_includes response.body, 'Accepted November 5, 2026'
+    assert_includes response.body, 'December 31, 2026'
+    assert_not_includes response.body, 'Once accepted'
+    assert_not_includes response.body, 'DRAFT'
+  end
+
   test 'admins edit the company info used on quotes' do
     sign_in @admin
     patch company_settings_path, params: { company: { name: 'Five Points Service, Inc.', address: '1 Main St',

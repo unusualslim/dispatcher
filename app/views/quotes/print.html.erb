@@ -127,10 +127,17 @@
       </div>
     </div>
 
-    <% if quote.locks_pricing? && quote.valid_from && quote.expiry_date %>
+    <% if quote.locks_pricing? && quote.valid_from && quote.expiry_date && !quote.rejected? %>
+      <% held_through = quote.lock_ended_on ? quote.lock_ended_on - 1 : quote.expiry_date %>
       <div class="lock">
-        Once accepted, these prices are held for <strong><%= customer.name %></strong> on orders from
-        <strong><%= long.(quote.valid_from) %></strong> through <strong><%= long.(quote.expiry_date) %></strong>.
+        <% if quote.accepted? %>
+          Accepted<%= " #{long.(quote.accepted_at.to_date)}" if quote.accepted_at %>.
+          These prices are held for <strong><%= customer.name %></strong> on orders from
+          <strong><%= long.(quote.valid_from) %></strong> through <strong><%= long.(held_through) %></strong>.
+        <% else %>
+          Once accepted, these prices are held for <strong><%= customer.name %></strong> on orders from
+          <strong><%= long.(quote.valid_from) %></strong> through <strong><%= long.(quote.expiry_date) %></strong>.
+        <% end %>
       </div>
     <% end %>
 
