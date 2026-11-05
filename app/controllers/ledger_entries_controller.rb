@@ -1,5 +1,5 @@
 class LedgerEntriesController < ApplicationController
-  permission_area :accounting, approve: %i[create reverse export]
+  permission_area :accounting, approve: %i[create reverse export], feature: :gl_entries, flag: :gl
 
   def index
     @status = params[:status].presence_in(LedgerEntry::STATUSES)

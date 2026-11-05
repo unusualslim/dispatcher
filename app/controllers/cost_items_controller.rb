@@ -1,6 +1,6 @@
 # Accounting → Cost Items: the non-inventory cost catalog that product cost lines price from.
 class CostItemsController < ApplicationController
-  permission_area :accounting
+  permission_area :accounting, feature: :costing_setup, flag: :costs
   before_action :set_cost_item, only: %i[update destroy]
 
   def index

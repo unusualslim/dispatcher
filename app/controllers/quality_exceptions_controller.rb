@@ -1,6 +1,6 @@
 # Out-of-range quality results waiting for someone with Production approval to review.
 class QualityExceptionsController < ApplicationController
-  permission_area :production, approve: %i[review]
+  permission_area :production, approve: %i[review], features: { review: :quality }
 
   def index
     @show_reviewed = params[:reviewed] == '1'

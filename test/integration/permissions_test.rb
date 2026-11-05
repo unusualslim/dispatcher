@@ -6,8 +6,7 @@ class PermissionsTest < ActionDispatch::IntegrationTest
   fixtures :products
 
   def staff(permissions)
-    User.create!(email: "staff-#{SecureRandom.hex(3)}@example.com", password: 'password123', role: 'staff',
-                 permissions: permissions)
+    staff_user("staff-#{SecureRandom.hex(3)}@example.com", permissions)
   end
 
   test 'levels stack and admin trumps everything' do
@@ -94,17 +93,21 @@ class PermissionsTest < ActionDispatch::IntegrationTest
     assert_redirected_to edit_user_registration_path
   end
 
-  test 'admins set area access on the user page' do
+  test 'admins give users roles and hide data on the user page' do
     admin = User.create!(email: 'admin-perm@example.com', password: 'password123', role: 'admin')
     user = staff({})
+    role = Role.create!(name: 'Accounting clerk', area_levels: { 'sales' => 'view', 'accounting' => 'approve' })
     sign_in admin
 
-    patch user_path(user), params: { user: { role: 'staff', permissions: { 'sales' => 'view', 'accounting' => 'approve',
-                                                                           'dispatch' => '' } } }
-    assert_equal({ 'sales' => 'view', 'accounting' => 'approve' }, user.reload.permissions)
+    patch user_path(user), params: { user: { role: 'staff', role_ids: ['', role.id.to_s], hidden_flags: ['', 'gl'] } }
+    user.reload
+    assert_equal [role], user.roles
+    assert_equal ['gl'], user.hidden_flags
+    assert user.can?(:accounting, :approve)
 
     get edit_user_path(user)
-    assert_select 'input[type=radio][name="user[permissions][accounting]"][value=approve][checked]'
+    assert_select "input[type=checkbox][name='user[role_ids][]'][value='#{role.id}'][checked]"
+    assert_select "input[type=checkbox][name='user[hidden_flags][]'][value=gl][checked]"
   end
 
   test 'dispatch and production staff reach their screens' do

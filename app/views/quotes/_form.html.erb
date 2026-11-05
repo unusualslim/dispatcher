@@ -223,6 +223,13 @@
       .catch(function() {});
   }
 
+  // Product pickers are searchable by product number or name (the number is in each option's text).
+  function searchable(select) {
+    if (!window.$ || !$.fn.select2 || $(select).hasClass('select2-hidden-accessible')) return;
+    $(select).select2({ placeholder: '— Select product —', width: '100%', theme: 'bootstrap-5' })
+      .on('change', function() { priceRow(this.closest('tr')); });
+  }
+
   // ── Rows ────────────────────────────────────────────────────────────────
   var rowIndex = Date.now();
   function addRow(productId) {
@@ -230,6 +237,7 @@
     body.insertAdjacentHTML('beforeend', html);
     var row = body.lastElementChild;
     if (productId) row.querySelector('.product-select').value = productId;
+    searchable(row.querySelector('.product-select'));
     return row;
   }
 
@@ -263,9 +271,12 @@
   // select2 fires jQuery change events; without it, listen natively.
   if (!window.$) customerField.addEventListener('change', onCustomerChange);
 
-  body.addEventListener('change', function(e) {
-    if (e.target.classList.contains('product-select')) priceRow(e.target.closest('tr'));
-  });
+  // Without select2, listen natively (select2 fires jQuery change events, handled in searchable()).
+  if (!window.$ || !$.fn.select2) {
+    body.addEventListener('change', function(e) {
+      if (e.target.classList.contains('product-select')) priceRow(e.target.closest('tr'));
+    });
+  }
 
   body.addEventListener('input', function(e) {
     var row = e.target.closest('tr');
@@ -321,5 +332,6 @@
       .on('change', onCustomerChange);
     $('.select2-location').select2({ placeholder: '— Select location —', allowClear: true, width: '100%', theme: 'bootstrap-5' });
   }
+  body.querySelectorAll('.product-select').forEach(searchable);
 })();
 </script>

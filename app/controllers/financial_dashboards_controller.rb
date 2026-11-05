@@ -1,5 +1,5 @@
 class FinancialDashboardsController < ApplicationController
-  permission_area :accounting
+  permission_area :accounting, flag: :financial_dashboard
 
   def show
     month = parse_month(params[:month]) || Date.current.beginning_of_month

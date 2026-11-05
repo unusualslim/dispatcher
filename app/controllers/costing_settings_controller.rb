@@ -1,5 +1,5 @@
 class CostingSettingsController < ApplicationController
-  permission_area :accounting
+  permission_area :accounting, feature: :costing_setup, flag: :costs
 
   def edit
     @labor_rate = AppSetting.labor_rate

@@ -102,8 +102,7 @@ class FreightTest < ActionDispatch::IntegrationTest
     get docs_freight_guide_path
     assert_select 'h1', 'Freight'
 
-    sign_in User.create!(email: 'viewer-freight@example.com', password: 'password123', role: 'staff',
-                         permissions: { 'sales' => 'view' })
+    sign_in staff_user('viewer-freight@example.com', { 'sales' => 'view' })
     get freight_rules_path
     assert_response :success
     post freight_classes_path, params: { freight_class: { code: 'ZZ', full_load_quantity: 1 } }

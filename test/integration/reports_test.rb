@@ -6,8 +6,7 @@ class ReportsTest < ActionDispatch::IntegrationTest
   fixtures :products, :locations, :location_categories
 
   def staff(permissions)
-    User.create!(email: "staff-#{SecureRandom.hex(3)}@example.com", password: 'password123', role: 'staff',
-                 permissions: permissions)
+    staff_user("staff-#{SecureRandom.hex(3)}@example.com", permissions)
   end
 
   setup do

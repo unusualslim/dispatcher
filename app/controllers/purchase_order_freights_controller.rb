@@ -3,6 +3,7 @@
 class PurchaseOrderFreightsController < ApplicationController
   permission_area :purchasing
   before_action :set_purchase_order
+  before_action -> { require_feature!(@purchase_order.expense? ? :expense_pos : :inventory_pos) }
 
   def update
     PurchaseOrder.transaction do

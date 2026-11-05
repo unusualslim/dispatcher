@@ -42,8 +42,7 @@ class LocationMergesTest < ActionDispatch::IntegrationTest
   end
 
   test 'staff cannot merge locations' do
-    sign_in User.create!(email: 'staff-lm@example.com', password: 'password123', role: 'staff',
-                         permissions: { 'dispatch' => 'approve' })
+    sign_in staff_user('staff-lm@example.com', { 'dispatch' => 'approve' })
     post location_merges_path, params: { source_id: @dupe.id, target_id: @keep.id }
     assert Location.exists?(@dupe.id)
   end

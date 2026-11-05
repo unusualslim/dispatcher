@@ -9,7 +9,7 @@
     <%= pf.hidden_field :_destroy, class: 'destroy-field' %>
     <%= pf.hidden_field :pricing_rule_id, class: 'rule-field' %>
     <%= pf.select :product_id,
-          products.map { |p| [p.name, p.id] },
+          products.map { |p| ["#{p.id} — #{p.name}", p.id] },
           { include_blank: '— Select product —', selected: selected_id },
           class: 'form-select form-select-sm product-select' %>
   </td>

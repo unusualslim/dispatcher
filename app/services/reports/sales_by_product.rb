@@ -2,7 +2,7 @@ module Reports
   class SalesByProduct < Base
     include SalesLines
 
-    report title: 'Sales by product', area: :sales,
+    report title: 'Sales by product', area: :sales, flag: :financial_dashboard,
            description: 'Quantity, average price and net sales per product for orders invoiced in the period.',
            filters: %i[dates item_type customer_id location_id]
 

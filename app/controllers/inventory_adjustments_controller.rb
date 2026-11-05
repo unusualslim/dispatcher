@@ -1,5 +1,5 @@
 class InventoryAdjustmentsController < ApplicationController
-  permission_area :inventory
+  permission_area :inventory, feature: :adjustments
   REASON_CODES = [
     'Count Correction',
     'Spill / Loss',

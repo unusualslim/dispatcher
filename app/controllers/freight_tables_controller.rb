@@ -1,6 +1,6 @@
 # A freight index table (point to point, mileage or flat) and its rates. Listed on Freight Rules → Tables.
 class FreightTablesController < ApplicationController
-  permission_area :sales
+  permission_area :sales, feature: :freight_setup
   before_action :set_table, only: %i[show edit update destroy]
 
   def show

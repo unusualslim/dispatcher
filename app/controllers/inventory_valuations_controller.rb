@@ -1,5 +1,5 @@
 class InventoryValuationsController < ApplicationController
-  permission_area :inventory
+  permission_area :inventory, flag: :costs
   before_action :require_admin!, only: %i[opening reset_tracking replay]
   before_action :require_reset_allowed!, only: :reset_tracking
 

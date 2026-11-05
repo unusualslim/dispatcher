@@ -7,8 +7,7 @@ class VoidAccessTest < ActionDispatch::IntegrationTest
 
   test 'only admins can void production orders' do
     po = ProductionOrder.create!(product: products(:def_finished))
-    sign_in User.create!(email: 'staff-void@example.com', password: 'password123', role: 'staff',
-                         permissions: { 'production' => 'approve' })
+    sign_in staff_user('staff-void@example.com', { 'production' => 'approve' })
     post void_production_order_path(po), params: { void_reason: 'nope' }
     assert_not po.reload.voided?
 
@@ -23,8 +22,7 @@ class VoidAccessTest < ActionDispatch::IntegrationTest
 
   test 'only admins can void purchase orders' do
     po = PurchaseOrder.create!(vendor: Vendor.create!(id: 'V-VOID', name: 'Void Vendor'), status: 'draft')
-    sign_in User.create!(email: 'staff-povoid@example.com', password: 'password123', role: 'staff',
-                         permissions: { 'purchasing' => 'approve' })
+    sign_in staff_user('staff-povoid@example.com', { 'purchasing' => 'approve' })
     post void_purchase_order_path(po), params: { void_reason: 'nope' }
     assert_not po.reload.voided?
 

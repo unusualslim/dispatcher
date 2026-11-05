@@ -3,7 +3,7 @@ class CustomersController < ApplicationController
   include RemembersListFilters
   include ListNeighbors
 
-  permission_area :sales, lookups: %i[search select2]
+  permission_area :sales, lookups: %i[search select2], feature: :customers
   before_action :set_customer, only: %i[edit update destroy]
 
   # GET /customers

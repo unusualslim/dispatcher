@@ -44,8 +44,7 @@ class SamsaraRoutingTest < ActionDispatch::IntegrationTest
   end
 
   test 'staff without dispatch edit cannot send' do
-    sign_in User.create!(email: 'viewer-samsara@example.com', password: 'password123', role: 'staff',
-                         permissions: { 'dispatch' => 'view' })
+    sign_in staff_user('viewer-samsara@example.com', { 'dispatch' => 'view' })
     post send_to_samsara_dispatch_path(@dispatch)
     assert_nil @dispatch.reload.samsara_route_id
   end
@@ -72,8 +71,7 @@ class SamsaraRoutingTest < ActionDispatch::IntegrationTest
   end
 
   test 'Samsara settings are admin-only' do
-    sign_in User.create!(email: 'staff-samsara@example.com', password: 'password123', role: 'staff',
-                         permissions: { 'dispatch' => 'approve' })
+    sign_in staff_user('staff-samsara@example.com', { 'dispatch' => 'approve' })
     get edit_samsara_settings_path
     assert_response :redirect
   end

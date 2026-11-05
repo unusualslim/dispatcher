@@ -1,6 +1,6 @@
 module Reports
   class InventoryMovements < Base
-    report title: 'Inventory movements', area: :inventory,
+    report title: 'Inventory movements', area: :inventory, flag: :costs,
            description: 'Costed stock movements in the period: receipts, sales, production, adjustments, PDI sync ' \
                         'differences and revaluations, with quantity and value.',
            filters: %i[dates product_id location_id movement_type]

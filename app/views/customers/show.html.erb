@@ -78,6 +78,7 @@
       </div>
 
       <!-- Locked Prices -->
+      <% if sees?(:customer_pricing) %>
       <% locks = QuoteProduct.joins(:quote).merge(Quote.accepted_locks)
                              .where(quotes: { customer_id: @customer.id })
                              .where('quotes.expiry_date >= ?', Date.today)
@@ -115,6 +116,7 @@
           <p class="text-muted text-center">No locked prices. Orders are priced from the live pricing rules.</p>
         <% end %>
       </div>
+      <% end %>
 
       <!-- Orders Table -->
       <div class="mt-5">

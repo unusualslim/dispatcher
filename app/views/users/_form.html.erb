@@ -70,41 +70,45 @@
         </div>
       </div>
 
-      <%# ── Area access (staff) ──────────────────────────────── %>
+      <%# ── Roles (staff) ─────────────────────────────────────── %>
       <div class="card-body border-bottom" id="area-access">
-        <h6 class="text-muted text-uppercase fw-semibold mb-1" style="font-size:.72rem;letter-spacing:.06em;">Area Access</h6>
-        <p class="text-muted small mb-3">
-          For <strong>Staff</strong> users. Each level includes the ones before it: <strong>View</strong> looks,
-          <strong>Edit</strong> creates and changes, <strong>Approve</strong> also signs off (approve/submit POs, accept quotes,
-          post and export GL, mark dispatches billed, correct line clock times). Only Admins can delete.
+        <h6 class="text-muted text-uppercase fw-semibold mb-1" style="font-size:.72rem;letter-spacing:.06em;">Roles</h6>
+        <p class="text-muted small mb-2">
+          For <strong>Staff</strong> users. Their access adds up across every role they hold.
+          Build and change roles on <%= link_to 'Roles', roles_path %>.
         </p>
-        <div class="table-responsive">
-          <table class="table table-sm align-middle mb-0" style="max-width: 560px;">
-            <thead class="table-light">
-              <tr>
-                <th>Area</th>
-                <th class="text-center">None</th>
-                <% User::LEVELS.each do |level| %><th class="text-center"><%= level.capitalize %></th><% end %>
-              </tr>
-            </thead>
-            <tbody>
-              <% User::AREAS.each do |area, label| %>
-                <% current_level = user.permissions[area].to_s %>
-                <tr>
-                  <td><%= label %></td>
-                  <% (['', *User::LEVELS]).each do |level| %>
-                    <td class="text-center">
-                      <%= radio_button_tag "user[permissions][#{area}]", level, current_level == level,
-                                           class: 'form-check-input', id: "perm_#{area}_#{level.presence || 'none'}",
-                                           "aria-label": "#{label}: #{level.presence || 'none'}" %>
-                    </td>
-                  <% end %>
-                </tr>
-              <% end %>
-            </tbody>
-          </table>
+        <%= hidden_field_tag 'user[role_ids][]', '' %>
+        <div class="row g-1">
+          <% Role.ordered.each do |role| %>
+            <div class="col-md-6">
+              <div class="form-check">
+                <%= check_box_tag 'user[role_ids][]', role.id, user.role_ids.include?(role.id), id: "user_role_#{role.id}", class: 'form-check-input' %>
+                <label class="form-check-label" for="user_role_<%= role.id %>">
+                  <%= role.name %> <span class="text-muted small"><%= role.area_summary %></span>
+                </label>
+              </div>
+            </div>
+          <% end %>
         </div>
+        <% if Role.none? %><p class="text-muted small mb-0">No roles yet: <%= link_to 'create one', new_role_path %>.</p><% end %>
       </div>
+
+      <%# ── Hidden data (anyone, admins too) ─────────────────── %>
+      <div class="card-body border-bottom">
+        <h6 class="text-muted text-uppercase fw-semibold mb-1" style="font-size:.72rem;letter-spacing:.06em;">Hidden from this user</h6>
+        <p class="text-muted small mb-2">Wins over roles and over Admin: ticked data stays hidden from this person.</p>
+        <%= hidden_field_tag 'user[hidden_flags][]', '' %>
+        <% User::DATA_FLAGS.each do |key, flag| %>
+          <div class="form-check form-check-inline">
+            <%= check_box_tag 'user[hidden_flags][]', key, user.hidden_flags.include?(key), id: "user_hidden_#{key}", class: 'form-check-input' %>
+            <label class="form-check-label" for="user_hidden_<%= key %>"><%= flag[:label] %></label>
+          </div>
+        <% end %>
+      </div>
+
+      <% if user.persisted? && (user.admin? || user.staff?) %>
+        <%= render 'users/access_summary', user: user %>
+      <% end %>
 
       <%# ── Password reset ────────────────────────────────────── %>
       <div class="card-body border-bottom">

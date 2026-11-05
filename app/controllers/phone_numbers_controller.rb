@@ -1,5 +1,5 @@
 class PhoneNumbersController < ApplicationController
-  permission_area :sales # customer phone numbers
+  permission_area :sales, feature: :customers # customer phone numbers
   before_action :set_phone_number, only: [:destroy]
 
   def destroy

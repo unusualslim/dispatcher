@@ -10,5 +10,10 @@ class ActiveSupport::TestCase
 
   # Fixtures are declared per test class — do not load all globally.
 
-  # Add more helper methods to be used by all tests here...
+  # A staff user holding one role with these area levels (and, unless limited, every feature right and data flag).
+  def staff_user(email, levels, features: User::FEATURES.keys, flags: User::DATA_FLAGS.keys, **attrs)
+    role = Role.create!(name: "Test role #{SecureRandom.hex(4)}", area_levels: levels, features: features,
+                        data_flags: flags)
+    User.create!(email: email, password: 'password123', role: 'staff', **attrs).tap { |user| user.roles << role }
+  end
 end

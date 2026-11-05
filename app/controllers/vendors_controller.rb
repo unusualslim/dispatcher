@@ -1,7 +1,7 @@
 class VendorsController < ApplicationController
   include CsvRoundTrip
 
-  permission_area :purchasing
+  permission_area :purchasing, feature: :vendors
   before_action :set_vendor, only: %i[show edit update destroy]
 
   def index

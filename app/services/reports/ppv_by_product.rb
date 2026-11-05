@@ -1,6 +1,6 @@
 module Reports
   class PpvByProduct < Base
-    report title: 'Purchase price variance by product', area: :purchasing,
+    report title: 'Purchase price variance by product', area: :purchasing, flag: :costs,
            description: 'Receipts of standard-costed products in the period: what was paid against standard cost.',
            filters: %i[dates product_id location_id]
 

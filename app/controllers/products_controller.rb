@@ -3,7 +3,7 @@ class ProductsController < ApplicationController
   include RemembersListFilters
   include ListNeighbors
 
-  permission_area :inventory, lookups: %i[search bom]
+  permission_area :inventory, lookups: %i[search bom], feature: :products
   before_action :set_product, only: %i[show edit update destroy components]
 
   def index

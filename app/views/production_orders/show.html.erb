@@ -144,7 +144,7 @@
     else "bg-secondary"
   end %>
 
-  <% show_accounting = can?(:accounting) %>
+  <% show_accounting = can_see?(:accounting, :gl) %>
   <ul class="nav nav-tabs mb-3" role="tablist">
     <li class="nav-item" role="presentation">
       <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#po-production" type="button" role="tab">Production</button>
@@ -334,7 +334,7 @@
     </div>
   </div>
 
-<% if show_accounting %>
+<% if can_see?(:accounting, :costs) %>
   <%= render 'costing', costing: ProductionOrderCosting.new(@production_order) %>
 <% end %>
 

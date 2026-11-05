@@ -7,6 +7,7 @@ class PurchaseOrdersController < ApplicationController
   before_action :set_purchase_order, only: %i[show edit update approve submit receive post_to_inventory void print]
   before_action :require_admin!, only: :void
   before_action :keep_voided_read_only, only: %i[edit update approve submit receive post_to_inventory]
+  before_action -> { require_feature!(po_feature) }, if: :changing?
 
   def dashboard
     today = Date.today
@@ -253,6 +254,12 @@ class PurchaseOrdersController < ApplicationController
   # Active products plus the ones already on this PO's lines.
   def po_products
     Product.selectable(@purchase_order&.line_items&.map(&:product_id)).order(:name)
+  end
+
+  # Inventory and expense POs are separate feature rights.
+  def po_feature
+    type = @purchase_order&.po_type || params.dig(:purchase_order, :po_type) || params[:type]
+    type == 'expense' ? :expense_pos : :inventory_pos
   end
 
   def keep_voided_read_only

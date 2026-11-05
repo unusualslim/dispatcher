@@ -1,0 +1,104 @@
+<%= form_with model: role, local: true do |f| %>
+  <% if role.errors.any? %>
+    <div class="alert alert-danger"><%= role.errors.full_messages.to_sentence %></div>
+  <% end %>
+
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-5">
+          <%= f.label :name, class: 'form-label fw-semibold' %>
+          <%= f.text_field :name, class: 'form-control', required: true, placeholder: 'e.g. Sales – no costing' %>
+        </div>
+        <div class="col-md-7">
+          <%= f.label :description, class: 'form-label fw-semibold' %>
+          <%= f.text_field :description, class: 'form-control', placeholder: 'Who this is for' %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-3">
+    <div class="card-header fw-semibold">Areas</div>
+    <div class="card-body">
+      <p class="text-muted small">
+        <strong>View</strong> looks, <strong>Edit</strong> creates and changes (where the feature right below allows),
+        <strong>Approve</strong> also signs off (approve/submit POs, accept quotes, post GL, mark dispatches billed).
+        Only admins delete.
+      </p>
+      <table class="table table-sm align-middle mb-0" style="max-width: 520px;">
+        <thead class="table-light">
+          <tr><th>Area</th><th class="text-center">None</th>
+            <% User::LEVELS.each do |level| %><th class="text-center"><%= level.capitalize %></th><% end %></tr>
+        </thead>
+        <tbody>
+          <% User::AREAS.each do |area, label| %>
+            <% current = role.area_levels[area].to_s %>
+            <tr>
+              <td><%= label %></td>
+              <% ['', *User::LEVELS].each do |level| %>
+                <td class="text-center">
+                  <%= radio_button_tag "role[area_levels][#{area}]", level, current == level, class: 'form-check-input',
+                                       id: "role_area_#{area}_#{level.presence || 'none'}", 'aria-label': "#{label}: #{level.presence || 'none'}" %>
+                </td>
+              <% end %>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-3">
+    <div class="card-header fw-semibold">Feature rights</div>
+    <div class="card-body">
+      <p class="text-muted small">What this role may create or change. Each needs Edit on its area too.</p>
+      <%= hidden_field_tag 'role[features][]', '' %>
+      <div class="row g-2">
+        <% User::FEATURES.group_by { |_, f| f[:area] }.each do |area, features| %>
+          <div class="col-md-4">
+            <div class="small text-uppercase text-muted fw-semibold mb-1"><%= User::AREAS[area] %></div>
+            <% features.each do |key, feature| %>
+              <div class="form-check">
+                <%= check_box_tag 'role[features][]', key, role.features.include?(key), id: "role_feature_#{key}", class: 'form-check-input' %>
+                <label class="form-check-label" for="role_feature_<%= key %>">
+                  <%= feature[:label] %> <span class="text-muted small d-block"><%= feature[:hint] %></span>
+                </label>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-3">
+    <div class="card-header fw-semibold">Data</div>
+    <div class="card-body">
+      <p class="text-muted small">Sensitive data across areas. Without a flag its pages, reports and sections stay hidden.</p>
+      <%= hidden_field_tag 'role[data_flags][]', '' %>
+      <% User::DATA_FLAGS.each do |key, flag| %>
+        <div class="form-check">
+          <%= check_box_tag 'role[data_flags][]', key, role.data_flags.include?(key), id: "role_flag_#{key}", class: 'form-check-input' %>
+          <label class="form-check-label" for="role_flag_<%= key %>">
+            <%= flag[:label] %> <span class="text-muted small"><%= flag[:hint] %></span>
+            <% if User::NEVER_TO_ASSISTANT.include?(key) %><span class="badge bg-light text-dark border ms-1">never sent to the assistant</span><% end %>
+          </label>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-3">
+    <div class="card-header fw-semibold">Assistant</div>
+    <div class="card-body">
+      <%= f.select :assistant_level, User::ASSISTANT_LEVELS.invert, {}, class: 'form-select', style: 'max-width: 280px;' %>
+      <div class="form-text">The AI assistant isn't built yet; this is where access to it will be set.</div>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2">
+    <%= f.submit 'Save role', class: 'btn btn-primary' %>
+    <%= link_to 'Cancel', roles_path, class: 'btn btn-outline-secondary' %>
+  </div>
+<% end %>

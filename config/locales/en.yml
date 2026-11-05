@@ -190,6 +190,13 @@ en:
       self: "You can't deactivate yourself."
     reactivate:
       reactivated: "%{name} is active again."
+  roles:
+    create:
+      created: "Role %{name} created."
+    update:
+      updated: "Role %{name} saved."
+    destroy:
+      deleted: "Role %{name} deleted."
   quality_exceptions:
     review:
       reviewed: "Quality exception reviewed."

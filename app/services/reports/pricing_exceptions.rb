@@ -3,7 +3,7 @@ module Reports
     LABELS = { 'lock_mismatch' => 'Locked quote price', 'rule_mismatch' => 'Pricing rule',
                'no_price' => 'No price' }.freeze
 
-    report title: 'Pricing exceptions', area: :sales,
+    report title: 'Pricing exceptions', area: :sales, flag: :customer_pricing,
            description: "Order lines priced differently from the customer's locked quote or pricing rule, " \
                         'for orders taken in the period.',
            filters: %i[dates customer_id product_id]

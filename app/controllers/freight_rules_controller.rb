@@ -1,7 +1,7 @@
 # Sales → Freight Rules: which freight table to use, and what its rate means, for each side, charge type, origin,
 # class, carrier and customer. Freight tables are listed on the Tables tab; classes have their own page.
 class FreightRulesController < ApplicationController
-  permission_area :sales
+  permission_area :sales, feature: :freight_setup
   before_action :set_rule, only: %i[edit update destroy]
   before_action :load_options, only: %i[new create edit update]
 

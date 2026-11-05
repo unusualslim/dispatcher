@@ -15,8 +15,7 @@ class MrpTest < ActionDispatch::IntegrationTest
   end
 
   test 'purchasing staff see what runs out and when to order, and the product timeline' do
-    sign_in User.create!(email: 'buyer-mrp@example.com', password: 'password123', role: 'staff',
-                         permissions: { 'purchasing' => 'edit' })
+    sign_in staff_user('buyer-mrp@example.com', { 'purchasing' => 'edit' })
 
     get mrp_path
     assert_response :success
@@ -33,8 +32,7 @@ class MrpTest < ActionDispatch::IntegrationTest
   end
 
   test 'users without purchasing access cannot open MRP' do
-    sign_in User.create!(email: 'sales-mrp@example.com', password: 'password123', role: 'staff',
-                         permissions: { 'sales' => 'edit' })
+    sign_in staff_user('sales-mrp@example.com', { 'sales' => 'edit' })
     get mrp_path
     assert_response :redirect
   end

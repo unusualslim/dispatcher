@@ -83,7 +83,7 @@
         <ul class="sidebar-nav mb-1">
           <%= nav_item 'Reports', reports_path, 'bi-file-earmark-bar-graph', active: current == 'reports', keywords: 'report export csv print' %>
           <% Reports::Registry::REPORTS.each do |report| %>
-            <% next unless can?(report.area) %>
+            <% next unless can_see?(report.area, report.flag) %>
             <%= nav_search_item "Report: #{report.title}", report_path(report.key), 'bi-table', keywords: report.description %>
           <% end %>
         </ul>
@@ -93,13 +93,13 @@
         <%= render 'layouts/sidebar_section', label: 'Sales', icon: 'bi-cart3', id: 'salesCollapse', active: sales_active do %>
           <%= nav_item 'Order Dashboard',     dashboard_customer_orders_path, 'bi-speedometer2',        active: current == 'customer_orders' && action == 'dashboard' %>
           <%= nav_item 'Customer Orders',     customer_orders_path,           'bi-cart3',               active: current == 'customer_orders' && action != 'dashboard', keywords: 'sales orders pdi' %>
-          <%= nav_item 'Quotes',              quotes_path,                    'bi-file-earmark-text',   active: current == 'quotes' %>
+          <%= nav_item 'Quotes',              quotes_path,                    'bi-file-earmark-text',   active: current == 'quotes' if sees?(:customer_pricing) %>
           <%= nav_item 'Customers',           customers_path,                 'bi-people',              active: current == 'customers' %>
           <%= nav_item 'Locations',           locations_path,                 'bi-geo-alt',             active: current == 'locations' && action != 'map' %>
-          <%= nav_item 'Pricing Rules',       pricing_rules_path,             'bi-tag',                 active: current == 'pricing_rules', keywords: 'prices' %>
+          <%= nav_item 'Pricing Rules',       pricing_rules_path,             'bi-tag',                 active: current == 'pricing_rules', keywords: 'prices' if sees?(:customer_pricing) %>
           <%= nav_item 'Freight Rules',       freight_rules_path,             'bi-truck-flatbed',       active: %w[freight_rules freight_tables freight_classes].include?(current), keywords: 'freight class table mileage point to point surcharge pump off stop lane' %>
-          <%= nav_item 'Price Exceptions',    price_exceptions_path,          'bi-exclamation-diamond', active: current == 'price_exceptions', keywords: 'price check mismatch' %>
-          <%= nav_item 'Quote Margin Review', quote_margin_review_path,       'bi-graph-down-arrow',    active: current == 'quote_margin_reviews', keywords: 're-price requote' %>
+          <%= nav_item 'Price Exceptions',    price_exceptions_path,          'bi-exclamation-diamond', active: current == 'price_exceptions', keywords: 'price check mismatch' if sees?(:customer_pricing) %>
+          <%= nav_item 'Quote Margin Review', quote_margin_review_path,       'bi-graph-down-arrow',    active: current == 'quote_margin_reviews', keywords: 're-price requote' if sees?(:costs) %>
         <% end %>
         <% end %>
 
@@ -146,19 +146,19 @@
           <%= nav_item 'Products',           products_path,                'bi-box-seam',      active: current == 'products' %>
           <%= nav_item 'Adjust Inventory',   new_inventory_adjustment_path, 'bi-sliders',      active: current == 'inventory_adjustments', keywords: 'adjustment stock count' %>
           <%= nav_item 'Inventory History',  inventory_transactions_path,  'bi-clock-history', active: current == 'inventory_transactions', keywords: 'transactions' %>
-          <%= nav_item 'Inventory Valuation', inventory_valuation_path,    'bi-cash-stack',    active: current == 'inventory_valuations', keywords: 'value cost fifo standard weighted average ppv variance' %>
+          <%= nav_item 'Inventory Valuation', inventory_valuation_path,    'bi-cash-stack',    active: current == 'inventory_valuations', keywords: 'value cost fifo standard weighted average ppv variance' if sees?(:costs) %>
         <% end %>
         <% end %>
 
         <% if can?(:accounting) %>
         <!-- ACCOUNTING -->
         <%= render 'layouts/sidebar_section', label: 'Accounting', icon: 'bi-journal-text', id: 'accountingCollapse', active: accounting_active do %>
-          <%= nav_item 'Financial Dashboard', financial_dashboard_path, 'bi-speedometer2', active: current == 'financial_dashboards', keywords: 'sales mtd month to date kpi margin delivery' %>
-          <%= nav_item 'GL Ledger',        ledger_entries_path,        'bi-journal-text', active: current == 'ledger_entries', keywords: 'journal fpst gl export posting' %>
-          <%= nav_item 'Reporting Groups', reporting_groups_path,      'bi-diagram-2',    active: current == 'reporting_groups', keywords: 'gl account posting cost' %>
-          <%= nav_item 'Cost Items',       cost_items_path,            'bi-tags',         active: current == 'cost_items', keywords: 'non-inventory pallet film tape label labor overhead consumables price' %>
-          <%= nav_item 'Expense Accounts', expense_accounts_path,      'bi-journal-minus', active: current == 'expense_accounts', keywords: 'gl expense po repairs maintenance parts' %>
-          <%= nav_item 'Costing Settings', edit_costing_settings_path, 'bi-calculator',   active: current == 'costing_settings', keywords: 'labor rate cost gl start date' %>
+          <%= nav_item 'Financial Dashboard', financial_dashboard_path, 'bi-speedometer2', active: current == 'financial_dashboards', keywords: 'sales mtd month to date kpi margin delivery' if sees?(:financial_dashboard) %>
+          <%= nav_item 'GL Ledger',        ledger_entries_path,        'bi-journal-text', active: current == 'ledger_entries', keywords: 'journal fpst gl export posting' if sees?(:gl) %>
+          <%= nav_item 'Reporting Groups', reporting_groups_path,      'bi-diagram-2',    active: current == 'reporting_groups', keywords: 'gl account posting cost' if sees?(:costs) %>
+          <%= nav_item 'Cost Items',       cost_items_path,            'bi-tags',         active: current == 'cost_items', keywords: 'non-inventory pallet film tape label labor overhead consumables price' if sees?(:costs) %>
+          <%= nav_item 'Expense Accounts', expense_accounts_path,      'bi-journal-minus', active: current == 'expense_accounts', keywords: 'gl expense po repairs maintenance parts' if sees?(:gl) %>
+          <%= nav_item 'Costing Settings', edit_costing_settings_path, 'bi-calculator',   active: current == 'costing_settings', keywords: 'labor rate cost gl start date' if sees?(:costs) %>
         <% end %>
         <% end %>
 
@@ -170,6 +170,7 @@
             <%= nav_search_item "Import: #{imp[:title]}", send(imp[:path]), imp[:icon], keywords: imp[:description] %>
           <% end %>
           <%= nav_item 'Users',               users_path,               'bi-person-badge', active: current == 'users' %>
+          <%= nav_item 'Roles',               roles_path,               'bi-shield-lock',  active: current == 'roles', keywords: 'permissions access security' %>
           <%= nav_item 'Merge Customers',     customer_merges_path,     'bi-intersect',    active: current == 'customer_merges', keywords: 'duplicate pdi link combine' %>
           <%= nav_item 'Merge Locations',     location_merges_path,     'bi-geo-alt',      active: current == 'location_merges', keywords: 'duplicate ship-to site combine' %>
           <%= nav_item 'Equipment & Assets',  things_path,              'bi-tools',        active: current == 'things', keywords: 'things' %>

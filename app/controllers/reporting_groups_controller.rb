@@ -1,5 +1,5 @@
 class ReportingGroupsController < ApplicationController
-  permission_area :accounting
+  permission_area :accounting, feature: :costing_setup, flag: :costs
   before_action :set_reporting_group, only: %i[update destroy]
 
   def index

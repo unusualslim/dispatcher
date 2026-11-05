@@ -72,8 +72,7 @@ class QualityCheckTest < ActionDispatch::IntegrationTest
     assert result.reload.reviewed?
     assert_equal @admin, result.reviewed_by
 
-    sign_in User.create!(email: 'staff-qc@example.com', password: 'password123', role: 'staff',
-                         permissions: { 'production' => 'edit' })
+    sign_in staff_user('staff-qc@example.com', { 'production' => 'edit' })
     other = @po.quality_results.create!(QualityResult.copy_spec(@sulfur).merge(value: 3, tested_at: Time.current))
     patch review_quality_exception_path(other), params: { resolution: 'nope' }
     assert_not other.reload.reviewed?

@@ -1,6 +1,6 @@
 # Accounting → Expense Accounts: the GL expense accounts that expense PO lines are charged to.
 class ExpenseAccountsController < ApplicationController
-  permission_area :accounting
+  permission_area :accounting, feature: :costing_setup, flag: :gl
   before_action :set_expense_account, only: %i[update destroy]
 
   def index

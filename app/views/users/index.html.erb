@@ -55,11 +55,14 @@
                         <%= user.full_name.presence || "—" %>
                         <% if user.staff? %>
                           <div class="fw-normal small">
-                            <% user.permissions.each do |area, level| %>
-                              <span class="badge bg-light text-dark border"><%= User::AREAS[area] %>: <%= level.capitalize %></span>
+                            <% user.roles.sort_by { |r| r.name.downcase }.each do |role| %>
+                              <span class="badge bg-light text-dark border"><%= role.name %></span>
                             <% end %>
-                            <% if user.permissions.empty? %><span class="text-muted">No area access yet</span><% end %>
+                            <% if user.roles.empty? %><span class="text-muted">No roles yet</span><% end %>
                           </div>
+                        <% end %>
+                        <% if user.hidden_flags.any? %>
+                          <div class="fw-normal small text-muted">Hidden: <%= user.hidden_flags.map { |f| User::DATA_FLAGS.dig(f, :label) }.join(', ') %></div>
                         <% end %>
                         <% if user.employment_type == 'temp' %><span class="badge bg-info-subtle text-info-emphasis border ms-1">Temp</span><% end %>
                       </div>

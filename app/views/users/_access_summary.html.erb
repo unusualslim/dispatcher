@@ -1,0 +1,26 @@
+<%# What this user can do once roles, Admin and hidden data are combined (as saved). %>
+<% access = user.access %>
+<div class="card-body border-bottom">
+  <h6 class="text-muted text-uppercase fw-semibold mb-2" style="font-size:.72rem;letter-spacing:.06em;">What they can do (as saved)</h6>
+  <div class="row small g-2">
+    <div class="col-md-4">
+      <div class="fw-semibold">Areas</div>
+      <% User::AREAS.each do |area, label| %>
+        <div><%= label %>: <%= access.levels[area]&.capitalize || content_tag(:span, 'none', class: 'text-muted') %></div>
+      <% end %>
+    </div>
+    <div class="col-md-4">
+      <div class="fw-semibold">Feature rights</div>
+      <% features = User::FEATURES.select { |key, _| access.features.include?(key) } %>
+      <%= features.any? ? safe_join(features.map { |_, f| f[:label] }, tag.br) : content_tag(:span, 'none', class: 'text-muted') %>
+    </div>
+    <div class="col-md-4">
+      <div class="fw-semibold">Data</div>
+      <% User::DATA_FLAGS.each do |key, flag| %>
+        <div><%= access.flags.include?(key) ? '✓' : '✗' %> <%= flag[:label] %></div>
+      <% end %>
+      <div class="fw-semibold mt-2">Assistant</div>
+      <div><%= User::ASSISTANT_LEVELS[access.assistant] %></div>
+    </div>
+  </div>
+</div>

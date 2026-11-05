@@ -5,7 +5,7 @@ class HomePageTest < ActionDispatch::IntegrationTest
   include Devise::Test::IntegrationHelpers
 
   def staff(email, permissions, home_page: nil)
-    User.create!(email: email, password: 'password123', role: 'staff', permissions: permissions, home_page: home_page)
+    staff_user(email, permissions, home_page: home_page)
   end
 
   test 'signing in and / go to the chosen home page, else the role default' do

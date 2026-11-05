@@ -1,6 +1,6 @@
 # Adds and removes a freight table's rows, one at a time or pasted in bulk (import).
 class FreightTableRatesController < ApplicationController
-  permission_area :sales
+  permission_area :sales, feature: :freight_setup
   before_action :set_table
 
   def create

@@ -125,11 +125,20 @@ Accounts post as Site-Major-Sub (site = `Location#pdi_site_code`, 4 digits). **R
 fuel/warehouse groups = PDI product categories (linked by `products.category` name, auto-created); non_inventory
 groups (Consumables, Labor, Overhead) hold cost lines. Admin → Reporting Groups / Costing Settings.
 **WorkOrders / Jobs** = shop work orders with comments; Jobs + JobWorkers are line-worker clock-in/out (`/line`)
-**User roles**: admin (everything), staff (per-area levels), worker (drivers), line_worker. Users with history can't be
-deleted (`User#history_reasons`); admins deactivate them instead (`deactivated_at`: can't sign in, `User.active` in pickers). Staff `users.permissions`
-jsonb = { area => view|edit|approve } for sales/dispatch/production/purchasing/inventory/accounting (`UserPermissions`).
-Controllers declare `permission_area :x, approve: [...], lookups: [...]`: GET needs view, writes edit, listed actions
-approve, destroy* always admin. Views use `can?(:area, :level)`. Admin-only pages keep `require_admin!`.
+**User roles**: user types admin (everything), staff (access from roles), worker (drivers), line_worker. Users with history can't be
+deleted (`User#history_reasons`); admins deactivate them instead (`deactivated_at`: can't sign in, `User.active` in pickers).
+**Roles** (Admin → Roles, `Role` + `RoleAssignment`, catalog in `AccessCatalog`): admins build custom roles: area levels (view < edit
+< approve per area), **feature rights** (`FEATURES`: what someone may create/change, e.g. quotes, inventory vs expense POs,
+adjustments, GL postings), **data flags** (`DATA_FLAGS`: costs, customer_pricing, gl, financial_dashboard) and an assistant level.
+Staff hold any number of roles and access **adds up** (highest level, any feature/flag); roles never take access away.
+`users.hidden_flags` ("Hidden from this user") removes data flags and wins over roles and admin (e.g. the tech admin can't see
+financials). `NEVER_TO_ASSISTANT` (customer_pricing, gl) is never sent to the AI assistant. `User#access` combines it all
+(`can?`, `can_feature?`, `sees?`). Controllers declare `permission_area :x, approve: [...], lookups: [...], feature: :y, flag: :z`
+(or per action `features:` / `flags:`; `AreaAuthorization`): GET needs view, writes edit, listed actions approve, new/edit forms
+and writes need the feature, the flag gates the page, destroy* always admin. POs pick the feature by type (`require_feature!`).
+Views use `can?`, `sees?`, `can_see?(area, flag)`; reports declare `flag:`. Existing per-user `users.permissions` were turned into
+roles on 2026-11-04 (column kept until a later deploy drops it). Field-level hiding of costs/prices inside mixed pages is not done
+yet (pages and sections only). Admin-only pages keep `require_admin!`.
 
 ---
 

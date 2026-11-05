@@ -53,16 +53,14 @@ class PdiMasterDataImportTest < ActionDispatch::IntegrationTest
   end
 
   test 'staff without admin cannot run it' do
-    sign_in User.create!(email: 'sales@example.com', password: 'password123', role: 'staff',
-                         permissions: { 'sales' => 'edit' })
+    sign_in staff_user('sales@example.com', { 'sales' => 'edit' })
     post preview_pdi_master_data_import_path
     assert_response :redirect
     assert_nil Customer.find_by(pdi_customer_id: '2362')
   end
 
   test 'credit frame shows a hold and an order that exceeds available credit' do
-    sign_in User.create!(email: 'sales@example.com', password: 'password123', role: 'staff',
-                         permissions: { 'sales' => 'view' })
+    sign_in staff_user('sales@example.com', { 'sales' => 'view' })
     customer = Customer.create!(name: 'Southern Performance Chemical', pdi_customer_id: '2362',
                                 preferred_contact_method: 'no preference')
     credit = PdiWebService::CreditCheck.new(credit_status: 1, available_credit: BigDecimal('-53727.98'),

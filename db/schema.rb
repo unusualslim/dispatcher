@@ -10,9 +10,9 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_11_03_140100) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_04_150000) do
   # These are extensions that must be enabled in order to support this database
-  enable_extension "plpgsql"
+  enable_extension "pg_catalog.plpgsql"
 
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
@@ -916,6 +916,28 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_03_140100) do
     t.index ["name"], name: "index_reporting_groups_on_name", unique: true
   end
 
+  create_table "role_assignments", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "role_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["role_id"], name: "index_role_assignments_on_role_id"
+    t.index ["user_id", "role_id"], name: "index_role_assignments_on_user_id_and_role_id", unique: true
+    t.index ["user_id"], name: "index_role_assignments_on_user_id"
+  end
+
+  create_table "roles", force: :cascade do |t|
+    t.string "name", null: false
+    t.text "description"
+    t.jsonb "area_levels", default: {}, null: false
+    t.jsonb "features", default: [], null: false
+    t.jsonb "data_flags", default: [], null: false
+    t.string "assistant_level", default: "off", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index "lower((name)::text)", name: "index_roles_on_lower_name", unique: true
+  end
+
   create_table "standard_cost_histories", force: :cascade do |t|
     t.string "product_id"
     t.decimal "amount", precision: 12, scale: 4
@@ -993,6 +1015,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_03_140100) do
     t.string "samsara_driver_id"
     t.bigint "home_location_id"
     t.string "home_page"
+    t.jsonb "hidden_flags", default: [], null: false
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["home_location_id"], name: "index_users_on_home_location_id"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
@@ -1131,6 +1154,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_03_140100) do
   add_foreign_key "quotes", "locations"
   add_foreign_key "quotes", "users", column: "accepted_by_id"
   add_foreign_key "quotes", "users", column: "lock_ended_by_id"
+  add_foreign_key "role_assignments", "roles"
+  add_foreign_key "role_assignments", "users"
   add_foreign_key "things", "dispatches"
   add_foreign_key "things", "locations"
   add_foreign_key "user_favorites", "users"

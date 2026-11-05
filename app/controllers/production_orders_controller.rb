@@ -1,5 +1,5 @@
 class ProductionOrdersController < ApplicationController
-  permission_area :production
+  permission_area :production, features: { record_quality: :quality }, flags: { bom_cost_report: :costs }
   before_action :authenticate_user!
   before_action :set_production_order, only: %i[show edit update destroy void record_quality quality_certificate]
   before_action :require_admin!, only: :void

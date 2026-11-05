@@ -5,8 +5,8 @@ class ReportsController < ApplicationController
   before_action :set_report, only: :show
 
   def index
-    @reports = Reports::Registry::REPORTS.select { |report| can?(report.area) }.group_by(&:area)
-    @pages = Reports::Registry::PAGES.select { |area, *| can?(area) }.group_by(&:first)
+    @reports = Reports::Registry::REPORTS.select { |report| can_see?(report.area, report.flag) }.group_by(&:area)
+    @pages = Reports::Registry::PAGES.select { |page| can_see?(page[0], page[4]) }.group_by(&:first)
   end
 
   def show
@@ -23,7 +23,7 @@ class ReportsController < ApplicationController
     @report_class = Reports::Registry.find(params[:id])
     raise ActiveRecord::RecordNotFound unless @report_class
 
-    deny_access unless can?(@report_class.area)
+    deny_access unless can_see?(@report_class.area, @report_class.flag)
   end
 
   def load_filter_options

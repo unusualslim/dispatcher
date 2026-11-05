@@ -34,8 +34,7 @@ class CustomerMergesTest < ActionDispatch::IntegrationTest
   end
 
   test 'staff cannot merge' do
-    sign_in User.create!(email: 'sales-merge@example.com', password: 'password123', role: 'staff',
-                         permissions: { 'sales' => 'approve' })
+    sign_in staff_user('sales-merge@example.com', { 'sales' => 'approve' })
     post customer_merges_path, params: { source_id: @app_customer.id, target_id: @pdi.id }
     assert_response :redirect
     assert Customer.exists?(@app_customer.id)

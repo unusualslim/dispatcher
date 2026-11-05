@@ -2,7 +2,7 @@ module Reports
   class SalesByMonth < Base
     include SalesLines
 
-    report title: 'Sales by month', area: :sales,
+    report title: 'Sales by month', area: :sales, flag: :financial_dashboard,
            description: 'Monthly net sales, taxes and volume for orders invoiced in the period.',
            filters: %i[dates item_type customer_id product_id location_id]
 

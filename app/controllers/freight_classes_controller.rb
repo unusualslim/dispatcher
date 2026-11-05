@@ -1,6 +1,6 @@
 # Freight classes (how much fits on a full load) and which products are in each.
 class FreightClassesController < ApplicationController
-  permission_area :sales
+  permission_area :sales, feature: :freight_setup
   before_action :set_class, only: %i[update destroy]
 
   def index

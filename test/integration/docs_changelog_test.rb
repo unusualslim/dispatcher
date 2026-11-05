@@ -5,8 +5,7 @@ class DocsChangelogTest < ActionDispatch::IntegrationTest
   include Devise::Test::IntegrationHelpers
 
   test 'shows the feature timeline with an area filter' do
-    sign_in User.create!(email: 'changelog-viewer@example.com', password: 'password123', role: 'staff',
-                         permissions: { 'sales' => 'view' })
+    sign_in staff_user('changelog-viewer@example.com', { 'sales' => 'view' })
     get docs_changelog_path
     assert_response :success
     assert_select '#feature-timeline h5', text: 'Dispatcher v1'

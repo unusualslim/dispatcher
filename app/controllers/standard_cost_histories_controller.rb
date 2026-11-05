@@ -1,5 +1,5 @@
 class StandardCostHistoriesController < ApplicationController
-  permission_area :inventory
+  permission_area :inventory, feature: :products, flag: :costs
 
   def create
     @product = Product.find(params[:product_id])

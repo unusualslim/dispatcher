@@ -1,5 +1,5 @@
 class PricingRulesController < ApplicationController
-  permission_area :sales, lookups: %i[lookup]
+  permission_area :sales, lookups: %i[lookup], feature: :pricing_rules, flag: :customer_pricing
   before_action :set_rule, only: %i[show edit update destroy]
 
   def index

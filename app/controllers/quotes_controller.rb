@@ -1,5 +1,5 @@
 class QuotesController < ApplicationController
-  permission_area :sales, approve: %i[accept reject end_lock]
+  permission_area :sales, approve: %i[accept reject end_lock], feature: :quotes, flag: :customer_pricing
   before_action :set_quote,
                 only: %i[show edit update destroy send_quote accept reject end_lock margin_review requote]
   before_action :require_editable, only: %i[edit update]

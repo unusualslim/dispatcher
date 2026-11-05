@@ -9,16 +9,18 @@ module Reports
     Column = Struct.new(:key, :label, :format, :total, keyword_init: true)
 
     class << self
-      attr_reader :title, :area, :description, :filter_names
+      attr_reader :title, :area, :flag, :description, :filter_names
 
       def key
         name.demodulize.underscore
       end
 
       # area: the permission area that can see it (sales, dispatch, production, purchasing, inventory, accounting).
-      def report(title:, area:, description:, filters: [:dates])
+      # flag: a data flag it also needs (UserPermissions::DATA_FLAGS), e.g. :costs.
+      def report(title:, area:, description:, filters: [:dates], flag: nil)
         @title = title
         @area = area.to_s
+        @flag = flag&.to_s
         @description = description
         @filter_names = filters
       end

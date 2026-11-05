@@ -4,7 +4,7 @@ class LocationsController < ApplicationController
   include ListNeighbors
   include CsvRoundTrip
 
-  permission_area :sales, lookups: %i[search select2],
+  permission_area :sales, lookups: %i[search select2], feature: :customers,
                           areas: { map: :dispatch, vehicles: :dispatch, dispatch_routes: :dispatch }
   before_action :set_location, only: %i[show edit update destroy]
   before_action :set_products, only: %i[new edit create update]

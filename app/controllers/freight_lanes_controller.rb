@@ -1,7 +1,7 @@
 # Standard miles per origin → destination: added and edited on a location's Freight tab, or pasted in bulk on
 # Freight Rules → Lanes.
 class FreightLanesController < ApplicationController
-  permission_area :sales
+  permission_area :sales, feature: :freight_setup
 
   def create
     lane = FreightLane.find_or_initialize_by(lane_params.slice(:origin_location_id, :destination_location_id))
