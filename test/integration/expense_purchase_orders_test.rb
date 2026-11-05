@@ -49,6 +49,11 @@ class ExpensePurchaseOrdersTest < ActionDispatch::IntegrationTest
     assert_select '.box', text: /Filler Parts Inc.*1 Gear St/m
     assert_select '.notes', text: /Rush please/
     assert_select '.for', text: 'For: Filler 2 (S/N SN-77)'
+    # The warehouse has no address yet, so the header falls back to the corporate address; once it has one, it's used.
+    assert_select 'header .company', text: /Fort Valley, GA 31030/
+    @plant.update!(address: '400 Plant Rd', city: 'Albany', state: 'GA', zip: '31705')
+    get print_purchase_order_path(po)
+    assert_select 'header .company', text: /EXPI Plant.*400 Plant Rd.*Albany, GA 31705/m
 
     get edit_purchase_order_path(po)
     assert_response :success

@@ -36,6 +36,7 @@ class DispatchPrintTest < ActionDispatch::IntegrationTest
     assert_select '.copy-label', text: 'Dispatch Copy'
     assert_select '.fill-line .label', text: 'BOL #', count: 2
     assert_select '.copy', text: /Albany Terminal.*1 Rack Rd.*Gate code 1234/m, count: 2
+    assert_select 'header .company', text: /Albany Terminal.*Albany, GA 31701/m, count: 2
     assert_select '.copy', text: /OD-1001.*Dana Driver.*Cordele Shop/m, count: 2
     assert_select 'td', text: 'PRINT1 – Clear Diesel', count: 2
     assert_select 'td', text: '$3.4567', count: 2
@@ -53,6 +54,8 @@ class DispatchPrintTest < ActionDispatch::IntegrationTest
     assert_select '.page', 1
     assert_select '.refs', text: /#{@dispatch.id}-#{@order.id}.*OD-1001/m
     assert_select '.box', text: /Ship From.*Albany Terminal.*1 Rack Rd/m
+    assert_select 'header .company', text: /Five Points Service.*Albany Terminal.*1 Rack Rd.*Albany, GA 31701/m
+    assert_select 'header .company', text: /Americus/, count: 0
     assert_select '.box', text: /Ship To.*Cordele Shop.*9 Main St/m
     assert_select '.carrier', text: /Dana Driver/
     assert_select 'td', text: 'PRINT1 – Clear Diesel'

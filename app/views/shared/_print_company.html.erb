@@ -1,0 +1,19 @@
+<%# Company block for printouts: logo, company name, and the given location's address (the PO's warehouse, the
+    BOL's origin), falling back to the corporate address in Admin → Company Info. %>
+<% company = AppSetting.company %>
+<% city = location && [location.city, [location.state, location.zip].compact_blank.join(' ')].compact_blank.join(', ') %>
+<div class="company">
+  <%= image_tag 'fps-logo.png', alt: company['name'], style: 'height: 34px; display: block; margin: 0 0 4px auto;' %>
+  <strong><%= company['name'] %></strong>
+  <% if location && (location.address.present? || city.present?) %>
+    <% if location.company_name.present? %><div><%= location.company_name %></div><% end %>
+    <% if location.address.present? %><div><%= location.address %></div><% end %>
+    <% if city.present? %><div><%= city %></div><% end %>
+    <% phone = location.phone_number.presence || company['phone'] %>
+  <% else %>
+    <% if company['address'].present? %><div><%= company['address'] %></div><% end %>
+    <% if company['city_state_zip'].present? %><div><%= company['city_state_zip'] %></div><% end %>
+    <% phone = company['phone'] %>
+  <% end %>
+  <% if phone.present? %><div><%= phone %></div><% end %>
+</div>

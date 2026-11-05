@@ -91,7 +91,8 @@ quote sets `superseded_on` on the customer's older lines for the same products (
 before). Quotes created before Oct 2026 have `locks_pricing: false` and never lock. "Create Order"
 opens the new-order form via `?from_quote=ID`. Order lines record `quote_product_id` / `pricing_rule_id`.
 Customer copy: `/quotes/:id/print` (logo, company info + quote terms from **Admin → Company Info** = `AppSetting.company`,
-`company.*` keys; corporate address Fort Valley, GA; DRAFT watermark, signature lines); the quote email footer uses the same info.
+`company.*` keys; corporate address Fort Valley, GA; DRAFT watermark, signature lines); the quote email footer uses the same info. PO print, BOL and delivery order headers use
+`shared/_print_company` (logo + company name + the PO's warehouse / the load's origin address, else the corporate address).
 An accepted lock can be ended early (`Quote#end_lock!` → `lock_ended_on`; `expiry_date` stays as quoted).
 **Price check**: PDI-imported order lines keep PDI's price (PDI bills). `PriceCheckService` runs on
 import and stores `expected_price` (lock on the order date, else rule) + `price_check`

@@ -14,7 +14,7 @@
       <div class="copy-label"><%= label %></div>
       <h1>Delivery Order</h1>
     </div>
-    <div class="company"><strong>Five Points Service, Inc.</strong>Perry Brothers Oil · Americus, GA</div>
+    <%= render 'shared/print_company', location: origin %>
   </header>
 
   <dl>
