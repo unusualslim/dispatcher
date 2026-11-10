@@ -28,12 +28,13 @@ module PdiFreightComponents
     def initialize(path)
       @path = path
       @skipped = 0
+      @charges = 0
     end
 
     def run
       rows = read
       PdiFreightComponent.transaction { replace(rows) }
-      Result.new(created: rows.size, skipped: @skipped, warnings: warnings(rows))
+      Result.new(created: rows.size, skipped: @skipped + @charges, warnings: warnings(rows))
     end
 
     private
@@ -63,25 +64,25 @@ module PdiFreightComponents
 
     def row(values, now)
       source = values['source'].to_s.downcase
-      return skip unless PdiFreightComponent::SOURCES.include?(source) && values.values_at(*REQUIRED).all?
+      return skip(values) unless PdiFreightComponent::SOURCES.include?(source) && values.values_at(*REQUIRED).all?
 
       fields = COLUMNS.to_h { |header, (column, convert)| [column, values[header] && convert.call(values[header])] }
       fields.merge(source: source, purchase: fields[:purchase] || false, sale: fields[:sale] || false,
                    created_at: now, updated_at: now)
     end
 
-    def skip
-      @skipped += 1
+    # Order / load level charges (OWIFSC, PER LOAD OWI…) have no fuel line; the API sends those.
+    def skip(values)
+      values['line_key'].nil? && values['rule_name'] ? @charges += 1 : @skipped += 1
       nil
     end
 
     def warnings(rows)
       loads = rows.filter_map { |row| row[:load_no] if row[:source] == 'load' }.uniq
       missing = loads - PdiFuelLoad.where(load_no: loads).pluck(:load_no)
-      list = []
-      list << "#{missing.size} loads not in the app (e.g. #{missing.first(5).join(', ')})" if missing.any?
-      list << "#{@skipped} rows without source, key, rule or amount" if @skipped.positive?
-      list
+      [missing.any? && "#{missing.size} loads not in the app yet (e.g. #{missing.first(5).join(', ')})",
+       @charges.positive? && "#{@charges} order/load-level charges left to the API",
+       @skipped.positive? && "#{@skipped} rows without source, key, rule or amount"].select(&:itself)
     end
   end
 end

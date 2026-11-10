@@ -7,10 +7,14 @@
 class PdiFreightComponent < ApplicationRecord
   SOURCES = %w[load order].freeze
   BASE_TYPE = 0
+  OVERRIDE_TYPE = 9
 
   validates :source, inclusion: { in: SOURCES }
   validates :component_key, :line_key, :charge, presence: true
 
   def load? = source == 'load'
-  def base? = rule_type == BASE_TYPE
+  def override? = rule_type == OVERRIDE_TYPE
+
+  # Line freight proper (a base rate, or an override replacing the rules), as opposed to surcharges and fees.
+  def base? = rule_type == BASE_TYPE || override?
 end
