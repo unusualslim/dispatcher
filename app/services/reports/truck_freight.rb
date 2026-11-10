@@ -1,5 +1,5 @@
 module Reports
-  # Freight items PDI recorded on delivered orders (CustomerOrder#pdi_freight_items, from PdiOrders::TruckFreight).
+  # Freight items PDI recorded on invoiced orders (CustomerOrder#pdi_freight_items, from PdiOrders::TruckFreight).
   # A load's purchase charge (FPLSPLIT…) repeats on every order of the load, so each order gets an even share.
   module TruckFreight
     NO_TRUCK = 'No truck'.freeze
@@ -13,9 +13,9 @@ module Reports
 
     private
 
-    # PDI orders with freight data delivered in the period (by delivery date).
+    # PDI orders with freight data invoiced in the period (orders not yet invoiced aren't included).
     def freight_orders
-      scope = CustomerOrder.where(required_delivery_date: range).where.not(pdi_gallons: nil)
+      scope = CustomerOrder.where(invoice_date: range).where.not(pdi_gallons: nil)
                            .where.not(order_status: FinancialDashboard::Sales::CANCELLED)
       scope = scope.where(customer_id: filters[:customer_id]) if filters[:customer_id]
       scope

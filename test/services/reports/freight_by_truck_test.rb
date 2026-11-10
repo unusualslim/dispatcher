@@ -9,6 +9,7 @@ class FreightByTruckTest < ActiveSupport::TestCase
   setup do
     LocationCategory.find_or_create_by!(id: 2) { |c| c.name = 'Destination' }
     assert_empty PdiOrderApiImportService.call(feed).errors
+    CustomerOrder.update_all(invoice_date: Date.new(2026, 10, 7)) # rubocop:disable Rails/SkipsModelValidations
   end
 
   test 'the import records truck, driver and each freight item' do
@@ -43,6 +44,16 @@ class FreightByTruckTest < ActiveSupport::TestCase
                                                           :margin)
     assert_equal [0, 100, 100], no_truck.values_at(:sale_freight, :sale_charges, :cost)
     assert_equal [1100, 925], report.totals.values_at(:sale, :cost)
+  end
+
+  test 'the reports go by invoice date, leaving out orders not yet invoiced' do
+    CustomerOrder.find_by!(external_order_no: 'OD-3').update!(invoice_date: nil)
+    CustomerOrder.find_by!(external_order_no: 'OD-2').update!(invoice_date: Date.new(2026, 11, 2))
+
+    assert_equal ['OD-1'],
+                 Reports::FreightDetail.new({ from: '2026-10-07', to: '2026-10-07' }).rows.pluck(:order_no).uniq
+    assert_equal ['OD-2'],
+                 Reports::FreightDetail.new({ from: '2026-11-01', to: '2026-11-30' }).rows.pluck(:order_no).uniq
   end
 
   test 'the backfill fills truck freight from saved feeds' do

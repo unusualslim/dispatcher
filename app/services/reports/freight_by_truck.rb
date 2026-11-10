@@ -5,8 +5,8 @@ module Reports
     FREIGHT_CHARGES = [PdiOrders::TruckFreight::LINE_FREIGHT, *PdiOrders::TruckFreight::SALE_FREIGHT_CODES].freeze
 
     report title: 'Freight by truck', area: :sales, flag: :costs,
-           description: 'Freight detail rolled up per truck (orders with no truck are grouped by carrier): ' \
-                        'per-gallon freight and charges, sale and purchase side.',
+           description: 'Freight detail rolled up per truck for orders invoiced in the period (orders with no ' \
+                        'truck are grouped by carrier): per-gallon freight and charges, sale and purchase side.',
            filters: %i[dates customer_id]
 
     def columns
@@ -42,7 +42,7 @@ module Reports
     end
 
     def truck_columns(orders)
-      { truck: truck_name(orders.max_by(&:required_delivery_date)), drivers: drivers(orders), orders: orders.size }
+      { truck: truck_name(orders.max_by(&:invoice_date)), drivers: drivers(orders), orders: orders.size }
     end
 
     def side_columns(side, (freight, charges))
