@@ -47,4 +47,28 @@ class ReportsTest < ActionDispatch::IntegrationTest
     assert_equal '5', filters[:customer_id]
     assert_equal Date.new(2025, 10, 1), Reports::SalesByMonth.default_from(Date.new(2026, 10, 27))
   end
+
+  test 'freight by truck and freight detail render, and need the costs flag' do
+    CustomerOrder.find_by!(external_order_no: 'OD-7')
+                 .update!(pdi_vehicle_id: '21', pdi_vehicle: 'Truck 21 PB 490', pdi_driver: 'Neal Harris',
+                          pdi_gallons: 5000, pdi_freight_items: [
+                            { 'side' => 'sale', 'charge' => 'Freight', 'amount' => '1000' },
+                            { 'side' => 'purchase', 'charge' => 'OWIFSC', 'amount' => '750' }
+                          ])
+    sign_in staff('sales' => 'view')
+
+    get report_path('freight_by_truck', from: '2026-10-01', to: '2026-10-31')
+    assert_response :success
+    assert_select 'tbody td', text: 'Truck 21 PB 490'
+    assert_select 'tfoot td', text: '$250.00'
+
+    get report_path('freight_detail', from: '2026-10-01', to: '2026-10-31')
+    assert_select 'tbody a', text: 'OD-7'
+    assert_select 'tbody td', text: 'OWIFSC'
+
+    sign_out :user
+    sign_in staff_user('nocosts@example.com', { 'sales' => 'view' }, flags: [])
+    get report_path('freight_by_truck')
+    assert_response :redirect
+  end
 end

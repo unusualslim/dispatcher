@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_04_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_10_120100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -169,11 +169,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_04_150000) do
     t.integer "freight_pump_offs", default: 0, null: false
     t.string "freight_presentation", default: "line", null: false
     t.datetime "freight_calculated_at"
+    t.string "pdi_vehicle_id"
+    t.string "pdi_vehicle"
+    t.string "pdi_driver"
+    t.decimal "pdi_gallons", precision: 14, scale: 2
+    t.jsonb "pdi_freight_items", default: [], null: false
     t.index ["customer_id"], name: "index_customer_orders_on_customer_id"
     t.index ["external_order_no"], name: "index_customer_orders_on_external_order_no"
     t.index ["freight_origin_location_id"], name: "index_customer_orders_on_freight_origin_location_id"
     t.index ["location_id"], name: "index_customer_orders_on_location_id"
     t.index ["pdi_carrier_id"], name: "index_customer_orders_on_pdi_carrier_id"
+    t.index ["pdi_vehicle_id"], name: "index_customer_orders_on_pdi_vehicle_id"
     t.index ["ship_from_location_id"], name: "index_customer_orders_on_ship_from_location_id"
   end
 

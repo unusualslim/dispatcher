@@ -31,7 +31,8 @@ module PdiOrders
 
     def attributes(record)
       destination = Destination.new(@order, current: record.location)
-      @order.attrs.merge(customer: destination.customer, location: destination.location, **carrier)
+      @order.attrs.merge(customer: destination.customer, location: destination.location, **carrier,
+                         **@order.truck_freight)
     end
 
     # The carrier's name for display (from master data), when PDI sent a carrier.

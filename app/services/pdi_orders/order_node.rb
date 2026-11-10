@@ -50,6 +50,9 @@ module PdiOrders
         address: [text('ShipToAddress1'), text('ShipToAddress2')].compact.join(', ').presence }.compact
     end
 
+    # The truck, driver and freight PDI recorded (PdiOrders::TruckFreight).
+    def truck_freight = TruckFreight.new(@node).attrs
+
     def lines
       @node.xpath(LINES).map do |line|
         Line.new(product_code: product_code(line), quantity: text('OrderedQuantity', line).to_d.round,

@@ -394,6 +394,10 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
   before posting replaces the estimate; after posting the difference is the payable's variance.
 - **Payables** (`FreightPayable`, Purchasing → Freight Payables): one per source (PO / customer order) and carrier, accrued →
   invoiced when invoice # + amount are entered; FPL/FPS carriers flagged intercompany. Not yet exported to PDI AP or the GL.
+- **Freight by truck / Freight detail reports** use PDI's own freight, not the calculator: `PdiOrders::TruckFreight` stores
+  truck (`pdi_vehicle_id`/`pdi_vehicle`), `pdi_driver`, `pdi_gallons` and `pdi_freight_items` (jsonb, one per amount: per-gallon
+  "Freight" sale/purchase, FREIGHT/DELIVERY lines, PDI charge IDs as-is) on each PDI order. PurchaseSideKey charges (FPLSPLIT)
+  repeat on every order of a load and carry `load`; the reports split them evenly. Backfilled from saved SyncLog feeds.
 - User guide: docs/freight_guide.md (/docs/freight-guide).
 
 ## Map
