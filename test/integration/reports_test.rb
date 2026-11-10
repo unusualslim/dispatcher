@@ -50,8 +50,8 @@ class ReportsTest < ActionDispatch::IntegrationTest
 
   test 'freight by truck and freight detail render, and need the costs flag' do
     CustomerOrder.find_by!(external_order_no: 'OD-7')
-                 .update!(pdi_vehicle_id: '21', pdi_vehicle: 'Truck 21 PB 490', pdi_driver: 'Neal Harris',
-                          pdi_gallons: 5000, pdi_freight_items: [
+                 .update!(pdi_carrier_id: '1514', pdi_vehicle_id: '21', pdi_vehicle: 'Truck 21 PB 490',
+                          pdi_driver: 'Neal Harris', pdi_gallons: 5000, pdi_freight_items: [
                             { 'side' => 'sale', 'charge' => 'Freight', 'amount' => '1000' },
                             { 'side' => 'purchase', 'charge' => 'OWIFSC', 'amount' => '750' }
                           ])
@@ -62,7 +62,19 @@ class ReportsTest < ActionDispatch::IntegrationTest
     assert_select 'tbody td', text: 'Truck 21 PB 490'
     assert_select 'tfoot td', text: '$250.00'
 
-    get report_path('freight_detail', from: '2026-10-01', to: '2026-10-31')
+    PdiCarrier.create!(pdi_carrier_id: '1514', name: 'Five Points Logistics')
+    get report_path('freight_detail', from: '2026-10-01', to: '2026-10-31', carrier_id: '1452')
+    assert_select 'tbody td', count: 0
+    assert_select 'select#carrier_id option', text: '1514 - Five Points Logistics'
+
+    PdiFuelLoad.create!(load_no: '34779', business_date: Date.new(2026, 10, 2), carrier_id: '1514', vehicle_id: '21',
+                        order_nos: ['OD-7'], items: [{ 'charge' => 'FPLSPLIT', 'amount' => '75' }])
+    get report_path('freight_by_truck', from: '2026-10-01', to: '2026-10-31', date_basis: 'business')
+    assert_select 'select#date_basis option[selected]', text: 'Load business date'
+    assert_select 'tbody td', text: 'Truck 21 PB 490'
+    assert_select 'tfoot td', text: '$925.00' # margin: the order's $1,000 sale − the load's $75 charge
+
+    get report_path('freight_detail', from: '2026-10-01', to: '2026-10-31', carrier_id: '1514')
     assert_select 'tbody a', text: 'OD-7'
     assert_select 'tbody td', text: 'OWIFSC'
 

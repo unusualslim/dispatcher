@@ -69,14 +69,14 @@ class PdiWebService
 
   # <PDIWarehouseOrders> with one <PDIWarehouseOrder> per order. Warehouse orders carry no status,
   # so callers ask for one status code at a time. Dates filter on the scheduled delivery date.
-  def warehouse_orders(**filter)
-    call('GetWarehouseOrders', OrderFilter.xml('PDIGetWarehouseOrders', **filter))
-  end
+  def warehouse_orders(**filter) = call('GetWarehouseOrders', OrderFilter.xml('PDIGetWarehouseOrders', **filter))
 
   # <PDIFuelOrders> with one <PDIFuelOrder> (including <OrderStatus>) per order.
-  def fuel_orders(**filter)
-    call('GetFuelOrders', OrderFilter.xml('PDIGetFuelOrders', **filter))
-  end
+  def fuel_orders(**filter) = call('GetFuelOrders', OrderFilter.xml('PDIGetFuelOrders', **filter))
+
+  # <PDIFuelLoads> with one <PDIFuelLoad> per load (its BusinessDate, carrier, truck, per-load charges and
+  # its <PDIFuelOrder>s). See LoadFilter; PDI filters loads by delivery date, not business date.
+  def fuel_loads(**filter) = call('GetFuelLoads', LoadFilter.xml(**filter))
 
   # Posts one SOAP operation and returns the result's root element (namespaces removed).
   def call(operation, body_xml)

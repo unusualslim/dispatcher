@@ -49,6 +49,20 @@
                                                                                           class: 'form-select form-select-sm report-select2' %>
           </div>
         <% end %>
+        <% if filters.offers?(:date_basis) %>
+          <div>
+            <label class="form-label small mb-0">Date</label>
+            <%= select_tag :date_basis, options_for_select(Reports::FreightEntries::BASES, filters[:date_basis]),
+                           class: 'form-select form-select-sm' %>
+          </div>
+        <% end %>
+        <% if filters.offers?(:carrier_id) %>
+          <div style="min-width: 240px;">
+            <label class="form-label small mb-0">Carrier</label>
+            <%= select_tag :carrier_id, options_for_select(@carriers, filters[:carrier_id]), include_blank: 'All carriers',
+                                                                                             class: 'form-select form-select-sm report-select2' %>
+          </div>
+        <% end %>
         <% if filters.offers?(:location_id) %>
           <div>
             <label class="form-label small mb-0"><%= @report_class.respond_to?(:location_label) ? @report_class.location_label : 'Warehouse' %></label>

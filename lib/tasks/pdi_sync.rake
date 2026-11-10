@@ -10,6 +10,14 @@ namespace :pdi do
          "errors #{result.errors.size}"
   end
 
+  desc 'Fetch PDI fuel loads delivered in a date range: rake pdi:sync_fuel_loads[2026-06-01,2026-11-10]'
+  task :sync_fuel_loads, %i[from to] => :environment do |_, args|
+    PdiFuelLoadSyncJob.perform_now(from: args.fetch(:from), to: args[:to])
+    log = SyncLog.for_process(PdiFuelLoadSyncJob::PROCESS_NAME).first
+    puts "#{log.status}: created #{log.records_created}, updated #{log.records_updated}, " \
+         "unchanged #{log.records_skipped} #{log.warnings}"
+  end
+
   desc 'Sync vendors from PDI FTP (AP Vendor List.csv)'
   task sync_vendors: :environment do
     puts 'Starting PDI vendor sync...'

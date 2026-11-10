@@ -1,13 +1,9 @@
 module Reports
   class FreightByTruck < Base
-    include TruckFreight
-
-    FREIGHT_CHARGES = [PdiOrders::TruckFreight::LINE_FREIGHT, *PdiOrders::TruckFreight::SALE_FREIGHT_CODES].freeze
-
     report title: 'Freight by truck', area: :sales, flag: :costs,
-           description: 'Freight detail rolled up per truck for orders invoiced in the period (orders with no ' \
-                        'truck are grouped by carrier): per-gallon freight and charges, sale and purchase side.',
-           filters: %i[dates customer_id]
+           description: 'Freight detail rolled up per truck (no truck = grouped by carrier): per-gallon freight and ' \
+                        'charges, sale and purchase side, by invoice date or load business date.',
+           filters: %i[dates date_basis carrier_id customer_id]
 
     def columns
       [column(:truck, 'Truck'), column(:drivers, 'Drivers'), column(:orders, 'Orders', :number, total: true),
@@ -23,26 +19,26 @@ module Reports
 
     def rows
       @rows ||= begin
-        orders = freight_orders.to_a
-        items = freight_items(orders).group_by(&:order)
-        orders.group_by { |order| truck_sort(order) }.sort.map do |_, truck_orders|
-          truck_row(truck_orders, truck_orders.flat_map { |order| items.fetch(order, []) })
-        end
+        source = FreightEntries.for(filters)
+        entries = source.entries.group_by(&:truck_key)
+        hauls = source.hauls.group_by(&:truck_key)
+        (entries.keys | hauls.keys).sort.map { |key| truck_row(hauls.fetch(key, []), entries.fetch(key, [])) }
       end
     end
 
     private
 
-    def truck_row(orders, items)
-      gallons = orders.sum { |o| o.pdi_gallons.to_d }
-      sale = split(items, :sale)
-      cost = split(items, :cost)
-      { **truck_columns(orders), gallons: gallons.round, **side_columns(:sale, sale), **side_columns(:cost, cost),
-                                 margin: sale.sum - cost.sum, **per_gallon(sale.sum, cost.sum, gallons) }
+    def truck_row(hauls, entries)
+      gallons = hauls.sum(0.to_d, &:gallons)
+      sale = split(entries, :sale)
+      cost = split(entries, :cost)
+      totals = { gallons: gallons.round, margin: sale.sum - cost.sum }
+      truck_columns(hauls + entries).merge(totals, side_columns(:sale, sale), side_columns(:cost, cost),
+                                           per_gallon(sale.sum, cost.sum, gallons))
     end
 
-    def truck_columns(orders)
-      { truck: truck_name(orders.max_by(&:invoice_date)), drivers: drivers(orders), orders: orders.size }
+    def truck_columns(rows)
+      { truck: rows.first.truck, drivers: drivers(rows), orders: rows.filter_map(&:order_no).uniq.size }
     end
 
     def side_columns(side, (freight, charges))
@@ -50,14 +46,20 @@ module Reports
     end
 
     # [per-gallon / line freight, charges] for one side.
-    def split(items, side)
-      freight, charges = items.partition { |item| FREIGHT_CHARGES.include?(item.charge) }
+    def split(entries, side)
+      freight, charges = entries.partition(&:freight?)
       [freight.sum(0, &side), charges.sum(0, &side)]
     end
 
-    # Most deliveries first.
-    def drivers(orders)
-      orders.filter_map(&:pdi_driver).tally.sort_by { |_, n| -n }.map(&:first).join(', ')
+    def per_gallon(sale, cost, gallons)
+      return {} unless gallons.positive?
+
+      { sale_per_gallon: (sale / gallons).round(4), cost_per_gallon: (cost / gallons).round(4) }
+    end
+
+    # Most lines first.
+    def drivers(rows)
+      rows.filter_map(&:driver).tally.sort_by { |_, n| -n }.map(&:first).join(', ')
     end
   end
 end

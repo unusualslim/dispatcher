@@ -35,7 +35,11 @@ class AutomatedProcessesController < ApplicationController
     { slug: 'pdi-order-api-full-sync', name: PdiOrderApiFullSyncJob::PROCESS_NAME, job: 'PdiOrderApiFullSyncJob',
       description: 'Nightly: imports every open PDI order and the last week\'s finished ones, then re-checks ' \
                    'open orders PDI didn\'t send. Catches anything the changes sync missed.',
-      default_schedule: '0 2 * * * America/New_York' }
+      default_schedule: '0 2 * * * America/New_York' },
+    { slug: 'pdi-fuel-load-sync', name: PdiFuelLoadSyncJob::PROCESS_NAME, job: 'PdiFuelLoadSyncJob',
+      description: 'Nightly: every PDI fuel load delivered in the last 120 days (business date, carrier, truck, ' \
+                   'purchase freight and load charges) for the freight reports\' load business date.',
+      default_schedule: '30 2 * * * America/New_York' }
   ].freeze
 
   # A process's schedule; new configs start at its default_schedule (blank = off), else hourly.

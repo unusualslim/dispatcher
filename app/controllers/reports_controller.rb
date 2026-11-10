@@ -31,13 +31,30 @@ class ReportsController < ApplicationController
     @customers = Customer.order(:name).pluck(:name, :id) if filters.offers?(:customer_id)
     @products = Product.order(:name).pluck(:name, :id) if filters.offers?(:product_id)
     @locations = warehouses if filters.offers?(:location_id)
-    @vendors = Vendor.order(:name).map { |vendor| [vendor.label, vendor.id] } if filters.offers?(:vendor_id)
+    @vendors = vendors if filters.offers?(:vendor_id)
+    @carriers = carriers if filters.offers?(:carrier_id)
+  end
+
+  def vendors
+    Vendor.order(:name).map { |vendor| [vendor.label, vendor.id] }
+  end
+
+  # PDI carriers on orders with freight data or on fuel loads, as "1514 - Five Points Logistics".
+  def carriers
+    ids = carrier_ids
+    names = PdiCarrier.where(pdi_carrier_id: ids).pluck(:pdi_carrier_id, :name).to_h
+    ids.sort_by(&:to_i).map { |id| [[id, names[id]].compact.join(' - '), id] }
   end
 
   # Locations that hold stock or are PDI sites.
   def warehouses
     Location.where(id: LocationProduct.select(:location_id)).or(Location.where.not(pdi_site_code: [nil, '']))
             .order(:company_name).pluck(:company_name, :id)
+  end
+
+  def carrier_ids
+    CustomerOrder.where.not(pdi_gallons: nil).where.not(pdi_carrier_id: nil).distinct.pluck(:pdi_carrier_id) |
+      PdiFuelLoad.where.not(carrier_id: nil).distinct.pluck(:carrier_id)
   end
 
   def csv_name

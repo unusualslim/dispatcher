@@ -398,6 +398,14 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
   truck (`pdi_vehicle_id`/`pdi_vehicle`), `pdi_driver`, `pdi_gallons` and `pdi_freight_items` (jsonb, one per amount: per-gallon
   "Freight" sale/purchase, FREIGHT/DELIVERY lines, PDI charge IDs as-is) on each PDI order. PurchaseSideKey charges (FPLSPLIT)
   repeat on every order of a load and carry `load`; the reports split them evenly. Backfilled from saved SyncLog feeds.
+  Filters: dates, **Date** basis (`date_basis`: invoice date, default / load business date), carrier, customer
+  (`Reports::FreightEntries::ByInvoice` / `ByLoad`). **Load business date** = PDI's FI Fuel Delivery Report (the
+  accountant reconciles carrier 1514 with it; Oct 2026 tied out to the cent): `PdiFuelLoad` rows from `GetFuelLoads`
+  (`PdiWebService#fuel_loads`, `LoadFilter`; filters on delivery date only, RecordsToInclude 3), imported by
+  `PdiFuelLoads::Import` (items = per load line FreightUnitCost × lifted net, rounded per line, + per-load charges once).
+  `PdiFuelLoadSyncJob` (nightly 2:30, all carriers) re-pulls the last 120 days of deliveries month by month: PDI
+  corrections (`34763C`) keep the old delivery date with a new business date. Backfill: `rake pdi:sync_fuel_loads[from,to]`.
+  Single lines can differ from PDI by a cent (PDI's internal rate is more precise than the API's).
 - User guide: docs/freight_guide.md (/docs/freight-guide).
 
 ## Map

@@ -28,7 +28,7 @@ class FreightByTruckTest < ActiveSupport::TestCase
     rows = Reports::FreightDetail.new({ from: '2026-10-01', to: '2026-10-31' }).rows
 
     split = rows.select { |row| row[:charge] == 'FPLSPLIT' }
-    assert_equal([[37.5, '5307 (1 of 2)']] * 2, split.map { |row| [row[:cost].to_f, row[:load]] })
+    assert_equal([[37.5, '1 of 2']] * 2, split.map { |row| [row[:cost].to_f, row[:load]] })
     surcharge = rows.find { |row| row[:charge] == 'OWI' }
     assert_equal ['No truck (no carrier)', 'Sale', 100], surcharge.values_at(:truck, :side, :sale)
     freight = rows.find { |row| row[:order_no] == 'OD-1' && row[:side] == 'Purchase' && row[:charge] == 'Freight' }
@@ -44,6 +44,11 @@ class FreightByTruckTest < ActiveSupport::TestCase
                                                           :margin)
     assert_equal [0, 100, 100], no_truck.values_at(:sale_freight, :sale_charges, :cost)
     assert_equal [1100, 925], report.totals.values_at(:sale, :cost)
+  end
+
+  test 'the carrier filter keeps only that carrier\'s orders' do
+    rows = Reports::FreightByTruck.new({ from: '2026-10-01', to: '2026-10-31', carrier_id: '1514' }).rows
+    assert_equal ['Truck 21 PB 490'], rows.pluck(:truck)
   end
 
   test 'the reports go by invoice date, leaving out orders not yet invoiced' do

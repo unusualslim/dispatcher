@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_10_120100) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_10_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -587,6 +587,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_10_120100) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["pdi_carrier_id"], name: "index_pdi_carriers_on_pdi_carrier_id", unique: true
+  end
+
+  create_table "pdi_fuel_loads", force: :cascade do |t|
+    t.string "load_no", null: false
+    t.string "load_reference_no"
+    t.string "vehicle_id"
+    t.string "driver_name"
+    t.string "carrier_id"
+    t.date "business_date", null: false
+    t.date "lift_date"
+    t.string "order_nos", default: [], null: false, array: true
+    t.jsonb "items", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["business_date"], name: "index_pdi_fuel_loads_on_business_date"
+    t.index ["carrier_id"], name: "index_pdi_fuel_loads_on_carrier_id"
+    t.index ["load_no"], name: "index_pdi_fuel_loads_on_load_no", unique: true
+    t.index ["order_nos"], name: "index_pdi_fuel_loads_on_order_nos", using: :gin
   end
 
   create_table "phone_numbers", force: :cascade do |t|
