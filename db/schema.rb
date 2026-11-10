@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_10_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_10_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -587,6 +587,32 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_10_150000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["pdi_carrier_id"], name: "index_pdi_carriers_on_pdi_carrier_id", unique: true
+  end
+
+  create_table "pdi_freight_components", force: :cascade do |t|
+    t.string "source", null: false
+    t.string "component_key", null: false
+    t.string "line_key", null: false
+    t.string "charge", null: false
+    t.string "load_no"
+    t.string "load_reference_no"
+    t.string "bol"
+    t.string "product"
+    t.string "method"
+    t.string "order_no"
+    t.date "business_date"
+    t.integer "rule_type"
+    t.boolean "purchase", default: false, null: false
+    t.boolean "sale", default: false, null: false
+    t.decimal "line_freight", precision: 14, scale: 2
+    t.decimal "amount", precision: 14, scale: 2
+    t.decimal "basis", precision: 14, scale: 4
+    t.decimal "rate", precision: 14, scale: 6
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["order_no"], name: "index_pdi_freight_components_on_order_no"
+    t.index ["source", "component_key"], name: "index_pdi_freight_components_on_source_and_component_key", unique: true
+    t.index ["source", "line_key"], name: "index_pdi_freight_components_on_source_and_line_key"
   end
 
   create_table "pdi_fuel_loads", force: :cascade do |t|

@@ -9,12 +9,14 @@ module Reports
     NO_TRUCK = 'No truck'.freeze
     FREIGHT_CHARGES = [PdiOrders::TruckFreight::LINE_FREIGHT, *PdiOrders::TruckFreight::SALE_FREIGHT_CODES].freeze
 
-    # One freight amount. truck_key sorts trucks by number, then the no-truck carriers.
+    # One freight amount (a stored item, or one of PDI's components of its line freight: Breakdown).
+    # truck_key sorts trucks by number, then the no-truck carriers.
     Entry = Struct.new(:truck_key, :truck, :driver, :business_date, :order, :order_no, :load, :bol, :side, :charge,
-                       :product, :quantity, :rate, :amount, keyword_init: true) do
+                       :product, :quantity, :rate, :amount, :base, keyword_init: true) do
       def sale = side == 'sale' ? amount : 0
       def cost = side == 'purchase' ? amount : 0
-      def freight? = FREIGHT_CHARGES.include?(charge)
+      # Per-gallon / line freight (a base rate or what PDI's components leave) vs surcharges and charges.
+      def freight? = base.nil? ? FREIGHT_CHARGES.include?(charge) : base
     end
 
     # Gallons hauled on one order, for the per-truck totals.
@@ -27,7 +29,7 @@ module Reports
     # The Entry fields a stored freight item carries (amount aside).
     def self.item_fields(raw)
       { bol: raw['bol'], side: raw['side'], charge: raw['charge'], product: raw['product'],
-        quantity: raw['quantity']&.to_d, rate: raw['rate']&.to_d }
+        quantity: raw['quantity']&.to_d, rate: raw['rate']&.to_d, base: raw['base'] }
     end
 
     def self.truck_key(vehicle_id, carrier_id)

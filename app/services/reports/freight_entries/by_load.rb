@@ -14,10 +14,10 @@ module Reports
         end
       end
 
+      # Gallons lifted per load line (before the line freight is split into components).
       def hauls
-        entries.select { |e| e.side == 'purchase' && e.freight? }.map do |e|
-          Haul.new(truck_key: e.truck_key, truck: e.truck, driver: e.driver, order_no: e.order_no,
-                   gallons: e.quantity.to_d)
+        loads.flat_map do |load|
+          load.items.select { |raw| line?(raw) && customer?(orders[raw['order_no']]) }.map { |raw| haul(load, raw) }
         end
       end
 
@@ -25,7 +25,7 @@ module Reports
 
       # The load's purchase lines and charges, then the sale freight of orders not already on an earlier load.
       def load_entries(load, new_orders)
-        load.items.filter_map { |raw| purchase_entry(load, raw) } +
+        load.items.flat_map { |raw| purchase_entries(load, raw) } +
           new_orders.flat_map { |order| sale_entries(load, order) }
       end
 
@@ -52,19 +52,37 @@ module Reports
         !@filters[:customer_id] || order&.customer_id.to_s == @filters[:customer_id].to_s
       end
 
-      # Load charges (no order) stay with the load; lines for other customers' orders drop out.
-      def purchase_entry(load, raw)
-        order = orders[raw['order_no']]
-        return if raw['order_no'] && !customer?(order)
-
-        entry(load, order, raw.merge('side' => 'purchase'), raw['order_no'])
+      def haul(load, raw)
+        Haul.new(truck_key: truck_key(load), truck: truck(load), driver: driver(load), order_no: raw['order_no'],
+                 gallons: raw['quantity'].to_d)
       end
+
+      def line?(raw) = raw['order_no'] && raw['charge'] == PdiOrders::TruckFreight::LINE_FREIGHT
+
+      # Load charges (no order) stay with the load; lines for other customers' orders drop out. Line freight is
+      # split into PDI's components (Breakdown), leaving out the ones the load carries as charges.
+      def purchase_entries(load, raw)
+        order = orders[raw['order_no']]
+        return [] if raw['order_no'] && !customer?(order)
+
+        breakdown.split(raw.merge('side' => 'purchase'), raw['order_no'], load_charges(load))
+                 .map { |part| entry(load, order, part, raw['order_no']) }
+      end
+
+      def load_charges(load) = load.items.filter_map { |item| item['charge'] unless item['order_no'] }
 
       def sale_entries(load, order)
         return [] unless customer?(order)
 
-        order.pdi_freight_items.select { |raw| raw['side'] == 'sale' }
-             .map { |raw| entry(load, order, raw, order.external_order_no) }
+        sales = order.pdi_freight_items.select { |raw| raw['side'] == 'sale' }
+        sales.flat_map do |raw|
+          breakdown.split(raw, order.external_order_no, sales.pluck('charge'))
+                   .map { |part| entry(load, order, part, order.external_order_no) }
+        end
+      end
+
+      def breakdown
+        @breakdown ||= Breakdown.new(scope.pluck(:order_nos).flatten)
       end
 
       def entry(load, order, raw, order_no)

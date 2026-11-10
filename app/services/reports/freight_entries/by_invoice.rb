@@ -10,7 +10,9 @@ module Reports
       def entries
         @entries ||= begin
           counts = load_counts
-          orders.flat_map { |order| order.pdi_freight_items.map { |raw| entry(order, raw, counts) } }
+          orders.flat_map do |order|
+            order.pdi_freight_items.flat_map { |raw| parts(order, raw).map { |part| entry(order, part, counts) } }
+          end
         end
       end
 
@@ -33,6 +35,16 @@ module Reports
                              .where.not(order_status: FinancialDashboard::Sales::CANCELLED)
         scope = scope.where(customer_id: @filters[:customer_id]) if @filters[:customer_id]
         @filters[:carrier_id] ? scope.where(pdi_carrier_id: @filters[:carrier_id]) : scope
+      end
+
+      # The item, or its line freight split into PDI's components.
+      def parts(order, raw)
+        existing = order.pdi_freight_items.filter_map { |item| item['charge'] if item['side'] == raw['side'] }
+        breakdown.split(raw, order.external_order_no, existing)
+      end
+
+      def breakdown
+        @breakdown ||= Breakdown.new(orders.map(&:external_order_no))
       end
 
       def entry(order, raw, counts)

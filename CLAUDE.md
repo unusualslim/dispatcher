@@ -406,6 +406,13 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
   `PdiFuelLoadSyncJob` (nightly 2:30, all carriers) re-pulls the last 120 days of deliveries month by month: PDI
   corrections (`34763C`) keep the old delivery date with a new business date. Backfill: `rake pdi:sync_fuel_loads[from,to]`.
   Single lines can differ from PDI by a cent (PDI's internal rate is more precise than the API's).
+  **Freight in detail**: the API only sends one per-gallon freight figure, so surcharges (FPLFSC, TAFSC, MANFSC, PBLFSC)
+  come from the nightly SQL export `FPS_FREIGHT_DETAIL_*.csv` (`docs/pdi_sql/freight_detail.sql`: load components =
+  purchase, fuel detail components = sale) → `PdiFreightComponent` (`PdiFreightDetailSyncJob`, starts Off).
+  `Reports::FreightEntries::Breakdown` splits each "Freight" item into its components (matched by order + product, BOL
+  on loads; skipping rules already sent as charges, e.g. OWIFSC/FPLSPLIT; only purchase-/sale-flagged rules); what they
+  don't explain (overrides, type 9) stays "Freight", < 5¢ rounding goes on the largest part, so totals never change.
+  Rule types: 0 base rate (counts as freight), 1 per load, 2 FSC, 4 split, 6 min load, 9 total freight override.
 - User guide: docs/freight_guide.md (/docs/freight-guide).
 
 ## Map

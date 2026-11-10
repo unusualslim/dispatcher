@@ -39,7 +39,11 @@ class AutomatedProcessesController < ApplicationController
     { slug: 'pdi-fuel-load-sync', name: PdiFuelLoadSyncJob::PROCESS_NAME, job: 'PdiFuelLoadSyncJob',
       description: 'Nightly: every PDI fuel load delivered in the last 120 days (business date, carrier, truck, ' \
                    'purchase freight and load charges) for the freight reports\' load business date.',
-      default_schedule: '30 2 * * * America/New_York' }
+      default_schedule: '30 2 * * * America/New_York' },
+    { slug: 'pdi-freight-detail-sync', name: PdiFreightDetailSyncJob::PROCESS_NAME, job: 'PdiFreightDetailSyncJob',
+      description: 'PDI freight in detail from the nightly PDI SQL export (FPS_FREIGHT_DETAIL_*.csv on PDI FTP): ' \
+                   'the rules behind each line\'s freight (base rate, FPLFSC, TAFSC…) for the freight reports.',
+      default_schedule: '' }
   ].freeze
 
   # A process's schedule; new configs start at its default_schedule (blank = off), else hourly.
