@@ -10,9 +10,11 @@ permissions:
 
 jobs:
   minitest:
-    # Pinned: ubuntu-latest (26.04) couldn't resolve Ubuntu's package mirrors in Nov 2026.
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 20
+    # Debian 12, like Render. Also avoids apt on GitHub's Ubuntu runners, whose package
+    # mirrors were unreachable in Nov 2026.
+    container: ruby:3.4.11-bookworm
 
     services:
       postgres:
@@ -20,7 +22,6 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-        ports: ['5432:5432']
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -29,7 +30,8 @@ jobs:
 
     env:
       RAILS_ENV: test
-      DATABASE_URL: postgres://postgres:postgres@localhost:5432/dispatcher_test
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/dispatcher_test
+      BUNDLE_PATH: vendor/bundle
 
     steps:
       - uses: actions/checkout@v4
@@ -37,24 +39,24 @@ jobs:
       # Active Storage loads ruby-vips at boot and needs libvips.
       - name: Install libvips
         timeout-minutes: 5
-        run: |
-          sudo rm -f /var/lib/man-db/auto-update
-          sudo apt-get update -o Acquire::Retries=3
-          sudo apt-get install -y --no-install-recommends libvips
+        run: apt-get update && apt-get install -y --no-install-recommends libvips42
 
-      - uses: ruby/setup-ruby@v1
+      - uses: actions/cache@v4
         with:
-          ruby-version: .ruby-version
-          bundler-cache: true
+          path: vendor/bundle
+          key: gems-bookworm-${{ hashFiles('Gemfile.lock', '.ruby-version') }}
+
+      - name: Install gems
+        run: bundle install --jobs 4
 
       - uses: actions/setup-node@v4
         with:
           node-version-file: .node-version
-          cache: yarn
 
       # Layouts reference the esbuild/sass bundles, so integration tests need them built.
       - name: Build JS and CSS
         run: |
+          corepack enable
           yarn install --frozen-lockfile
           yarn build
           yarn build:css

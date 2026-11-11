@@ -470,7 +470,7 @@ the PDI sync/import code and most controllers are largely untested. Security reg
 Costing, ledger, quality checks, voids and permissions have their own model/service/integration tests.
 The suite is **green** (cleared 2026-10-28); keep it that way. Controller tests sign in with
 `Devise::Test::IntegrationHelpers` and create their own records rather than relying on fixtures.
-CI runs RuboCop (`.github/workflows/lint.yml`) and the Minitest suite (`.github/workflows/test.yml`: Postgres 15, libvips, built JS/CSS; system tests are not run).
+CI runs RuboCop (`.github/workflows/lint.yml`) and the Minitest suite (`.github/workflows/test.yml`: runs in the `ruby:3.4.11-bookworm` container like Render's Debian 12, Postgres 15, libvips, built JS/CSS; system tests are not run).
 CI runs on GitHub alongside the Render deploy and does not block it (deliberately: deploy time). The **pre-push hook**
 (`bin/hooks/pre-push`, installed by `bin/setup` via `git config core.hooksPath bin/hooks`) runs RuboCop on the pushed Ruby
 files plus `bin/rails test` and stops a failing push (`git push --no-verify` skips it).
