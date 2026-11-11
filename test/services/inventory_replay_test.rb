@@ -56,6 +56,16 @@ class InventoryReplayTest < ActiveSupport::TestCase
     assert_equal [20.0, Date.new(2026, 10, 15)], [output.quantity.to_f, output.occurred_on]
   end
 
+  test 'finished goods flagged raw material still come in from production' do
+    @product.update!(is_raw_material: true) # packaged DEF cases carried the flag in production data
+    order = ProductionOrder.create!(product: @product, location: @location, total_qty_produced: 20)
+    order.update_columns(status: 'completed', date_completed: Date.new(2026, 10, 15)) # rubocop:disable Rails/SkipsModelValidations
+    InventoryReplay.new(from: Date.new(2026, 10, 1), to: Date.new(2026, 10, 31)).run!
+
+    assert InventoryTransaction.exists?(transactable: order, movement_type: 'production_output')
+    assert_equal 120.0, on_hand
+  end
+
   test "won't replay before the opening balances" do
     assert_raises(ArgumentError) { InventoryReplay.new(from: Date.new(2026, 9, 1)).run! }
   end

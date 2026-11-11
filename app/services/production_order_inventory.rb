@@ -16,13 +16,15 @@ module ProductionOrderInventory
 
   # Finished goods come in at what went into them: the components' inventory cost plus the absorbed
   # supplies, overhead and labor (ProductionOrderCosting). Standard products book at standard instead.
+  # The order's product comes in whatever its raw-material flag says: what a production order makes is produced
+  # (packaged DEF cases flagged raw material lost their output in Oct 2026 replays).
   def post!(order, user = nil)
     return if posted?(order)
 
     consumed = consume_components!(order, user)
     finished = order.product
     produced = order.total_qty_produced.to_d
-    return unless finished && !finished.is_raw_material? && produced.positive?
+    return unless finished && produced.positive?
 
     unit_cost = (consumed + ProductionOrderCosting.new(order).absorbed_cost) / produced
     move!(order, finished, produced, user, unit_cost: unit_cost)
