@@ -11,6 +11,7 @@ permissions:
 jobs:
   minitest:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     services:
       postgres:
@@ -32,9 +33,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Active Storage loads ruby-vips at boot and needs libvips.
+      # Active Storage loads ruby-vips at boot and needs libvips. Skipping the man-db rebuild avoids
+      # a known multi-minute stall on GitHub's Ubuntu runners.
       - name: Install libvips
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libvips
+        timeout-minutes: 5
+        run: |
+          echo 'set man-db/auto-update false' | sudo debconf-communicate >/dev/null
+          sudo rm -f /var/lib/man-db/auto-update
+          sudo apt-get update -o Acquire::Retries=3
+          sudo apt-get install -y --no-install-recommends libvips
 
       - uses: ruby/setup-ruby@v1
         with:
