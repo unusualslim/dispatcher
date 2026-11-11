@@ -447,7 +447,7 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
 - **Staging**: web **dispatcher-staging** (`srv-dbl78ivf3r2c73dpvjn0`, https://dispatcher-staging.onrender.com, Starter,
   also deploys from `main`) on its own Postgres **dbDispatcherStaging** (`dpg-dbl645dbedkc73elmblg-a`, external access
   allow-listed by IP). `STAGING=1` (production.rb) = uploads on local disk, mail captured (`:test`), `STAGING_HOST` allowed,
-  striped banner + "STAGING ·" title (`staging?` helper). Its env has **no** PDI, Samsara, Twilio, SendGrid, DigitalOcean
+  striped banner + "STAGING ·" title (`staging?` helper). Production's sidebar footer links to it for admins/staff ("Staging (test copy)", `staging_url`, override with `STAGING_URL`). Its env has **no** PDI, Samsara, Twilio, SendGrid, DigitalOcean
   or master key, and there is no staging scheduler: never add them. `bin/staging-refresh` (run on the Mac) replaces its
   database with a read-only dump of production, runs `db/staging/sanitize.sql` (all schedules Off, blobs → local,
   `staging_refreshed_at`) and restarts the service. Staging uses production's logins; uploaded files from production

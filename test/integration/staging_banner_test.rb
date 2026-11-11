@@ -20,4 +20,22 @@ class StagingBannerTest < ActionDispatch::IntegrationTest
     assert_select '.main-wrapper > .staging-banner', text: /copy of production from 2026-11-03 21:00/
     assert_select 'title', text: 'STAGING · FPS Team'
   end
+
+  test 'production links staging for the team; staging does not link itself' do
+    get expense_accounts_path
+    assert_select '.sidebar-footer a[href="https://dispatcher-staging.onrender.com"][target="_blank"]', text: /Staging/
+
+    Rails.configuration.x.staging = true
+    get expense_accounts_path
+    assert_select '.sidebar-footer a[href="https://dispatcher-staging.onrender.com"]', 0
+  end
+
+  test 'drivers do not get the staging link' do
+    sign_out :user
+    sign_in User.create!(email: 'staging-driver@example.com', password: 'password123', role: 'worker')
+    get '/'
+    follow_redirect! while response.redirect?
+    assert_select '.sidebar-footer'
+    assert_select 'a[href="https://dispatcher-staging.onrender.com"]', 0
+  end
 end

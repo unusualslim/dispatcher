@@ -7,6 +7,11 @@ module ApplicationHelper
     Rails.configuration.x.staging == true
   end
 
+  # The staging copy's address, linked from production's sidebar so the team can try things there.
+  def staging_url
+    ENV.fetch('STAGING_URL', 'https://dispatcher-staging.onrender.com')
+  end
+
   CRON_PRESETS = {
     'Off' => '',
     'Every 1 minute' => '* * * * *',
