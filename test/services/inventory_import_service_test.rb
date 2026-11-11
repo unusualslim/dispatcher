@@ -32,4 +32,21 @@ class InventoryImportServiceTest < ActiveSupport::TestCase
     assert_in_delta 185.545, item.cost_per_unit, 0.001
     assert_equal Date.new(2026, 9, 30), s.report_date
   end
+
+  test 'PDI quantities with 4 decimals import, and importing again posts nothing' do
+    LocationCategory.find_or_create_by!(id: 1) { |c| c.name = 'Origin' }
+    plant = Location.create!(company_name: 'IIS Plant', location_category_id: 1)
+    rows = [row(0 => 'For 09/30/2026 Thru 09/30/2026'), row(0 => 'Report Format', 4 => 'Summary for a Date Range'),
+            row(0 => '110 / FPS-South'), row(0 => 'COOLANT'),
+            row(0 => 'EGBULK / ETHYLENE GLYCOL', 20 => 4215.1212, 22 => 4215.12),
+            row(0 => '12C2AT / HYDRAULIC 12', 20 => 525.5425, 22 => 525.54)]
+
+    service(rows).import(site_location_map: { '110' => plant }, as_of: Date.new(2026, 9, 30))
+    stock = LocationProduct.find_by!(location: plant, product_id: 'EGBULK')
+    assert_in_delta 4215.121, stock.quantity
+
+    assert_no_difference -> { InventoryTransaction.count } do
+      service(rows).import(site_location_map: { '110' => plant }, as_of: Date.new(2026, 9, 30))
+    end
+  end
 end

@@ -96,7 +96,14 @@ class InventoryImportService
   # selected_part_numbers: optional allowlist of part numbers to import.
   # Returns { updated: N, created: N, skipped: N }
   # as_of: the report's date (the movement date of what it changes); today by default.
+  # All or nothing: a failure leaves products and stock as they were.
   def import(selected_part_numbers: nil, site_location_map: {}, as_of: Date.current)
+    ActiveRecord::Base.transaction { apply(selected_part_numbers, site_location_map, as_of) }
+  end
+
+  private
+
+  def apply(selected_part_numbers, site_location_map, as_of)
     rows   = preview
     counts = { updated: 0, created: 0, skipped: 0 }
 
@@ -154,7 +161,8 @@ class InventoryImportService
 
       # PDI's quantity wins; the difference posts as a "PDI sync" movement at the app's cost.
       current = LocationProduct.find_by(location_id: location.id, product_id: product.id)&.quantity.to_d
-      InventoryPosting.post!(product: product, location: location, quantity: total_qty.to_d - current,
+      InventoryPosting.post!(product: product, location: location,
+                             quantity: total_qty.to_d.round(InventoryPosting::QUANTITY_SCALE) - current,
                              movement_type: 'pdi_sync', reference: "PDI-INV-#{as_of.strftime('%Y%m%d')}",
                              occurred_on: as_of, notes: "PDI inventory sync — ending #{total_qty}")
       products_to_sync << product.id
@@ -167,8 +175,6 @@ class InventoryImportService
 
     counts
   end
-
-  private
 
   # Where the quantity and extended cost are, from the report's own "Report Format" setting.
   def columns

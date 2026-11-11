@@ -48,11 +48,16 @@ class InventoryImportsController < ApplicationController
       site_location_map[site_code] = loc if loc
     end
 
-    counts = InventoryImportService.new(file).import(
-      selected_part_numbers: selected,
-      site_location_map: site_location_map,
-      as_of: report_date
-    )
+    begin
+      counts = InventoryImportService.new(file).import(
+        selected_part_numbers: selected,
+        site_location_map: site_location_map,
+        as_of: report_date
+      )
+    rescue ActiveRecord::RecordInvalid, InventoryPosting::NoLocation => e
+      file.close
+      redirect_to new_inventory_import_path, alert: "Import failed, nothing was changed: #{e.message}" and return
+    end
     file.close
     File.delete(session[:import_tmp_path]) rescue nil
     session.delete(:import_tmp_path)

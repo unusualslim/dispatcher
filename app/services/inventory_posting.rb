@@ -13,10 +13,14 @@ class InventoryPosting
 
   class NoLocation < StandardError; end
 
+  # Quantities are stored to 3 decimals; finer amounts (PDI reports 4) round first, so a difference smaller
+  # than that posts nothing instead of a zero-quantity movement.
+  QUANTITY_SCALE = 3
+
   # quantity is signed: positive adds stock, negative removes it. unit_cost is a receipt's actual cost
   # (PO line, production cost); without one, stock comes in at the location's current cost.
   def self.post!(product:, location:, quantity:, movement_type:, **details)
-    new(product, location).post!(quantity.to_d, movement_type, **details)
+    new(product, location).post!(quantity.to_d.round(QUANTITY_SCALE), movement_type, **details)
   end
 
   # Undoes a movement at exactly its original value (FIFO puts the layers back).
