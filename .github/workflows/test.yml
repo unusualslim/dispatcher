@@ -10,7 +10,8 @@ permissions:
 
 jobs:
   minitest:
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest (26.04) couldn't resolve Ubuntu's package mirrors in Nov 2026.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
 
     services:
@@ -33,12 +34,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Active Storage loads ruby-vips at boot and needs libvips. Skipping the man-db rebuild avoids
-      # a known multi-minute stall on GitHub's Ubuntu runners.
+      # Active Storage loads ruby-vips at boot and needs libvips.
       - name: Install libvips
         timeout-minutes: 5
         run: |
-          echo 'set man-db/auto-update false' | sudo debconf-communicate >/dev/null
           sudo rm -f /var/lib/man-db/auto-update
           sudo apt-get update -o Acquire::Retries=3
           sudo apt-get install -y --no-install-recommends libvips
