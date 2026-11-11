@@ -80,8 +80,6 @@ GEM
       public_suffix (>= 2.0.2, < 8.0)
     afm (0.2.2)
     ast (2.4.3)
-    autoprefixer-rails (10.4.15.0)
-      execjs (~> 2)
     aws-eventstream (1.4.1)
     aws-partitions (1.1298.0)
     aws-sdk-core (3.260.0)
@@ -109,8 +107,7 @@ GEM
     bindex (0.8.1)
     bootsnap (1.26.1)
       msgpack (~> 1.5)
-    bootstrap (5.3.2)
-      autoprefixer-rails (>= 9.1.0)
+    bootstrap (5.3.8)
       popper_js (>= 2.11.8, < 3)
     brakeman (8.1.0)
       racc
@@ -149,7 +146,6 @@ GEM
     erubi (1.12.0)
     et-orbi (1.4.0)
       tzinfo
-    execjs (2.9.1)
     faraday (2.15.0)
       faraday-net_http (>= 2.0, < 3.6)
       json
