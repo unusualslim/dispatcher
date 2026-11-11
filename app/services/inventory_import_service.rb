@@ -1,11 +1,14 @@
 class InventoryImportService
   # PDI "by site by reporting group" inventory export format
   # Col 0:  site header ("110 / FPS-South"), category header ("COMPONENTS"), or product ("PART / DESC")
-  # Col 17: on-hand quantity (nil/blank for site/category headers, numeric for products)
-  # Col 19: total extended cost — divided by quantity to get cost_per_unit
+  # Quantity column: on-hand (Ending) quantity (nil/blank for site/category headers, numeric for products)
+  # Cost column: total extended cost — divided by quantity to get cost_per_unit
+  # "Current Inventory Levels" reports put them in cols 17 / 19; "Summary for a Date Range" reports (on hand as of
+  # a past day, e.g. 09/30 - 09/30) add a unit-cost column, moving them to 20 / 22.
   COL_COMBINED   = 0
   COL_QUANTITY   = 17
   COL_TOTAL_COST = 19
+  DATE_RANGE_COLUMNS = { quantity: 20, total_cost: 22 }.freeze
 
   # site_code: PDI site code string (e.g. "110"), site_name: PDI site name (e.g. "FPS-South")
   ImportRow = Struct.new(:part_number, :description, :category, :quantity,
@@ -16,6 +19,15 @@ class InventoryImportService
     @file = file
   end
 
+  # The day the report is for: "For 10/18/2026", or the end of "For 09/30/2026 Thru 09/30/2026".
+  def report_date
+    title = spreadsheet_rows.first(6).filter_map { |raw| raw[COL_COMBINED].to_s[/\AFor\b.*/] }.first
+    dates = title.to_s.scan(%r{\d{1,2}/\d{1,2}/\d{4}})
+    Date.strptime(dates.last, '%m/%d/%Y') if dates.any?
+  rescue Date::Error
+    nil
+  end
+
   # Returns an array of ImportRow structs — does NOT write to DB.
   def preview
     rows             = []
@@ -23,7 +35,9 @@ class InventoryImportService
     current_site_code = nil
     current_site_name = nil
 
-    parse_spreadsheet.each do |raw|
+    quantity_col, cost_col = columns.values_at(:quantity, :total_cost)
+
+    spreadsheet_rows.each do |raw|
       combined = raw[COL_COMBINED].to_s.strip
       next if combined.blank?
 
@@ -33,18 +47,18 @@ class InventoryImportService
         right = right.to_s.strip
 
         # Site header: short pure-numeric code + blank quantity
-        if left.match?(/\A\d{1,4}\z/) && raw[COL_QUANTITY].nil?
+        if left.match?(/\A\d{1,4}\z/) && raw[quantity_col].nil?
           current_site_code = left
           current_site_name = right
           next
         end
 
         # Product row — must have a parseable quantity
-        qty = parse_quantity(raw[COL_QUANTITY])
+        qty = parse_quantity(raw[quantity_col])
         next if qty.nil?
         next if left.blank? || right.blank?
 
-        total_cost    = parse_quantity(raw[COL_TOTAL_COST])
+        total_cost    = parse_quantity(raw[cost_col])
         cost_per_unit = total_cost && qty > 0 ? (total_cost / qty).round(4) : nil
         product       = Product.find_by(id: left)
 
@@ -155,6 +169,20 @@ class InventoryImportService
   end
 
   private
+
+  # Where the quantity and extended cost are, from the report's own "Report Format" setting.
+  def columns
+    format = spreadsheet_rows.first(15).find { |raw| raw[COL_COMBINED].to_s.strip == 'Report Format' }
+    if format.to_a.compact.any? { |value| value.to_s.include?('Date Range') }
+      DATE_RANGE_COLUMNS
+    else
+      { quantity: COL_QUANTITY, total_cost: COL_TOTAL_COST }
+    end
+  end
+
+  def spreadsheet_rows
+    @spreadsheet_rows ||= parse_spreadsheet
+  end
 
   def parse_spreadsheet
     path = @file.respond_to?(:path) ? @file.path : @file.to_s

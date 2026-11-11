@@ -8,7 +8,15 @@ class InventoryImportsController < ApplicationController
 
     service      = InventoryImportService.new(params[:file])
     @rows        = service.preview
+    if @rows.empty?
+      redirect_to new_inventory_import_path, alert: 'No product rows found in this file. Use PDI\'s Current ' \
+                                                    'Inventory report ("Current Inventory Levels" or "Summary for ' \
+                                                    'a Date Range", grouped by site).'
+      return
+    end
+
     @sites       = service.sites
+    @report_date = service.report_date
     @warehouses  = Location.where(location_category_id: 1, show_in_warehouse_dropdown: true).order(:company_name)
     @update_count = @rows.count { |r| r.action == :update }
     @create_count = @rows.count { |r| r.action == :create }
