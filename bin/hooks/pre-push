@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Runs before every `git push`: RuboCop on the Ruby files being pushed, then the test suite.
+# A failure stops the push. Skip in a hurry with: git push --no-verify
+# Installed by bin/setup (git config core.hooksPath bin/hooks).
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+
+# Compare against what the remote already has (fall back to origin/main for a new branch).
+base=$(git rev-parse --verify --quiet '@{upstream}' || git rev-parse --verify --quiet origin/main || true)
+if [ -n "$base" ]; then
+  files=$(git diff --name-only --diff-filter=ACMR "$base"...HEAD -- '*.rb' '*.rake' 'Gemfile' 'Rakefile' 'config.ru')
+else
+  files=""
+fi
+
+if [ -n "$files" ]; then
+  echo "pre-push: RuboCop on changed files"
+  # shellcheck disable=SC2086
+  bin/rubocop --force-exclusion $files
+else
+  echo "pre-push: no Ruby changes for RuboCop"
+fi
+
+echo "pre-push: running tests"
+bin/rails test
