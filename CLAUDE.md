@@ -462,18 +462,30 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
 
 ---
 
-## Tests
+## Tests and checks
+**While working:** run the related test file after each change (`bin/rails test test/models/user_test.rb`, or `:LINE`
+for one test). **Before finishing:** `bin/check` (RuboCop on files changed since origin/main, Brakeman, full test suite;
+`--all` lints everything; ~25s). The **pre-push hook** (`bin/hooks/pre-push`, installed by `bin/setup` via
+`git config core.hooksPath bin/hooks`) runs `bin/check` and stops a failing push (`git push --no-verify` skips it).
+
 Minitest under `test/`. Coverage is concentrated on MRP services/models
 (Mrp::Plan, BomPopulator, MaterialAvailability, Reorder, ProductionOrderBatch);
 the PDI sync/import code and most controllers are largely untested. Security regression tests live in
 `test/integration/` (admin-only sign-up, Twilio webhook signature, announcement rich text, permissions).
 Costing, ledger, quality checks, voids and permissions have their own model/service/integration tests.
-The suite is **green** (cleared 2026-10-28); keep it that way. Controller tests sign in with
-`Devise::Test::IntegrationHelpers` and create their own records rather than relying on fixtures.
-CI runs RuboCop (`.github/workflows/lint.yml`) and the Minitest suite (`.github/workflows/test.yml`: runs in the `ruby:3.4.11-bookworm` container like Render's Debian 12, Postgres 15, libvips, built JS/CSS; system tests are not run).
-CI runs on GitHub alongside the Render deploy and does not block it (deliberately: deploy time). The **pre-push hook**
-(`bin/hooks/pre-push`, installed by `bin/setup` via `git config core.hooksPath bin/hooks`) runs RuboCop on the pushed Ruby
-files plus `bin/rails test` and stops a failing push (`git push --no-verify` skips it).
+The suite is **green** (cleared 2026-10-28); keep it that way. Tests create their own records rather than relying on
+fixtures (fixtures are declared per test class, never globally); controller tests sign in with
+`Devise::Test::IntegrationHelpers`.
+
+**Brakeman** (security scan): accepted warnings are in `config/brakeman.ignore`, each with a note saying why it's safe;
+fix new warnings rather than ignoring them. **strong_migrations** fails unsafe migrations (dropping/renaming live
+columns, locking indexes…) for migrations after 2026-11-11 and explains the safe pattern; wrap in `safety_assured` only
+when it really is safe. Migrations run with a 10s lock timeout.
+
+CI (GitHub Actions) runs RuboCop + Brakeman (`.github/workflows/lint.yml`) and the Minitest suite
+(`.github/workflows/test.yml`: in the `ruby:3.4.11-bookworm` container like Render's Debian 12, Postgres 15, libvips,
+built JS/CSS; system tests are not run) on pushes and pull requests (Dependabot PRs included). CI runs alongside the
+Render deploy and does not block it (deliberately: deploy time).
 
 ## Lint
 `bin/rubocop` (rubocop + rubocop-rails, config in `.rubocop.yml`). Existing offenses are
@@ -520,6 +532,6 @@ file, remove it from the todo (or regenerate with the command at the top of `.ru
 - `dispatch_customer_orders` join table is legacy but still used by `CustomerOrder.unassigned_open_orders`
 - With the :async adapter, failed jobs are only visible in `SyncLog` and the Rails log
 - Zone.Identifier files from Windows show as deleted in git status — safe to ignore
-- Render runs migrations before swapping instances, so renaming/dropping a live column causes ~30s of 500s on the
+- Render runs migrations before swapping instances (strong_migrations enforces this), so renaming/dropping a live column causes ~30s of 500s on the
   old code — add the new column first and drop the old one in a later deploy
 - Production orders and POs are voided (admin), not deleted; users with history are deactivated, not deleted

@@ -21,3 +21,17 @@ jobs:
 
       - name: RuboCop
         run: bin/rubocop --format github
+
+  brakeman:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+
+      # Accepted warnings are in config/brakeman.ignore (each with a note).
+      - name: Brakeman
+        run: bundle exec brakeman --quiet --no-pager --no-summary

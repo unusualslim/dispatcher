@@ -79,9 +79,15 @@ gem 'image_processing', '~> 1.2'
 # Active Storage uploads to the DigitalOcean Space in production (S3-compatible)
 gem 'aws-sdk-s3', require: false
 
+# Fails unsafe migrations (locking tables, dropping/renaming live columns) before they reach Render
+gem 'strong_migrations'
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem 'debug', platforms: %i[mri mingw x64_mingw]
+
+  # Security scanner for the app's own code (bin/check, CI)
+  gem 'brakeman', require: false
 end
 
 group :development do

@@ -1,0 +1,86 @@
+{
+  "ignored_warnings": [
+    {
+      "fingerprint": "0d030ac4c2246944e738547bdfca90a2a494a168fd8908fbac2bfe1f64f631cf",
+      "check_name": "VerbConfusion",
+      "message": "Potential HTTP verb confusion. `HEAD` is routed like `GET` but `request.get?` will return `false`",
+      "file": "app/controllers/application_controller.rb",
+      "line": 66,
+      "code": "if request.get? then\n  redirect_to(default_home_path, :alert => t(\"access.denied\"))\nelse\n  redirect_back_or_to(default_home_path, :alert => t(\"access.denied\"))\nend",
+      "note": "HEAD on an access-denied redirect just gets redirect_back; harmless."
+    },
+    {
+      "fingerprint": "1ea8e705342bc0ae1a1609c68251420205ca2f2f9f349c936b2fcfbb3a95cff3",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/services/product_list_query.rb",
+      "line": 98,
+      "code": "rel.where(\"#{\"reorder_point IS NOT NULL AND #{\"((#{stock_sql}) + #{ON_ORDER_SQL})\"} >= (#{COMMITTED_SQL})\"} AND (#{stock_sql}) > reorder_point\")",
+      "note": "stock_sql interpolates only warehouse.id.to_i; the rest are SQL constants."
+    },
+    {
+      "fingerprint": "20ee3c0e9e1adfc94fe3186528ea315947164e68cc2d7e2e294d25f51ca0e01b",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/services/product_list_query.rb",
+      "line": 96,
+      "code": "rel.where(\"reorder_point IS NOT NULL AND #{\"((#{stock_sql}) + #{ON_ORDER_SQL})\"} < (#{COMMITTED_SQL})\")",
+      "note": "stock_sql interpolates only warehouse.id.to_i; the rest are SQL constants."
+    },
+    {
+      "fingerprint": "29356755e88ae5f187cf2732c521168b6f262fe9d8fb783fa46c7857220702fe",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/services/customer_list_query.rb",
+      "line": 51,
+      "code": "rel.where(\"#{self.class.open_orders_sql} > 0\")",
+      "note": "open_orders_sql interpolates only quoted ACTIVE_STATUSES constants."
+    },
+    {
+      "fingerprint": "ab69e5db21497adef4db2bbf0a4819fbabb34e8205b090836f22dc2c8886706a",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/services/pdi_invoice_date_import_service.rb",
+      "line": 113,
+      "code": "CustomerOrder.connection.execute(\"UPDATE customer_orders o SET invoice_date = v.invoice_date,\\n  invoice_no = COALESCE(v.invoice_no, o.invoice_no), salesperson = COALESCE(v.salesperson, o.salesperson),\\n  updated_at = NOW()\\nFROM (VALUES #{slice.map do\n ActiveRecord::Base.sanitize_sql_array([\"(?, ?::date, ?, ?)\", *row.to_h.values_at(:order_no, :invoice_date, :invoice_no, :salesperson)])\n end.join(\", \")}) AS v(order_no, invoice_date, invoice_no, salesperson)\\nWHERE o.external_order_no = v.order_no\\n\".squish)",
+      "note": "Every value is bound through sanitize_sql_array."
+    },
+    {
+      "fingerprint": "cec84bdf1cb2ec60f0e112373c60b096e5d98e2b1068f84d94bf90dacd41f60c",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/services/product_list_query.rb",
+      "line": 97,
+      "code": "rel.where(\"#{\"reorder_point IS NOT NULL AND #{\"((#{stock_sql}) + #{ON_ORDER_SQL})\"} >= (#{COMMITTED_SQL})\"} AND (#{stock_sql}) <= reorder_point\")",
+      "note": "stock_sql interpolates only warehouse.id.to_i; the rest are SQL constants."
+    },
+    {
+      "fingerprint": "d1d3b82b5893fcb0b47ddd2a247d5a4cefdbe6e271851294aa877b6e16da9b19",
+      "check_name": "PermitAttributes",
+      "message": "Potentially dangerous key allowed for mass assignment",
+      "file": "app/controllers/users/registrations_controller.rb",
+      "line": 119,
+      "code": "params.require(:user).permit(:email, :password, :password_confirmation, :first_name, :last_name, :phone_number, :role)",
+      "note": "Sign-up is admin-only (require_admin!); admins assign roles here."
+    },
+    {
+      "fingerprint": "d81e017386ea33878af05a0c3b797f537842238cb484bd233e9c941b7f040a8f",
+      "check_name": "PermitAttributes",
+      "message": "Potentially dangerous key allowed for mass assignment",
+      "file": "app/controllers/users_controller.rb",
+      "line": 114,
+      "code": "params.require(:user).permit(:email, :first_name, :last_name, :phone_number, :role, :employment_type, :sms_opt_in, :email_opt_in, :home_page, :password, :password_confirmation, :role_ids => ([]), :hidden_flags => ([]))",
+      "note": "UsersController is admin-only (require_admin!); admins assign roles here."
+    },
+    {
+      "fingerprint": "e5240fea3b371ab33017a10ddbbd3122620a2ff18c85c8fc7aceffc8f0c09c1d",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/services/product_list_query.rb",
+      "line": 69,
+      "code": "rel.where(\"(#{stock_sql}) > 0\")",
+      "note": "stock_sql interpolates only warehouse.id.to_i; the rest are SQL constants."
+    }
+  ],
+  "brakeman_version": "8.1.0"
+}
