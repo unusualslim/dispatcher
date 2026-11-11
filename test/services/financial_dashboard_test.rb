@@ -42,6 +42,21 @@ class FinancialDashboardTest < ActiveSupport::TestCase
                                                     sales.total.to_f, sales.gallons.to_f, sales.order_count]
   end
 
+  test 'gross margin takes cost of sales from the inventory movements once tracking has started' do
+    order(Date.new(2026, 10, 5), lines: [{ product_id: @case.id, quantity: 10, price: 20 }])
+    sales = FinancialDashboard::Sales.new(Date.new(2026, 10, 1)..Date.new(2026, 10, 31))
+    assert_nil sales.gross_margin, 'no costs before inventory tracking starts'
+
+    AppSetting.set(InventoryRevaluation::START_DATE_KEY, '2026-10-01')
+    InventoryPosting.post!(product: @case, location: locations(:warehouse), quantity: 50, movement_type: 'adjustment',
+                           unit_cost: 6, occurred_on: Date.new(2026, 10, 1))
+    InventoryPosting.post!(product: @case, location: locations(:warehouse), quantity: -10, movement_type: 'sale',
+                           occurred_on: Date.new(2026, 10, 5))
+
+    assert_equal 60.0, sales.cost_of_sales.to_f
+    assert_equal 140.0, sales.gross_margin.to_f
+  end
+
   test 'delivery time and on-time share run from order date to invoice date' do
     order(Date.new(2026, 10, 10), order_date: Date.new(2026, 10, 7), required: Date.new(2026, 10, 9))
     order(Date.new(2026, 10, 12), order_date: Date.new(2026, 10, 11), required: Date.new(2026, 10, 12))

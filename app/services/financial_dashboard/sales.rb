@@ -62,7 +62,7 @@ class FinancialDashboard
       return unless start && start <= range.begin
 
       sales = InventoryTransaction.where(movement_type: 'sale', occurred_on: range)
-      -sales.sum(Arel.sql(InventoryValuation::SIGNED_VALUE))
+      -sales.pick(Arel.sql(InventoryValuation::SIGNED_VALUE)).to_d
     end
 
     def gross_margin
