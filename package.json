@@ -16,7 +16,7 @@
     "postcss": "^8.5.32",
     "postcss-cli": "^12.0.0",
     "qrcode-generator": "^2.0.4",
-    "sass": "^1.107.0",
+    "sass": "^1.108.1",
     "sortablejs": "^1.15.7",
     "trix": "^2.1.19"
   },
