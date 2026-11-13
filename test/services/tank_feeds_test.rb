@@ -44,6 +44,23 @@ class TankFeedsTest < ActiveSupport::TestCase
     assert_in_delta 391_883, tanks.where(ignored: false).sum(:last_gallons)
   end
 
+  test '0002: a saved email is read by its sent time, ignoring the banner and the hidden preview line' do
+    TankFeeds::Plant0002.new(tank_file(plant_0002_email, 'tanks.eml'), file_name: 'FPS_TANKS_0002_x.eml').import!
+    tanks = FeedTank.in_feed('plant_0002')
+
+    assert_equal ['DI Water', 'P-1', 'T-8 500 K', 'Tank 1', 'Tank 11', 'Tank 99'], tanks.order(:name).pluck(:name)
+    assert_equal [Time.find_zone('America/New_York').local(2026, 11, 8, 23, 54, 54)],
+                 TankReading.joins(:feed_tank).merge(tanks).distinct.pluck(:read_at), 'sent date, not the subject date'
+    assert_equal [1049], tanks.where(name: 'Tank 1').pluck(:last_gallons).map(&:to_i)
+  end
+
+  test '0002: an email is recognised by its content when the file name has no .eml' do
+    reading = TankFeeds::Plant0002.new(tank_file(plant_0002_email, 'upload.bin')).rows
+
+    assert_equal 6, reading.size
+    assert_equal [Time.find_zone('America/New_York').local(2026, 11, 8, 23, 54, 54)], reading.map(&:read_at).uniq
+  end
+
   test '0002 needs a reading time' do
     assert_raises(ArgumentError) { TankFeeds::Plant0002.new(tank_file(PLANT_0002, 'tanks.txt')).rows }
   end

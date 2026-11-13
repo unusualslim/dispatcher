@@ -26,7 +26,7 @@ module PdiCsvPickup
 
     # FPS_PO_LINES.csv, FPS_PO_LINES_20261105.csv, fps_po_lines-2026-11-05.csv …
     def matches?(filename)
-      File.basename(filename).match?(/\A#{Regexp.escape(self::FILE_PREFIX)}([_-].*)?\.#{file_ext}\z/i)
+      File.basename(filename).match?(/\A#{Regexp.escape(self::FILE_PREFIX)}([_-].*)?\.(?:#{file_ext})\z/i)
     end
   end
 
@@ -81,10 +81,9 @@ module PdiCsvPickup
   end
 
   def skip_run
+    names = "#{self.class::FILE_PREFIX}*.#{self.class.file_ext.tr('|', '/')}"
     SyncLog.create!(process_name: self.class::PROCESS_NAME, status: 'skipped', started_at: Time.current,
-                    completed_at: Time.current,
-                    error_message: "No #{self.class::FILE_PREFIX}*.#{self.class.file_ext} files in " \
-                                   "#{self.class.ftp_dir}")
+                    completed_at: Time.current, error_message: "No #{names} files in #{self.class.ftp_dir}")
   end
 
   def pick_up(filename)
@@ -112,7 +111,8 @@ module PdiCsvPickup
   end
 
   def import_text(content)
-    Tempfile.create([self.class::FILE_PREFIX.downcase, ".#{self.class.file_ext}"], binmode: true) do |file|
+    extension = File.extname(current_file) # the file's own (a job can take several, e.g. eml|txt)
+    Tempfile.create([self.class::FILE_PREFIX.downcase, extension], binmode: true) do |file|
       file.write(content)
       file.flush
       import(file.path)

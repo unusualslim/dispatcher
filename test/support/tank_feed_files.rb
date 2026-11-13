@@ -28,6 +28,28 @@ module TankFeedFiles
     0 Gallons
   TXT
 
+  # The 0002 email as Power Automate saves it whole: HTML only, sent at 11:54 PM on Nov 8 with Nov 9 in the subject,
+  # a mail filter banner, and a hidden preview line that runs every reading together.
+  def plant_0002_email(sent: 'Sun, 8 Nov 2026 23:54:54 -0500', subject: 'Tank Levels 11/09/2026')
+    html = plant_0002_html
+    Mail.new do
+      from 'no-reply@perrybrothersoil.com'
+      to 'tanks@example.com'
+      date sent
+      subject subject
+      content_type 'text/html; charset=UTF-8'
+      body html
+    end.to_s
+  end
+
+  def plant_0002_html
+    lines = PLANT_0002.lines.map(&:strip)
+    hidden = %(<div style="display:none; font-size:1px; max-height:0px; overflow:hidden">#{lines.join(' ')}</div>)
+    "<html><body>#{hidden}<div>Internal (no-reply@perrybrothersoil.com)</div>" \
+      '<div>Safe Spam Phish More... FAQ Protection by INKY</div>' \
+      "#{lines.map { |line| "<div>#{line}</div>" }.join}<br>Tank 99 5 Gallons</body></html>"
+  end
+
   SPREADSHEET = <<~CSV.freeze
     tab,site,date,fill_limit,gallons,day_load,night_load
     WRENS,JET WRENS,2026-10-27,1978,1081,,

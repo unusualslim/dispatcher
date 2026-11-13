@@ -35,6 +35,17 @@ class TankFeedPickupTest < ActiveSupport::TestCase
     job.perform_now
   end
 
+  test '0002: a saved .eml email is picked up and read by its sent time' do
+    ftp = FakeFtp.new('FPS_TANKS_0002_20261109.eml' => plant_0002_email)
+    run_job(TankPlant0002SyncJob, ftp)
+
+    assert_equal ['FPS_TANKS_0002_20261109.eml'], ftp.deleted
+    log = SyncLog.find_by!(process_name: '0002 Tank Email Sync')
+    assert_equal 'success', log.status
+    assert_equal [Time.find_zone('America/New_York').local(2026, 11, 8, 23, 54, 54)],
+                 TankReading.where(sync_log: log).distinct.pluck(:read_at)
+  end
+
   test '0002: .txt files, reading time from the name, readings linked to the log' do
     ftp = FakeFtp.new('FPS_TANKS_0002_20261111_0600.txt' => PLANT_0002, 'FPS_SMARTANK_20261111_0305.csv' => SMARTANK)
     run_job(TankPlant0002SyncJob, ftp)

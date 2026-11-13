@@ -14,12 +14,12 @@
         </div>
         <div class="mb-3">
           <%= label_tag :file, 'File', class: 'form-label fw-semibold' %>
-          <%= file_field_tag :file, class: 'form-control', accept: '.csv,.txt' %>
+          <%= file_field_tag :file, class: 'form-control', accept: '.csv,.txt,.eml' %>
         </div>
         <div class="mb-3" id="tank-read-at">
           <%= label_tag :read_at, 'Reading time (0002 tank email only)', class: 'form-label fw-semibold' %>
           <%= datetime_local_field_tag :read_at, nil, class: 'form-control' %>
-          <div class="form-text">The email has no date inside. Leave blank when the file is named FPS_TANKS_0002_yyyyMMdd_HHmm.txt (Eastern).</div>
+          <div class="form-text">A saved email (.eml) is read by the time it was sent. A text file has no date inside: leave this blank when it is named FPS_TANKS_0002_yyyyMMdd_HHmm.txt (Eastern).</div>
         </div>
         <%= submit_tag 'Preview Import', class: 'btn btn-primary' %>
       </div>
@@ -32,7 +32,7 @@
       <ul class="mb-0">
         <li><strong>Kii</strong>: the hourly report CSV (<code>KII_&lt;day&gt;_&lt;HH&gt;.csv</code> or Kii's own name). Sensors are ours when Sensor Owner or Customer is Five Points Service; the rest are kept but ignored.</li>
         <li><strong>Smartank</strong>: the daily "Inventory" report CSV (<code>FPS_SMARTANK_yyyyMMdd_HHmm.csv</code>). Inactive and "z-" tanks are ignored.</li>
-        <li><strong>0002 tank email</strong>: the text file of "&lt;tank&gt; &lt;gallons&gt; Gallons" lines. DI Water is ignored.</li>
+        <li><strong>0002 tank email</strong>: the whole email saved as .eml (or a text file of "&lt;tank&gt; &lt;gallons&gt; Gallons" lines). DI Water is ignored.</li>
         <li><strong>Spreadsheet history</strong>: the CSV made from TankOnHandDaysInv.xlsx with <code>bin/rails "tanks:spreadsheet_csv[path/to/TankOnHandDaysInv.xlsx]"</code> (each typed 6AM inventory → a reading at 6:00 AM).</li>
       </ul>
     </div>

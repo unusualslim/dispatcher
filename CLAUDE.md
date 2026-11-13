@@ -438,12 +438,13 @@ Plan doc: https://claude.ai/artifact/XHN7g5K59XsoHWpMk7saER (board/forecast/aler
   `ignored` (no readings stored). `TankReading` (feed_tank, read_at UTC, gallons, water, temp, status, sync_log),
   unique per feed tank + time, so re-imports are safe (`FeedTank#record_reading!`). Readings never move inventory.
 - Importers `TankFeeds::Kii` (hourly snapshot, UTC; ours = Sensor Owner/Customer Five Points Service),
-  `::Smartank` (header row found by "System Tank ID", Eastern; inactive / "z-" ignored), `::Plant0002` (text lines,
-  time from the file name `FPS_TANKS_0002_yyyyMMdd_HHmm.txt`, DI Water ignored), `::SpreadsheetHistory` (CSV made
+  `::Smartank` (header row found by "System Tank ID", Eastern; inactive / "z-" ignored), `::Plant0002` (the whole
+  email saved as `.eml`: the reading is its **sent** date/time, Eastern; banner + hidden preview line ignored; a text file
+  named `FPS_TANKS_0002_yyyyMMdd_HHmm.txt` still works; DI Water ignored), `::SpreadsheetHistory` (CSV made
   locally by `rake "tanks:spreadsheet_csv[TankOnHandDaysInv.xlsx]"`: typed 6AM inventories only, Jun–Oct 2026).
 - Pickup jobs (`TankFeedPickup` on `PdiCsvPickup`, FTP /Imports, schedules start Off): `TankKiiSyncJob` (KII_*.csv,
   staged by docs/tank_feeds/Kii_WinSCP_Launch.bat; stored files cleared after 14 days), `TankSmartankSyncJob`
-  (FPS_SMARTANK_*.csv), `TankPlant0002SyncJob` (FPS_TANKS_0002_*.txt). Files younger than 2 min wait (still uploading).
+  (FPS_SMARTANK_*.csv), `TankPlant0002SyncJob` (FPS_TANKS_0002_*.eml or .txt). Files younger than 2 min wait (still uploading).
 - Pages (Dispatch area): /tanks (list, detail, manual reading), /tank_feeds (feed status + feed tanks to set up /
   link / ignore); Data Imports → Tank Readings (admin, manual upload with preview). Stale = `tank_stale_hours` (30).
 
