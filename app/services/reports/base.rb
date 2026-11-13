@@ -29,6 +29,11 @@ module Reports
       def default_from(today)
         today.beginning_of_month
       end
+
+      # Where it ends when none is chosen (today unless a report looks ahead).
+      def default_to(today)
+        today
+      end
     end
 
     attr_reader :filters

@@ -8,7 +8,7 @@ module Reports
     REPORTS = [
       SalesByCustomer, SalesByProduct, SalesByMonth, DeliveryByCustomer, LateOrders, PricingExceptions,
       FreightByTruck, FreightDetail, QualityResults, InventoryMovements, PoSpendByVendor, ExpensePoSpend,
-      PpvByProduct
+      PpvByProduct, IncomingReceipts
     ].freeze
 
     # Existing pages, listed alongside: [area, title, description, route helper].

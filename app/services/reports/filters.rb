@@ -9,7 +9,7 @@ module Reports
     def initialize(params, report_class, today)
       @names = report_class.filter_names
       @from = date(params[:from]) || report_class.default_from(today)
-      @to = date(params[:to]) || today
+      @to = date(params[:to]) || report_class.default_to(today)
       @values = SELECTS.index_with { |key| params[key].presence }
       @values[:only_problems] = params.key?(:only_problems) ? params[:only_problems] == '1' : true
     end
