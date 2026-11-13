@@ -1,13 +1,14 @@
-# Nightly PDI SQL export (PO lines + invoice dates)
+# Nightly PDI SQL export (PO lines, invoice dates, freight detail, repack batches)
 
-A scheduled job on the PDI SQL Server writes two CSVs every night into an export folder. Your existing WinSCP
-setup uploads them to the PDI FTP folder `/Imports`, and FPS Team picks them up with two automated processes:
+A scheduled job on the PDI SQL Server writes its CSVs every night into an export folder. Your existing WinSCP
+setup uploads them to the PDI FTP folder `/Imports`, and FPS Team picks them up with automated processes:
 
 | File | App process | Layout |
 |---|---|---|
 | `FPS_PO_LINES_<yyyymmdd>.csv` | PDI PO Lines Sync | 56 columns, **no header**: exactly the file Data Imports → PDI Purchase Orders takes today |
 | `FPS_INVOICE_DATES_<yyyymmdd>.csv` | PDI Invoice Dates Sync | Header row; columns found by name: order number, invoice date, optional invoice # and salesperson (Data Imports → PDI Invoice Dates) |
 | `FPS_FREIGHT_DETAIL_<yyyymmdd>.csv` | PDI Freight Detail Sync | Header row; PDI's freight in detail (base rate, FPLFSC, TAFSC, MANFSC…) per load line and order line, from `docs/pdi_sql/freight_detail.sql`. Keep its column aliases |
+| `FPS_REPACK_BATCHES_<yyyymmdd>.csv` | PDI Repack Batches Sync | Header row; the last 90 days of repack batches from `docs/pdi_sql/repack_batches.sql`, read **by column position** (same layout as Data Imports → Repack Batches). New batches become production orders; an order with no warehouse gets it from Warehouse_ID (column 9) |
 
 The app imports every waiting file oldest first, keeps each one on its log (Automated Processes → the process →
 download), and deletes it from FTP once it imported. A file that fails stays on FTP and is retried the next night.
@@ -22,6 +23,7 @@ C:\fps\pdi-export\
   sql\po_lines.sql        your PO lines query (the one you export today)
   sql\invoice_dates.sql   your invoice dates query
   sql\freight_detail.sql  freight in detail (docs/pdi_sql/freight_detail.sql)
+  sql\repack_batches.sql  repack batches (docs/pdi_sql/repack_batches.sql)
   out\                    the CSVs (default $OutDir; WinSCP uploads from here)
   logs\
   export.ps1              the script below
@@ -36,6 +38,7 @@ imports update in place), so overlap generously:
 - PO lines: POs entered, changed or received in the last 14 days.
 - Invoice dates: orders invoiced in the last 30 days.
 - Freight detail: loads and orders with a business date in the last 120 days (matches the app's fuel load sync).
+- Repack batches: business date in the last 90 days (already in `repack_batches.sql`).
 
 The PO lines query is in `docs/pdi_sql/po_lines.sql` (56 columns, open POs + 14 days of activity).
 Keep its 56 columns in this order: the app reads them by position.
@@ -91,6 +94,7 @@ function Export-To($SqlFile, $Name, [switch]$NoHeader) {
 Export-To "$Root\sql\po_lines.sql"      "FPS_PO_LINES_$stamp.csv" -NoHeader
 Export-To "$Root\sql\invoice_dates.sql" "FPS_INVOICE_DATES_$stamp.csv"
 Export-To "$Root\sql\freight_detail.sql" "FPS_FREIGHT_DETAIL_$stamp.csv"
+Export-To "$Root\sql\repack_batches.sql" "FPS_REPACK_BATCHES_$stamp.csv"
 
 Get-ChildItem "$Root\logs" | Where-Object LastWriteTime -lt (Get-Date).AddDays(-30) | Remove-Item
 Stop-Transcript

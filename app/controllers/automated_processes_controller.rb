@@ -43,6 +43,9 @@ class AutomatedProcessesController < ApplicationController
     { slug: 'pdi-freight-detail-sync', name: PdiFreightDetailSyncJob::PROCESS_NAME, job: 'PdiFreightDetailSyncJob',
       description: 'PDI freight in detail from the nightly PDI SQL export (FPS_FREIGHT_DETAIL_*.csv on PDI FTP): ' \
                    'the rules behind each line\'s freight (base rate, FPLFSC, TAFSC…) for the freight reports.',
+      default_schedule: '' },
+    { slug: 'pdi-repack-batches-sync', name: PdiRepackBatchesSyncJob::PROCESS_NAME, job: 'PdiRepackBatchesSyncJob',
+      description: 'Last 90 days of repack batches from the nightly PDI SQL export (FPS_REPACK_BATCHES_*.csv).',
       default_schedule: '' }
   ].freeze
 

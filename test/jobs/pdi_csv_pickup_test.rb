@@ -94,4 +94,25 @@ class PdiCsvPickupTest < ActiveSupport::TestCase
     assert PdiPoLinesSyncJob.matches?('fps_po_lines-2026-11-05.csv')
     assert PdiInvoiceDatesSyncJob.matches?('FPS_INVOICE_DATES.csv')
   end
+
+  test 'repack batches: a new batch becomes an order and a later file fills a missing warehouse' do
+    main = locations(:warehouse).tap { |l| l.update!(pdi_site_code: '0002') }
+    batch = lambda do |warehouse_id, name|
+      row = Array.new(40)
+      { 0 => '15300', 1 => 'Repack', 2 => '2026-11-05', 3 => 'Unposted', 8 => warehouse_id, 9 => name,
+        13 => products(:urea).id, 16 => '10' }.each { |i, v| row[i] = v }
+      "Batch_Key,Batch_Description\n#{row.to_csv}"
+    end
+
+    run_job(PdiRepackBatchesSyncJob, FakeFtp.new('FPS_REPACK_BATCHES_20261105.csv' => batch.call('9999', 'Nowhere')))
+    order = ProductionOrder.find_by!(number: 'PDI-15300')
+    assert_nil order.location
+    first_log = SyncLog.find_by!(process_name: 'PDI Repack Batches Sync')
+    assert_equal [1, 'success'], first_log.values_at(:records_created, :status)
+    assert_match(/Batch 15300: warehouse 9999 Nowhere matches no location/, first_log.warnings)
+
+    run_job(PdiRepackBatchesSyncJob, FakeFtp.new('FPS_REPACK_BATCHES_20261106.csv' => batch.call('2', 'FPS-Main')))
+    assert_equal main, order.reload.location
+    assert_equal 1, SyncLog.where(process_name: 'PDI Repack Batches Sync').order(:id).last.records_updated
+  end
 end

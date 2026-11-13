@@ -4,17 +4,20 @@
 # closed month. Each record is posted only if it isn't already: running it twice changes nothing.
 #
 # Manual inventory adjustments aren't replayed (they're entered by hand, not kept as documents).
+# A completed production order with no warehouse is skipped and listed (`skipped_no_warehouse`): posting it to the
+# main warehouse would be a guess, so someone sets its warehouse and replays again.
 class InventoryReplay
   Event = Struct.new(:date, :rank, :kind, :record)
   KINDS = { receipt: 0, production: 1, sale: 2 }.freeze
 
-  attr_reader :from, :to, :counts, :errors
+  attr_reader :from, :to, :counts, :errors, :skipped_no_warehouse
 
   def initialize(from:, to: Date.current)
     @from = from
     @to = to
     @counts = KINDS.keys.index_with(0)
     @errors = []
+    @skipped_no_warehouse = []
   end
 
   def run!
@@ -30,10 +33,18 @@ class InventoryReplay
   def summary
     text = "Replayed #{from}…#{to}: #{counts[:receipt]} PO receipt(s), #{counts[:production]} production order(s), " \
            "#{counts[:sale]} shipped order(s)"
+    text += skipped_text
     errors.any? ? "#{text}; #{errors.size} failed (#{errors.first(5).join('; ')})" : "#{text}."
   end
 
   private
+
+  def skipped_text
+    return '' if skipped_no_warehouse.empty?
+
+    "; #{skipped_no_warehouse.size} production order(s) skipped, no warehouse (set it on each order, then replay " \
+      "again): #{skipped_no_warehouse.first(10).join(', ')}#{' …' if skipped_no_warehouse.size > 10}"
+  end
 
   def events
     receipts + productions + sales
@@ -46,8 +57,15 @@ class InventoryReplay
   end
 
   def productions
-    ProductionOrder.where(status: 'completed', date_completed: from..to)
-                   .map { |order| Event.new(order.date_completed, KINDS[:production], :production, order) }
+    completed = ProductionOrder.where(status: 'completed', date_completed: from..to)
+    unplaced, placed = completed.partition { |order| order.location_id.nil? }
+    note_skipped(unplaced)
+    placed.map { |order| Event.new(order.date_completed, KINDS[:production], :production, order) }
+  end
+
+  # Orders already posted (by an earlier run) are left out of the list: there is nothing to decide for them.
+  def note_skipped(orders)
+    @skipped_no_warehouse = orders.reject { |order| ProductionOrderInventory.posted?(order) }.map(&:number)
   end
 
   def period_times

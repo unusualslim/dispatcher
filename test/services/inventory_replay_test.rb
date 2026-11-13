@@ -83,4 +83,22 @@ class InventoryReplayTest < ActiveSupport::TestCase
     assert_not InventoryTransaction.costed.exists?
     assert_equal 1, CustomerOrder.where(external_order_no: 'OD-R3').count
   end
+
+  test 'completed production with no warehouse is skipped and listed, not posted to the main warehouse' do
+    placed = ProductionOrder.create!(number: 'PO-PLACED', product: @product, item: @product.name, status: 'completed',
+                                     qty_to_make: 10, total_qty_produced: 10, location: @location,
+                                     date_completed: Date.new(2026, 10, 15))
+    unplaced = ProductionOrder.create!(number: 'PO-NOWH', product: @product, item: @product.name, status: 'created',
+                                       qty_to_make: 5)
+    # As PDI's repack import leaves them: completed, no warehouse, nothing posted.
+    unplaced.update_columns(status: 'completed', total_qty_produced: 5, date_completed: Date.new(2026, 10, 16)) # rubocop:disable Rails/SkipsModelValidations
+
+    replay = InventoryReplay.new(from: Date.new(2026, 10, 1), to: Date.new(2026, 10, 31)).run!
+
+    assert_equal 0, replay.counts[:production] # the placed order posted when it was completed
+    assert ProductionOrderInventory.posted?(placed)
+    assert_not ProductionOrderInventory.posted?(unplaced)
+    assert_equal ['PO-NOWH'], replay.skipped_no_warehouse
+    assert_match(/1 production order\(s\) skipped, no warehouse.*PO-NOWH/, replay.summary)
+  end
 end
