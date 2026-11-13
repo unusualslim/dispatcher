@@ -2,6 +2,7 @@ class Location < ApplicationRecord
   has_rich_text :dispatch_notes
   has_rich_text :location_notes
 
+  has_many :tanks, dependent: :restrict_with_error
   has_many :customer_locations
   has_many :customers, through: :customer_locations
 

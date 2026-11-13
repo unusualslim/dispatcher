@@ -264,6 +264,17 @@ Rails.application.routes.draw do
   get 'pdi_master_data_import/download/:log_id', to: 'pdi_master_data_imports#download',
                                                  as: :download_pdi_master_data_import
 
+  resource :tank_feed_import, only: %i[new create] do
+    post :preview, on: :collection
+  end
+  get 'tank_feed_import/download/:log_id', to: 'tank_feed_imports#download', as: :download_tank_feed_import
+
+  resources :tanks do
+    post :record_reading, on: :member
+    get :locations, on: :collection
+  end
+  resources :feed_tanks, only: %i[index update], path: 'tank_feeds'
+
   resource :pdi_invoice_date_import, only: %i[new create] do
     post :preview, on: :collection
   end

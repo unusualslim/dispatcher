@@ -1,0 +1,42 @@
+<div class="container mt-4" style="max-width: 720px;">
+  <h1>Import Tank Readings</h1>
+  <p class="text-muted">
+    Load a tank feed's file by hand: to try a feed before its pickup job is turned on, to re-import a file, or to
+    bring in the old spreadsheet's history. Readings already stored are skipped, so a file can be imported again.
+  </p>
+
+  <%= form_with url: preview_tank_feed_import_path, method: :post, multipart: true, data: { turbo: false } do |f| %>
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <div class="mb-3">
+          <%= label_tag :feed, 'Feed', class: 'form-label fw-semibold' %>
+          <%= select_tag :feed, options_for_select(TankFeedImportsController::FEEDS.invert.to_a), class: 'form-select', id: 'tank-feed' %>
+        </div>
+        <div class="mb-3">
+          <%= label_tag :file, 'File', class: 'form-label fw-semibold' %>
+          <%= file_field_tag :file, class: 'form-control', accept: '.csv,.txt' %>
+        </div>
+        <div class="mb-3" id="tank-read-at">
+          <%= label_tag :read_at, 'Reading time (0002 tank email only)', class: 'form-label fw-semibold' %>
+          <%= datetime_local_field_tag :read_at, nil, class: 'form-control' %>
+          <div class="form-text">The email has no date inside. Leave blank when the file is named FPS_TANKS_0002_yyyyMMdd_HHmm.txt (Eastern).</div>
+        </div>
+        <%= submit_tag 'Preview Import', class: 'btn btn-primary' %>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="card shadow-sm mt-3">
+    <div class="card-header fw-semibold">Files</div>
+    <div class="card-body small text-muted">
+      <ul class="mb-0">
+        <li><strong>Kii</strong>: the hourly report CSV (<code>KII_&lt;day&gt;_&lt;HH&gt;.csv</code> or Kii's own name). Sensors are ours when Sensor Owner or Customer is Five Points Service; the rest are kept but ignored.</li>
+        <li><strong>Smartank</strong>: the daily "Inventory" report CSV (<code>FPS_SMARTANK_yyyyMMdd_HHmm.csv</code>). Inactive and "z-" tanks are ignored.</li>
+        <li><strong>0002 tank email</strong>: the text file of "&lt;tank&gt; &lt;gallons&gt; Gallons" lines. DI Water is ignored.</li>
+        <li><strong>Spreadsheet history</strong>: the CSV made from TankOnHandDaysInv.xlsx with <code>bin/rails "tanks:spreadsheet_csv[path/to/TankOnHandDaysInv.xlsx]"</code> (each typed 6AM inventory → a reading at 6:00 AM).</li>
+      </ul>
+    </div>
+  </div>
+
+  <%= render 'shared/import_history', logs: @logs, download_path: :download_tank_feed_import_path %>
+</div>

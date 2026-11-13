@@ -1,0 +1,75 @@
+<div class="container mt-4" style="max-width: 1100px;">
+  <%= render layout: 'shared/page_header', locals: { title: @tank.label, subtitle: [@tank.product&.name, Tank::OWNERSHIPS[@tank.ownership], (@tank.active ? nil : 'Inactive')].compact.join(' · ') } do %>
+    <% if can?(:dispatch, :edit) %>
+      <%= link_to 'Edit', edit_tank_path(@tank), class: 'btn btn-outline-primary btn-sm' %>
+    <% end %>
+    <%= link_to 'Back', tanks_path, class: 'btn btn-outline-secondary btn-sm' %>
+    <% if admin? %>
+      <%= button_to 'Delete', @tank, method: :delete, class: 'btn btn-outline-danger btn-sm', form: { data: { turbo_confirm: 'Delete this tank? Its readings stay with its feed tanks.' } } %>
+    <% end %>
+  <% end %>
+
+  <div class="row g-3 mb-4">
+    <% [['Level', gallons(@tank.current_gallons)], ['Safe ullage', gallons(@tank.safe_ullage)], ['Fill limit', gallons(@tank.fill_limit_gallons)],
+        ['Bottom', gallons(@tank.bottom_gallons)], ['Capacity', gallons(@tank.capacity_gallons)], ['Last reading', reading_time(@tank.last_read_at)]].each do |label, value| %>
+      <div class="col-6 col-md-2">
+        <div class="border rounded p-2 h-100">
+          <div class="small text-muted"><%= label %></div>
+          <div class="fw-semibold <%= stale_class(@tank.last_read_at) if label.in?(['Level', 'Last reading']) %>"><%= value %></div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-7">
+      <h5>Recent readings</h5>
+      <table class="table table-sm align-middle">
+        <thead class="table-light"><tr><th>Time (Eastern)</th><th>Feed tank</th><th class="text-end">Gallons</th><th class="text-end">Water (in)</th><th>Status</th></tr></thead>
+        <tbody>
+          <% @readings.each do |r| %>
+            <tr>
+              <td class="text-nowrap"><%= r.read_at.in_time_zone(TankFeeds::Base::EASTERN).strftime('%b %-d %Y %-l:%M %p') %></td>
+              <td class="small"><%= r.feed_tank.label %></td>
+              <td class="text-end"><%= number_with_delimiter(r.gallons.round) %></td>
+              <td class="text-end"><%= r.water_inches %></td>
+              <td class="small text-muted"><%= r.status %></td>
+            </tr>
+          <% end %>
+          <% if @readings.empty? %><tr><td colspan="5" class="text-muted">No readings yet.</td></tr><% end %>
+        </tbody>
+      </table>
+      <% if @sources.count { |s| !s.ignored } > 1 %>
+        <p class="small text-muted">This tank adds up several feed tanks; each row is one of them.</p>
+      <% end %>
+    </div>
+
+    <div class="col-lg-5">
+      <h5>Feed tanks</h5>
+      <ul class="list-group mb-4">
+        <% @sources.each do |source| %>
+          <li class="list-group-item small d-flex justify-content-between <%= 'text-muted' if source.ignored %>">
+            <span><%= source.label %><% if source.ignored %> (ignored)<% end %><br><span class="text-muted"><%= source.external_id %></span></span>
+            <span class="text-end <%= stale_class(source.last_read_at) %>"><%= gallons(source.last_gallons) %><br><%= reading_time(source.last_read_at) %></span>
+          </li>
+        <% end %>
+        <% if @sources.empty? %><li class="list-group-item small text-muted">None. Link one on <%= link_to 'Tank Feeds', feed_tanks_path %>, or enter readings by hand below.</li><% end %>
+      </ul>
+
+      <% if can?(:dispatch, :edit) %>
+        <h5>Enter a reading</h5>
+        <p class="small text-muted mb-2">For tanks without a monitor: the level the site gave you.</p>
+        <%= form_with url: record_reading_tank_path(@tank), method: :post, class: 'row g-2' do %>
+          <div class="col-5"><%= number_field_tag :gallons, nil, class: 'form-control', placeholder: 'Gallons', min: 0, step: 1, required: true %></div>
+          <div class="col-7"><%= datetime_local_field_tag :read_at, Time.current.in_time_zone(TankFeeds::Base::EASTERN).strftime('%Y-%m-%dT%H:%M'), class: 'form-control' %></div>
+          <div class="col-12"><%= submit_tag 'Record Reading', class: 'btn btn-outline-primary btn-sm' %></div>
+        <% end %>
+      <% end %>
+
+      <% if @tank.notes.present? %>
+        <h5 class="mt-4">Notes</h5>
+        <p class="pre-line small"><%= @tank.notes %></p>
+      <% end %>
+    </div>
+  </div>
+</div>

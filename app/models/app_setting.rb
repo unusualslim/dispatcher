@@ -6,6 +6,7 @@ class AppSetting < ApplicationRecord
     'mrp_customer_lead_days' => '3',
     'mrp_transfer_days' => '1',
     'samsara_route_start_time' => '08:00',
+    'tank_stale_hours' => '30',
     'company.name' => 'Five Points Service, Inc.',
     'company.address' => '10154 US Highway 341',
     'company.city_state_zip' => 'Fort Valley, GA 31030',

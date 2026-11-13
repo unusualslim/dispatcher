@@ -69,6 +69,28 @@ en:
       updated: "Costing settings updated."
       invalid_accounts: "GL accounts must be Major-Sub, e.g. 1410-02: %{roles}"
       invalid_start_date: "GL posting start date must be a date."
+  tanks:
+    create:
+      created: "Added tank %{name}."
+    update:
+      updated: "Saved %{name}."
+    destroy:
+      deleted: "Deleted tank %{name}. Its feed tanks are back under Needs setup."
+    record_reading:
+      no_gallons: "Enter the gallons in the tank."
+      recorded: "Recorded %{gallons} gal at %{at}."
+  feed_tanks:
+    update:
+      updated: "Saved %{name}."
+  tank_feed_imports:
+    preview:
+      choose: "Choose the feed and a file."
+    create:
+      expired: "Import session expired. Please re-upload the file."
+      done: "Imported %{count} new readings (%{tanks} new feed tanks)."
+      failed: "Import failed: %{message}"
+    download:
+      unavailable: "File not available."
   pdi_invoice_date_imports:
     preview:
       choose_csv: "Please select a CSV file."

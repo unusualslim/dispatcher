@@ -129,7 +129,37 @@ Route line colors indicate urgency by days until dispatch date:
 
 ---
 
-## 8. Master Data
+## 8. Tanks
+
+**Dispatch → Tanks** lists the tanks we keep filled at customer sites ("managed") and the tanks holding our own
+product ("ours", such as site 0002's Bulk DEF). Each row shows the tank's level, its room up to the fill limit
+(safe ullage) and when it was last read. A level is grayed out when the last reading is more than 30 hours old.
+
+Levels come from **tank feeds**:
+
+- **Kii**: hourly sensor readings. Sensors owned by or assigned to Five Points Service are tracked; the rest are ignored.
+- **Smartank**: one reading per tank per day.
+- **0002 tank email**: the plant's production and holding tanks, added together into one Bulk DEF tank.
+- **Spreadsheet history**: the morning readings from the old tank spreadsheet.
+- **Manual**: for a tank without a monitor, open it and use **Enter a reading** with the level the site gave you.
+
+### Setting up tanks
+
+**Dispatch → Tank Feeds** shows each feed's newest reading and the feed tanks waiting to be set up. For each one:
+
+- **Create tank**: makes an app tank from it (pick the location and product; the name and capacity come from the feed).
+- **Link to tank**: adds it to an existing tank. Several feed tanks linked to one tank add up (that's how 0002 works).
+- **Ignore**: for tanks that aren't ours or are retired. Ignored tanks store no readings; **Track** undoes it.
+
+A tank's **fill limit** defaults to 90% of capacity and its **bottom** (treated as empty) to 10% of the fill limit.
+Change either on the tank's Edit page.
+
+Admins can load a feed's file by hand on **Admin → Data Imports → Tank Readings**. The feeds are picked up from FTP
+automatically once their schedules are turned on in **Automated Processes**.
+
+---
+
+## 9. Master Data
 
 ### Customers
 
@@ -158,7 +188,7 @@ Click **Vendors** in the sidebar to manage supplier records. Vendors are linked 
 
 ---
 
-## 9. Messages & Announcements
+## 10. Messages & Announcements
 
 ### Messages
 
@@ -170,7 +200,7 @@ Click **Announcements** to post company-wide notices visible to all users when t
 
 ---
 
-## 10. FAQ
+## 11. FAQ
 
 **Q: A driver can't see their dispatch. What do I check?**
 Make sure the dispatch status is **Sent to Driver** — dispatches in Pending status are not visible to drivers. Also confirm the driver is assigned to the correct user account.

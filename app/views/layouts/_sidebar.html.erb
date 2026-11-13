@@ -4,7 +4,7 @@
 <%# ── Active-section detection ──────────────────────────────────────────── %>
 <% sales_active      = %w[customer_orders quotes customers pricing_rules price_exceptions quote_margin_reviews freight_rules freight_tables freight_classes].include?(current) ||
                        (current == 'locations' && action != 'map') %>
-<% dispatch_active   = %w[dispatches calendar dispatch_messages].include?(current) ||
+<% dispatch_active   = %w[dispatches calendar dispatch_messages tanks feed_tanks].include?(current) ||
                        (current == 'locations' && action == 'map') %>
 <% production_active = %w[production_orders jobs warehouse work_orders quality_exceptions].include?(current) %>
 <% purchasing_active = %w[purchase_orders purchasing_report mrp vendors freight_payables].include?(current) %>
@@ -110,6 +110,8 @@
           <%= nav_item 'Dispatch List',   view_dispatches_path,   'bi-table',     active: current == 'dispatches' && action == 'view_dispatches', keywords: 'dispatches table' %>
           <%= nav_item 'Calendar',        calendar_path,          'bi-calendar3', active: current == 'calendar' %>
           <%= nav_item 'Map',             locations_map_path,     'bi-map',       active: current == 'locations' && action == 'map', keywords: 'gps trucks samsara routes' %>
+          <%= nav_item 'Tanks',           tanks_path,             'bi-fuel-pump', active: current == 'tanks', keywords: 'tank levels kii smartank readings ullage def' %>
+          <%= nav_item 'Tank Feeds',      feed_tanks_path,        'bi-broadcast', active: current == 'feed_tanks', keywords: 'kii smartank sensor monitor setup' %>
           <%= nav_item 'Driver Messages', dispatch_messages_path, 'bi-chat-dots', active: current == 'dispatch_messages', keywords: 'sms twilio' %>
         <% end %>
         <% end %>

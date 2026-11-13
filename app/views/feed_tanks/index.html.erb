@@ -1,0 +1,87 @@
+<div class="container-fluid mt-4">
+  <%= render layout: 'shared/page_header', locals: { title: 'Tank Feeds', subtitle: 'Where tank readings come from, and the feed tanks waiting to be set up.' } do %>
+    <%= link_to tanks_path, class: 'btn btn-outline-secondary btn-sm' do %><i class="bi bi-fuel-pump"></i> Tanks<% end %>
+    <% if admin? %>
+      <%= link_to new_tank_feed_import_path, class: 'btn btn-outline-secondary btn-sm' do %><i class="bi bi-upload"></i> Import a file<% end %>
+      <%= link_to automated_processes_path, class: 'btn btn-outline-secondary btn-sm' do %><i class="bi bi-arrow-repeat"></i> Schedules<% end %>
+    <% end %>
+  <% end %>
+
+  <div class="row g-3 mb-4">
+    <% @status.each do |feed| %>
+      <div class="col-sm-6 col-xl">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body small">
+            <div class="d-flex justify-content-between">
+              <h6 class="mb-2"><%= link_to feed.name, feed_tanks_path(feed: feed.key, show: 'all') %></h6>
+              <% if feed.schedule %>
+                <span class="badge <%= feed.schedule.schedule.present? ? 'bg-success' : 'bg-secondary' %>" title="Pickup schedule"><%= feed.schedule.schedule.present? ? 'On' : 'Off' %></span>
+              <% end %>
+            </div>
+            <div><%= feed.linked %> linked · <%= link_to "#{feed.needs_setup} to set up", feed_tanks_path(feed: feed.key, show: 'setup'), class: (feed.needs_setup.positive? ? 'fw-semibold' : 'text-muted') %> · <%= feed.ignored %> ignored</div>
+            <div>Newest reading: <span class="<%= stale_class(feed.newest_read_at) %>"><%= reading_time(feed.newest_read_at) %></span></div>
+            <div>Readings, last 24 h: <%= number_with_delimiter(feed.readings_24h) %></div>
+            <% if feed.stale.positive? %><div class="text-warning">Stale linked tanks: <%= feed.stale %></div><% end %>
+            <% if feed.last_log %>
+              <div class="text-muted mt-1">Last file: <%= feed.last_log.file_name %> (<%= feed.last_log.status %>, <%= time_ago_in_words(feed.last_log.started_at) %> ago)</div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+    <ul class="nav nav-pills">
+      <% FeedTanksController::SHOWS.each do |key, label| %>
+        <li class="nav-item"><%= link_to label, feed_tanks_path(show: key, feed: @feed), class: "nav-link py-1 #{'active' if @show == key}" %></li>
+      <% end %>
+    </ul>
+    <%= form_with url: feed_tanks_path, method: :get, class: 'd-flex gap-2' do %>
+      <%= hidden_field_tag :show, @show %>
+      <%= select_tag :feed, options_for_select([['All feeds', '']] + FeedTank::FEEDS.invert.to_a, @feed), class: 'form-select form-select-sm', onchange: 'this.form.submit()' %>
+    <% end %>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-sm table-hover align-middle">
+      <thead class="table-light">
+        <tr><th>Feed</th><th>Name</th><th>Feed's details</th><th class="text-end">Last level</th><th>Last reading</th><th>Status</th><th>App tank</th><th></th></tr>
+      </thead>
+      <tbody>
+        <% @feed_tanks.each do |ft| %>
+          <tr class="<%= 'text-muted' if ft.ignored %>">
+            <td class="small"><%= ft.feed_name %></td>
+            <td><%= ft.name.presence || ft.external_id %><br><span class="small text-muted"><%= ft.external_id %></span></td>
+            <td class="small"><%= feed_tank_summary(ft) %></td>
+            <td class="text-end"><%= gallons(ft.last_gallons) %></td>
+            <td class="small <%= stale_class(ft.last_read_at) %>"><%= reading_time(ft.last_read_at) %></td>
+            <td class="small"><%= ft.last_status %></td>
+            <td class="small"><%= ft.tank ? link_to(ft.tank.label, ft.tank) : content_tag(:span, '—', class: 'text-muted') %></td>
+            <td class="text-nowrap">
+              <% if can?(:dispatch, :edit) %>
+                <div class="d-flex gap-1 justify-content-end">
+                  <% unless ft.tank || ft.ignored %>
+                    <%= link_to 'Create tank', new_tank_path(feed_tank_id: ft.id), class: 'btn btn-sm btn-primary' %>
+                  <% end %>
+                  <%= form_with model: ft, url: feed_tank_path(ft), method: :patch, class: 'd-flex gap-1' do |f| %>
+                    <%= f.select :tank_id, @tanks, { include_blank: '— link to tank —' }, class: 'form-select form-select-sm', style: 'min-width: 190px; max-width: 240px', onchange: 'this.form.submit()' %>
+                  <% end %>
+                  <%= button_to (ft.ignored ? 'Track' : 'Ignore'), feed_tank_path(ft), method: :patch, params: { feed_tank: { ignored: !ft.ignored } },
+                                class: "btn btn-sm #{ft.ignored ? 'btn-outline-success' : 'btn-outline-secondary'}" %>
+                </div>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+        <% if @feed_tanks.empty? %>
+          <tr><td colspan="8" class="text-muted text-center py-4">Nothing here<%= ' — every feed tank is set up or ignored' if @show == 'setup' %>.</td></tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <p class="small text-muted">
+    Ignored feed tanks (not ours, retired sensors, DI Water) keep their details up to date but store no readings.
+    Several feed tanks can link to one tank: its level is their sum (0002's production and holding tanks).
+  </p>
+</div>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_10_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_11_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -271,6 +271,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_10_160000) do
     t.datetime "updated_at", null: false
     t.string "account_group"
     t.index ["account"], name: "index_expense_accounts_on_account", unique: true
+  end
+
+  create_table "feed_tanks", force: :cascade do |t|
+    t.string "feed", null: false
+    t.string "external_id", null: false
+    t.string "name"
+    t.bigint "tank_id"
+    t.boolean "ignored", default: false, null: false
+    t.jsonb "details", default: {}, null: false
+    t.datetime "last_read_at"
+    t.decimal "last_gallons", precision: 12, scale: 2
+    t.string "last_status"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["feed", "external_id"], name: "index_feed_tanks_on_feed_and_external_id", unique: true
+    t.index ["tank_id"], name: "index_feed_tanks_on_tank_id"
   end
 
   create_table "freight_classes", force: :cascade do |t|
@@ -1015,6 +1031,35 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_10_160000) do
     t.boolean "file_binary"
   end
 
+  create_table "tank_readings", force: :cascade do |t|
+    t.bigint "feed_tank_id", null: false
+    t.datetime "read_at", null: false
+    t.decimal "gallons", precision: 12, scale: 2, null: false
+    t.decimal "water_inches", precision: 8, scale: 2
+    t.decimal "temperature_f", precision: 6, scale: 2
+    t.string "status"
+    t.bigint "sync_log_id"
+    t.datetime "created_at", null: false
+    t.index ["feed_tank_id", "read_at"], name: "index_tank_readings_on_feed_tank_id_and_read_at", unique: true
+    t.index ["sync_log_id"], name: "index_tank_readings_on_sync_log_id"
+  end
+
+  create_table "tanks", force: :cascade do |t|
+    t.bigint "location_id", null: false
+    t.string "product_id"
+    t.string "name", null: false
+    t.string "ownership", default: "managed", null: false
+    t.decimal "capacity_gallons", precision: 12, scale: 2
+    t.decimal "fill_limit_gallons", precision: 12, scale: 2
+    t.decimal "bottom_gallons", precision: 12, scale: 2
+    t.boolean "active", default: true, null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["location_id"], name: "index_tanks_on_location_id"
+    t.index ["product_id"], name: "index_tanks_on_product_id"
+  end
+
   create_table "things", force: :cascade do |t|
     t.string "name"
     t.datetime "created_at", null: false
@@ -1134,6 +1179,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_10_160000) do
   add_foreign_key "dispatches", "locations", column: "origin_location_id"
   add_foreign_key "dispatches", "things", column: "asset_id"
   add_foreign_key "dispatches", "vendors"
+  add_foreign_key "feed_tanks", "tanks"
   add_foreign_key "freight_lanes", "locations", column: "destination_location_id"
   add_foreign_key "freight_lanes", "locations", column: "origin_location_id"
   add_foreign_key "freight_payables", "vendors"
@@ -1206,6 +1252,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_10_160000) do
   add_foreign_key "quotes", "users", column: "lock_ended_by_id"
   add_foreign_key "role_assignments", "roles"
   add_foreign_key "role_assignments", "users"
+  add_foreign_key "tank_readings", "feed_tanks"
+  add_foreign_key "tank_readings", "sync_logs", on_delete: :nullify
+  add_foreign_key "tanks", "locations"
+  add_foreign_key "tanks", "products"
   add_foreign_key "things", "dispatches"
   add_foreign_key "things", "locations"
   add_foreign_key "user_favorites", "users"

@@ -47,7 +47,7 @@ class AutomatedProcessesController < ApplicationController
     { slug: 'pdi-repack-batches-sync', name: PdiRepackBatchesSyncJob::PROCESS_NAME, job: 'PdiRepackBatchesSyncJob',
       description: 'Last 90 days of repack batches from the nightly PDI SQL export (FPS_REPACK_BATCHES_*.csv).',
       default_schedule: '' }
-  ].freeze
+  ].freeze + TankFeedPickup::AUTOMATED_PROCESSES
 
   # A process's schedule; new configs start at its default_schedule (blank = off), else hourly.
   def self.config_for(process)

@@ -33,6 +33,10 @@ class ImportsController < ApplicationController
       process: PdiInvoiceDateImportsController::PROCESS_NAME,
       description: 'Invoice date, number and salesperson for PDI orders (CSV from a PDI query). ' \
                    'Feeds sales and delivery time on the Financial Dashboard.' },
+    { group: 'Regular', title: 'Tank Readings', icon: 'bi-fuel-pump',
+      path: :new_tank_feed_import_path,
+      description: 'Kii, Smartank or 0002 tank email files by hand, and the tank spreadsheet\'s history. ' \
+                   'Normally picked up from FTP (Dispatch → Tank Feeds).' },
     { group: 'Regular', title: 'PDI Purchase Orders', icon: 'bi-bag-check',
       path: :new_pdi_purchase_order_import_path,
       process: PdiPurchaseOrderImportsController::PROCESS_NAME,

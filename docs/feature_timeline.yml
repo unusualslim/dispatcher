@@ -105,7 +105,10 @@
     - { date: 2026-10-29, title: Freight, note: "Rules, tables, lanes, per-dispatch carrier pricing, PO landed cost, freight payables.", area: Sales, major: true }
 
 - name: November 2026
-  span: Nov 1 – Nov 3, 2026
-  summary: "Expense purchasing."
+  span: Nov 1 – Nov 13, 2026
+  summary: "Expense purchasing, tank monitoring, repack batches and receiving."
   items:
     - { date: 2026-11-03, title: Expense purchase orders, note: "Parts and supplies charged to GL expense accounts and equipment; printable vendor copy; Expense PO spend report.", area: Purchasing }
+    - { date: 2026-11-11, title: Tanks and tank feeds, note: "Tanks at customer sites and our plant, with readings from Kii, Smartank, the 0002 tank email, the old spreadsheet and manual entry.", area: Dispatch, major: true }
+    - { date: 2026-11-13, title: Repack batches post to the right site, note: "The PDI repack import matches the warehouse by PDI site number, flags batches it cannot place and fills in missing warehouses; nightly from the PDI SQL export; Replay skips orders with no warehouse.", area: PDI }
+    - { date: 2026-11-13, title: Incoming receipts report, note: "Open purchase orders by location and expected date, with vendor and carrier.", area: Inventory }

@@ -5,7 +5,8 @@ require 'tempfile'
 # deletes the file from FTP once it imported. A file that fails stays on FTP and is retried on the next run.
 #
 # Including jobs define PROCESS_NAME, FILE_PREFIX (e.g. 'FPS_PO_LINES') and #import(path) returning
-# { created:, updated:, skipped:, warnings: [] }.
+# { created:, updated:, skipped:, warnings: [] }. Optional: FILE_EXT (default 'csv') and MIN_FILE_AGE (seconds; a file
+# modified more recently may still be uploading and waits for the next run). #current_file is the file being imported.
 module PdiCsvPickup
   extend ActiveSupport::Concern
   include PdiFtpConcern
@@ -19,9 +20,13 @@ module PdiCsvPickup
       ENV.fetch('PDI_FTP_SQL_EXPORT_DIR', '/Imports')
     end
 
+    def file_ext
+      const_defined?(:FILE_EXT) ? self::FILE_EXT : 'csv'
+    end
+
     # FPS_PO_LINES.csv, FPS_PO_LINES_20261105.csv, fps_po_lines-2026-11-05.csv …
     def matches?(filename)
-      File.basename(filename).match?(/\A#{Regexp.escape(self::FILE_PREFIX)}([_-].*)?\.csv\z/i)
+      File.basename(filename).match?(/\A#{Regexp.escape(self::FILE_PREFIX)}([_-].*)?\.#{file_ext}\z/i)
     end
   end
 
@@ -35,6 +40,8 @@ module PdiCsvPickup
   end
 
   private
+
+  attr_reader :current_file, :current_log
 
   # One run of a process at a time: a second run (the scheduler ticking again, or "Run now" during a scheduled run)
   # would read the same waiting files and race the first one. Held on the database connection (a Postgres advisory
@@ -59,13 +66,25 @@ module PdiCsvPickup
   end
 
   def waiting_files
-    in_export_dir { |ftp| ftp.nlst.map { |f| File.basename(f) }.select { |f| self.class.matches?(f) }.sort }
+    in_export_dir do |ftp|
+      ftp.nlst.map { |f| File.basename(f) }.select { |f| self.class.matches?(f) && settled?(ftp, f) }.sort
+    end
+  end
+
+  # False while a file is younger than MIN_FILE_AGE (still uploading). Servers without MDTM: always true.
+  def settled?(ftp, filename)
+    return true unless self.class.const_defined?(:MIN_FILE_AGE)
+
+    ftp.mtime(filename) < Time.current - self.class::MIN_FILE_AGE
+  rescue Net::FTPError
+    true
   end
 
   def skip_run
     SyncLog.create!(process_name: self.class::PROCESS_NAME, status: 'skipped', started_at: Time.current,
                     completed_at: Time.current,
-                    error_message: "No #{self.class::FILE_PREFIX}*.csv files in #{self.class.ftp_dir}")
+                    error_message: "No #{self.class::FILE_PREFIX}*.#{self.class.file_ext} files in " \
+                                   "#{self.class.ftp_dir}")
   end
 
   def pick_up(filename)
@@ -80,8 +99,9 @@ module PdiCsvPickup
   end
 
   def start_log(filename)
-    SyncLog.create!(process_name: self.class::PROCESS_NAME, status: 'running', started_at: Time.current,
-                    file_name: filename, file_binary: false)
+    @current_file = filename
+    @current_log = SyncLog.create!(process_name: self.class::PROCESS_NAME, status: 'running',
+                                   started_at: Time.current, file_name: filename, file_binary: false)
   end
 
   def in_export_dir
@@ -92,7 +112,7 @@ module PdiCsvPickup
   end
 
   def import_text(content)
-    Tempfile.create([self.class::FILE_PREFIX.downcase, '.csv'], binmode: true) do |file|
+    Tempfile.create([self.class::FILE_PREFIX.downcase, ".#{self.class.file_ext}"], binmode: true) do |file|
       file.write(content)
       file.flush
       import(file.path)

@@ -173,7 +173,17 @@ download the file, delete it from FTP, run an import service, and record a `Sync
 - **Nightly PDI SQL export** (docs/pdi_sql_export.md): the user's SQL Server job uploads `FPS_PO_LINES_<date>.csv` (56-col,
   no header) and `FPS_INVOICE_DATES_<date>.csv` to FTP `/Imports` (`PDI_FTP_SQL_EXPORT_DIR`); `PdiPoLinesSyncJob` /
   `PdiInvoiceDatesSyncJob` (`PdiCsvPickup`: all waiting files oldest first, SyncLog per file, delete on success, failed files stay)
-  run the same services as the manual imports. Schedules start Off.
+  run the same services as the manual imports. Schedules start Off. Also `FPS_FREIGHT_DETAIL_<date>.csv` and
+  `FPS_REPACK_BATCHES_<date>.csv` (docs/pdi_sql/repack_batches.sql, last 90 days, header row, read by column position;
+  `PdiRepackBatchesSyncJob`). One run of a process at a time: `PdiCsvPickup` holds a Postgres advisory lock per
+  process (a second run logs "Another run of this process is already working" and leaves the files).
+- **Repack batches** (`RepackBatchImportService`, manual + nightly) → production orders `PDI-<batch key>`. The warehouse
+  comes from PDI's **Warehouse_ID** (site number, matched to `pdi_site_code`), then the name; a batch that matches nothing
+  is created with no warehouse and **flagged** (preview badge, SyncLog warning), never defaulted to 0002. A re-import
+  fills the warehouse of an existing order that has none (never changes one that's set) and, for a completed order that
+  already posted inventory, reverses and re-posts it at the right site. Batches PDI marks Reversed are skipped; if the app
+  still has that order live it is flagged (SyncLog + preview), never auto-voided: an admin voids it. Orders with no
+  warehouse are hidden by the header's warehouse selector (the production order list filters on `location_id`).
 - Manual imports (each with a preview step, and downloadable source file via SyncLog):
   customer orders, PDI products, PDI inventory, PDI purchase orders, purchase orders,
   repack batches, warehouse transactions, inventory, BOMs, min/max, vendor freight terms.
@@ -273,6 +283,8 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
   period, oldest first, skipping anything already posted (manual adjustments aren't replayed) → import PDI's period-end
   report to compare (the differences are the `pdi_sync` movements). **Reset** (`InventoryReset`, staging/dev only)
   deletes costed movements, layers and inventory GL entries, zeroes all stock and clears the start date.
+  Replay skips completed production orders that have no warehouse and lists them in its summary (it never posts them to
+  0002); set the warehouse, then replay again.
 - /inventory_valuation (`InventoryValuation`): value as of a date (today's balance minus later movements), movements
   by type, PPV, PDI sync differences (how much movement the app missed).
 - **PDI Purchase Orders import** (`PdiPurchaseOrderImportService`, manual on Data Imports for now — the user is working on
@@ -339,6 +351,9 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
   lists existing report-like pages on the hub. A report's `area` is the permission area that can see it. Filters
   (`Reports::Filters`): dates (default this month, `default_from` per report), customer, product, warehouse, vendor,
   item type, movement type, "problems only". Sales reports reuse `FinancialDashboard::Sales` (`Reports::SalesLines`).
+  A report can also set `default_to` (look-ahead). **Incoming receipts** (`Reports::IncomingReceipts`, Inventory): open
+  (approved/submitted) PO lines by location and expected date with vendor and freight carrier, a week back to two weeks
+  ahead by default; undated POs listed last.
 - /financial_dashboard (Accounting, `FinancialDashboard` + `::Sales` / `::Operations` / `::Snapshot`): month to date vs the
   same days of the prior month and of last year. Sales = lines on orders by **invoice date** (from orders.xls; billed
   orders without one are flagged, not guessed), price × shipped qty, split by reporting group item type; taxes from PDI's
@@ -414,6 +429,23 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
   don't explain (overrides, type 9) stays "Freight", < 5¢ rounding goes on the largest part, so totals never change.
   Rule types: 0 base rate (counts as freight), 1 per load, 2 FSC, 4 split, 6 min load, 9 total freight override.
 - User guide: docs/freight_guide.md (/docs/freight-guide).
+
+## Tanks (phase 1 of the tank plan, 2026-11-11)
+Plan doc: https://claude.ai/artifact/XHN7g5K59XsoHWpMk7saER (board/forecast/alerts, deliveries, suggested loads next).
+- `Tank` (location, product, ownership managed|ours, capacity / fill limit (default 90%) / bottom (default 10% of fill
+  limit)). `FeedTank` = a tank as one feed knows it (feed kii / smartank / plant_0002 / spreadsheet / manual +
+  `external_id`, `details` jsonb, `last_read_at` / `last_gallons`), mapped to a Tank (several add up: 0002) or
+  `ignored` (no readings stored). `TankReading` (feed_tank, read_at UTC, gallons, water, temp, status, sync_log),
+  unique per feed tank + time, so re-imports are safe (`FeedTank#record_reading!`). Readings never move inventory.
+- Importers `TankFeeds::Kii` (hourly snapshot, UTC; ours = Sensor Owner/Customer Five Points Service),
+  `::Smartank` (header row found by "System Tank ID", Eastern; inactive / "z-" ignored), `::Plant0002` (text lines,
+  time from the file name `FPS_TANKS_0002_yyyyMMdd_HHmm.txt`, DI Water ignored), `::SpreadsheetHistory` (CSV made
+  locally by `rake "tanks:spreadsheet_csv[TankOnHandDaysInv.xlsx]"`: typed 6AM inventories only, Jun–Oct 2026).
+- Pickup jobs (`TankFeedPickup` on `PdiCsvPickup`, FTP /Imports, schedules start Off): `TankKiiSyncJob` (KII_*.csv,
+  staged by docs/tank_feeds/Kii_WinSCP_Launch.bat; stored files cleared after 14 days), `TankSmartankSyncJob`
+  (FPS_SMARTANK_*.csv), `TankPlant0002SyncJob` (FPS_TANKS_0002_*.txt). Files younger than 2 min wait (still uploading).
+- Pages (Dispatch area): /tanks (list, detail, manual reading), /tank_feeds (feed status + feed tanks to set up /
+  link / ignore); Data Imports → Tank Readings (admin, manual upload with preview). Stale = `tank_stale_hours` (30).
 
 ## Map
 - Leaflet.js + OpenStreetMap tiles, centered on Georgia

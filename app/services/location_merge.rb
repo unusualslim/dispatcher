@@ -11,7 +11,7 @@ class LocationMerge
             'Order lines (warehouse)' => [CustomerOrderProduct, :location_id],
             'Orders shipped from here' => [CustomerOrder, :ship_from_location_id],
             'Expense PO lines (site)' => [PurchaseOrderLineItem, :location_id],
-            'Equipment' => [Thing, :location_id] }.freeze
+            'Equipment' => [Thing, :location_id], 'Tanks' => [Tank, :location_id] }.freeze
 
   FILLS = %w[address city state zip phone_number latitude longitude max_capacity uleage_90 cutoff_percent
              marker_color pdi_site_code pdi_terminal_id].freeze

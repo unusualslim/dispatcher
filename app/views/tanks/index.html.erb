@@ -1,0 +1,65 @@
+<div class="container-fluid mt-4">
+  <%= render layout: 'shared/page_header', locals: { title: 'Tanks', subtitle: 'Tanks we keep filled or hold our product, and their latest level from the feeds.' } do %>
+    <%= link_to feed_tanks_path, class: 'btn btn-outline-secondary btn-sm' do %><i class="bi bi-broadcast"></i> Tank Feeds<% end %>
+    <% if can?(:dispatch, :edit) %>
+      <%= link_to new_tank_path, class: 'btn btn-primary btn-sm' do %><i class="bi bi-plus-lg"></i> New Tank<% end %>
+    <% end %>
+  <% end %>
+
+  <% if @needs_setup.positive? %>
+    <div class="alert alert-info py-2">
+      <i class="bi bi-info-circle"></i>
+      <strong><%= @needs_setup %> feed tanks</strong> are waiting to be set up or ignored.
+      <%= link_to 'Set them up', feed_tanks_path(show: 'setup') %>
+    </div>
+  <% end %>
+
+  <%= form_with url: tanks_path, method: :get, class: 'row g-2 align-items-end mb-3' do %>
+    <div class="col-auto">
+      <%= label_tag :ownership, 'Ownership', class: 'form-label small mb-0' %>
+      <%= select_tag :ownership, options_for_select([['All', '']] + Tank::OWNERSHIPS.invert.to_a, params[:ownership]), class: 'form-select form-select-sm' %>
+    </div>
+    <div class="col-auto">
+      <%= label_tag :product_id, 'Product', class: 'form-label small mb-0' %>
+      <%= select_tag :product_id, options_from_collection_for_select(@products, :id, :name, params[:product_id]), include_blank: 'All', class: 'form-select form-select-sm' %>
+    </div>
+    <div class="col-auto form-check ms-2 mb-1">
+      <%= check_box_tag :inactive, '1', params[:inactive] == '1', class: 'form-check-input' %>
+      <%= label_tag :inactive, 'Show inactive', class: 'form-check-label small' %>
+    </div>
+    <div class="col-auto"><%= submit_tag 'Filter', class: 'btn btn-sm btn-outline-primary', name: nil %></div>
+  <% end %>
+
+  <div class="table-responsive">
+    <table class="table table-sm table-hover align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Location</th><th>Tank</th><th>Product</th><th>Ownership</th>
+          <th class="text-end">Capacity</th><th class="text-end">Fill limit</th><th class="text-end">Bottom</th>
+          <th class="text-end">Level</th><th class="text-end">Safe ullage</th><th>Last reading</th><th>Feeds</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @tanks.each do |tank| %>
+          <tr class="<%= 'table-secondary' unless tank.active %>">
+            <td><%= link_to tank.location.company_name, tank.location %></td>
+            <td><%= link_to tank.name, tank %></td>
+            <td><%= tank.product&.name || content_tag(:span, 'not set', class: 'text-warning') %></td>
+            <td><span class="badge <%= tank.ownership == 'ours' ? 'bg-primary' : 'bg-secondary' %>"><%= tank.ownership %></span></td>
+            <td class="text-end"><%= gallons(tank.capacity_gallons) %></td>
+            <td class="text-end"><%= gallons(tank.fill_limit_gallons) %></td>
+            <td class="text-end"><%= gallons(tank.bottom_gallons) %></td>
+            <td class="text-end fw-semibold <%= stale_class(tank.last_read_at) %>"><%= gallons(tank.current_gallons) %></td>
+            <td class="text-end"><%= gallons(tank.safe_ullage) %></td>
+            <td class="small <%= stale_class(tank.last_read_at) %>"><%= reading_time(tank.last_read_at) %></td>
+            <td class="small"><%= tank.sources.map(&:feed_name).uniq.join(', ').presence || content_tag(:span, 'none', class: 'text-muted') %></td>
+          </tr>
+        <% end %>
+        <% if @tanks.empty? %>
+          <tr><td colspan="11" class="text-muted text-center py-4">No tanks yet. Set them up from <%= link_to 'Tank Feeds', feed_tanks_path %> or add one.</td></tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <p class="small text-muted">Level = the sum of each linked feed tank's last reading. Grayed out when the last reading is over <%= FeedTank.stale_hours %> hours old.</p>
+</div>
