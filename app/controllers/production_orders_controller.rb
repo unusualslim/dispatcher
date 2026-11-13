@@ -14,7 +14,7 @@ class ProductionOrdersController < ApplicationController
     @statuses        = ProductionOrder::STATUSES
     @selected_status = params[:status].presence || 'all'
 
-    @search_term = params[:q]
+    @search_term = params[:search].presence || params[:q] # the page's form sends :search
     @location    = params[:location]
     @due_from    = params[:due_from]
     @due_to      = params[:due_to]
