@@ -55,7 +55,7 @@ class RepackBatchImportService
   PreviewRow = Struct.new(
     :batch_key, :description, :business_date, :status, :source,
     :product_id, :product_name, :product, :qty,
-    :warehouse_name, :warehouse_matched, :location, :moves_inventory, :component_count, :action,
+    :warehouse_name, :warehouse_matched, :location, :moves_inventory, :live_in_app, :component_count, :action,
     keyword_init: true
   )
 
@@ -111,6 +111,7 @@ class RepackBatchImportService
         warehouse_matched: location.present?,
         location: location,
         moves_inventory: action == :set_warehouse && reposts?(order),
+        live_in_app: action == :skip_reversed && live?(order),
         component_count: comp_count,
         action: action
       )
@@ -131,6 +132,7 @@ class RepackBatchImportService
 
       if status == 'Reversed'
         result.skipped_reversed += 1
+        flag_live_reversed(existing["PDI-#{batch_key}"], batch_key, result)
         next
       end
 
@@ -244,6 +246,19 @@ class RepackBatchImportService
     end
     result.warehouse_set += 1
     result.reposted += 1 if repost
+  end
+
+  # PDI reversed the batch, but the app still has the order as live work (and any inventory it posted). It is only
+  # flagged: voiding it (admin) is a decision for a person.
+  def live?(order)
+    order.present? && !order.voided?
+  end
+
+  def flag_live_reversed(order, batch_key, result)
+    return unless live?(order)
+
+    result.errors << "Batch #{batch_key}: reversed in PDI, but #{order.number} is still " \
+                     "#{order.status.humanize.downcase} in the app; void it if the batch should not count"
   end
 
   def reposts?(order)

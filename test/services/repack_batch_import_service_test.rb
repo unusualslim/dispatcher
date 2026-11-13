@@ -100,4 +100,31 @@ class RepackBatchImportServiceTest < ActiveSupport::TestCase
     assert_equal 0, result.warehouse_set
     assert_match(/Batch 15192: warehouse 9999 Unknown matches no location/, result.errors.first)
   end
+
+  def reversed_export(batch_key)
+    row = Array.new(40)
+    { 0 => batch_key, 1 => 'Repack', 2 => '2026-10-23', 3 => 'Reversed', 8 => '110', 9 => 'FPS-South',
+      13 => @product.id, 16 => '1' }.each { |index, value| row[index] = value }
+    Tempfile.new(['repack', '.csv']).tap { |file| CSV.open(file.path, 'w') { |csv| csv << row } }
+  end
+
+  test 'a batch PDI reversed that is still live in the app is flagged, not changed' do
+    RepackBatchImportService.call(export('15195', '110', 'FPS-South').path)
+    order = ProductionOrder.find_by!(number: 'PDI-15195')
+
+    result = RepackBatchImportService.call(reversed_export('15195').path)
+
+    assert_equal 1, result.skipped_reversed
+    assert_match(/Batch 15195: reversed in PDI, but PDI-15195 is still completed in the app/, result.errors.first)
+    assert_equal 'completed', order.reload.status
+    assert RepackBatchImportService.new(reversed_export('15195').path).preview.first.live_in_app
+  end
+
+  test 'a reversed batch that is not in the app, or is already voided, is not flagged' do
+    assert_empty RepackBatchImportService.call(reversed_export('15196').path).errors
+
+    RepackBatchImportService.call(export('15197', '110', 'FPS-South').path)
+    ProductionOrder.find_by!(number: 'PDI-15197').update_columns(status: 'voided', voided_at: Time.current) # rubocop:disable Rails/SkipsModelValidations
+    assert_empty RepackBatchImportService.call(reversed_export('15197').path).errors
+  end
 end

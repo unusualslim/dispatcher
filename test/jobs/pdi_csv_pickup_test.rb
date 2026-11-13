@@ -115,4 +115,34 @@ class PdiCsvPickupTest < ActiveSupport::TestCase
     assert_equal main, order.reload.location
     assert_equal 1, SyncLog.where(process_name: 'PDI Repack Batches Sync').order(:id).last.records_updated
   end
+
+  test 'a run that finds another run of the same process working leaves the files alone' do
+    ftp = FakeFtp.new('FPS_INVOICE_DATES_20261105.csv' => "OrderNo,InvoiceDate\nOD-1,2026-11-04\n")
+    key = Zlib.crc32(PdiInvoiceDatesSyncJob::PROCESS_NAME)
+    # A second database session, as a second run would have (tests share one pooled connection, so open our own).
+    info = ActiveRecord::Base.connection.raw_connection.conninfo_hash
+    other = PG.connect(info.compact.slice(:host, :port, :dbname, :user, :password))
+    begin
+      other.exec("SELECT pg_advisory_lock(#{key.to_i})")
+      run_job(PdiInvoiceDatesSyncJob, ftp)
+
+      assert_equal ['FPS_INVOICE_DATES_20261105.csv'], ftp.files.keys, 'the file waits for the run that holds it'
+      assert_equal 'skipped', SyncLog.find_by!(process_name: 'PDI Invoice Dates Sync').status
+      assert_match(/Another run/, SyncLog.find_by!(process_name: 'PDI Invoice Dates Sync').error_message)
+    ensure
+      other.exec("SELECT pg_advisory_unlock(#{key.to_i})")
+      other.close
+    end
+
+    run_job(PdiInvoiceDatesSyncJob, ftp)
+    assert_empty ftp.files, 'once the other run is done, the next run takes the file'
+  end
+
+  test 'the lock is released after a run, so the next run works' do
+    run_job(PdiPoLinesSyncJob, FakeFtp.new({}))
+    run_job(PdiPoLinesSyncJob, FakeFtp.new({}))
+
+    assert_equal %w[skipped skipped], SyncLog.where(process_name: 'PDI PO Lines Sync').order(:id).map(&:status)
+    assert_empty SyncLog.where(process_name: 'PDI PO Lines Sync').where("error_message LIKE 'Another run%'")
+  end
 end

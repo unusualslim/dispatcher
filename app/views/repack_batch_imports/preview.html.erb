@@ -151,6 +151,15 @@
       </div>
     <% end %>
 
+    <% if @reversed_live_rows.any? %>
+      <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle"></i>
+        <strong><%= @reversed_live_rows.size %> reversed in PDI but still live in the app:</strong>
+        <%= @reversed_live_rows.map { |r| "PDI-#{r.batch_key}" }.join(', ') %>.
+        They are not changed. Void them (admin) if those batches should not count.
+      </div>
+    <% end %>
+
     <% if @skip_exists_count > 0 %>
       <div class="alert alert-secondary">
         <i class="bi bi-check-circle"></i> <strong><%= @skip_exists_count %> batches</strong> already imported — will be skipped.

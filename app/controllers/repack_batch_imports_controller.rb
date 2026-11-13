@@ -30,6 +30,7 @@ class RepackBatchImportsController < ApplicationController
     @create_count       = @rows.count { |r| r.action == :create }
     @skip_exists_count  = @rows.count { |r| r.action == :skip_exists }
     @skip_reversed_count = @rows.count { |r| r.action == :skip_reversed }
+    @reversed_live_rows = @rows.select(&:live_in_app)
     @skip_no_product_count = @rows.count { |r| r.action == :skip_no_product }
     @no_warehouse_count = @rows.count { |r| r.action == :create && !r.warehouse_matched }
     @set_warehouse_rows = @rows.select { |r| r.action == :set_warehouse }

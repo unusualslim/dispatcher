@@ -26,13 +26,37 @@ module PdiCsvPickup
   end
 
   def perform
-    files = waiting_files
-    return skip_run if files.empty?
+    with_run_lock do
+      files = waiting_files
+      return skip_run if files.empty?
 
-    files.each { |filename| pick_up(filename) }
+      files.each { |filename| pick_up(filename) }
+    end
   end
 
   private
+
+  # One run of a process at a time: a second run (the scheduler ticking again, or "Run now" during a scheduled run)
+  # would read the same waiting files and race the first one. Held on the database connection (a Postgres advisory
+  # lock), so it frees itself if the process dies. A run that finds it taken logs a skip and leaves the files alone.
+  def with_run_lock
+    key = Zlib.crc32(self.class::PROCESS_NAME)
+    ActiveRecord::Base.connection_pool.with_connection do |connection|
+      locked = connection.select_value(ActiveRecord::Base.sanitize_sql(['SELECT pg_try_advisory_lock(?)', key]))
+      return skip_busy unless locked
+
+      begin
+        yield
+      ensure
+        connection.execute(ActiveRecord::Base.sanitize_sql(['SELECT pg_advisory_unlock(?)', key]))
+      end
+    end
+  end
+
+  def skip_busy
+    SyncLog.create!(process_name: self.class::PROCESS_NAME, status: 'skipped', started_at: Time.current,
+                    completed_at: Time.current, error_message: 'Another run of this process is already working')
+  end
 
   def waiting_files
     in_export_dir { |ftp| ftp.nlst.map { |f| File.basename(f) }.select { |f| self.class.matches?(f) }.sort }
