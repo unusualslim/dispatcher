@@ -31,6 +31,8 @@ class RepackBatchImportsController < ApplicationController
     @skip_exists_count  = @rows.count { |r| r.action == :skip_exists }
     @skip_reversed_count = @rows.count { |r| r.action == :skip_reversed }
     @skip_no_product_count = @rows.count { |r| r.action == :skip_no_product }
+    @no_warehouse_count = @rows.count { |r| r.action == :create && !r.warehouse_matched }
+    @set_warehouse_rows = @rows.select { |r| r.action == :set_warehouse }
   end
 
   def create
@@ -56,11 +58,14 @@ class RepackBatchImportsController < ApplicationController
         status: 'success',
         completed_at: Time.current,
         records_created: result.created,
+        records_updated: result.warehouse_set,
         records_skipped: result.skipped_exists + result.skipped_reversed + result.skipped_no_product,
         warnings: result.errors.any? ? result.errors.join("\n") : nil
       )
 
       summary = "Import complete — #{result.created} production orders created."
+      summary += " #{result.warehouse_set} existing orders got their warehouse." if result.warehouse_set > 0
+      summary += " #{result.reposted} had their inventory moved to it." if result.reposted > 0
       summary += " #{result.skipped_exists} already imported." if result.skipped_exists > 0
       summary += " #{result.skipped_reversed} reversed batches skipped." if result.skipped_reversed > 0
       summary += " #{result.skipped_no_product} skipped (product not found)." if result.skipped_no_product > 0

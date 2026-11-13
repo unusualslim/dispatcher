@@ -49,12 +49,13 @@ class RepackBatchImportService
   COL_COMP_EXT_COST    = 38
   COL_COMP_SOURCE      = 39
 
-  Result = Struct.new(:created, :skipped_exists, :skipped_reversed, :skipped_no_product, :errors, keyword_init: true)
+  Result = Struct.new(:created, :skipped_exists, :skipped_reversed, :skipped_no_product, :warehouse_set, :reposted,
+                      :errors, keyword_init: true)
 
   PreviewRow = Struct.new(
     :batch_key, :description, :business_date, :status, :source,
     :product_id, :product_name, :product, :qty,
-    :warehouse_name, :component_count, :action,
+    :warehouse_name, :warehouse_matched, :location, :moves_inventory, :component_count, :action,
     keyword_init: true
   )
 
@@ -68,7 +69,9 @@ class RepackBatchImportService
 
   def preview
     batches = parse_batches
-    existing_numbers = ProductionOrder.where(number: batches.keys.map { |k| "PDI-#{k}" }).pluck(:number).to_set
+    existing = ProductionOrder.where(number: batches.keys.map { |k| "PDI-#{k}" }).index_by(&:number)
+    existing_numbers = existing.keys.to_set
+    locations_by_name = locations_by_name_index
 
     batches.map do |batch_key, rows|
       first = rows.first
@@ -76,8 +79,14 @@ class RepackBatchImportService
       product_id = null_safe(first[COL_REPACK_PROD_ID])
       product = Product.find_by(id: product_id) if product_id
 
+      location = find_location(null_safe(first[COL_WAREHOUSE_ID]), null_safe(first[COL_WAREHOUSE_NAME]),
+                               locations_by_name)
+      order = existing["PDI-#{batch_key}"]
+
       action = if status == 'Reversed'
                  :skip_reversed
+               elsif order && fills_missing_warehouse?(order, location)
+                 :set_warehouse
                elsif existing_numbers.include?("PDI-#{batch_key}")
                  :skip_exists
                elsif product_id && product.nil?
@@ -99,6 +108,9 @@ class RepackBatchImportService
         product: product,
         qty: null_safe_decimal(first[COL_REPACK_QTY]),
         warehouse_name: null_safe(first[COL_WAREHOUSE_NAME]),
+        warehouse_matched: location.present?,
+        location: location,
+        moves_inventory: action == :set_warehouse && reposts?(order),
         component_count: comp_count,
         action: action
       )
@@ -106,10 +118,12 @@ class RepackBatchImportService
   end
 
   def run
-    result = Result.new(created: 0, skipped_exists: 0, skipped_reversed: 0, skipped_no_product: 0, errors: [])
+    result = Result.new(created: 0, skipped_exists: 0, skipped_reversed: 0, skipped_no_product: 0,
+                        warehouse_set: 0, reposted: 0, errors: [])
     batches = parse_batches
-    existing_numbers = ProductionOrder.where(number: batches.keys.map { |k| "PDI-#{k}" }).pluck(:number).to_set
-    locations_by_name = Location.all.index_by { |l| l.company_name.to_s.strip.downcase }
+    existing = ProductionOrder.where(number: batches.keys.map { |k| "PDI-#{k}" }).index_by(&:number)
+    existing_numbers = existing.keys.to_set
+    locations_by_name = locations_by_name_index
 
     batches.each do |batch_key, rows|
       first = rows.first
@@ -122,7 +136,7 @@ class RepackBatchImportService
 
       number = "PDI-#{batch_key}"
       if existing_numbers.include?(number)
-        result.skipped_exists += 1
+        set_missing_warehouse(existing[number], first, locations_by_name, result)
         next
       end
 
@@ -141,7 +155,9 @@ class RepackBatchImportService
       batch_source  = null_safe(first[COL_BATCH_SOURCE])
       credit        = null_safe(first[COL_CREDIT_BATCH])
       wh_name       = null_safe(first[COL_WAREHOUSE_NAME])
-      location      = locations_by_name[wh_name.to_s.strip.downcase] if wh_name
+      site_id       = null_safe(first[COL_WAREHOUSE_ID])
+      location      = find_location(site_id, wh_name, locations_by_name)
+      result.errors << unmatched_warehouse_message(batch_key, site_id, wh_name) unless location
 
       po_status = status == 'Posted' ? 'completed' : 'created'
 
@@ -198,6 +214,55 @@ class RepackBatchImportService
   end
 
   private
+
+  # PDI's warehouse ID is its site number (2, 110): match the app location with that pdi_site_code first.
+  # The name ("FPS-Main") only matches a location literally named that, so it is the fallback.
+  def find_location(site_id, name, locations_by_name)
+    PdiOrders::Warehouses.for_site(site_id) || (locations_by_name[name.to_s.strip.downcase] if name)
+  end
+
+  # An order imported before its warehouse could be matched gets it now. Only an empty warehouse is filled, never
+  # changed. Inventory a completed order already posted (to the main warehouse by default) is reversed and posted
+  # again at the right site.
+  def set_missing_warehouse(order, first, locations_by_name, result)
+    site_id = null_safe(first[COL_WAREHOUSE_ID])
+    name = null_safe(first[COL_WAREHOUSE_NAME])
+    location = find_location(site_id, name, locations_by_name)
+    unless fills_missing_warehouse?(order, location)
+      result.skipped_exists += 1
+      return unless order.location_id.nil?
+
+      result.errors << unmatched_warehouse_message(order.number.delete_prefix('PDI-'), site_id, name)
+      return
+    end
+
+    repost = reposts?(order)
+    ProductionOrder.transaction do
+      ProductionOrderInventory.reverse!(order) if repost
+      order.update_column(:location_id, location.id)
+      ProductionOrderInventory.post!(order.reload) if repost
+    end
+    result.warehouse_set += 1
+    result.reposted += 1 if repost
+  end
+
+  def reposts?(order)
+    order.status == 'completed' && ProductionOrderInventory.posted?(order)
+  end
+
+  def fills_missing_warehouse?(order, location)
+    order.location_id.nil? && location.present?
+  end
+
+  def locations_by_name_index
+    Location.all.index_by { |l| l.company_name.to_s.strip.downcase }
+  end
+
+  # The warehouse is never guessed: a batch PDI ran somewhere we can't identify is created without one and flagged.
+  def unmatched_warehouse_message(batch_key, site_id, name)
+    "Batch #{batch_key}: warehouse #{[site_id, name].compact.join(' ').presence || '(blank)'} matches no location; " \
+      'created with no warehouse, set it by hand'
+  end
 
   def parse_batches
     rows = CSV.read(@file_path, headers: false, encoding: 'bom|utf-8')

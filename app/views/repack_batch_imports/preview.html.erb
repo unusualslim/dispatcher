@@ -6,6 +6,9 @@
         <% if @create_count > 0 %>
           <span class="text-success fw-semibold"><%= @create_count %> production orders to create</span>
         <% end %>
+        <% if @set_warehouse_rows.any? %>
+          &nbsp;&middot;&nbsp;<span class="text-primary fw-semibold"><%= @set_warehouse_rows.size %> existing orders get a warehouse</span>
+        <% end %>
         <% if @skip_exists_count > 0 %>
           &nbsp;&middot;&nbsp;<span class="text-muted"><%= @skip_exists_count %> already imported</span>
         <% end %>
@@ -14,6 +17,9 @@
         <% end %>
         <% if @skip_no_product_count > 0 %>
           &nbsp;&middot;&nbsp;<span class="text-danger fw-semibold"><%= @skip_no_product_count %> product not found</span>
+        <% end %>
+        <% if @no_warehouse_count > 0 %>
+          &nbsp;&middot;&nbsp;<span class="text-warning fw-semibold"><%= @no_warehouse_count %> warehouse not matched</span>
         <% end %>
       </p>
     </div>
@@ -64,8 +70,42 @@
                   </td>
                   <td class="text-end"><%= number_with_precision(row.qty, precision: 1, strip_insignificant_zeros: true) %></td>
                   <td class="text-center"><%= row.component_count %></td>
-                  <td><%= row.warehouse_name || '—' %></td>
+                  <td>
+                    <%= row.warehouse_name || '—' %>
+                    <% unless row.warehouse_matched %>
+                      <span class="badge bg-warning text-dark" title="No location matches this warehouse. The order is created without one.">No match</span>
+                    <% end %>
+                  </td>
                   <td class="small text-muted"><%= row.source %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    <% end %>
+
+    <% if @set_warehouse_rows.any? %>
+      <div class="card shadow-sm mb-3">
+        <div class="card-header bg-primary text-white">
+          <h6 class="mb-0">Existing Orders That Get a Warehouse (<%= @set_warehouse_rows.size %>)</h6>
+        </div>
+        <div class="card-body small text-muted pb-0">
+          Only orders with no warehouse are changed. Completed orders whose inventory is already posted have it reversed and posted again at the new warehouse.
+        </div>
+        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+          <table class="table table-sm table-hover mb-0">
+            <thead class="table-light" style="position: sticky; top: 0;">
+              <tr><th>PDI Batch</th><th>Date</th><th>Product</th><th>Warehouse</th><th>Inventory</th></tr>
+            </thead>
+            <tbody>
+              <% @set_warehouse_rows.each do |row| %>
+                <tr>
+                  <td class="font-monospace small">PDI-<%= row.batch_key %></td>
+                  <td class="text-nowrap"><%= row.business_date&.strftime('%b %-d, %Y') || '—' %></td>
+                  <td><%= row.product&.name || row.product_name %></td>
+                  <td><%= row.warehouse_name %> &rarr; <%= row.location.company_name %></td>
+                  <td><%= row.moves_inventory ? 'Moved to this warehouse' : 'Nothing posted' %></td>
                 </tr>
               <% end %>
             </tbody>
