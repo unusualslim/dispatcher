@@ -1,0 +1,16 @@
+# rails-erd settings (bin/rails erd). Output: erd.svg in the project root (gitignored); open it in a browser to zoom.
+filename: erd
+generator: graphviz
+filetype: svg
+attributes:
+  - foreign_keys
+  - primary_keys
+indirect: false
+inheritance: false
+polymorphism: true
+title: FPS Team models
+exclude:
+  - ActionMailbox::Record
+  - ActionText::Record
+  - ActiveStorage::Record
+  - ApplicationRecord

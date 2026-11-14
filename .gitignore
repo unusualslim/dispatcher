@@ -38,3 +38,7 @@
 /config/credentials/development.key
 /.env
 /config/database.yml
+
+# rails-erd output
+/erd.svg
+/erd.pdf

@@ -98,6 +98,10 @@ group :development do
   gem 'rubocop', require: false
   gem 'rubocop-rails', require: false
 
+  # Model/relationship diagram: bin/rails erd → erd.svg (needs Graphviz: brew install graphviz; settings in .erdconfig)
+  gem 'rails-erd'
+  gem 'ruby-graphviz', require: false
+
   # Add speed badges [https://github.com/MiniProfiler/rack-mini-profiler]
   # gem "rack-mini-profiler"
 

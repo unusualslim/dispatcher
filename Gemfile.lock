@@ -124,6 +124,7 @@ GEM
       rack-test (>= 0.6.3)
       regexp_parser (>= 1.5, < 3.0)
       xpath (~> 3.2)
+    choice (0.2.0)
     concurrent-ruby (1.3.8)
     connection_pool (2.5.5)
     crass (1.0.8)
@@ -272,6 +273,10 @@ GEM
       activesupport (>= 5.0.0)
       minitest
       nokogiri (>= 1.6)
+    rails-erd (2.2.0)
+      activerecord (>= 7.0)
+      activesupport (>= 7.0)
+      choice (~> 0.2.0)
     rails-html-sanitizer (1.7.2)
       loofah (~> 2.25, >= 2.25.3)
       nokogiri (>= 1.15.7, != 1.16.7, != 1.16.6, != 1.16.5, != 1.16.4, != 1.16.3, != 1.16.2, != 1.16.1, != 1.16.0.rc1, != 1.16.0)
@@ -334,6 +339,8 @@ GEM
       rack (>= 1.1)
       rubocop (>= 1.89.0, < 2.0)
       rubocop-ast (>= 1.44.0, < 2.0)
+    ruby-graphviz (1.2.5)
+      rexml
     ruby-ole (1.2.13.1)
     ruby-progressbar (1.13.0)
     ruby-rc4 (0.1.5)
@@ -438,11 +445,13 @@ DEPENDENCIES
   pg (~> 1.1)
   puma (~> 7.2)
   rails (~> 8.1.4)
+  rails-erd
   redcarpet
   roo
   roo-xls
   rubocop
   rubocop-rails
+  ruby-graphviz
   sassc-rails
   select2-rails
   selenium-webdriver

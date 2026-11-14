@@ -11,7 +11,6 @@ class Dispatch < ApplicationRecord
   belongs_to :vendor, optional: true
   belongs_to :truck, class_name: 'Thing', optional: true
   belongs_to :trailer, class_name: 'Thing', optional: true
-  has_many :things
   belongs_to :destination_location, class_name: 'Location', optional: true
   # The origin terminal. `origin` keeps the text picked on the form (a snapshot of the terminal's name and address).
   belongs_to :origin_location, class_name: 'Location', optional: true
