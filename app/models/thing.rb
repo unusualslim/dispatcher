@@ -3,9 +3,6 @@
 class Thing < ApplicationRecord
   CATEGORIES = { 'truck' => 'Truck', 'trailer' => 'Trailer', 'equipment' => 'Equipment' }.freeze
 
-  # things.dispatch_id is a retired link (a dispatch's truck/trailer are dispatches.truck_id/trailer_id); dropped later.
-  self.ignored_columns += ['dispatch_id']
-
   belongs_to :location, optional: true
   has_many :work_orders, as: :workable, dependent: :destroy
   has_many :expense_lines, class_name: 'PurchaseOrderLineItem', foreign_key: :equipment_id,

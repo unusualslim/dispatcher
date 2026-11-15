@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_11_180000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_14_190000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -1065,7 +1065,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_11_180000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "category", default: "truck", null: false
-    t.bigint "dispatch_id"
     t.bigint "location_id"
     t.string "serial_number"
     t.string "production_line"
@@ -1074,7 +1073,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_11_180000) do
     t.string "purchased_from"
     t.string "invoice_number"
     t.integer "year_made"
-    t.index ["dispatch_id"], name: "index_things_on_dispatch_id"
     t.index ["location_id"], name: "index_things_on_location_id"
   end
 
@@ -1256,7 +1254,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_11_180000) do
   add_foreign_key "tank_readings", "sync_logs", on_delete: :nullify
   add_foreign_key "tanks", "locations"
   add_foreign_key "tanks", "products"
-  add_foreign_key "things", "dispatches"
   add_foreign_key "things", "locations"
   add_foreign_key "user_favorites", "users"
   add_foreign_key "users", "locations", column: "home_location_id"
