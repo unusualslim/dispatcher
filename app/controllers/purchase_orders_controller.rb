@@ -3,8 +3,11 @@ require 'csv'
 class PurchaseOrdersController < ApplicationController
   include ListNeighbors
 
+  PALLET_LABEL_LIMIT = 100
+
   permission_area :purchasing, approve: %i[approve submit post_to_inventory]
-  before_action :set_purchase_order, only: %i[show edit update approve submit receive post_to_inventory void print]
+  before_action :set_purchase_order,
+                only: %i[show edit update approve submit receive post_to_inventory void print pallet_labels]
   before_action :require_admin!, only: :void
   before_action :keep_voided_read_only, only: %i[edit update approve submit receive post_to_inventory]
   before_action -> { require_feature!(po_feature) }, if: :changing?
@@ -232,6 +235,12 @@ class PurchaseOrdersController < ApplicationController
 
   # GET /purchase_orders/:id/print — the copy sent to the vendor (layout-less, print from the browser).
   def print
+    render layout: false
+  end
+
+  # 4x6 pallet labels for a Zebra printer: one identical label per pallet received.
+  def pallet_labels
+    @count = params[:count].to_i.clamp(1, PALLET_LABEL_LIMIT)
     render layout: false
   end
 

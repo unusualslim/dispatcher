@@ -252,6 +252,10 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
   Expense Accounts were loaded 2026-11-03 from PDI's chart of accounts (`LoadExpenseChartOfAccounts`): Expense-type
   accounts only, without inventory-related ones (Cost of Sales / Fuel Cost of Sales groups, over/short); PDI-disabled
   accounts load inactive. `account_group` (PDI group) groups the searchable picker.
+- **Pallet labels** (`/purchase_orders/:id/pallet_labels?count=N`, "Pallet Labels" on inventory POs): one 4×6 page per
+  pallet for a Zebra (browser print): company (Five Points Service, from Company Info; the only company the app tracks,
+  other companies' stock at 2171 is not labeled here), PO #, received date (today if not marked received), warehouse,
+  vendor, up to 7 lines, QR code to the PO (`qr_codes.js`, any `[data-qr]`).
 - `InventoryTransaction` — polymorphic audit trail (direction: 'in'/'out'), `location_id`; costed rows carry
   `movement_type` (opening/receipt/sale/production_use/production_output/adjustment/pdi_sync/revaluation),
   `occurred_on`, `unit_cost`, `total_cost`, `variance_amount` (PPV on standard receipts) and the location's balance after.

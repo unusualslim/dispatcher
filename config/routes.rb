@@ -195,6 +195,7 @@ Rails.application.routes.draw do
       patch :post_to_inventory
       post  :void
       get   :print
+      get   :pallet_labels
     end
     collection do
       get :export_pdi

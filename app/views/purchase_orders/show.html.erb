@@ -36,6 +36,12 @@
     <%= link_to print_purchase_order_path(@purchase_order), class: 'btn btn-outline-secondary btn-sm', target: '_blank', rel: 'noopener' do %>
       <i class="bi bi-printer"></i> Print
     <% end %>
+    <% unless @purchase_order.expense? %>
+      <%= link_to pallet_labels_purchase_order_path(@purchase_order), class: 'btn btn-outline-secondary btn-sm',
+                  target: '_blank', rel: 'noopener' do %>
+        <i class="bi bi-upc-scan"></i> Pallet Labels
+      <% end %>
+    <% end %>
     <% if admin? && !@purchase_order.voided? %>
       <button class="btn btn-outline-dark btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#po-void-form">Void</button>
     <% end %>
