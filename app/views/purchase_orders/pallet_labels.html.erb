@@ -23,8 +23,10 @@
     .toolbar button { font: inherit; padding: 6px 14px; border: 1px solid #78716c; background: #fff; border-radius: 4px; cursor: pointer; }
     .toolbar .hint { width: 100%; text-align: center; color: #44403c; font-size: 12px; }
     .label { width: 4in; height: 6in; margin: 0 auto 16px; background: #fff; padding: 0.15in; display: flex; flex-direction: column;
-             overflow: hidden; page-break-after: always; break-after: page; }
-    .label:last-child { page-break-after: auto; break-after: auto; }
+             overflow: hidden; }
+    /* Break before each label after the first (not after each one): Cloudflare appends scripts to the body, so
+       :last-child can't be trusted, and a trailing break prints a blank label. */
+    .label + .label { page-break-before: always; break-before: page; }
     .company { background: #000; color: #fff; text-align: center; font-weight: 900; font-size: 21px; letter-spacing: .02em;
                padding: 0.08in 0.05in; text-transform: uppercase; line-height: 1.05; }
     .tag { text-align: center; font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; margin: 3px 0 4px; }
@@ -54,7 +56,8 @@
     @media print {
       body { background: #fff; padding: 0; }
       .toolbar { display: none; }
-      .label { margin: 0; }
+      html, body { margin: 0; }
+      .label { margin: 0; height: 5.98in; } /* a hair under 6in so rounding never spills onto another label */
     }
   </style>
 </head>
