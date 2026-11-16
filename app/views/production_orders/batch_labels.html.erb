@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<%
+  l = @label
+  quad = @format == 'quad'
+  scan_url = lot_scan_url(lot: l.lot)
+  made = l.made_on&.strftime('%m/%d/%Y') || '____/____/______'
+  pages = quad ? @count.fdiv(4).ceil : @count
+%>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Batch Labels · <%= l.lot %></title>
+  <%= javascript_include_tag 'qr_codes', defer: true %>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: Arial, Helvetica, sans-serif; color: #000; background: #d6d3d1; margin: 0; padding: 16px; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 14px; }
+    .toolbar input, .toolbar select { font: inherit; padding: 4px 6px; }
+    .toolbar input { width: 70px; }
+    .toolbar button { font: inherit; padding: 6px 14px; border: 1px solid #78716c; background: #fff; border-radius: 4px; cursor: pointer; }
+    .toolbar .hint { width: 100%; text-align: center; color: #44403c; font-size: 12px; }
+    .page { width: 4in; height: 6in; margin: 0 auto 16px; background: #fff; overflow: hidden; }
+    /* Break before each page after the first, never after the last (Cloudflare appends scripts to the body). */
+    .page + .page { page-break-before: always; break-before: page; }
+    .k { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; display: block; }
+    .mono { font-family: "Courier New", Courier, monospace; }
+    .qr svg { width: 100%; height: 100%; display: block; }
+    .clamp2 { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+
+    /* Full: one label per 4x6 page */
+    .full { padding: 0.15in; display: flex; flex-direction: column; }
+    .full .product { font-size: 27px; font-weight: 900; line-height: 1.1; text-align: center; }
+    .full .code { text-align: center; font-size: 13px; margin: 2px 0 6px; }
+    .full .made { border: 3px solid #000; text-align: center; padding: 2px 4px 4px; }
+    .full .made .v { font-size: 58px; font-weight: 900; line-height: 1.05; }
+    .full .box { border: 2px solid #000; border-top: none; padding: 3px 6px; }
+    .full .lot .v { font-size: 22px; font-weight: 700; word-break: break-all; }
+    .full .row { display: grid; grid-template-columns: 1fr 1fr; border: 2px solid #000; border-top: none; }
+    .full .row > div { padding: 3px 6px; min-width: 0; }
+    .full .row > div + div { border-left: 2px solid #000; }
+    .full .row .v { font-size: 18px; font-weight: 700; word-break: break-all; }
+    .full .bottom { display: flex; align-items: center; gap: 0.12in; margin-top: auto; }
+    .full .qr { width: 2in; height: 2in; flex: none; }
+    .full .pallet { font-size: 26px; white-space: nowrap; font-weight: 900; }
+    .full .small { font-size: 11px; margin-top: 4px; }
+
+    /* Quad: four 2x3 in labels per 4x6 page */
+    .quad { display: grid; grid-template-columns: 2in 2in; grid-template-rows: 3in 3in; }
+    .mini { padding: 0.09in; display: flex; flex-direction: column; align-items: center; text-align: center; border: 1px dashed #a8a29e; overflow: hidden; }
+    .mini .product { font-size: 12px; font-weight: 900; line-height: 1.1; min-height: 2.2em; }
+    .mini .k { font-size: 8px; margin-top: 3px; }
+    .mini .made { font-size: 21px; font-weight: 900; line-height: 1.05; }
+    .mini .lot { font-size: 9px; font-weight: 700; word-break: break-all; }
+    .mini .pdi { font-size: 9px; }
+    .mini .qr { width: 1.4in; height: 1.4in; margin-top: auto; }
+    .mini .n { font-size: 8px; }
+    .mini.blank { border-color: transparent; }
+
+    @page { size: 4in 6in; margin: 0; }
+    @media print {
+      html, body { margin: 0; }
+      body { background: #fff; padding: 0; }
+      .toolbar { display: none; }
+      .page { margin: 0; height: 5.98in; } /* a hair under 6in so rounding never spills onto another label */
+      .mini { border-color: transparent; }
+    }
+  </style>
+</head>
+<body>
+  <form class="toolbar" method="get" action="<%= batch_labels_production_order_path(@production_order) %>">
+    <label>Labels <input type="number" name="count" min="1" max="<%= BatchLabel::MAX_LABELS %>" value="<%= @count %>"></label>
+    <label>Layout
+      <select name="format_type">
+        <% BatchLabel::FORMATS.each do |key, name| %>
+          <option value="<%= key %>" <%= 'selected' if key == @format %>><%= name %></option>
+        <% end %>
+      </select>
+    </label>
+    <button type="submit">Update</button>
+    <button type="button" onclick="window.print()">Print <%= pluralize(pages, 'page') %></button>
+    <div class="hint">Print to the Zebra with paper size 4 × 6 in, margins none, scale 100%.</div>
+  </form>
+
+  <% if quad %>
+    <% (1..@count).each_slice(4) do |slice| %>
+      <section class="page quad">
+        <% 4.times do |i| %>
+          <% n = slice[i] %>
+          <% if n %>
+            <div class="mini">
+              <div class="product clamp2"><%= l.product_name %></div>
+              <span class="k">Made</span>
+              <div class="made"><%= made %></div>
+              <span class="k">Lot</span>
+              <div class="lot mono"><%= l.lot %></div>
+              <% if l.pdi_batches.any? %><div class="pdi">PDI batch <%= l.pdi_batches.join(', ') %></div><% end %>
+              <div class="qr" data-qr="<%= scan_url %>"></div>
+              <div class="n"><%= n %> of <%= @count %></div>
+            </div>
+          <% else %>
+            <div class="mini blank"></div>
+          <% end %>
+        <% end %>
+      </section>
+    <% end %>
+  <% else %>
+    <% 1.upto(@count) do |n| %>
+      <section class="page full">
+        <div class="product clamp2"><%= l.product_name %></div>
+        <div class="code mono"><%= l.product_code %></div>
+        <div class="made"><span class="k">Made</span><span class="v"><%= made %></span></div>
+        <div class="box lot"><span class="k">Lot</span><span class="v mono"><%= l.lot %></span></div>
+        <div class="row">
+          <div><span class="k">PDI batch</span><span class="v mono"><%= l.pdi_batches.join(', ').presence || '—' %></span></div>
+          <div><span class="k">Warehouse</span><span class="v"><%= l.warehouse&.pdi_site_code.presence || l.warehouse&.company_name || '—' %></span></div>
+        </div>
+        <div class="bottom">
+          <div class="qr" data-qr="<%= scan_url %>"></div>
+          <div>
+            <span class="k">Pallet</span>
+            <div class="pallet"><%= n %> of <%= @count %></div>
+            <div class="small">Order <%= @production_order.number %></div>
+            <div class="small">Scan for lot details</div>
+          </div>
+        </div>
+      </section>
+    <% end %>
+  <% end %>
+</body>
+</html>

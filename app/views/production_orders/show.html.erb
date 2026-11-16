@@ -85,6 +85,13 @@
     </div>
   <% end %>
 
+  <% if @production_order.lot_number.present? && !@production_order.voided? %>
+    <%= link_to batch_labels_production_order_path(@production_order), class: 'btn btn-outline-secondary btn-sm',
+                target: '_blank', rel: 'noopener' do %>
+      <i class="bi bi-qr-code"></i> Batch Labels
+    <% end %>
+  <% end %>
+
   <% if admin? && !@production_order.voided? %>
     <button class="btn btn-outline-dark btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#void-form">
       Void

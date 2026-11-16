@@ -1,7 +1,8 @@
 class ProductionOrdersController < ApplicationController
   permission_area :production, features: { record_quality: :quality }, flags: { bom_cost_report: :costs }
   before_action :authenticate_user!
-  before_action :set_production_order, only: %i[show edit update destroy void record_quality quality_certificate]
+  before_action :set_production_order,
+                only: %i[show edit update destroy void record_quality quality_certificate batch_labels]
   before_action :require_admin!, only: :void
   before_action :keep_voided_read_only, only: %i[edit update]
   before_action :drop_placeholder_ids, only: %i[create update]
@@ -270,6 +271,18 @@ class ProductionOrdersController < ApplicationController
   end
 
   # GET /production_orders/:id/quality_certificate — printable certificate of analysis
+  # Pallet batch labels for the lot (Zebra 4x6): one per label, or four small ones per label to save paper.
+  def batch_labels
+    @label = BatchLabel.new(@production_order)
+    if @label.lot.blank?
+      return redirect_to(@production_order, alert: 'Batch labels need a lot number (assigned at quality check).')
+    end
+
+    @format = BatchLabel::FORMATS.key?(params[:format_type]) ? params[:format_type] : 'full'
+    @count = params[:count].to_i.clamp(1, BatchLabel::MAX_LABELS)
+    render layout: false
+  end
+
   def quality_certificate
     @results = @production_order.quality_results.includes(:tested_by, :quality_spec)
                                 .sort_by { |r| [r.quality_spec&.position || 0, r.quality_spec_id || 0, r.id] }

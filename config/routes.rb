@@ -5,6 +5,8 @@ Rails.application.routes.draw do
   get  '/labels',        to: 'batch#new',            as: :labels
   post '/labels/encode', to: 'batch#encode',         as: :labels_encode
   get  '/l',             to: 'batch#show',           as: :label
+  # Batch labels printed from a production order open this (LotScansController: same gate, or signed in)
+  get  '/lot/:lot',      to: 'lot_scans#show',       as: :lot_scan, constraints: { lot: %r{[^/]+} }
 
   # get 'assets/index'
   # get 'assets/show'
@@ -143,6 +145,7 @@ Rails.application.routes.draw do
       post  :void
       patch :record_quality
       get   :quality_certificate
+      get   :batch_labels
     end
     collection do
       get :kanban

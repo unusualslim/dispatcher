@@ -1,0 +1,41 @@
+<% l = @label %>
+<div class="container text-center py-4" style="max-width:480px;">
+  <% if l.voided? %>
+    <div class="alert alert-danger fw-semibold">This production order was voided. Check with the office before using this pallet.</div>
+  <% end %>
+
+  <p class="text-muted mb-1 small text-uppercase" style="letter-spacing:0.08em;">Product</p>
+  <div class="fw-semibold" style="font-size:clamp(1.2rem,5vw,1.8rem);line-height:1.2;"><%= l.product_name %></div>
+  <% if l.product_code.present? %><div class="text-muted font-monospace mb-4"><%= l.product_code %></div><% end %>
+
+  <p class="text-muted mb-1 small text-uppercase" style="letter-spacing:0.08em;">Made</p>
+  <% if l.made_on %>
+    <div class="fw-bold" style="font-size:clamp(2rem,10vw,3.5rem);line-height:1.1;"><%= l.made_on.strftime('%m/%d/%Y') %></div>
+    <div class="text-muted mb-4">
+      <%= l.age_in_days.zero? ? 'Today' : "#{pluralize(l.age_in_days, 'day')} ago" %>
+    </div>
+  <% else %>
+    <div class="fw-bold mb-4" style="font-size:1.5rem;">Not recorded</div>
+  <% end %>
+
+  <p class="text-muted mb-1 small text-uppercase" style="letter-spacing:0.08em;">Lot</p>
+  <div class="fw-bold font-monospace mb-4" style="font-size:clamp(1.3rem,6vw,2rem);word-break:break-all;"><%= l.lot %></div>
+
+  <dl class="row text-start small mx-auto" style="max-width:340px;">
+    <% if l.pdi_batches.any? %>
+      <dt class="col-5 text-muted">PDI batch</dt><dd class="col-7 font-monospace"><%= l.pdi_batches.join(', ') %></dd>
+    <% end %>
+    <% if l.warehouse %>
+      <dt class="col-5 text-muted">Warehouse</dt><dd class="col-7"><%= [l.warehouse.pdi_site_code, l.warehouse.company_name].compact_blank.join(' · ') %></dd>
+    <% end %>
+    <% if l.quantity %>
+      <dt class="col-5 text-muted">Batch quantity</dt><dd class="col-7"><%= number_with_precision(l.quantity, precision: 3, strip_insignificant_zeros: true, delimiter: ',') %></dd>
+    <% end %>
+    <dt class="col-5 text-muted">Status</dt><dd class="col-7"><%= l.status_label %></dd>
+    <dt class="col-5 text-muted">Order</dt><dd class="col-7"><%= l.order.number %></dd>
+  </dl>
+
+  <% if user_signed_in? && current_user.can?(:production) %>
+    <%= link_to 'Open production order', production_order_path(l.order), class: 'btn btn-outline-primary btn-sm mt-2' %>
+  <% end %>
+</div>

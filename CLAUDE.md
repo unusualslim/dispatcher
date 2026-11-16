@@ -127,6 +127,12 @@ reserved for the app taking over a category's inventory/COGS/sales posting from 
 Accounts post as Site-Major-Sub (site = `Location#pdi_site_code`, 4 digits). **ReportingGroup** uses PDI item types:
 fuel/warehouse groups = PDI product categories (linked by `products.category` name, auto-created); non_inventory
 groups (Consumables, Labor, Overhead) hold cost lines. Admin → Reporting Groups / Costing Settings.
+**Batch labels (new way)**: "Batch Labels" on a production order with a lot number → `/production_orders/:id/batch_labels`
+(Zebra 4x6, `format_type` full = one per pallet / quad = four 2x3 in per label; product, made date = `date_completed` → production
+date → started, app lot, PDI batch numbers, warehouse; `BatchLabel`). The QR opens `/lot/:lot` (`LotScansController`, outside Devise
+like `BatchController`: signed-in users, or the crew with the `/gate` batch label password; live data, voided warning). The crew
+uses the made date for FIFO. The old hand-typed `/labels` + `/l?d=` tool is untouched (to be deprecated later; printed labels must
+keep decoding).
 **WorkOrders / Jobs** = shop work orders with comments; Jobs + JobWorkers are line-worker clock-in/out (`/line`)
 **User roles**: user types admin (everything), staff (access from roles), worker (drivers), line_worker. Users with history can't be
 deleted (`User#history_reasons`); admins deactivate them instead (`deactivated_at`: can't sign in, `User.active` in pickers).

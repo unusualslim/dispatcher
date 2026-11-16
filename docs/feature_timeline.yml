@@ -113,3 +113,4 @@
     - { date: 2026-11-13, title: Repack batches post to the right site, note: "The PDI repack import matches the warehouse by PDI site number, flags batches it cannot place and fills in missing warehouses; nightly from the PDI SQL export; Replay skips orders with no warehouse.", area: PDI }
     - { date: 2026-11-13, title: Incoming receipts report, note: "Open purchase orders by location and expected date, with vendor and carrier.", area: Inventory }
     - { date: 2026-11-16, title: PO pallet labels, note: "Printable 4×6 Zebra labels, one per pallet received: Five Points Service, PO number, received date, vendor, products and a QR code to the PO.", area: Purchasing }
+    - { date: 2026-11-16, title: Batch labels from production orders, note: "Pallet labels printed from the order with product, made date, lot and PDI batch; one or four per 4×6 label; the QR opens a live lot page for the crew. The old label tool still works.", area: Production }
