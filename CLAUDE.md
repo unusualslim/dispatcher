@@ -458,6 +458,20 @@ Plan doc: https://claude.ai/artifact/XHN7g5K59XsoHWpMk7saER (board/forecast/aler
   (FPS_SMARTANK_*.csv), `TankPlant0002SyncJob` (FPS_TANKS_0002_*.eml or .txt). Files younger than 2 min wait (still uploading).
 - Pages (Dispatch area): /tanks (list, detail, manual reading), /tank_feeds (feed status + feed tanks to set up /
   link / ignore); Data Imports → Tank Readings (admin, manual upload with preview). Stale = `tank_stale_hours` (30).
+- **Tank setup before phase 2** (charter T2/T8/T16–T20): monitor IDs live in the monitors: Kii **Parameter_1** = app location
+  number, **Parameter_2** = product ID; Smartank **User Defined (A)** = location number, **User Product ID** = product ID (-1 =
+  unset). Kii Content is housekeeping only. `TankSetup`: a monitor feed tank → Tank at a location (monitor's name, capacity,
+  product ID, else DEF guessed from the product text → 901); a tank at that site + product that no monitor feeds yet is taken
+  over (monitor capacity, its fill/bottom % kept). Imports auto-link when the monitor carries a location number; otherwise the
+  **location selector** on /tank_feeds (Set up). **Export monitor IDs** (`TankFeedExport`, /tank_feeds/export) = CSV to key back
+  into Kii/Smartank, not-yet-keyed first. **Copy from location settings** (`TankCopy`, admin, /tanks/copy_from_locations/new):
+  location_products max_capacity / uleage_90 % / cutoff % (of the fill limit) → Tanks; skips FPS011/FPS012 (fuel), FPS001 → 901,
+  location 70 → 527 (customer renumbered; 70 stays as an archive), skips site+product pairs that already have a tank.
+  Feeds stay Off until every tank phase is built. Readings of feed tanks with no location stay off the board.
+- **Admin → Merge Products** (`ProductMerge`): obsolete product → its replacement (FPS001 → 901). History (order/quote/PO/
+  production lines, inventory movements, cost layers/history, BOM uses, tanks, stock/tank rows, pricing rule + vendor links)
+  moves; BOM / cost lines / quality specs move only if the target has none; the source is left inactive. Refused while the
+  source holds stock.
 
 ## Map
 - Leaflet.js + OpenStreetMap tiles, centered on Georgia

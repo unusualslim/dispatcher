@@ -1,14 +1,16 @@
 # Kii's hourly report (KII_<day>_<HH>.csv): a snapshot of each sensor's latest reading, mostly one row per sensor,
 # times in UTC without a zone marker. Sensors are ours when Sensor Owner or Customer is Five Points Service; the
-# rest (Perry Brothers Oil's Cordele plant, unassigned customers) are created ignored. Kii's Content label is
-# unreliable, so the product is set on the app tank.
+# rest (Perry Brothers Oil's Cordele plant, unassigned customers) are created ignored. Parameter_1 carries the app
+# location number and Parameter_2 the product ID (keyed in from the Tank Feeds export), so a tank links itself;
+# Content is housekeeping only.
 module TankFeeds
   class Kii < Base
     FEED = 'kii'.freeze
     TIME_FORMATS = ['%m/%d/%Y %I:%M:%S %p', '%m/%d/%Y %H:%M:%S', '%m/%d/%Y %H:%M'].freeze
     DETAILS = { 'customer' => 'Customer', 'sensor_owner' => 'Sensor Owner', 'content' => 'Content',
                 'capacity' => 'Capacity (Gal)', 'tank_height_in' => 'Tank Height (In)', 'site_id' => 'Mapping Site ID',
-                'tank_number' => 'Mapping Tank ID' }.freeze
+                'tank_number' => 'Mapping Tank ID', 'location_id' => 'Parameter_1',
+                'product_id' => 'Parameter_2' }.freeze
 
     def self.ours?(owner, customer)
       [owner, customer].any? { |name| name.to_s.strip.match?(/\A(five points service|fps)\b/i) }

@@ -1,6 +1,7 @@
 <div class="container-fluid mt-4">
   <%= render layout: 'shared/page_header', locals: { title: 'Tank Feeds', subtitle: 'Where tank readings come from, and the feed tanks waiting to be set up.' } do %>
     <%= link_to tanks_path, class: 'btn btn-outline-secondary btn-sm' do %><i class="bi bi-fuel-pump"></i> Tanks<% end %>
+    <%= link_to export_feed_tanks_path, class: 'btn btn-outline-secondary btn-sm', title: 'Location numbers and product IDs to key into Kii and Smartank' do %><i class="bi bi-download"></i> Export monitor IDs<% end %>
     <% if admin? %>
       <%= link_to new_tank_feed_import_path, class: 'btn btn-outline-secondary btn-sm' do %><i class="bi bi-upload"></i> Import a file<% end %>
       <%= link_to automated_processes_path, class: 'btn btn-outline-secondary btn-sm' do %><i class="bi bi-arrow-repeat"></i> Schedules<% end %>
@@ -61,7 +62,17 @@
             <td class="text-nowrap">
               <% if can?(:dispatch, :edit) %>
                 <div class="d-flex gap-1 justify-content-end">
-                  <% unless ft.tank || ft.ignored %>
+                  <% if !ft.tank && !ft.ignored && TankSetup::MONITOR_FEEDS.include?(ft.feed) %>
+                    <% setup = TankSetup.new(ft) %>
+                    <% location = setup.monitor_location %>
+                    <%= form_with url: setup_feed_tank_path(ft), method: :post, class: 'd-flex gap-1' do %>
+                      <select name="location_id" class="form-select form-select-sm feed-location-select" style="min-width: 220px" aria-label="Location">
+                        <% if location %><option value="<%= location.id %>" selected><%= location.picker_label %></option><% end %>
+                      </select>
+                      <%= text_field_tag :product_id, setup.suggested_product_id, class: 'form-control form-control-sm', style: 'width: 90px', placeholder: 'Product ID', 'aria-label': 'Product ID' %>
+                      <%= submit_tag 'Set up', class: 'btn btn-sm btn-primary' %>
+                    <% end %>
+                  <% elsif !ft.tank && !ft.ignored %>
                     <%= link_to 'Create tank', new_tank_path(feed_tank_id: ft.id), class: 'btn btn-sm btn-primary' %>
                   <% end %>
                   <%= form_with model: ft, url: feed_tank_path(ft), method: :patch, class: 'd-flex gap-1' do |f| %>
@@ -83,5 +94,17 @@
   <p class="small text-muted">
     Ignored feed tanks (not ours, retired sensors, DI Water) keep their details up to date but store no readings.
     Several feed tanks can link to one tank: its level is their sum (0002's production and holding tanks).
+    Set up a Kii or Smartank tank by picking its location: the tank takes the monitor's name, capacity and product ID.
+    Then <%= link_to 'export the monitor IDs', export_feed_tanks_path %> and key each location number and product ID into the
+    monitor (Kii Parameter_1 / Parameter_2, Smartank User Defined A / User Product ID); later imports link those tanks by themselves.
   </p>
 </div>
+
+<script>
+  $(function() {
+    $('.feed-location-select').select2({
+      theme: 'bootstrap-5', width: 'style', placeholder: 'Pick location', minimumInputLength: 1,
+      ajax: { url: '<%= locations_tanks_path %>', dataType: 'json', delay: 200, data: function(p) { return { q: p.term }; } }
+    });
+  });
+</script>

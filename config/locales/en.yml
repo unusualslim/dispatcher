@@ -79,9 +79,16 @@ en:
     record_reading:
       no_gallons: "Enter the gallons in the tank."
       recorded: "Recorded %{gallons} gal at %{at}."
+  tank_copies:
+    create:
+      copied: "Created %{count} tanks from the location settings."
   feed_tanks:
     update:
       updated: "Saved %{name}."
+    setup:
+      no_location: "Choose the tank's location."
+      no_product: "No product with ID %{id}."
+      linked: "%{name} is now %{tank}."
   tank_feed_imports:
     preview:
       choose: "Choose the feed and a file."
@@ -251,6 +258,11 @@ en:
       done: "Merged %{merged} location(s); %{skipped} skipped (already merged); %{errors} failed."
     create:
       merged: "Merged %{source} into %{target} (%{summary})."
+      nothing_moved: "nothing to move"
+      failed: "Merge failed: %{error}"
+  product_merges:
+    create:
+      merged: "Merged %{source} into %{target} (%{summary}). %{source} is now inactive."
       nothing_moved: "nothing to move"
       failed: "Merge failed: %{error}"
   customer_merges:

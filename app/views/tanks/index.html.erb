@@ -4,6 +4,9 @@
     <% if can?(:dispatch, :edit) %>
       <%= link_to new_tank_path, class: 'btn btn-primary btn-sm' do %><i class="bi bi-plus-lg"></i> New Tank<% end %>
     <% end %>
+    <% if admin? %>
+      <%= link_to new_tank_copy_path, class: 'btn btn-outline-secondary btn-sm' do %><i class="bi bi-copy"></i> Copy from location settings<% end %>
+    <% end %>
   <% end %>
 
   <% if @needs_setup.positive? %>

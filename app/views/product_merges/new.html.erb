@@ -1,0 +1,64 @@
+<div class="container-fluid mt-4">
+  <%= render layout: 'shared/page_header', locals: { title: 'Merge Products', subtitle: 'Fold an obsolete product into the product that replaced it, so its history follows.' } do %>
+  <% end %>
+
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <%= form_with url: new_product_merge_path, method: :get, local: true, class: 'row g-2 align-items-end' do %>
+        <div class="col-md-5">
+          <label class="form-label fw-semibold mb-1" for="source_id">Obsolete product (merged away)</label>
+          <select name="source_id" id="source_id" class="form-select product-merge-select">
+            <% if @source %><option value="<%= @source.id %>" selected><%= @source.id %> — <%= @source.name %></option><% end %>
+          </select>
+        </div>
+        <div class="col-md-5">
+          <label class="form-label fw-semibold mb-1" for="target_id">Merge into (keep)</label>
+          <select name="target_id" id="target_id" class="form-select product-merge-select">
+            <% if @target %><option value="<%= @target.id %>" selected><%= @target.id %> — <%= @target.name %></option><% end %>
+          </select>
+        </div>
+        <div class="col-md-2"><%= submit_tag 'Preview', class: 'btn btn-primary w-100' %></div>
+      <% end %>
+    </div>
+  </div>
+
+  <% if @error %>
+    <div class="alert alert-warning"><%= @error %></div>
+  <% elsif @merge %>
+    <div class="card shadow-sm mb-3">
+      <div class="card-header fw-semibold"><%= @source.id %> <%= @source.name %> → <%= @target.id %> <%= @target.name %></div>
+      <div class="card-body">
+        <h6>Moves to <%= @target.id %></h6>
+        <ul>
+          <% @merge.counts.each do |label, count| %>
+            <li class="<%= 'text-muted' if count.zero? %>"><%= count %> <%= label.downcase %></li>
+          <% end %>
+        </ul>
+        <% if @merge.kept_on_source.any? %>
+          <h6>Stays on <%= @source.id %> (<%= @target.id %> has its own)</h6>
+          <ul class="small"><% @merge.kept_on_source.each do |label, count| %><li><%= count %> <%= label.downcase %></li><% end %></ul>
+        <% end %>
+        <p class="small text-muted mb-0">
+          Pricing rule and vendor links <%= @target.id %> already has are kept as they are; the duplicates from <%= @source.id %> are dropped.
+          Afterwards <%= @source.id %> is left inactive, not deleted.
+        </p>
+      </div>
+      <div class="card-footer d-flex gap-2">
+        <%= button_to "Merge #{@source.id} into #{@target.id}", product_merges_path,
+              params: { source_id: @source.id, target_id: @target.id }, class: 'btn btn-danger',
+              form: { data: { turbo_confirm: "Merge #{@source.id} into #{@target.id}? This can't be undone." } } %>
+        <%= link_to 'Cancel', new_product_merge_path, class: 'btn btn-outline-secondary' %>
+      </div>
+    </div>
+  <% end %>
+</div>
+
+<script>
+  $(function() {
+    $('.product-merge-select').select2({
+      theme: 'bootstrap-5', width: '100%', placeholder: 'Search by product ID or name', minimumInputLength: 1,
+      ajax: { url: '<%= products_product_merges_path %>', dataType: 'json', delay: 200,
+              data: function(p) { return { q: p.term }; }, processResults: function(data) { return { results: data }; } }
+    });
+  });
+</script>

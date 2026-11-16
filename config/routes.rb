@@ -258,6 +258,9 @@ Rails.application.routes.draw do
   resources :customer_merges, only: %i[index new create] do
     get :targets, on: :collection
   end
+  resources :product_merges, only: %i[new create] do
+    get :products, on: :collection
+  end
   resources :location_merges, only: %i[index new create] do
     get :targets, on: :collection
     post :bulk, on: :collection
@@ -273,11 +276,15 @@ Rails.application.routes.draw do
   end
   get 'tank_feed_import/download/:log_id', to: 'tank_feed_imports#download', as: :download_tank_feed_import
 
+  resource :tank_copy, only: %i[new create], path: 'tanks/copy_from_locations'
   resources :tanks do
     post :record_reading, on: :member
     get :locations, on: :collection
   end
-  resources :feed_tanks, only: %i[index update], path: 'tank_feeds'
+  resources :feed_tanks, only: %i[index update], path: 'tank_feeds' do
+    post :setup, on: :member
+    get :export, on: :collection
+  end
 
   resource :pdi_invoice_date_import, only: %i[new create] do
     post :preview, on: :collection

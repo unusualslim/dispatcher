@@ -2,7 +2,7 @@ require 'test_helper'
 require Rails.root.join('test/support/tank_feed_files').to_s
 
 # Dispatch → Tanks / Tank Feeds and Data Imports → Tank Readings.
-class TanksTest < ActionDispatch::IntegrationTest
+class TanksTest < ActionDispatch::IntegrationTest # rubocop:disable Metrics/ClassLength
   include Devise::Test::IntegrationHelpers
   include TankFeedFiles
 
@@ -92,5 +92,52 @@ class TanksTest < ActionDispatch::IntegrationTest
     assert_redirected_to new_tank_feed_import_path
     assert_equal 4, TankReading.joins(:feed_tank).merge(FeedTank.in_feed('plant_0002')).count
     assert_equal 'success', SyncLog.find_by!(process_name: 'Tank Feed Import (0002 tank email)').status
+  end
+
+  test 'a dispatcher picks a monitor tank location on Tank Feeds and exports the IDs to key in' do
+    sign_in staff_user('tanks-selector@example.com', { 'dispatch' => 'edit' })
+    get feed_tanks_path
+    assert_select "form[action='#{setup_feed_tank_path(@thomson)}'] input[name=product_id]"
+
+    post setup_feed_tank_path(@thomson), params: { location_id: @site.id, product_id: @def.id }
+    tank = @thomson.reload.tank
+    assert_equal [@site, @def, 2198], [tank.location, tank.product, tank.capacity_gallons.to_i]
+
+    post setup_feed_tank_path(FeedTank.find_by!(external_id: '1003')),
+         params: { location_id: @site.id, product_id: 'NOPE' }
+    assert_equal 'No product with ID NOPE.', flash[:alert]
+
+    get export_feed_tanks_path
+    assert_equal 'text/csv', response.media_type
+    row = CSV.parse(response.body, headers: true).first
+    assert_equal ['1001', @site.id.to_s, @def.id, 'No'],
+                 row.values_at('Monitor tank ID', 'Location number', 'Product ID', 'Monitor has location number')
+  end
+
+  test 'admins copy tanks from the location settings after a preview' do
+    sign_in @admin
+    LocationProduct.create!(location: @site, product: @def, max_capacity: 2000)
+    get new_tank_copy_path
+    assert_response :success
+    assert_select 'span.badge', text: 'Create'
+
+    post tank_copy_path
+    assert_redirected_to tanks_path
+    assert Tank.exists?(location: @site, product: @def, capacity_gallons: 2000)
+  end
+
+  test 'admins merge an obsolete product into its replacement' do
+    sign_in @admin
+    old = Product.create!(id: 'TT-OLD', name: 'Old DEF', active: false)
+    Tank.create!(location: @site, product: old, name: 'Old', capacity_gallons: 500)
+
+    get products_product_merges_path(q: 'TT-OLD')
+    assert_equal 'TT-OLD — Old DEF (inactive)', response.parsed_body.first['text']
+    get new_product_merge_path(source_id: old.id, target_id: @def.id)
+    assert_select 'li', text: '1 tanks'
+
+    post product_merges_path, params: { source_id: old.id, target_id: @def.id }
+    assert_redirected_to product_path(@def)
+    assert_equal @def, Tank.find_by!(name: 'Old').product
   end
 end

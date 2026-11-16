@@ -2,7 +2,7 @@ require 'csv'
 
 # Shared parsing and storing for the tank feed importers (see TankFeeds).
 module TankFeeds
-  class Base
+  class Base # rubocop:disable Metrics/ClassLength
     EASTERN = 'America/New_York'.freeze
     READING_FIELDS = %i[read_at gallons water_inches temperature_f status].freeze
 
@@ -37,6 +37,7 @@ module TankFeeds
 
     def import_row(row, counts, sync_log)
       feed_tank = upsert_feed_tank(row, counts)
+      counts[:linked] += 1 if TankSetup.new(feed_tank).auto_link!
       return counts[:skipped] += 1 if feed_tank.ignored || !row.readable?
 
       result = feed_tank.record_reading!(row.to_h.slice(*READING_FIELDS), sync_log: sync_log)
@@ -61,6 +62,7 @@ module TankFeeds
       if counts[:new_tracked].positive?
         list << "#{counts[:new_tracked]} new feed tanks to set up (Dispatch → Tank Feeds)"
       end
+      list << "#{counts[:linked]} feed tanks linked by their monitor's location number" if counts[:linked].positive?
       list << "#{unreadable} rows without a readable time or level" if unreadable.positive?
       list
     end

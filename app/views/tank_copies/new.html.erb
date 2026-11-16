@@ -1,0 +1,40 @@
+<div class="container-fluid mt-4">
+  <%= render layout: 'shared/page_header', locals: { title: 'Copy Tanks from Location Settings', subtitle: 'The capacity, fill % and cutoff % kept on location products become tanks, for sites no monitor covers yet.' } do %>
+    <%= link_to 'Back to Tanks', tanks_path, class: 'btn btn-outline-secondary btn-sm' %>
+  <% end %>
+
+  <% creating = @copy.to_create %>
+  <div class="alert alert-info small">
+    <%= pluralize(creating.size, 'tank') %> will be created, <%= @copy.plans.size - creating.size %> rows skipped.
+    Blank percentages take the defaults (fill limit 90% of capacity, bottom 10% of the fill limit). A cutoff % is taken
+    as a share of the fill limit. FPS001 rows become 901, location 70's tank goes on 527, and the fuel tanks are skipped.
+    A monitor set up later at the same site and product takes the copied tank over. Running this again skips tanks already there.
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-sm table-hover align-middle">
+      <thead class="table-light">
+        <tr><th>Location</th><th>Product</th><th class="text-end">Capacity</th><th class="text-end">Fill limit</th><th class="text-end">Bottom</th><th>Settings on the row</th><th>Result</th></tr>
+      </thead>
+      <tbody>
+        <% @copy.plans.each do |p| %>
+          <% location = @copy.locations[p.location_id] %>
+          <tr class="<%= 'text-muted' unless p.create? %>">
+            <td><%= p.location_id %> <%= location&.company_name %><% if p.location_id != p.row.location_id %><br><span class="small text-muted">from location <%= p.row.location_id %></span><% end %></td>
+            <td><%= p.product_id %> <%= @copy.products[p.product_id]&.name %><% if p.product_id != p.row.product_id %><br><span class="small text-muted">from <%= p.row.product_id %></span><% end %></td>
+            <td class="text-end"><%= number_with_delimiter(p.capacity.to_i) %></td>
+            <td class="text-end"><%= p.fill_limit ? number_with_delimiter(p.fill_limit.to_i) : 'default' %></td>
+            <td class="text-end"><%= p.bottom ? number_with_delimiter(p.bottom.to_i) : 'default' %></td>
+            <td class="small"><%= [p.row.uleage_90 && "fill #{p.row.uleage_90}%", p.row.cutoff && "cutoff #{p.row.cutoff}%"].compact.join(', ').presence || '—' %></td>
+            <td class="small"><%= p.create? ? content_tag(:span, 'Create', class: 'badge bg-success') : p.skip %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <% if creating.any? %>
+    <%= button_to "Create #{pluralize(creating.size, 'tank')}", tank_copy_path, class: 'btn btn-primary',
+          form: { data: { turbo_confirm: "Create #{pluralize(creating.size, 'tank')} from the location settings?" } } %>
+  <% end %>
+</div>

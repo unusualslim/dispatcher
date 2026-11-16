@@ -1,6 +1,7 @@
 # Smartank's daily "Inventory" report (FPS_SMARTANK_<yyyyMMdd>_<HHmm>.csv via Power Automate): a few info rows,
 # then a header row and one row per tank. Every tank is FPS's; inactive ones and retired "z-" names are created
-# ignored. Inventory Time is Eastern. Columns are found by header name.
+# ignored. Inventory Time is Eastern. Columns are found by header name. User Defined (A) carries the app location
+# number and User Product ID the product ID (-1 = not set), so a tank links itself.
 module TankFeeds
   class Smartank < Base
     FEED = 'smartank'.freeze
@@ -10,7 +11,7 @@ module TankFeeds
                 'product' => 'Product', 'capacity' => 'Capacity (gal)', 'cap_limit' => 'Cap Limit (gal)',
                 'lat_lon' => 'Lat/Lon', 'serial' => 'Serial # (RTU ID)', 'battery' => 'Bat (%)',
                 'volume_alarm' => 'Volume Alarm Status', 'avg_daily_usage_7' => 'Avg. Daily Usage (7)',
-                'tank_number' => 'Tank #' }.freeze
+                'tank_number' => 'Tank #', 'location_id' => 'User Defined', 'product_id' => 'User Product ID' }.freeze
 
     private
 
@@ -31,6 +32,7 @@ module TankFeeds
 
     def details(record)
       DETAILS.transform_values { |column| record[column].to_s.strip.presence }
+             .tap { |d| d['product_id'] = nil if d['product_id'] == '-1' }
     end
 
     # Comm. / Sensor problems ("No Recent Update", "Low Battery Alarm"…); blank when both are OK.
