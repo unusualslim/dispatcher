@@ -4,6 +4,7 @@ class PurchaseOrdersController < ApplicationController
   include ListNeighbors
 
   PALLET_LABEL_LIMIT = 100
+  LABEL_NOTE_LIMIT = 120
 
   permission_area :purchasing, approve: %i[approve submit post_to_inventory]
   before_action :set_purchase_order,
@@ -241,6 +242,7 @@ class PurchaseOrdersController < ApplicationController
   # 4x6 pallet labels for a Zebra printer: one identical label per pallet received.
   def pallet_labels
     @count = params[:count].to_i.clamp(1, PALLET_LABEL_LIMIT)
+    @note = params[:note].to_s.squish.first(LABEL_NOTE_LIMIT)
     render layout: false
   end
 

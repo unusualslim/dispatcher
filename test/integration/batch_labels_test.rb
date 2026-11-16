@@ -38,6 +38,18 @@ class BatchLabelsTest < ActionDispatch::IntegrationTest
     assert_select '.mini .made', text: '11/12/2026'
   end
 
+  test 'a typed note prints on full and quad labels' do
+    sign_in @admin
+    get batch_labels_production_order_path(@order, count: 2, note: 'Ship to Albany first')
+    assert_select '.full .notes:not([hidden]) [data-note]', text: 'Ship to Albany first', count: 2
+
+    get batch_labels_production_order_path(@order, count: 2, format_type: 'quad', note: 'x' * 500)
+    assert_select '.mini .note [data-note]', text: 'x' * BatchLabel::NOTE_LIMIT, count: 2
+
+    get batch_labels_production_order_path(@order)
+    assert_select '.full .notes[hidden]', 1
+  end
+
   test 'no labels until the order has a lot number' do
     sign_in @admin
     @order.update!(lot_number: nil)

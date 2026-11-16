@@ -280,6 +280,7 @@ class ProductionOrdersController < ApplicationController
 
     @format = BatchLabel::FORMATS.key?(params[:format_type]) ? params[:format_type] : 'full'
     @count = params[:count].to_i.clamp(1, BatchLabel::MAX_LABELS)
+    @note = params[:note].to_s.squish.first(BatchLabel::NOTE_LIMIT)
     render layout: false
   end
 

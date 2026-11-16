@@ -16,10 +16,12 @@
   <%= javascript_include_tag 'qr_codes', defer: true %>
   <style>
     * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
     body { font-family: Arial, Helvetica, sans-serif; color: #000; background: #d6d3d1; margin: 0; padding: 16px; }
     .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center; margin: 0 auto 16px;
                font-size: 14px; }
     .toolbar input { width: 70px; font: inherit; padding: 4px 6px; }
+    .toolbar input.note { width: 300px; }
     .toolbar button { font: inherit; padding: 6px 14px; border: 1px solid #78716c; background: #fff; border-radius: 4px; cursor: pointer; }
     .toolbar .hint { width: 100%; text-align: center; color: #44403c; font-size: 12px; }
     .label { width: 4in; height: 6in; margin: 0 auto 16px; background: #fff; padding: 0.15in; display: flex; flex-direction: column;
@@ -43,9 +45,13 @@
     .products { border: 2px solid #000; border-top: none; padding: 3px 6px; flex: 1; overflow: hidden; }
     .products table { width: 100%; border-collapse: collapse; font-size: 12px; }
     .products td { padding: 1px 0; vertical-align: top; }
+    .products td.id { white-space: nowrap; font-weight: 900; font-size: 13px; padding-right: 6px; }
     .products td.q { text-align: right; white-space: nowrap; font-weight: 700; padding-left: 6px; }
     .products .name { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; }
     .products .more { font-size: 11px; font-style: italic; }
+    .note { border-top: 2px solid #000; margin-top: 4px; padding-top: 2px; }
+    .note .v { font-size: 13px; font-weight: 700; line-height: 1.15; overflow: hidden; display: -webkit-box;
+               -webkit-line-clamp: 4; -webkit-box-orient: vertical; }
     .bottom { display: flex; align-items: center; gap: 0.12in; margin-top: 0.08in; }
     .qr { width: 1.45in; height: 1.45in; flex: none; }
     .qr svg { width: 100%; height: 100%; display: block; }
@@ -64,6 +70,7 @@
 <body>
   <form class="toolbar" method="get" action="<%= pallet_labels_purchase_order_path(po) %>">
     <label>Pallets received <input type="number" name="count" min="1" max="<%= PurchaseOrdersController::PALLET_LABEL_LIMIT %>" value="<%= @count %>"></label>
+    <label>Note <input type="text" name="note" class="note" maxlength="<%= PurchaseOrdersController::LABEL_NOTE_LIMIT %>" value="<%= @note %>" placeholder="optional, prints on every label"></label>
     <button type="submit">Update</button>
     <button type="button" onclick="window.print()">Print <%= pluralize(@count, 'label') %></button>
     <div class="hint">Print to the Zebra with paper size 4 × 6 in, margins none, scale 100%.</div>
@@ -82,10 +89,11 @@
       <div class="vendor"><span class="k">Vendor</span><span class="v"><%= po.vendor&.name || po.vendor_id %></span></div>
 
       <div class="products">
-        <span class="k">Products on PO</span>
+        <span class="k">Product ID · Products on PO</span>
         <table>
           <% shown.each do |line| %>
             <tr>
+              <td class="id"><%= line.product_id %></td>
               <td><span class="name"><%= line.display_name %></span></td>
               <td class="q"><%= qty.(line.quantity) %> <%= line.package_code.presence || line.product&.pdi_package_code %></td>
             </tr>
@@ -101,9 +109,20 @@
         <div class="info">
           <div class="pallet">Pallet <%= n %> of <%= @count %></div>
           <div class="small">Scan to open PO <%= po.display_number %></div>
+          <div class="note" data-note-box <%= 'hidden' if @note.blank? %>><span class="k">Notes</span><span class="v" data-note><%= @note %></span></div>
         </div>
       </div>
     </section>
   <% end %>
+  <script>
+    // The note shows on the labels as it's typed, so Print never needs an Update first.
+    document.querySelector('input.note').addEventListener('input', (e) => {
+      const text = e.target.value.trim();
+      document.querySelectorAll('[data-note-box]').forEach((box) => {
+        box.hidden = text === '';
+        box.querySelector('[data-note]').textContent = text;
+      });
+    });
+  </script>
 </body>
 </html>

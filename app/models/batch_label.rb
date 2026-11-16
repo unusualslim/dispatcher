@@ -4,6 +4,7 @@
 class BatchLabel
   FORMATS = { 'full' => '1 per 4×6 label', 'quad' => '4 per 4×6 label' }.freeze
   MAX_LABELS = 100
+  NOTE_LIMIT = 120 # the note typed on the label page (printed on every label, not saved)
 
   attr_reader :order
 

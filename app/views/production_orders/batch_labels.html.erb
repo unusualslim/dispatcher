@@ -14,10 +14,12 @@
   <%= javascript_include_tag 'qr_codes', defer: true %>
   <style>
     * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
     body { font-family: Arial, Helvetica, sans-serif; color: #000; background: #d6d3d1; margin: 0; padding: 16px; }
     .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 14px; }
     .toolbar input, .toolbar select { font: inherit; padding: 4px 6px; }
     .toolbar input { width: 70px; }
+    .toolbar input.note { width: 300px; }
     .toolbar button { font: inherit; padding: 6px 14px; border: 1px solid #78716c; background: #fff; border-radius: 4px; cursor: pointer; }
     .toolbar .hint { width: 100%; text-align: center; color: #44403c; font-size: 12px; }
     .page { width: 4in; height: 6in; margin: 0 auto 16px; background: #fff; overflow: hidden; }
@@ -40,6 +42,8 @@
     .full .row > div { padding: 3px 6px; min-width: 0; }
     .full .row > div + div { border-left: 2px solid #000; }
     .full .row .v { font-size: 18px; font-weight: 700; word-break: break-all; }
+    .full .notes .v { font-size: 16px; font-weight: 700; line-height: 1.15; overflow: hidden; display: -webkit-box;
+                      -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
     .full .bottom { display: flex; align-items: center; gap: 0.12in; margin-top: auto; }
     .full .qr { width: 2in; height: 2in; flex: none; }
     .full .pallet { font-size: 26px; white-space: nowrap; font-weight: 900; }
@@ -53,6 +57,8 @@
     .mini .made { font-size: 21px; font-weight: 900; line-height: 1.05; }
     .mini .lot { font-size: 9px; font-weight: 700; word-break: break-all; }
     .mini .pdi { font-size: 9px; }
+    .mini .note { font-size: 9px; font-weight: 700; line-height: 1.1; margin-top: 2px; overflow: hidden; display: -webkit-box;
+                  -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
     .mini .qr { width: 1.4in; height: 1.4in; margin-top: auto; }
     .mini .n { font-size: 8px; }
     .mini.blank { border-color: transparent; }
@@ -77,6 +83,7 @@
         <% end %>
       </select>
     </label>
+    <label>Note <input type="text" name="note" class="note" maxlength="<%= BatchLabel::NOTE_LIMIT %>" value="<%= @note %>" placeholder="optional, prints on every label"></label>
     <button type="submit">Update</button>
     <button type="button" onclick="window.print()">Print <%= pluralize(pages, 'page') %></button>
     <div class="hint">Print to the Zebra with paper size 4 × 6 in, margins none, scale 100%.</div>
@@ -95,6 +102,7 @@
               <span class="k">Lot</span>
               <div class="lot mono"><%= l.lot %></div>
               <% if l.pdi_batches.any? %><div class="pdi">PDI batch <%= l.pdi_batches.join(', ') %></div><% end %>
+              <div class="note" data-note-box <%= 'hidden' if @note.blank? %>><span data-note><%= @note %></span></div>
               <div class="qr" data-qr="<%= scan_url %>"></div>
               <div class="n"><%= n %> of <%= @count %></div>
             </div>
@@ -115,6 +123,7 @@
           <div><span class="k">PDI batch</span><span class="v mono"><%= l.pdi_batches.join(', ').presence || '—' %></span></div>
           <div><span class="k">Warehouse</span><span class="v"><%= l.warehouse&.pdi_site_code.presence || l.warehouse&.company_name || '—' %></span></div>
         </div>
+        <div class="box notes" data-note-box <%= 'hidden' if @note.blank? %>><span class="k">Notes</span><span class="v" data-note><%= @note %></span></div>
         <div class="bottom">
           <div class="qr" data-qr="<%= scan_url %>"></div>
           <div>
@@ -127,5 +136,15 @@
       </section>
     <% end %>
   <% end %>
+  <script>
+    // The note shows on the labels as it's typed, so Print never needs an Update first.
+    document.querySelector('input.note').addEventListener('input', (e) => {
+      const text = e.target.value.trim();
+      document.querySelectorAll('[data-note-box]').forEach((box) => {
+        box.hidden = text === '';
+        box.querySelector('[data-note]').textContent = text;
+      });
+    });
+  </script>
 </body>
 </html>

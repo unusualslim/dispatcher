@@ -261,7 +261,8 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
 - **Pallet labels** (`/purchase_orders/:id/pallet_labels?count=N`, "Pallet Labels" on inventory POs): one 4×6 page per
   pallet for a Zebra (browser print): company (Five Points Service, from Company Info; the only company the app tracks,
   other companies' stock at 2171 is not labeled here), PO #, received date (today if not marked received), warehouse,
-  vendor, up to 7 lines, QR code to the PO (`qr_codes.js`, any `[data-qr]`).
+  vendor, up to 7 lines (product ID, name, qty), QR code to the PO (`qr_codes.js`, any `[data-qr]`). Both label pages take an optional **Note** typed on the
+  print page (`note`, 120 chars, printed on every label, shown live as typed, not saved).
 - `InventoryTransaction` — polymorphic audit trail (direction: 'in'/'out'), `location_id`; costed rows carry
   `movement_type` (opening/receipt/sale/production_use/production_output/adjustment/pdi_sync/revaluation),
   `occurred_on`, `unit_cost`, `total_cost`, `variance_amount` (PPV on standard receipts) and the location's balance after.
