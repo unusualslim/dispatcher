@@ -205,7 +205,7 @@
               class="form-select form-select-sm co-product-select">
         <option value="">— Select product —</option>
         <% Product.active.order(:name).each do |p| %>
-          <option value="<%= p.id %>" data-weight="<%= p.weight.to_f %>"><%= p.name %></option>
+          <option value="<%= p.id %>" data-weight="<%= p.weight.to_f %>"><%= p.picker_label %></option>
         <% end %>
       </select>
     </td>

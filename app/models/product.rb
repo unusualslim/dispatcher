@@ -34,6 +34,9 @@ class Product < ApplicationRecord # rubocop:disable Metrics/ClassLength
   has_one :sds_document, -> { where(kind: 'sds') }, class_name: 'ProductDocument', dependent: :destroy,
                                                     inverse_of: :product
 
+  # How pickers show a product, so typing either the name or the item ID finds it: "Bulk DEF (901)".
+  def picker_label = "#{name} (#{id})"
+
   # The product's safety data sheet (PDF), or nil.
   def sds
     sds_document&.file&.attached? ? sds_document.file : nil

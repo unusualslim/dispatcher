@@ -275,7 +275,7 @@
                           <div class="small text-muted mt-1"><%= link_to "Link to MRP &rarr;".html_safe, product_code_links_path, class: "text-muted" %></div>
                         <% end %>
                       <% else %>
-                        <%= f.collection_select :product_id, Product.selectable(cop.product_id).order(:name), :id, :name,
+                        <%= f.collection_select :product_id, Product.selectable(cop.product_id).order(:name), :id, :picker_label,
                               { selected: cop.product_id, include_blank: "— Select —" },
                               class: "form-select form-select-sm" %>
                       <% end %>
@@ -434,8 +434,8 @@
         <div class="modal-body d-flex flex-column gap-3">
           <div>
             <%= f.label :product_id, "Product", class: "form-label fw-semibold" %>
-            <%= f.collection_select :product_id, Product.active.order(:name), :id, :name,
-                  { include_blank: "— Select a product —" }, class: "form-select" %>
+            <%= f.collection_select :product_id, Product.active.order(:name), :id, :picker_label,
+                  { include_blank: "— Select a product —" }, class: "form-select add-product-select" %>
           </div>
           <div>
             <%= f.label :quantity, "Quantity (gal)", class: "form-label fw-semibold" %>
@@ -462,6 +462,14 @@
   .dispatch-row:hover { background-color: var(--bs-light); }
   .d-contents { display: contents; }
 </style>
+
+<script>
+  // The Add Product box: search by name or item ID.
+  $(function() {
+    $('.add-product-select').select2({ theme: 'bootstrap-5', width: '100%', placeholder: '— Select a product —',
+                                       dropdownParent: $('#addProductModal') });
+  });
+</script>
 
 <div class="container-fluid">
   <%= render 'shared/history', record: @customer_order, children: { 'CustomerOrderProduct' => 'customer_order_id' } %>
