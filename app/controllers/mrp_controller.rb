@@ -8,6 +8,7 @@ class MrpController < ApplicationController
     @horizon = horizon
     @result = Mrp::Plan.new(horizon_days: @horizon).run
     @warehouse_id = params.key?(:warehouse) ? params[:warehouse].presence&.to_i : current_warehouse&.id
+    @group = params[:group].presence
     @draft_pos   = PurchaseOrder.inventory_type.includes(:vendor, line_items: :product).draft.order(created_at: :desc)
     @pending_pos = PurchaseOrder.inventory_type.includes(:vendor, line_items: :product).pending_approval
                                 .order(created_at: :desc)

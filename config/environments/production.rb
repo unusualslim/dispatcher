@@ -92,6 +92,8 @@ Rails.application.configure do
 
   config.action_mailer.default_url_options = { host: ENV.fetch('HOSTNAME', 'team.fivepointsservice.com'),
                                                protocol: 'https' }
+  # Images in emails (the logo on an emailed PO) load from the live site.
+  config.action_mailer.asset_host = "https://#{ENV.fetch('HOSTNAME', 'team.fivepointsservice.com')}"
 
   # Staging never sends mail: messages are kept in memory and logged, not delivered.
   config.action_mailer.delivery_method = staging ? :test : :smtp

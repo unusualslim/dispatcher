@@ -23,15 +23,24 @@
 <%= render 'settings', horizon: @horizon %>
 
 <div class="btn-group btn-group-sm mb-3 flex-wrap">
-  <%= link_to 'All warehouses', mrp_path(horizon: @horizon, warehouse: ''), class: "btn #{@warehouse_id ? 'btn-outline-secondary' : 'btn-secondary'}" %>
+  <%= link_to 'All warehouses', mrp_path(horizon: @horizon, warehouse: '', group: @group), class: "btn #{@warehouse_id ? 'btn-outline-secondary' : 'btn-secondary'}" %>
   <% @result.warehouses.values.sort_by(&:company_name).each do |warehouse| %>
-    <%= link_to warehouse.company_name, mrp_path(horizon: @horizon, warehouse: warehouse.id),
+    <%= link_to warehouse.company_name, mrp_path(horizon: @horizon, warehouse: warehouse.id, group: @group),
                 class: "btn #{@warehouse_id == warehouse.id ? 'btn-secondary' : 'btn-outline-secondary'}" %>
   <% end %>
 </div>
 
+<%= form_with url: mrp_path, method: :get, class: 'd-flex gap-2 align-items-center mb-3' do %>
+  <%= hidden_field_tag :horizon, @horizon %>
+  <%= hidden_field_tag :warehouse, @warehouse_id.to_s %>
+  <label class="small text-muted" for="group">Product group</label>
+  <%= select_tag :group, options_for_select([['All groups', '']] + ReportingGroup.order(:name).pluck(:name), @group),
+                 class: 'form-select form-select-sm', style: 'max-width: 240px', onchange: 'this.form.submit()' %>
+<% end %>
+
 <%# ── Action needed ─────────────────────────────────────────────────────────── %>
 <% actions = @result.actions(@warehouse_id) %>
+<% actions = actions.select { |plan| plan.product.category == @group } if @group %>
 <div class="card shadow-sm mb-4">
   <div class="card-header fw-semibold d-flex justify-content-between">
     <span>Action needed</span>

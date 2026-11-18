@@ -34,7 +34,8 @@
     .carrier div { padding: 4px 6px; border-left: 1px solid var(--rule); }
     .carrier div:first-child { border-left: none; }
     .terms { display: flex; gap: 18px; align-items: center; margin-bottom: 10px; }
-    .check { display: inline-block; width: 11px; height: 11px; border: 1px solid var(--ink); vertical-align: -2px; margin-right: 4px; }
+    .check { display: inline-block; width: 11px; height: 11px; border: 1px solid var(--ink); vertical-align: -2px; margin-right: 4px;
+             font-size: 9px; line-height: 10px; text-align: center; font-weight: 700; }
     table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
     th { font-size: 8.5px; text-transform: uppercase; letter-spacing: .04em; text-align: left; background: #f5f5f4;
          border: 1px solid var(--ink); padding: 4px; }
@@ -137,9 +138,13 @@
 
       <div class="terms">
         <span class="label" style="display:inline">Freight charges</span>
-        <span><span class="check"></span>Prepaid</span>
-        <span><span class="check"></span>Collect</span>
-        <span><span class="check"></span>3rd Party</span>
+        <% ticked = ->(term) { order.freight_terms.to_s.start_with?(term) ? 'X' : '' } %>
+        <span><span class="check"><%= ticked.('Prepaid') %></span>Prepaid</span>
+        <span><span class="check"><%= ticked.('Collect') %></span>Collect</span>
+        <span><span class="check"><%= ticked.('3rd Party') %></span>3rd Party</span>
+        <% if order.freight_terms.present? && CustomerOrder::FREIGHT_TERMS.first(4).none? { |t| order.freight_terms == t } %>
+          <span><span class="label" style="display:inline">Terms</span> <%= order.freight_terms %></span>
+        <% end %>
         <span style="margin-left:auto"><span class="label" style="display:inline">Seal #</span> <span class="fill" style="min-width:1.2in"></span></span>
       </div>
 
@@ -169,6 +174,7 @@
                   <div class="hazmat-desc"><%= line.product.hazmat_description.presence || 'HAZARDOUS MATERIAL: DOT description missing' %></div>
                 <% end %>
                 <%= [line.product_id, line.product&.name || line.product_name].compact_blank.join(' – ').presence || 'Unknown' %>
+                <% if (theirs = CustomerItemNumber.map_for(order.customer_id)[line.product_id]) %>(Customer # <%= theirs %>)<% end %>
               </td>
               <td class="num"><%= number_with_delimiter(weight.round) if weight %></td>
             </tr>

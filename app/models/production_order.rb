@@ -50,6 +50,9 @@ class ProductionOrder < ApplicationRecord
     where('LOWER(location_name) LIKE ?', "%#{location_name.strip.downcase}%")
   }
 
+  # Orders making products of one product group (reporting group / PDI category: Coolants, DEF…).
+  scope :in_group, ->(group) { group.present? ? joins(:product).where(products: { category: group }) : all }
+
   scope :due_between, lambda { |from_str, to_str|
     from = from_str.present? ? (Date.parse(from_str) rescue nil) : nil
     to   = to_str.present?   ? (Date.parse(to_str)   rescue nil) : nil

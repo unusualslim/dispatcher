@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<%
+  po = @production_order
+  product = po.product
+  specs = product ? product.quality_specs.to_a : []
+  qty = ->(n) { n && number_with_precision(n, precision: 3, strip_insignificant_zeros: true, delimiter: ',') }
+  company = AppSetting.company['name'].presence || 'Five Points Service, Inc.'
+  target = lambda do |spec|
+    next spec.expected.presence || 'Pass' if spec.pass_fail?
+    min, max = qty.(spec.target_min), qty.(spec.target_max)
+    [min && max ? "#{min} – #{max}" : (min && "≥ #{min}") || (max && "≤ #{max}"), spec.unit].compact_blank.join(' ')
+  end
+%>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Batch Ticket <%= po.number %></title>
+  <style>
+    :root { --ink: #1c1917; --muted: #57534e; --rule: #a8a29e; --accent: #f26722; }
+    * { box-sizing: border-box; }
+    body { font: 12px/1.4 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: var(--ink); background: #e7e5e4;
+           margin: 0; padding: 16px; }
+    .toolbar { display: flex; justify-content: flex-end; max-width: 8.5in; margin: 0 auto 12px; }
+    .toolbar button { font: inherit; padding: 6px 14px; border: 1px solid var(--rule); background: #fff; border-radius: 4px; cursor: pointer; }
+    .page { background: #fff; max-width: 8.5in; margin: 0 auto; padding: 0.45in; }
+    header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid var(--accent);
+             padding-bottom: 8px; margin-bottom: 12px; }
+    h1 { font-size: 20px; margin: 0; } h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; margin: 16px 0 4px; }
+    .company { text-align: right; color: var(--muted); }
+    .company strong { color: var(--ink); display: block; font-size: 13px; }
+    dl { display: grid; grid-template-columns: max-content 1fr max-content 1fr; gap: 3px 14px; margin: 0; }
+    dt { font-weight: 600; } dd { margin: 0; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted);
+         border-bottom: 1.5px solid var(--ink); padding: 4px; }
+    td { border-bottom: 1px solid var(--rule); padding: 7px 4px; vertical-align: top; }
+    td.num { text-align: right; white-space: nowrap; }
+    .blank { min-width: 0.9in; }
+    .signoffs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 22px; }
+    .signoffs div { border-top: 1px solid var(--ink); padding-top: 3px; font-size: 11px; color: var(--muted); }
+    .notes { min-height: 0.7in; border: 1px solid var(--rule); padding: 6px; white-space: pre-line; }
+    @media print { body { background: #fff; padding: 0; } .toolbar { display: none; } .page { padding: 0.3in; max-width: none; } }
+  </style>
+</head>
+<body>
+  <div class="toolbar"><button type="button" onclick="window.print()">Print</button></div>
+  <section class="page">
+    <header>
+      <div><h1>Batch Ticket</h1><div style="font-size: 15px; font-weight: 700;"><%= po.number %></div></div>
+      <div class="company"><strong><%= company %></strong>Production order</div>
+    </header>
+
+    <dl>
+      <dt>Product</dt><dd><%= [po.product_id, product&.name || po.item].compact_blank.join(' – ') %></dd>
+      <dt>Warehouse</dt><dd><%= po.location&.pdi_site_code.presence || po.location&.company_name || '—' %></dd>
+      <dt>Quantity to make</dt><dd><%= qty.(po.qty_to_make) %> <%= product&.pdi_package_code %></dd>
+      <dt>Due</dt><dd><%= po.due_date&.strftime('%m/%d/%Y') || '—' %></dd>
+      <dt>Lot</dt><dd><%= po.lot_number.presence || '____________________' %></dd>
+      <dt>PDI batch</dt><dd><%= [po.batch_number, *po.production_order_batches.map(&:batch_number)].compact_blank.uniq.join(', ').presence || '____________________' %></dd>
+      <% if po.customer_name.present? %><dt>Customer</dt><dd><%= po.customer_name %></dd><% end %>
+      <dt>Printed</dt><dd><%= Time.current.in_time_zone('America/New_York').strftime('%m/%d/%Y %-I:%M %p') %></dd>
+    </dl>
+
+    <h2>Components</h2>
+    <table>
+      <thead><tr><th>Item</th><th>Description</th><th class="num">Planned</th><th>UOM</th><th class="blank">Actual used</th><th class="blank">Lot / batch used</th><th>Initials</th></tr></thead>
+      <tbody>
+        <% po.production_order_components.sort_by { |c| [c.position || 0, c.id] }.each do |c| %>
+          <tr>
+            <td><%= c.product_id || c.part_number %></td>
+            <td><%= c.product&.name || c.description %></td>
+            <td class="num"><%= qty.(c.quantity) %></td>
+            <td><%= c.uom %></td>
+            <td><%= qty.(c.quantity_actual) %></td><td></td><td></td>
+          </tr>
+        <% end %>
+        <% if po.production_order_components.empty? %><tr><td colspan="7">No components on this order.</td></tr><% end %>
+      </tbody>
+    </table>
+
+    <h2>Quality checks</h2>
+    <table>
+      <thead><tr><th>Test</th><th>Method</th><th>Target</th><th class="blank">Result</th><th>Pass</th><th>Initials</th></tr></thead>
+      <tbody>
+        <% specs.each do |spec| %>
+          <tr>
+            <td><%= spec.name %></td>
+            <td><%= spec.test_method %></td>
+            <td><%= target.(spec) %></td>
+            <td></td><td>☐</td><td></td>
+          </tr>
+        <% end %>
+        <% if specs.empty? %><tr><td colspan="6">No quality checks set up for this product.</td></tr><% end %>
+      </tbody>
+    </table>
+
+    <h2>Notes</h2>
+    <div class="notes"><%= [po.notes, po.production_notes].compact_blank.join("\n") %></div>
+
+    <div class="signoffs">
+      <div>Blended by / date</div>
+      <div>Quality approved by / date</div>
+      <div>Finished and packaged by / date</div>
+    </div>
+  </section>
+</body>
+</html>

@@ -64,6 +64,11 @@
             <%= form.date_field :required_delivery_date, class: "form-control" %>
           </div>
 
+          <div>
+            <%= form.label :freight_terms, "Freight Terms", class: "form-label fw-semibold mb-1" %>
+            <%= form.select :freight_terms, CustomerOrder::FREIGHT_TERMS, { include_blank: '—' }, class: "form-select" %>
+          </div>
+
           <%# Order Status (only on edit) %>
           <% if customer_order.persisted? %>
             <div>

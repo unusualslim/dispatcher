@@ -148,6 +148,9 @@
             <th class="text-end" style="width:120px;">Unit Price</th>
             <th class="text-end" style="width:120px;">Total</th>
             <th class="d-print-none">How it was priced</th>
+            <% if sees?(:costs) %>
+              <th class="d-print-none text-nowrap">Cost today (margin)</th>
+            <% end %>
             <% if @quote.locks_pricing? && @quote.accepted? %>
               <th class="d-print-none">Lock</th>
             <% end %>
@@ -183,6 +186,17 @@
                   Manual price
                 <% end %>
               </td>
+              <% if sees?(:costs) %>
+                <td class="small d-print-none text-nowrap">
+                  <% if (product = qp.product) %>
+                    <% margin = ->(cost) { cost && qp.price.to_d.positive? ? " (#{number_to_percentage((qp.price.to_d - cost) / qp.price.to_d * 100, precision: 1)})" : '' } %>
+                    <% standard = product.current_standard_cost&.to_d || product.bom_standard_cost %>
+                    <% current = product.cost_per_unit&.to_d&.nonzero? || product.bom_standard_cost %>
+                    <div>Standard <%= standard ? number_to_currency(standard, precision: 4) : '—' %><%= margin.(standard) %></div>
+                    <div>Current <%= current ? number_to_currency(current, precision: 4) : '—' %><%= margin.(current) %></div>
+                  <% else %>—<% end %>
+                </td>
+              <% end %>
               <% if @quote.locks_pricing? && @quote.accepted? %>
                 <td class="small d-print-none">
                   <% status = qp.lock_status %>

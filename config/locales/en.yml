@@ -260,6 +260,17 @@ en:
       merged: "Merged %{source} into %{target} (%{summary})."
       nothing_moved: "nothing to move"
       failed: "Merge failed: %{error}"
+  customer_item_numbers:
+    create:
+      no_product: "No product %{id}."
+      saved: "Saved part number %{number} for %{item}."
+    destroy:
+      removed: "Removed the part number."
+  vendor_item_prices:
+    create:
+      added: "Added a %{vendor} price."
+    destroy:
+      removed: "Removed the vendor price."
   product_merges:
     create:
       merged: "Merged %{source} into %{target} (%{summary}). %{source} is now inactive."

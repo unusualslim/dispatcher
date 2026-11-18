@@ -1,4 +1,6 @@
 class PurchaseOrder < ApplicationRecord
+  include LineWeight
+
   # voided: cancelled by an admin (PurchaseOrderVoid), posted receipts reversed, kept read-only
   STATUSES      = %w[draft pending_approval approved submitted received cancelled voided].freeze
   TRIGGER_TYPES = %w[auto_reorder mrp_shortage manual pdi_import].freeze
@@ -12,6 +14,8 @@ class PurchaseOrder < ApplicationRecord
   include PurchaseOrderExpense
 
   has_many :line_items, class_name: 'PurchaseOrderLineItem', dependent: :destroy
+
+  def weight_lines = line_items
   has_many :inventory_transactions, as: :transactable
   accepts_nested_attributes_for :line_items, allow_destroy: true, reject_if: :all_blank
 

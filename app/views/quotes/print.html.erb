@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <%
   quote    = @quote
+  customer_numbers = CustomerItemNumber.map_for(quote.customer_id)
   company  = @company
   customer = quote.customer
   site     = quote.location
@@ -53,6 +54,7 @@
     tbody tr:nth-child(even) td { background: #fafaf9; }
     .num { text-align: right; white-space: nowrap; }
     .mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 10.5px; }
+    .cust-pn { font-family: -apple-system, "Segoe UI", Arial, sans-serif; font-size: 9.5px; color: #57534e; }
     .totals { display: flex; justify-content: flex-end; margin-top: 8px; }
     .totals table { width: 2.8in; }
     .totals td { padding: 5px 6px; border: none; }
@@ -155,7 +157,7 @@
       <tbody>
         <% lines.each do |line| %>
           <tr>
-            <td class="mono"><%= line.product_id %></td>
+            <td class="mono"><%= line.product_id %><% if (theirs = customer_numbers[line.product_id]) %><div class="cust-pn">Your #: <%= theirs %></div><% end %></td>
             <td><%= line.product&.name || line.product_name %></td>
             <% if has_qty %><td class="num"><%= qty.(line.quantity) %></td><% end %>
             <td><%= line.product&.pdi_package_code.presence || line.product&.unit_of_measurement %></td>

@@ -96,4 +96,20 @@ class BatchLabelsTest < ActionDispatch::IntegrationTest
   ensure
     ENV['BATCH_QR_PASSWORD'] = old
   end
+
+  test 'the batch ticket prints components, quality checks and sign-off lines' do
+    sign_in @admin
+    urea = Product.create!(id: 'BLT-UREA', name: 'Urea')
+    @order.production_order_components.create!(product: urea, quantity: 40, uom: 'LB', description: 'Urea')
+    QualitySpec.create!(product: @order.product, name: 'Specific gravity', result_type: 'numeric', target_min: 1.08,
+                        target_max: 1.095)
+    get production_order_path(@order)
+    assert_select "a[href='#{batch_ticket_production_order_path(@order)}']"
+
+    get batch_ticket_production_order_path(@order)
+    assert_response :success
+    assert_select 'td', text: 'Urea'
+    assert_select 'td', text: '1.08 – 1.095'
+    assert_select '.signoffs div', 3
+  end
 end

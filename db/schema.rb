@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_14_190000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_17_123000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -102,6 +102,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_14_190000) do
     t.index ["reporting_group_id"], name: "index_cost_items_on_reporting_group_id"
   end
 
+  create_table "customer_item_numbers", force: :cascade do |t|
+    t.bigint "customer_id", null: false
+    t.string "product_id", null: false
+    t.string "part_number", null: false
+    t.string "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["customer_id", "product_id"], name: "index_customer_item_numbers_on_customer_id_and_product_id", unique: true
+    t.index ["customer_id"], name: "index_customer_item_numbers_on_customer_id"
+    t.index ["product_id"], name: "index_customer_item_numbers_on_product_id"
+  end
+
   create_table "customer_locations", force: :cascade do |t|
     t.bigint "customer_id", null: false
     t.bigint "location_id", null: false
@@ -174,6 +186,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_14_190000) do
     t.string "pdi_driver"
     t.decimal "pdi_gallons", precision: 14, scale: 2
     t.jsonb "pdi_freight_items", default: [], null: false
+    t.string "freight_terms"
     t.index ["customer_id"], name: "index_customer_orders_on_customer_id"
     t.index ["external_order_no"], name: "index_customer_orders_on_external_order_no"
     t.index ["freight_origin_location_id"], name: "index_customer_orders_on_freight_origin_location_id"
@@ -703,6 +716,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_14_190000) do
     t.index ["reporting_group_id"], name: "index_product_cost_lines_on_reporting_group_id"
   end
 
+  create_table "product_documents", force: :cascade do |t|
+    t.string "product_id", null: false
+    t.string "kind", default: "sds", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_id", "kind"], name: "index_product_documents_on_product_id_and_kind", unique: true
+    t.index ["product_id"], name: "index_product_documents_on_product_id"
+  end
+
   create_table "product_vendors", force: :cascade do |t|
     t.string "product_id", null: false
     t.string "vendor_id", null: false
@@ -1122,6 +1144,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_14_190000) do
     t.index ["vendor_id", "freight_term"], name: "index_vendor_freight_terms_on_vendor_id_and_freight_term", unique: true
   end
 
+  create_table "vendor_item_prices", force: :cascade do |t|
+    t.bigint "product_vendor_id", null: false
+    t.string "vendor_part_number"
+    t.string "description"
+    t.decimal "min_quantity", precision: 14, scale: 3
+    t.decimal "unit_cost", precision: 12, scale: 4, null: false
+    t.date "effective_on"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_vendor_id"], name: "index_vendor_item_prices_on_product_vendor_id"
+  end
+
   create_table "vendors", id: :string, force: :cascade do |t|
     t.string "name"
     t.datetime "created_at", null: false
@@ -1159,6 +1193,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_14_190000) do
   add_foreign_key "comments", "users"
   add_foreign_key "comments", "work_orders"
   add_foreign_key "cost_items", "reporting_groups"
+  add_foreign_key "customer_item_numbers", "customers", on_delete: :cascade
+  add_foreign_key "customer_item_numbers", "products", on_delete: :cascade
   add_foreign_key "customer_locations", "customers"
   add_foreign_key "customer_locations", "locations"
   add_foreign_key "customer_order_products", "customer_orders"
@@ -1220,6 +1256,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_14_190000) do
   add_foreign_key "product_components", "products", column: "component_product_id"
   add_foreign_key "product_cost_lines", "cost_items"
   add_foreign_key "product_cost_lines", "reporting_groups"
+  add_foreign_key "product_documents", "products", on_delete: :cascade
   add_foreign_key "product_vendors", "products"
   add_foreign_key "product_vendors", "vendors"
   add_foreign_key "production_order_batches", "production_orders"
@@ -1257,5 +1294,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_14_190000) do
   add_foreign_key "things", "locations"
   add_foreign_key "user_favorites", "users"
   add_foreign_key "users", "locations", column: "home_location_id"
+  add_foreign_key "vendor_item_prices", "product_vendors", on_delete: :cascade
   add_foreign_key "work_orders", "vendors"
 end

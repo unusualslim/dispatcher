@@ -4,7 +4,7 @@ module Reports
 
     report title: 'Sales by month', area: :sales, flag: :financial_dashboard,
            description: 'Monthly net sales, taxes and volume for orders invoiced in the period.',
-           filters: %i[dates item_type customer_id product_id location_id]
+           filters: %i[dates item_type category customer_id product_id location_id]
 
     def self.default_from(today)
       today.beginning_of_month << 12

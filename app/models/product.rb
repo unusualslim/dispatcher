@@ -1,4 +1,4 @@
-class Product < ApplicationRecord
+class Product < ApplicationRecord # rubocop:disable Metrics/ClassLength
   include ProductCosting
 
   has_many :location_products
@@ -25,6 +25,13 @@ class Product < ApplicationRecord
   has_many :purchase_orders, through: :purchase_order_line_items
 
   has_many :product_vendors, -> { order(:priority) }, dependent: :destroy
+  has_one :sds_document, -> { where(kind: 'sds') }, class_name: 'ProductDocument', dependent: :destroy,
+                                                    inverse_of: :product
+
+  # The product's safety data sheet (PDF), or nil.
+  def sds
+    sds_document&.file&.attached? ? sds_document.file : nil
+  end
   has_many :vendors, through: :product_vendors
 
   accepts_nested_attributes_for :product_components, allow_destroy: true, reject_if: :all_blank
@@ -88,9 +95,10 @@ class Product < ApplicationRecord
   def set_vendors_in_order(vendor_ids)
     vendor_ids = Array(vendor_ids).reject(&:blank?)
     transaction do
-      product_vendors.destroy_all
+      # Kept vendors keep their row (and their prices); only the order changes.
+      product_vendors.where.not(vendor_id: vendor_ids).destroy_all
       vendor_ids.each_with_index do |vid, i|
-        product_vendors.create!(vendor_id: vid, priority: i + 1)
+        product_vendors.find_or_initialize_by(vendor_id: vid).update!(priority: i + 1)
       end
     end
   end

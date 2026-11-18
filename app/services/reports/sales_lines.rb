@@ -10,13 +10,14 @@ module Reports
     # Filter → condition on the sales lines.
     CONDITIONS = {
       item_type: ->(value) { { reporting_groups: { item_type: value } } },
+      category: ->(value) { { products: { category: value } } },
       product_id: ->(value) { { product_id: value } },
       customer_id: ->(value) { { customer_orders: { customer_id: value } } },
       location_id: ->(value) { { location_id: value } }
     }.freeze
 
-    def sales_lines
-      CONDITIONS.reduce(S.new(range).lines) do |lines, (key, condition)|
+    def sales_lines(period = range)
+      CONDITIONS.reduce(S.new(period).lines) do |lines, (key, condition)|
         filters[key] ? lines.where(condition.call(filters[key])) : lines
       end
     end

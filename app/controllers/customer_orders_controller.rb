@@ -240,6 +240,6 @@ class CustomerOrdersController < ApplicationController
 
   def customer_order_params
     params.require(:customer_order).permit(:required_delivery_date, :product, :freight_only, :customer_id,
-                                           :location_id, :ship_from_location_id, :approximate_product_amount, :notes, :order_status, customer_order_products_attributes: %i[id product_id quantity price quote_product_id pricing_rule_id _destroy], thing_ids: [])
+                                           :location_id, :ship_from_location_id, :approximate_product_amount, :notes, :order_status, :freight_terms, customer_order_products_attributes: %i[id product_id quantity price quote_product_id pricing_rule_id _destroy], thing_ids: [])
   end
 end

@@ -4,7 +4,7 @@ module Reports
 
     report title: 'Sales by customer', area: :sales, flag: :financial_dashboard,
            description: 'Net sales, taxes and volume per customer for orders invoiced in the period.',
-           filters: %i[dates item_type product_id location_id]
+           filters: %i[dates item_type category product_id location_id]
 
     def columns
       sales_columns([column(:customer, 'Customer'), column(:pdi_id, 'PDI #')]) + [column(:share, 'Share', :percent)]

@@ -6,9 +6,11 @@ module Reports
               'purchasing' => 'Purchasing', 'accounting' => 'Accounting' }.freeze
 
     REPORTS = [
-      SalesByCustomer, SalesByProduct, SalesByMonth, DeliveryByCustomer, LateOrders, PricingExceptions,
+      OpenOrderLines, ContractPrices, SalesByCustomer, SalesByProduct, SalesByMonth, DeliveryByCustomer, LateOrders,
+      PricingExceptions,
       FreightByTruck, FreightDetail, QualityResults, InventoryMovements, PoSpendByVendor, ExpensePoSpend,
-      PpvByProduct, IncomingReceipts
+      PpvByProduct, IncomingReceipts, SalesByClass, CustomerSalesTrend, AbcClasses, ItemActivity, PoHistoryByItem,
+      ProductionShortages, ProductionVariance, OrderMargins
     ].freeze
 
     # Existing pages, listed alongside: [area, title, description, route helper].

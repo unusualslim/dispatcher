@@ -61,12 +61,17 @@
   </style>
 </head>
 <body>
+  <% unless @emailed %>
   <div class="toolbar">
     <% if expense %>
       <label><input type="checkbox" id="show-gl" onchange="document.body.classList.toggle('show-gl', this.checked)"> Show GL accounts (internal copy)</label>
     <% end %>
     <button type="button" onclick="window.print()">Print</button>
   </div>
+  <% end %>
+  <% if @email_message.present? %>
+    <p style="max-width: 8.5in; margin: 0 auto 12px; white-space: pre-line;"><%= @email_message %></p>
+  <% end %>
 
   <section class="page">
     <header>
@@ -155,6 +160,9 @@
           <% if po.other_charges.to_f > 0 %>
             <tr><td colspan="5"></td><td class="num"><%= po.other_charges_description.presence || 'Other' %></td><td class="num"><%= money.(po.other_charges) %></td></tr>
           <% end %>
+        <% end %>
+        <% if (lbs = po.total_weight_lbs) %>
+          <tr><td colspan="5"></td><td class="num">Weight</td><td class="num"><%= number_with_delimiter(lbs.round) %> lb</td></tr>
         <% end %>
         <tr class="total"><td colspan="5" style="border-top: none;"></td><td class="num">Total</td><td class="num"><%= money.(po.total_cost) %></td></tr>
       </tfoot>

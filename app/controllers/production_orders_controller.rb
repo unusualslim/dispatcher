@@ -2,7 +2,8 @@ class ProductionOrdersController < ApplicationController
   permission_area :production, features: { record_quality: :quality }, flags: { bom_cost_report: :costs }
   before_action :authenticate_user!
   before_action :set_production_order,
-                only: %i[show edit update destroy void record_quality quality_certificate batch_labels]
+                only: %i[show edit update destroy void record_quality quality_certificate batch_labels
+                         batch_ticket]
   before_action :require_admin!, only: :void
   before_action :keep_voided_read_only, only: %i[edit update]
   before_action :drop_placeholder_ids, only: %i[create update]
@@ -19,11 +20,13 @@ class ProductionOrdersController < ApplicationController
     @location    = params[:location]
     @due_from    = params[:due_from]
     @due_to      = params[:due_to]
+    @group       = params[:group].presence
 
     @production_orders = ProductionOrder
                          .search(@search_term)
                          .by_status(@selected_status)
                          .by_location(@location)
+                         .in_group(@group)
                          .due_between(@due_from, @due_to)
                          .ordered_default
     @production_orders = @production_orders.where(location_id: current_warehouse.id) if current_warehouse
@@ -172,6 +175,7 @@ class ProductionOrdersController < ApplicationController
     @location        = params[:location]
     @due_from        = params[:due_from]
     @due_to          = params[:due_to]
+    @group           = params[:group].presence
 
     @production_orders =
       ProductionOrder
@@ -179,6 +183,7 @@ class ProductionOrdersController < ApplicationController
       .search(@search_term)
       .by_status(@selected_status)
       .by_location(@location)
+      .in_group(@group)
       .due_between(@due_from, @due_to)
       .ordered_default
 
@@ -272,6 +277,12 @@ class ProductionOrdersController < ApplicationController
 
   # GET /production_orders/:id/quality_certificate — printable certificate of analysis
   # Pallet batch labels for the lot (Zebra 4x6): one per label, or four small ones per label to save paper.
+  # The printable batch ticket: components with blanks for actual use and lots, quality checks with blanks for
+  # results, and sign-off lines (blend, quality, finish).
+  def batch_ticket
+    render layout: false
+  end
+
   def batch_labels
     @label = BatchLabel.new(@production_order)
     if @label.lot.blank?

@@ -8,7 +8,7 @@ class PurchaseOrdersController < ApplicationController
 
   permission_area :purchasing, approve: %i[approve submit post_to_inventory]
   before_action :set_purchase_order,
-                only: %i[show edit update approve submit receive post_to_inventory void print pallet_labels]
+                only: %i[show edit update approve submit receive post_to_inventory void print pallet_labels email_vendor]
   before_action :require_admin!, only: :void
   before_action :keep_voided_read_only, only: %i[edit update approve submit receive post_to_inventory]
   before_action -> { require_feature!(po_feature) }, if: :changing?
@@ -237,6 +237,15 @@ class PurchaseOrdersController < ApplicationController
   # GET /purchase_orders/:id/print — the copy sent to the vendor (layout-less, print from the browser).
   def print
     render layout: false
+  end
+
+  # Emails the vendor copy to the vendor (or any address typed), replies going to the sender.
+  def email_vendor
+    to = params[:to].to_s.split(/[,;\s]+/).compact_blank
+    return redirect_to(@purchase_order, alert: 'Enter the email address to send the PO to.') if to.empty?
+
+    PurchaseOrderMailer.vendor_copy(@purchase_order, to: to, sender: current_user, message: params[:message]).deliver_later
+    redirect_to @purchase_order, notice: "Emailed PO #{@purchase_order.display_number} to #{to.join(', ')}."
   end
 
   # 4x6 pallet labels for a Zebra printer: one identical label per pallet received.

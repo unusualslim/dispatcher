@@ -111,6 +111,13 @@
           <div class="fw-semibold"><%= @customer_order.required_delivery_date&.strftime("%B %-d, %Y") || "Not set" %></div>
         </div>
 
+        <% if @customer_order.freight_terms.present? %>
+          <div>
+            <div class="text-muted small text-uppercase fw-semibold mb-1">Freight Terms</div>
+            <div class="fw-semibold"><%= @customer_order.freight_terms %></div>
+          </div>
+        <% end %>
+
         <% if @customer_order.invoice_no.present? %>
           <div>
             <div class="text-muted small text-uppercase fw-semibold mb-1">Invoice No</div>
@@ -310,6 +317,13 @@
                   <td></td>
                 </tr>
               <% end %>
+              <% if (lbs = @customer_order.total_weight_lbs) %>
+                <tr class="small text-muted">
+                  <td colspan="5" class="text-end">Shipping weight<%= " (#{pluralize(@customer_order.unweighed_lines, 'line')} without a weight)" if @customer_order.unweighed_lines.positive? %></td>
+                  <td><%= number_with_delimiter(lbs.round) %> lb</td>
+                  <td></td>
+                </tr>
+              <% end %>
               <tr class="fw-semibold table-light">
                 <td colspan="5" class="text-end">Order Total</td>
                 <td><%= number_to_currency(total_sum + freight_sale) %></td>
@@ -327,6 +341,30 @@
   </div>
 
   <%= render 'freight' %>
+
+  <% if sees?(:costs) && @customer_order.customer_order_products.any? %>
+    <% om = OrderMargin.new(@customer_order) %>
+    <div class="card shadow-sm mb-4">
+      <div class="card-header fw-semibold">Margin after freight</div>
+      <div class="card-body">
+        <div class="row g-3 text-center">
+          <div class="col"><div class="text-muted small">Product sales</div><div class="fw-semibold"><%= number_to_currency(om.sales) %></div></div>
+          <div class="col"><div class="text-muted small">Product cost (standard)</div><div class="fw-semibold"><%= number_to_currency(om.product_cost) %></div></div>
+          <div class="col"><div class="text-muted small">Freight billed</div><div class="fw-semibold"><%= number_to_currency(om.freight_billed) %></div></div>
+          <div class="col"><div class="text-muted small">Freight cost</div><div class="fw-semibold"><%= number_to_currency(om.freight_cost) %></div></div>
+          <div class="col">
+            <div class="text-muted small">Margin</div>
+            <div class="fw-bold <%= om.margin.negative? ? 'text-danger' : 'text-success' %>">
+              <%= number_to_currency(om.margin) %><% if om.margin_share %> (<%= number_to_percentage(om.margin_share * 100, precision: 1) %>)<% end %>
+            </div>
+          </div>
+        </div>
+        <% if om.uncosted.positive? %>
+          <div class="small text-warning-emphasis mt-2"><%= pluralize(om.uncosted, 'line') %> without a standard or BOM cost <%= om.uncosted == 1 ? 'is' : 'are' %> left out of product cost.</div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
 
   <%# ── Associated Dispatches ──────────────────────────────────────────────── %>
   <div class="col-12">

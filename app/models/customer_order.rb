@@ -1,4 +1,6 @@
 class CustomerOrder < ApplicationRecord
+  include LineWeight
+
   belongs_to :location
   belongs_to :customer, optional: true
   # The warehouse an order entered in the app ships from; PDI orders carry theirs per line.
@@ -58,6 +60,12 @@ class CustomerOrder < ApplicationRecord
     staged: 'Staged',
     truck_loaded: 'Loaded' # key can't be "loaded" (ActiveRecord::Relation#loaded)
   }
+
+  def weight_lines = customer_order_products
+
+  # Freight terms on a sales order (printed on the bill of lading; the BOL ticks Prepaid / Collect / 3rd Party).
+  FREIGHT_TERMS = ['Prepaid', 'Prepaid & Add', 'Collect', '3rd Party', 'Customer Pickup', 'FOB Origin',
+                   'FOB Destination'].freeze
 
   # Statuses that represent active/open work (equivalent to the old "New")
   ACTIVE_STATUSES = [

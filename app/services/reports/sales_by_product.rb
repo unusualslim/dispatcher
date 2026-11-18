@@ -4,7 +4,7 @@ module Reports
 
     report title: 'Sales by product', area: :sales, flag: :financial_dashboard,
            description: 'Quantity, average price and net sales per product for orders invoiced in the period.',
-           filters: %i[dates item_type customer_id location_id]
+           filters: %i[dates item_type category customer_id location_id]
 
     def columns
       sales_columns([column(:product_id, 'Product'), column(:name, 'Name'), column(:category, 'Category')])

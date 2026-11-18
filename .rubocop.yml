@@ -41,3 +41,17 @@ Metrics/BlockLength:
 # autocorrect can't know), not in bulk.
 Rails/StrongParametersExpect:
   Enabled: false
+
+# Reports build one flat row hash per record from many fields and filters; splitting those builders hurts reading.
+Metrics/AbcSize:
+  Exclude:
+    - "app/services/reports/*.rb"
+Metrics/CyclomaticComplexity:
+  Exclude:
+    - "app/services/reports/*.rb"
+Metrics/PerceivedComplexity:
+  Exclude:
+    - "app/services/reports/*.rb"
+Metrics/MethodLength:
+  Exclude:
+    - "app/services/reports/*.rb"

@@ -20,14 +20,23 @@
   <div class="card shadow-sm mb-3 d-print-none">
     <div class="card-body py-2">
       <%= form_with url: report_path(@report_class.key), method: :get, local: true, class: 'd-flex flex-wrap gap-2 align-items-end' do %>
-        <div>
-          <label class="form-label small mb-0">From</label>
-          <%= date_field_tag :from, filters.range.begin, class: 'form-control form-control-sm' %>
-        </div>
-        <div>
-          <label class="form-label small mb-0">To</label>
-          <%= date_field_tag :to, filters.range.end, class: 'form-control form-control-sm' %>
-        </div>
+        <% if filters.offers?(:dates) %>
+          <div>
+            <label class="form-label small mb-0">From</label>
+            <%= date_field_tag :from, filters.range.begin, class: 'form-control form-control-sm' %>
+          </div>
+          <div>
+            <label class="form-label small mb-0">To</label>
+            <%= date_field_tag :to, filters.range.end, class: 'form-control form-control-sm' %>
+          </div>
+        <% end %>
+        <% if filters.offers?(:view) %>
+          <div>
+            <label class="form-label small mb-0">Show</label>
+            <%= select_tag :view, options_for_select(@report_class::VIEWS.invert, filters[:view]), include_blank: 'All',
+                           class: 'form-select form-select-sm' %>
+          </div>
+        <% end %>
         <% if filters.offers?(:customer_id) %>
           <div style="min-width: 240px;">
             <label class="form-label small mb-0">Customer</label>
@@ -77,6 +86,13 @@
                            include_blank: 'All', class: 'form-select form-select-sm' %>
           </div>
         <% end %>
+        <% if filters.offers?(:category) %>
+          <div>
+            <label class="form-label small mb-0">Product group</label>
+            <%= select_tag :category, options_for_select(ReportingGroup.order(:name).pluck(:name), filters[:category]),
+                           include_blank: 'All', class: 'form-select form-select-sm' %>
+          </div>
+        <% end %>
         <% if filters.offers?(:movement_type) %>
           <div>
             <label class="form-label small mb-0">Movement</label>
@@ -102,11 +118,12 @@
   <% else %>
     <div class="card shadow-sm">
       <div class="table-responsive">
-        <table class="table table-sm table-hover align-middle mb-0">
+        <table class="table table-sm table-hover align-middle mb-0 report-table">
           <thead class="table-light">
             <tr>
               <% @report.columns.each do |column| %>
-                <th class="<%= 'text-end' if report_numeric?(column) %> text-nowrap"><%= column.label %></th>
+                <th class="<%= 'text-end' if report_numeric?(column) %> text-nowrap report-sort" role="button" title="Sort"
+                    data-numeric="<%= report_numeric?(column) %>"><%= column.label %> <span class="sort-mark text-muted"></span></th>
               <% end %>
             </tr>
           </thead>
@@ -114,7 +131,7 @@
             <% rows.first(limit).each do |row| %>
               <tr>
                 <% @report.columns.each do |column| %>
-                  <td class="<%= 'text-end text-nowrap' if report_numeric?(column) %>"><%= report_cell(@report, row, column) %></td>
+                  <td class="<%= 'text-end text-nowrap' if report_numeric?(column) %>" data-sort="<%= row[column.key] %>"><%= report_cell(@report, row, column) %></td>
                 <% end %>
               </tr>
             <% end %>
@@ -141,4 +158,25 @@
 
 <script>
   $(function() { $('.report-select2').select2({ theme: 'bootstrap-5', width: '100%', allowClear: true, placeholder: 'All' }); });
+
+  // Click a column header to sort the rows shown (click again to reverse). Totals and CSV are unaffected.
+  document.querySelectorAll('.report-table th.report-sort').forEach(function(th, index) {
+    th.addEventListener('click', function() {
+      var table = th.closest('table'), body = table.tBodies[0], numeric = th.dataset.numeric === 'true';
+      var dir = th.dataset.dir === 'asc' ? 'desc' : 'asc';
+      table.querySelectorAll('th.report-sort').forEach(function(h) { h.dataset.dir = ''; h.querySelector('.sort-mark').textContent = ''; });
+      th.dataset.dir = dir;
+      th.querySelector('.sort-mark').textContent = dir === 'asc' ? '▲' : '▼';
+      var value = function(row) {
+        var raw = row.cells[index].dataset.sort || '';
+        if (!numeric) return raw.toLowerCase();
+        var n = parseFloat(raw);
+        return isNaN(n) ? -Infinity : n;
+      };
+      Array.from(body.rows).sort(function(a, b) {
+        var x = value(a), y = value(b);
+        return (x < y ? -1 : x > y ? 1 : 0) * (dir === 'asc' ? 1 : -1);
+      }).forEach(function(row) { body.appendChild(row); });
+    });
+  });
 </script>

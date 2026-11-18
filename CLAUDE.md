@@ -258,6 +258,18 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
   Expense Accounts were loaded 2026-11-03 from PDI's chart of accounts (`LoadExpenseChartOfAccounts`): Expense-type
   accounts only, without inventory-related ones (Cost of Sales / Fuel Cost of Sales groups, over/short); PDI-disabled
   accounts load inactive. `account_group` (PDI group) groups the searchable picker.
+- **Vendor prices** (`VendorItemPrice` on `product_vendors`): several part numbers / costs per vendor and item (package,
+  min qty, effective date), on the product page's Vendors card. `set_vendors_in_order` keeps existing links (and prices).
+- **Customer part numbers** (`CustomerItemNumber`, customer page): printed beside ours on the quote print and the BOL.
+- **SDS** per product (`ProductDocument` kind sds, `Product#sds`; Active Storage needs a numeric record id, products have text
+  ids). **Email PO to vendor** (`PurchaseOrderMailer.vendor_copy`, PO page): the print view as the body, reply-to and cc the
+  sender; production mailer `asset_host` = HOSTNAME so the logo loads. Sales orders have `freight_terms`
+  (`CustomerOrder::FREIGHT_TERMS`, ticks the BOL's Prepaid / Collect / 3rd Party). Orders show **Margin after freight**
+  (`OrderMargin`, costs flag). Quote lines show standard and current cost with margin (costs flag). Production orders have
+  a printable **Batch Ticket** (`/production_orders/:id/batch_ticket`: components with blanks for actual/lot, quality
+  checks, sign-offs) and a product group filter (list, kanban, MRP).
+- **Weights**: `products.weight` is **lb per unit**; orders, POs and the PO print show shipping weight (`LineWeight`), the BOL
+  per line.
 - **Pallet labels** (`/purchase_orders/:id/pallet_labels?count=N`, "Pallet Labels" on inventory POs): one 4×6 page per
   pallet for a Zebra (browser print): company (Five Points Service, from Company Info; the only company the app tracks,
   other companies' stock at 2171 is not labeled here), PO #, received date (today if not marked received), warehouse,
@@ -362,7 +374,15 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
   lists existing report-like pages on the hub. A report's `area` is the permission area that can see it. Filters
   (`Reports::Filters`): dates (default this month, `default_from` per report), customer, product, warehouse, vendor,
   item type, movement type, "problems only". Sales reports reuse `FinancialDashboard::Sales` (`Reports::SalesLines`).
-  A report can also set `default_to` (look-ahead). **Incoming receipts** (`Reports::IncomingReceipts`, Inventory): open
+  A report can also set `default_to` (look-ahead). Filters also include `category` (product group) and `view` (a report's
+  own `VIEWS` slices); a report without `:dates` hides the date fields. Report tables sort by clicking a header (client side).
+  **Operations requirements reports** (2026-11-17, from the ops group's Fishbowl-style list): `OpenOrderLines` (open
+  order report: stock handed out first come first served, picking/staged first, then requested date; disposition ready /
+  picking / production / backorder (buy) / return / direct; views incl. past due), `ContractPrices` (locked quote prices
+  with standard + current cost margins), `SalesByClass`, `CustomerSalesTrend` (period vs prior, Stopped buying / Down /
+  New), `AbcClasses` (80/15/5 of net sales), `ItemActivity` (last sold/received/produced, days on hand at the 90-day
+  rate), `PoHistoryByItem`, `ProductionShortages`, `ProductionVariance` (yield, material usage at standard, labor),
+  `OrderMargins` (below 0 or below the pricing rule's target margin). Reports are exempt from the method-size cops. **Incoming receipts** (`Reports::IncomingReceipts`, Inventory): open
   (approved/submitted) PO lines by location and expected date with vendor and freight carrier, a week back to two weeks
   ahead by default; undated POs listed last.
 - /financial_dashboard (Accounting, `FinancialDashboard` + `::Sales` / `::Operations` / `::Snapshot`): month to date vs the

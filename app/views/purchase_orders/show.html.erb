@@ -36,6 +36,11 @@
     <%= link_to print_purchase_order_path(@purchase_order), class: 'btn btn-outline-secondary btn-sm', target: '_blank', rel: 'noopener' do %>
       <i class="bi bi-printer"></i> Print
     <% end %>
+    <% if can?(:purchasing, :edit) && !@purchase_order.voided? %>
+      <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#po-email-form">
+        <i class="bi bi-envelope"></i> Email to Vendor
+      </button>
+    <% end %>
     <% unless @purchase_order.expense? %>
       <%= link_to pallet_labels_purchase_order_path(@purchase_order), class: 'btn btn-outline-secondary btn-sm',
                   target: '_blank', rel: 'noopener' do %>
@@ -46,6 +51,27 @@
       <button class="btn btn-outline-dark btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#po-void-form">Void</button>
     <% end %>
     <%= link_to 'All POs', purchase_orders_path, class: 'btn btn-outline-secondary btn-sm' %>
+  <% end %>
+
+  <% if can?(:purchasing, :edit) && !@purchase_order.voided? %>
+    <div class="collapse mb-3" id="po-email-form">
+      <div class="card">
+        <div class="card-body">
+          <%= form_with url: email_vendor_purchase_order_path(@purchase_order), method: :post, class: 'row g-2 align-items-end' do %>
+            <div class="col-md-4">
+              <label class="form-label small mb-0" for="to">To</label>
+              <%= email_field_tag :to, @purchase_order.vendor&.email, multiple: true, required: true, class: 'form-control form-control-sm' %>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small mb-0" for="message">Message (optional)</label>
+              <%= text_field_tag :message, nil, class: 'form-control form-control-sm', placeholder: 'Please confirm receipt and ship date.' %>
+            </div>
+            <div class="col-md-2"><%= submit_tag 'Send', class: 'btn btn-primary btn-sm w-100' %></div>
+          <% end %>
+          <div class="form-text">Sends the vendor copy (as printed). Replies go to you, <%= current_user.email %>.</div>
+        </div>
+      </div>
+    </div>
   <% end %>
 
   <% if admin? && !@purchase_order.voided? %>
@@ -221,6 +247,13 @@
             <td class="text-end"><%= number_to_currency(@purchase_order.other_charges) %></td>
           </tr>
         <% end %>
+      <% end %>
+      <% if (lbs = @purchase_order.total_weight_lbs) %>
+        <tr class="small text-muted">
+          <td colspan="4" class="text-end">Shipping weight<%= " (#{pluralize(@purchase_order.unweighed_lines, 'line')} without a weight)" if @purchase_order.unweighed_lines.positive? %></td>
+          <td class="text-end"><%= number_with_delimiter(lbs.round) %> lb</td>
+          <% if allocations.any? %><td colspan="2"></td><% end %>
+        </tr>
       <% end %>
       <tr class="fw-semibold">
         <td colspan="4" class="text-end">Total</td>

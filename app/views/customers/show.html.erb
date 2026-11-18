@@ -118,6 +118,45 @@
       </div>
       <% end %>
 
+      <div class="mt-5">
+        <h4 class="text-center mb-3">Customer Part Numbers</h4>
+        <% numbers = @customer.customer_item_numbers.includes(:product).order(:product_id) %>
+        <div class="card shadow-sm">
+          <% if numbers.any? %>
+            <table class="table table-sm align-middle mb-0">
+              <thead class="table-light"><tr><th>Our item</th><th>Their part #</th><th>Their description</th><th></th></tr></thead>
+              <tbody>
+                <% numbers.each do |number| %>
+                  <tr>
+                    <td><%= number.product_id %> <span class="text-muted small"><%= number.product&.name %></span></td>
+                    <td class="fw-semibold"><%= number.part_number %></td>
+                    <td><%= number.description %></td>
+                    <td class="text-end">
+                      <% if can?(:sales, :edit) %>
+                        <%= button_to 'Remove', customer_customer_item_number_path(@customer, number), method: :delete,
+                                      class: 'btn btn-link btn-sm p-0 text-danger', form: { data: { turbo_confirm: 'Remove this part number?' } } %>
+                      <% end %>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          <% else %>
+            <p class="text-muted text-center my-3">No customer part numbers. They print beside ours on quotes and bills of lading.</p>
+          <% end %>
+          <% if can?(:sales, :edit) %>
+            <div class="card-footer">
+              <%= form_with url: customer_customer_item_numbers_path(@customer), method: :post, class: 'd-flex flex-wrap gap-2' do %>
+                <%= text_field_tag :product_id, nil, required: true, placeholder: 'Our item # (e.g. 901)', class: 'form-control form-control-sm', style: 'width: 180px' %>
+                <%= text_field_tag :part_number, nil, required: true, placeholder: 'Their part #', class: 'form-control form-control-sm', style: 'width: 160px' %>
+                <%= text_field_tag :description, nil, placeholder: 'Their description (optional)', class: 'form-control form-control-sm', style: 'min-width: 220px' %>
+                <%= submit_tag 'Add', class: 'btn btn-sm btn-outline-primary' %>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
       <!-- Orders Table -->
       <div class="mt-5">
         <h4 class="text-center mb-3">Associated Orders</h4>

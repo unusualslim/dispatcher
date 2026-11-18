@@ -93,6 +93,7 @@ Rails.application.routes.draw do
     member do
       get :pdi_credit
     end
+    resources :customer_item_numbers, only: %i[create destroy]
   end
 
   resources :quotes do
@@ -146,6 +147,7 @@ Rails.application.routes.draw do
       patch :record_quality
       get   :quality_certificate
       get   :batch_labels
+      get   :batch_ticket
     end
     collection do
       get :kanban
@@ -199,6 +201,7 @@ Rails.application.routes.draw do
       post  :void
       get   :print
       get   :pallet_labels
+      post  :email_vendor
     end
     collection do
       get :export_pdi
@@ -338,8 +341,10 @@ Rails.application.routes.draw do
     end
     member do
       get :bom
+      patch :sds
     end
     resources :standard_cost_histories, only: [:create]
+    resources :vendor_item_prices, only: %i[create destroy]
   end
 
   resources :dispatch_messages, only: %i[index show]

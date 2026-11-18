@@ -4,7 +4,7 @@ class ProductsController < ApplicationController
   include ListNeighbors
 
   permission_area :inventory, lookups: %i[search bom], feature: :products
-  before_action :set_product, only: %i[show edit update destroy components]
+  before_action :set_product, only: %i[show edit update destroy components sds]
 
   def index
     return if restore_list_filters('products', ProductListQuery::KEYS)
@@ -158,6 +158,20 @@ class ProductsController < ApplicationController
     render json: { components: components }
   end
 
+  # Attaches (or with remove=1, removes) the product's safety data sheet.
+  def sds
+    if params[:remove] == '1'
+      @product.sds_document&.destroy!
+      return redirect_to(@product, notice: 'Removed the SDS.')
+    end
+    file = params[:file]
+    return redirect_to(@product, alert: 'Choose a PDF to upload.') unless file.respond_to?(:content_type)
+    return redirect_to(@product, alert: 'The SDS must be a PDF.') unless file.content_type == 'application/pdf'
+
+    (@product.sds_document || @product.build_sds_document).tap { |doc| doc.file.attach(file) }.save!
+    redirect_to @product, notice: 'Saved the SDS.'
+  end
+
   private
 
   def set_product
@@ -165,7 +179,7 @@ class ProductsController < ApplicationController
   end
 
   def load_show_data
-    @product_vendors = @product.product_vendors.includes(:vendor)
+    @product_vendors = @product.product_vendors.includes(:vendor, :prices)
     @recent_transactions = @product.inventory_transactions
                                    .order(created_at: :desc)
                                    .includes(:created_by)

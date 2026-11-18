@@ -1,8 +1,10 @@
 module Reports
   # The filters a report offers (its filter_names) read from request params: a date range plus optional
-  # customer, product, warehouse, vendor, PDI carrier, item type, movement type and a "problems only" switch.
+  # customer, product, warehouse, vendor, PDI carrier, item type, product group (category), movement type and a
+  # "problems only" switch.
   class Filters
-    SELECTS = %i[date_basis customer_id product_id location_id vendor_id carrier_id item_type movement_type].freeze
+    SELECTS = %i[date_basis customer_id product_id location_id vendor_id carrier_id item_type category movement_type
+                 view].freeze
 
     attr_reader :names, :from, :to, :values
 

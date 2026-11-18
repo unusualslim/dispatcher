@@ -19,6 +19,12 @@
     </div>
 
     <div>
+      <%= f.label :group, "Product group", class: "block text-sm font-medium" %>
+      <%= f.select :group, options_for_select([["All", ""]] + ReportingGroup.order(:name).pluck(:name), @group),
+            {}, class: "border rounded px-2 py-1" %>
+    </div>
+
+    <div>
       <%= f.label :due_from, "Due from", class: "block text-sm font-medium" %>
       <%= f.date_field :due_from, value: @due_from, class: "border rounded px-2 py-1" %>
     </div>

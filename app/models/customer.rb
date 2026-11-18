@@ -5,6 +5,7 @@ class Customer < ApplicationRecord
   has_many :customer_orders, dependent: :nullify
   has_many :pricing_rules, dependent: :destroy
   has_many :quotes
+  has_many :customer_item_numbers, dependent: :delete_all
   has_many :locations, through: :customer_locations
 
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP, allow_blank: true }
