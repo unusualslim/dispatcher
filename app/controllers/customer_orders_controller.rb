@@ -220,8 +220,11 @@ class CustomerOrdersController < ApplicationController
 
   def destroy
     @customer_order = CustomerOrder.find(params[:id])
-    @customer_order.destroy
-    redirect_to dispatches_path, notice: 'Order was successfully deleted.'
+    if @customer_order.destroy
+      redirect_to dispatches_path, notice: t('.deleted')
+    else
+      redirect_to @customer_order, alert: @customer_order.errors.full_messages.to_sentence
+    end
   end
 
   private

@@ -237,7 +237,8 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
   next free in the year, advisory lock, kept in `pdi_order_number`), AlternateReferenceNo `APP<id>`, FuelDetail
   per line (product = ordered and purchased, gallons, prices 0 / overridden 0, plus the LoadDetail PDI requires: planned from
   the ship-from site else plant 2, OriginType 1, nothing lifted); then `RecalculateOrder` so PDI prices it
-  (freight, taxes). Lines must be fuel-group products (901). Orders also have `release_number` (app only, not sent to PDI yet). Sent once; tanks, driver, load details are filled in PDI and come
+  (freight, taxes). Lines must be fuel-group products (901). Orders also have `release_number` (app only, not sent to PDI yet). An order sent to PDI (`pdi_order_number`) can't be deleted
+  (`before_destroy`, prepended so lines survive): it's cancelled in PDI. Sent once; tanks, driver, load details are filled in PDI and come
   back with the sync. PDI's reply is stored (`pdi_push_response`); an order number links at once, a request ID → `queued`
   (Check PDI = `GetResponses`), and `OrderWriter#find_record` links a synced order by `APP<id>`. Staging has no PDI keys.
 - Customer and open-order pages lazy-load PDI credit (`/customers/:id/pdi_credit`, Turbo Frame).

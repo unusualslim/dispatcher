@@ -305,6 +305,8 @@ en:
       failed: "Not sent to PDI: %{error}"
     check_pdi:
       failed: "Couldn't check PDI: %{error}"
+    destroy:
+      deleted: "Order was successfully deleted."
   product_merges:
     create:
       merged: "Merged %{source} into %{target} (%{summary}). %{source} is now inactive."

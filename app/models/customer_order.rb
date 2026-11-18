@@ -20,6 +20,8 @@ class CustomerOrder < ApplicationRecord
 
   accepts_nested_attributes_for :customer_order_products, allow_destroy: true
 
+  # An order sent to PDI is cancelled in PDI, never deleted here.
+  before_destroy :keep_if_sent_to_pdi, prepend: true
   after_save :sync_approximate_amount
   after_save :link_customer_location, if: -> { saved_change_to_customer_id? || saved_change_to_location_id? }
 
@@ -72,6 +74,8 @@ class CustomerOrder < ApplicationRecord
 
   validate :stock_available, if: :check_stock
 
+  def sent_to_pdi? = pdi_order_number.present?
+
   # Freight terms on a sales order (printed on the bill of lading; the BOL ticks Prepaid / Collect / 3rd Party).
   FREIGHT_TERMS = ['Prepaid', 'Prepaid & Add', 'Collect', '3rd Party', 'Customer Pickup', 'FOB Origin',
                    'FOB Destination'].freeze
@@ -121,6 +125,13 @@ class CustomerOrder < ApplicationRecord
   end
 
   private
+
+  def keep_if_sent_to_pdi
+    return unless sent_to_pdi?
+
+    errors.add(:base, "Order #{pdi_order_number} was sent to PDI: cancel it in PDI instead")
+    throw :abort
+  end
 
   def stock_available
     OversellCheck.new(self).problems.each { |problem| errors.add(:base, problem) }

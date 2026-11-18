@@ -2,7 +2,7 @@ require 'test_helper'
 require 'minitest/mock'
 
 # Send to PDI: an app order goes to PDI as a fuel order, PDI prices it, and the order sync links it back.
-class PdiFuelOrderPushTest < ActionDispatch::IntegrationTest
+class PdiFuelOrderPushTest < ActionDispatch::IntegrationTest # rubocop:disable Metrics/ClassLength
   include Devise::Test::IntegrationHelpers
 
   # Stands in for PdiWebService: records what was sent and answers like PDI.
@@ -84,6 +84,17 @@ class PdiFuelOrderPushTest < ActionDispatch::IntegrationTest
                  [@order.pdi_order_number, @order.external_order_no, @order.pdi_push_status]
     assert_equal ["OD-090042-#{year}"], fake.recalculated
     assert_equal 'OD-090001-27', PdiOrders::OrderNumbers.next_for(Date.new(2027, 1, 2))
+  end
+
+  test 'an order sent to PDI cannot be deleted; it is cancelled in PDI' do
+    @order.update!(pdi_order_number: 'OD-090007-26', pdi_push_status: 'sent')
+    sign_in @user
+    get customer_order_path(@order)
+    assert_select 'button', text: 'Delete Order', count: 0
+
+    assert_no_difference('CustomerOrder.count') { delete customer_order_path(@order) }
+    assert_redirected_to customer_order_path(@order)
+    assert_match 'cancel it in PDI', flash[:alert]
   end
 
   test 'a queued push is checked later, or linked by the order sync through our reference' do

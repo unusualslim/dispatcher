@@ -414,9 +414,13 @@
 
   <%# ── Danger zone ─────────────────────────────────────────────────────────── %>
   <div class="col-12 pb-4 text-end">
-    <%= button_to "Delete Order", @customer_order, method: :delete,
-          class: "btn btn-outline-danger btn-sm",
-          data: { confirm: "Are you sure you want to delete this order?", turbo: false } %>
+    <% if @customer_order.sent_to_pdi? %>
+      <span class="small text-muted">Sent to PDI as <%= @customer_order.pdi_order_number %>: cancel it in PDI, it can't be deleted here.</span>
+    <% else %>
+      <%= button_to "Delete Order", @customer_order, method: :delete,
+            class: "btn btn-outline-danger btn-sm",
+            data: { confirm: "Are you sure you want to delete this order?", turbo: false } %>
+    <% end %>
   </div>
 
 </div>
