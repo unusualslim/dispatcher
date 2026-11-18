@@ -71,6 +71,7 @@ class ProductsController < ApplicationController
   def update
     if @product.update(product_params)
       @product.set_vendors_in_order(params[:product][:vendor_ids])
+      BomVersion.capture!(@product, user: current_user, source: 'product page')
       redirect_to product_path(@product), notice: 'Product was successfully updated.'
     else
       @vendors = Vendor.order(:name)

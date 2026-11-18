@@ -20,16 +20,16 @@ class LocationsControllerTest < ActionDispatch::IntegrationTest
     assert_select '.nav-tabs .nav-link.active', /Customer Orders\s*30/
     assert_select '.nav-tabs .nav-link', /Products\s*60/
     assert_select 'td', text: 'Product 00', count: 0
-    assert_select 'tbody tr', 25
+    assert_select 'table.table-striped tbody tr', 25
     assert_select ".pagination a[href*='tab=orders'][href*='page=2']"
 
     get location_url(@location, tab: 'products')
-    assert_select 'tbody tr', 50
+    assert_select 'table.table-striped tbody tr', 50
     assert_select 'td', text: 'Product 00'
     assert_select ".pagination a[href*='tab=products'][href*='page=2']"
 
     get location_url(@location, tab: 'products', page: 2)
-    assert_select 'tbody tr', 10
+    assert_select 'table.table-striped tbody tr', 10
     assert_select 'td', text: 'Product 59'
   end
 

@@ -271,6 +271,33 @@ en:
       added: "Added a %{vendor} price."
     destroy:
       removed: "Removed the vendor price."
+  scrap_reasons:
+    create:
+      added: "Added scrap reason %{name}."
+    update:
+      saved: "Saved %{name}."
+  production_order_scraps:
+    create:
+      voided: "This order is voided."
+      recorded: "Recorded %{quantity} scrapped (%{reason})."
+    destroy:
+      removed: "Removed the scrap entry."
+  product_substitutes:
+    create:
+      added: "Added %{item} as a substitute."
+    destroy:
+      removed: "Removed the substitute."
+  pricing_rules:
+    bulk_increase:
+      bad_number: "Enter the increase as a number."
+    apply_increase:
+      incomplete: "Choose a component or product group, and a percent or a dollar amount (not both)."
+      applied: "Raised %{count} pricing rules. Locked quotes below the new prices are listed under Price increase."
+  quote_margin_reviews:
+    accept_increases:
+      none: "Select at least one quote."
+      done: "Accepted %{count} re-quotes effective %{date}%{emailed}."
+      emailed: ", %{count} emailed to the customer"
   product_merges:
     create:
       merged: "Merged %{source} into %{target} (%{summary}). %{source} is now inactive."

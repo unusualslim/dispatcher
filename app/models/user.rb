@@ -1,4 +1,9 @@
 class User < ApplicationRecord
+  include Audited
+
+  audited ignore: %i[list_filters],
+          skip: %i[encrypted_password reset_password_token reset_password_sent_at remember_created_at]
+
   include UserPermissions
 
   # Include default devise modules. Others available are:

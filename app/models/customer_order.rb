@@ -1,4 +1,8 @@
 class CustomerOrder < ApplicationRecord
+  include Audited
+
+  audited
+
   include LineWeight
 
   belongs_to :location
@@ -63,6 +67,11 @@ class CustomerOrder < ApplicationRecord
 
   def weight_lines = customer_order_products
 
+  # Set by the order form: new or changed lines can't oversell stocked items we buy (OversellCheck).
+  attr_accessor :check_stock
+
+  validate :stock_available, if: :check_stock
+
   # Freight terms on a sales order (printed on the bill of lading; the BOL ticks Prepaid / Collect / 3rd Party).
   FREIGHT_TERMS = ['Prepaid', 'Prepaid & Add', 'Collect', '3rd Party', 'Customer Pickup', 'FOB Origin',
                    'FOB Destination'].freeze
@@ -109,5 +118,11 @@ class CustomerOrder < ApplicationRecord
   # Hazardous products on the order's lines (uses preloaded lines when present).
   def hazmat_products
     customer_order_products.filter_map(&:product).select(&:hazmat).uniq
+  end
+
+  private
+
+  def stock_available
+    OversellCheck.new(self).problems.each { |problem| errors.add(:base, problem) }
   end
 end

@@ -1,4 +1,8 @@
 class Product < ApplicationRecord # rubocop:disable Metrics/ClassLength
+  include Audited
+
+  audited ignore: %i[current_stock]
+
   include ProductCosting
 
   has_many :location_products
@@ -25,6 +29,8 @@ class Product < ApplicationRecord # rubocop:disable Metrics/ClassLength
   has_many :purchase_orders, through: :purchase_order_line_items
 
   has_many :product_vendors, -> { order(:priority) }, dependent: :destroy
+  has_many :product_substitutes, -> { ordered }, dependent: :destroy, inverse_of: :product
+  has_many :bom_versions, dependent: :destroy
   has_one :sds_document, -> { where(kind: 'sds') }, class_name: 'ProductDocument', dependent: :destroy,
                                                     inverse_of: :product
 

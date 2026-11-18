@@ -224,6 +224,9 @@ GEM
     nokogiri (1.19.7-x86_64-linux-gnu)
       racc (~> 1.4)
     orm_adapter (0.5.0)
+    paper_trail (17.0.0)
+      activerecord (>= 7.1)
+      request_store (~> 1.4)
     parallel (1.28.0)
     parser (3.3.13.0)
       ast (~> 2.4.1)
@@ -304,6 +307,8 @@ GEM
     regexp_parser (2.13.1)
     reline (0.7.0)
       io-console (~> 0.5)
+    request_store (1.7.0)
+      rack (>= 1.4)
     responders (3.1.1)
       actionpack (>= 5.2)
       railties (>= 5.2)
@@ -441,6 +446,7 @@ DEPENDENCIES
   jbuilder
   jsbundling-rails
   net-ftp
+  paper_trail (~> 17.0)
   pdf-reader
   pg (~> 1.1)
   puma (~> 7.2)

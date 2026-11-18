@@ -2,6 +2,10 @@
 # gallon, day... Product cost lines that use one take its unit cost, so updating it here re-costs every
 # finished good on the next rollup. Labor lines still cost at the labor rate setting.
 class CostItem < ApplicationRecord
+  include Audited
+
+  audited
+
   belongs_to :reporting_group
   has_many :product_cost_lines, dependent: :restrict_with_error
 

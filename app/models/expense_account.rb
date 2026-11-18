@@ -2,6 +2,10 @@
 # 6810-10). The site segment comes from the line's site, so a line posts as Site-Major-Sub. AP keys the
 # vendor bill into PDI against these; the app doesn't post expense POs to the GL.
 class ExpenseAccount < ApplicationRecord
+  include Audited
+
+  audited
+
   has_many :purchase_order_line_items, dependent: :restrict_with_error
 
   validates :account, presence: true, uniqueness: true,

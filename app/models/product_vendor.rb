@@ -1,4 +1,8 @@
 class ProductVendor < ApplicationRecord
+  include Audited
+
+  audited
+
   belongs_to :product
   belongs_to :vendor
   has_many :prices, -> { ordered }, class_name: 'VendorItemPrice', dependent: :destroy, inverse_of: :product_vendor

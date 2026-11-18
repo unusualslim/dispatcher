@@ -6,6 +6,7 @@ class ApplicationController < ActionController::Base
 
   before_action :configure_permitted_parameters, if: :devise_controller?
   before_action :authenticate_user!
+  before_action :set_paper_trail_whodunnit # audit trail: who made each change
 
   helper_method :admin?, :driver?, :line_worker?, :home_path, :current_warehouse, :warehouse_stock_for
 

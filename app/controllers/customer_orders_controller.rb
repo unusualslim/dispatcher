@@ -152,6 +152,7 @@ class CustomerOrdersController < ApplicationController
 
   def create
     @customer_order = CustomerOrder.new(customer_order_params)
+    @customer_order.check_stock = true
 
     # A missing location is caught by the model's belongs_to validation below;
     # re-render (not redirect) so the user keeps what they entered.
@@ -178,6 +179,7 @@ class CustomerOrdersController < ApplicationController
   def update
     @customer_order = CustomerOrder.find(params[:id])
 
+    @customer_order.check_stock = true
     respond_to do |format|
       if @customer_order.update(customer_order_params)
         format.html { redirect_to @customer_order, notice: 'Customer Order was successfully updated.' }

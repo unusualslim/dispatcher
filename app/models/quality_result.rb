@@ -1,6 +1,10 @@
 # A recorded quality check on a production order. Out-of-range results don't block completion;
 # they wait for someone with Production approval to review them and record a resolution.
 class QualityResult < ApplicationRecord
+  include Audited
+
+  audited
+
   COPIED_FIELDS = %i[section name test_method result_type expected unit target_min target_max].freeze
 
   belongs_to :production_order

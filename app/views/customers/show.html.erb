@@ -201,3 +201,7 @@
     </div>
   </div>
 </div>
+
+<div class="container-fluid">
+  <%= render 'shared/history', record: @customer, children: { 'CustomerItemNumber' => 'customer_id' } %>
+</div>

@@ -1,4 +1,8 @@
 class Dispatch < ApplicationRecord
+  include Audited
+
+  audited
+
   before_validation :set_default_status, on: :create
   before_validation :link_origin_location, if: -> { origin_changed? || (origin_location_id.nil? && origin.present?) }
   before_save :set_full_destination_address

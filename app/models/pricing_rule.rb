@@ -1,4 +1,8 @@
 class PricingRule < ApplicationRecord
+  include Audited
+
+  audited
+
   belongs_to :customer, optional: true
   has_many :pricing_rule_products, dependent: :destroy
   has_many :products, through: :pricing_rule_products

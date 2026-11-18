@@ -1,5 +1,9 @@
 # A customer's own part number for one of our items (printed beside ours on quotes and bills of lading).
 class CustomerItemNumber < ApplicationRecord
+  include Audited
+
+  audited
+
   belongs_to :customer
   belongs_to :product
 

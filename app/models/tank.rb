@@ -2,6 +2,10 @@
 # Its level comes from the feed tanks mapped to it (FeedTank); several feed tanks can add up to one tank, as at
 # site 0002, where the Power Automate email lists each production and holding tank.
 class Tank < ApplicationRecord
+  include Audited
+
+  audited
+
   OWNERSHIPS = { 'managed' => 'Managed (customer)', 'ours' => 'Ours (FPS inventory)' }.freeze
   DEFAULT_FILL_LIMIT = 0.9 # share of capacity a delivery may fill to
   DEFAULT_BOTTOM = 0.1     # share of the fill limit treated as empty (the spreadsheet's 10%)

@@ -446,3 +446,7 @@
   .dispatch-row:hover { background-color: var(--bs-light); }
   .d-contents { display: contents; }
 </style>
+
+<div class="container-fluid">
+  <%= render 'shared/history', record: @customer_order, children: { 'CustomerOrderProduct' => 'customer_order_id' } %>
+</div>

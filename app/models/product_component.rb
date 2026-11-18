@@ -1,4 +1,8 @@
 class ProductComponent < ApplicationRecord
+  include Audited
+
+  audited
+
   belongs_to :product
   belongs_to :component_product, class_name: 'Product'
 

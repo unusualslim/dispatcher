@@ -1,4 +1,8 @@
 class ProductCostLine < ApplicationRecord
+  include Audited
+
+  audited
+
   # Lines in a labor reporting group are the only ones with actuals (/line crew-hours): their
   # unit cost is the labor rate setting and per_quantity is the standard units per worker-hour.
   # Lines picked from the cost item catalog take the item's current unit cost.

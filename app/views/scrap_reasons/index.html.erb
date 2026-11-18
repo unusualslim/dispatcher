@@ -1,0 +1,38 @@
+<div class="container-fluid mt-4" style="max-width: 760px;">
+  <%= render layout: 'shared/page_header', locals: { title: 'Scrap Reasons', subtitle: 'Offered when scrap is recorded on a production order. Retire a reason by unticking Active; past entries keep it.' } do %>
+  <% end %>
+  <div class="card shadow-sm">
+    <table class="table table-sm align-middle mb-0">
+      <thead class="table-light"><tr><th>Reason</th><th>Active</th><th class="text-end">Used</th><th></th></tr></thead>
+      <tbody>
+        <% counts = ProductionOrderScrap.group(:scrap_reason_id).count %>
+        <% @reasons.each do |reason| %>
+          <tr class="<%= 'text-muted' unless reason.active %>">
+            <% form_id = "scrap-reason-#{reason.id}" %>
+            <td><%= text_field_tag 'scrap_reason[name]', reason.name, form: form_id, class: 'form-control form-control-sm', disabled: !can?(:production, :edit) %></td>
+            <td>
+              <%= hidden_field_tag 'scrap_reason[active]', '0', form: form_id, id: nil %>
+              <%= check_box_tag 'scrap_reason[active]', '1', reason.active, form: form_id, id: nil, disabled: !can?(:production, :edit) %>
+            </td>
+            <td class="text-end"><%= counts.fetch(reason.id, 0) %></td>
+            <td class="text-end">
+              <% if can?(:production, :edit) %>
+                <%= form_with url: scrap_reason_path(reason), method: :patch, id: form_id do %>
+                  <%= submit_tag 'Save', class: 'btn btn-sm btn-outline-secondary' %>
+                <% end %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <% if can?(:production, :edit) %>
+      <div class="card-footer">
+        <%= form_with model: @reason, url: scrap_reasons_path, class: 'd-flex gap-2' do |f| %>
+          <%= f.text_field :name, required: true, placeholder: 'New reason', class: 'form-control form-control-sm' %>
+          <%= f.submit 'Add', class: 'btn btn-sm btn-primary' %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>

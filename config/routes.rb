@@ -141,7 +141,9 @@ Rails.application.routes.draw do
     resources :comments, only: :create
   end
 
+  resources :scrap_reasons, only: %i[index create update]
   resources :production_orders do
+    resources :production_order_scraps, only: %i[create destroy], path: 'scrap'
     member do
       post  :void
       patch :record_quality
@@ -218,6 +220,8 @@ Rails.application.routes.draw do
                                                  as: :download_purchase_order_import
 
   get 'quote_margin_review', to: 'quote_margin_reviews#index', as: :quote_margin_review
+  post 'quote_margin_review/accept_increases', to: 'quote_margin_reviews#accept_increases',
+                                               as: :accept_increases_quote_margin_review
   resources :price_exceptions, only: [:index] do
     post :recheck, on: :collection
   end
@@ -238,6 +242,8 @@ Rails.application.routes.draw do
   resources :pricing_rules do
     collection do
       get :lookup
+      get :bulk_increase
+      post :apply_increase
     end
   end
   resources :inventory_adjustments, only: %i[new create]
@@ -345,6 +351,7 @@ Rails.application.routes.draw do
     end
     resources :standard_cost_histories, only: [:create]
     resources :vendor_item_prices, only: %i[create destroy]
+    resources :product_substitutes, only: %i[create destroy], path: 'substitutes'
   end
 
   resources :dispatch_messages, only: %i[index show]

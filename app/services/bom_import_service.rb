@@ -122,6 +122,7 @@ class BomImportService
         )
         result.created += 1
       end
+      BomVersion.capture!(product, source: 'BOM import')
     rescue StandardError => e
       result.errors << "Product #{finished_id}: #{e.message}"
     end

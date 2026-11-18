@@ -1,4 +1,8 @@
 class Vendor < ApplicationRecord
+  include Audited
+
+  audited
+
   has_many :dispatches
   has_many :purchase_orders
   has_many :product_vendors, dependent: :destroy

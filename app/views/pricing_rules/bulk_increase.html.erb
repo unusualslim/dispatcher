@@ -1,0 +1,67 @@
+<div class="container-fluid mt-4">
+  <%= render layout: 'shared/page_header', locals: { title: 'Bulk Price Increase', subtitle: 'Raise the pricing rules for every product that uses a component, or a whole product group. Locked quotes then show under Price increase on Quote Margin Review.' } do %>
+    <%= link_to 'Pricing Rules', pricing_rules_path, class: 'btn btn-outline-secondary btn-sm' %>
+  <% end %>
+
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <%= form_with url: bulk_increase_pricing_rules_path, method: :get, class: 'row g-2 align-items-end' do %>
+        <div class="col-md-3">
+          <label class="form-label small mb-0" for="component_id">Products using component (item #)</label>
+          <%= text_field_tag :component_id, @increase.component_id, class: 'form-control form-control-sm', placeholder: 'e.g. a cap or bottle item #' %>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small mb-0" for="category">and/or product group</label>
+          <%= select_tag :category, options_for_select([['—', '']] + ReportingGroup.order(:name).pluck(:name), @increase.category), class: 'form-select form-select-sm' %>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small mb-0" for="percent">Increase %</label>
+          <%= number_field_tag :percent, @increase.percent&.to_s('F'), step: 'any', min: 0, class: 'form-control form-control-sm' %>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small mb-0" for="amount">or $ per unit (flat rules)</label>
+          <%= number_field_tag :amount, @increase.amount&.to_s('F'), step: 'any', min: 0, class: 'form-control form-control-sm' %>
+        </div>
+        <div class="col-md-2"><%= submit_tag 'Preview', class: 'btn btn-primary btn-sm w-100' %></div>
+      <% end %>
+    </div>
+  </div>
+
+  <% if @increase.valid? %>
+    <% changes = @increase.changes %>
+    <p class="small text-muted"><%= pluralize(@increase.products.size, 'product') %> chosen · <%= pluralize(changes.count { |c| !c.skip }, 'rule') %> to raise.</p>
+    <% if changes.empty? %>
+      <div class="alert alert-info">No pricing rules price these products.</div>
+    <% else %>
+      <div class="card shadow-sm mb-3">
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead class="table-light"><tr><th>Rule</th><th>Customer</th><th>Method</th><th class="text-end">Now</th><th class="text-end">New</th><th>Products it prices</th><th>Note</th></tr></thead>
+            <tbody>
+              <% changes.each do |c| %>
+                <% unit = c.rule.pricing_method == 'flat' ? '$' : '%' %>
+                <tr class="<%= 'text-muted' if c.skip %>">
+                  <td><%= link_to c.rule.name, edit_pricing_rule_path(c.rule) %></td>
+                  <td><%= c.rule.customer&.name || 'All customers' %></td>
+                  <td><%= c.rule.pricing_method_label %></td>
+                  <td class="text-end"><%= number_with_precision(c.old_value, precision: 4, strip_insignificant_zeros: true) %><%= unit %></td>
+                  <td class="text-end fw-semibold"><%= c.new_value ? "#{number_with_precision(c.new_value, precision: 4, strip_insignificant_zeros: true)}#{unit}" : '—' %></td>
+                  <td class="small"><%= c.products.map(&:id).first(8).join(', ') %><%= " +#{c.products.size - 8} more" if c.products.size > 8 %></td>
+                  <td class="small">
+                    <%= c.skip %>
+                    <% if c.other_products.any? %><span class="text-warning-emphasis">Also prices <%= pluralize(c.other_products.size, 'other product') %>, which rise too.</span><% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <%= button_to "Raise #{pluralize(changes.count { |c| !c.skip }, 'rule')}", apply_increase_pricing_rules_path,
+            params: { component_id: @increase.component_id, category: @increase.category, percent: @increase.percent&.to_s('F'), amount: @increase.amount&.to_s('F') }.compact,
+            class: 'btn btn-danger', form: { data: { turbo_confirm: 'Raise these pricing rules now? New orders and quotes price at the new values.' } } %>
+    <% end %>
+  <% elsif params[:percent].present? || params[:amount].present? %>
+    <div class="alert alert-warning">Choose a component or product group, and a percent or a dollar amount (not both).</div>
+  <% end %>
+</div>

@@ -1,0 +1,27 @@
+<%# The audit trail for a record: render 'shared/history', record: @x, children: { 'LineModel' => 'parent_id' } %>
+<% versions = audit_versions(record, children: local_assigns.fetch(:children, {})).to_a %>
+<% users = audit_users(versions) %>
+<details class="card shadow-sm mt-4 mb-4">
+  <summary class="card-header fw-semibold" style="cursor: pointer;">
+    History <span class="text-muted small fw-normal">(<%= versions.size == AuditHelper::HISTORY_LIMIT ? "latest #{versions.size}" : versions.size %> changes)</span>
+  </summary>
+  <% if versions.any? %>
+    <div class="table-responsive">
+      <table class="table table-sm mb-0 align-top small">
+        <thead class="table-light"><tr><th>When</th><th>Who</th><th>What</th><th>Changes</th></tr></thead>
+        <tbody>
+          <% versions.each do |version| %>
+            <tr>
+              <td class="text-nowrap"><%= version.created_at.in_time_zone('America/New_York').strftime('%m/%d/%Y %-I:%M %p') %></td>
+              <td class="text-nowrap"><%= audit_user(version, users) %></td>
+              <td class="text-nowrap"><%= version.event.capitalize %> <%= version.item_type.titleize.downcase unless version.item_type == record.class.base_class.name %></td>
+              <td><%= safe_join(audit_changes(version), tag.br) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="card-body text-muted small">No changes recorded yet. Changes are recorded from 17 Nov 2026 on.</div>
+  <% end %>
+</details>

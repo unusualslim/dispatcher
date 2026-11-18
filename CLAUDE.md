@@ -268,6 +268,23 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
   (`OrderMargin`, costs flag). Quote lines show standard and current cost with margin (costs flag). Production orders have
   a printable **Batch Ticket** (`/production_orders/:id/batch_ticket`: components with blanks for actual/lot, quality
   checks, sign-offs) and a product group filter (list, kanban, MRP).
+- **Audit trail** (paper_trail, `versions` table, jsonb, text `item_id` for product ids): models `include Audited` + `audited
+  ignore:/skip:` (stock, sync stamps, `list_filters`, Devise secrets excluded); whodunnit = user id from ApplicationController.
+  `shared/_history` (History panel, collapsed) on product, customer, vendor, location, quote, order, PO and production order
+  pages, with child rows (lines, components…) via `children:`; cost/price fields hidden without the costs / customer_pricing
+  flags. Kept 5 years: `AuditTrailPruneJob` (Automated Processes, weekly).
+- **Scrap**: `ScrapReason` (Production → Scrap Reasons, addable, retire by inactive) and `ProductionOrderScrap` (production order's
+  Scrap card: finished product or a component, qty, reason); shown on Production variance and yield.
+- **Substitutes** (`ProductSubstitute`: item → substitute, ratio, priority; product page); Production shortages lists substitutes'
+  stock. **BOM versions** (`BomVersion`: components + cost lines snapshot): saved when the BOM changes (product page, BOM import)
+  or when a production order is created after an unsaved change; `production_orders.bom_version_id`; product page lists versions
+  with what changed.
+- **Oversell block** (`OversellCheck`, `CustomerOrder#check_stock` set by the order form only): new/changed app-order lines for
+  stocked bought items (not produced, not fuel) can't exceed on hand − other open orders at the warehouse; PDI orders unaffected.
+- **Bulk price increase** (Pricing Rules → Bulk increase, `PricingRuleIncrease`): products by BOM component and/or group → their
+  rules raised by % (markup/margin moved so prices rise x%) or $ (flat only). Quote Margin Review status **Price increase**
+  (rule value above the line's `rule_value` snapshot and above the locked price); tick quotes + effective date → **Accept price
+  increases** (`QuoteIncrease`: re-quote at rule prices from that date, same length, accepted, optional email).
 - **Weights**: `products.weight` is **lb per unit**; orders, POs and the PO print show shipping weight (`LineWeight`), the BOL
   per line.
 - **Pallet labels** (`/purchase_orders/:id/pallet_labels?count=N`, "Pallet Labels" on inventory POs): one 4×6 page per

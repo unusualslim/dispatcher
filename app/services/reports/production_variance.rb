@@ -2,6 +2,9 @@ module Reports
   # Standard against actual for completed production orders: yield (produced vs planned), component usage at
   # standard cost (actual vs BOM), and labor hours and cost (/line actual vs standard).
   class ProductionVariance < Base
+    INCLUDES = [:product, { production_order_scraps: :scrap_reason, production_order_components: :product,
+                            jobs: { job_workers: :user } }].freeze
+
     report title: 'Production variance and yield', area: :production, flag: :costs,
            description: 'Completed production orders: yield, material usage and labor against standard.',
            filters: %i[dates location_id category product_id]
@@ -9,7 +12,9 @@ module Reports
     def columns
       [column(:order, 'Production order'), column(:completed, 'Completed', :date), column(:product, 'Product'),
        column(:planned, 'Planned qty', :decimal, total: true), column(:produced, 'Produced', :decimal, total: true),
-       column(:yield, 'Yield', :percent), column(:material_standard, 'Material at standard', :currency, total: true),
+       column(:yield, 'Yield', :percent), column(:scrapped, 'Scrapped', :decimal, total: true),
+       column(:scrap_reasons, 'Scrap reasons'),
+       column(:material_standard, 'Material at standard', :currency, total: true),
        column(:material_actual, 'Material used at standard', :currency, total: true),
        column(:material_variance, 'Material variance', :currency, total: true),
        column(:labor_hours_standard, 'Std labor hrs', :decimal, total: true),
@@ -29,7 +34,7 @@ module Reports
 
     def orders
       scope = ProductionOrder.where(status: 'completed', date_completed: time_range)
-                             .includes(:product, production_order_components: :product, jobs: { job_workers: :user })
+                             .includes(INCLUDES)
                              .order(:date_completed)
       scope = scope.where(location_id: filters[:location_id]) if filters[:location_id]
       scope = scope.where(product_id: filters[:product_id]) if filters[:product_id]
@@ -44,7 +49,11 @@ module Reports
       standard, actual = material(order)
       { order_id: order.id, order: order.number, completed: order.date_completed&.to_date,
         product: order.product&.name || order.item, planned: planned, produced: produced,
-        yield: (produced / planned if planned.positive?), material_standard: standard, material_actual: actual,
+        yield: (produced / planned if planned.positive?),
+        scrapped: order.production_order_scraps.sum(&:quantity).to_d.nonzero?,
+        scrap_reasons: order.production_order_scraps.map do |s|
+          s.scrap_reason.name
+        end.uniq.join(', ').presence, material_standard: standard, material_actual: actual,
         material_variance: standard - actual, labor_hours_standard: costing.standard_labor_hours,
         labor_hours_actual: costing.actual_labor_hours,
         labor_variance: costing.standard_labor_cost - costing.actual_labor_cost }

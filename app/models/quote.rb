@@ -1,4 +1,8 @@
 class Quote < ApplicationRecord
+  include Audited
+
+  audited
+
   belongs_to :customer
   belongs_to :location, optional: true
   belongs_to :customer_order, optional: true

@@ -1,4 +1,8 @@
 class Customer < ApplicationRecord
+  include Audited
+
+  audited
+
   has_many :phone_numbers, dependent: :destroy
   accepts_nested_attributes_for :phone_numbers, allow_destroy: true
   has_many :customer_locations, dependent: :destroy

@@ -1,6 +1,10 @@
 # A quality test a product's production orders must record: numeric against a target range
 # (e.g. pH 9.5 to 10.5) or pass/fail against an expected description (e.g. Appearance "clear").
 class QualitySpec < ApplicationRecord
+  include Audited
+
+  audited
+
   RESULT_TYPES = { 'numeric' => 'Numeric', 'pass_fail' => 'Pass/Fail' }.freeze
 
   belongs_to :product

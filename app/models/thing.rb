@@ -1,6 +1,10 @@
 # Equipment & Assets: trucks and trailers (assigned to dispatches) and equipment such as packaging lines,
 # which expense PO lines can be charged to.
 class Thing < ApplicationRecord
+  include Audited
+
+  audited
+
   CATEGORIES = { 'truck' => 'Truck', 'trailer' => 'Trailer', 'equipment' => 'Equipment' }.freeze
 
   belongs_to :location, optional: true

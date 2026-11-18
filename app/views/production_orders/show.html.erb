@@ -239,7 +239,11 @@
       <div class="card shadow-sm">
   <div class="card-body">
     <div class="d-flex justify-content-between align-items-center mb-3">
-      <h5 class="mb-0">Components and Qty</h5>
+      <h5 class="mb-0">Components and Qty
+        <% if (version = @production_order.bom_version) %>
+          <span class="badge bg-light text-dark border ms-1" title="BOM version this order was made with">BOM v<%= version.number %> · <%= version.effective_on.strftime('%m/%d/%Y') %></span>
+        <% end %>
+      </h5>
       <span class="text-muted small">
         <%= @production_order.production_order_components.size %> line(s)
       </span>
@@ -293,6 +297,8 @@
 
 
       <%= render 'quality_check', production_order: @production_order %>
+
+      <%= render 'scrap', production_order: @production_order %>
 
       <div class="card shadow-sm mt-3">
         <div class="card-body">
@@ -405,3 +411,7 @@
     if (tab && window.location.hash === "#gl-posting") bootstrap.Tab.getOrCreateInstance(tab).show();
   });
 </script>
+
+<div class="container-fluid">
+  <%= render 'shared/history', record: @production_order, children: { 'ProductionOrderComponent' => 'production_order_id', 'QualityResult' => 'production_order_id', 'ProductionOrderScrap' => 'production_order_id' } %>
+</div>

@@ -48,7 +48,7 @@ module Reports
     end
 
     def lines
-      scope = CustomerOrderProduct.joins(:customer_order).where(customer_orders: { order_status: STATUSES })
+      scope = CustomerOrderProduct.joins(:customer_order).where(customer_orders: { order_status: [*STATUSES, nil] })
                                   .includes({ customer_order: %i[customer location ship_from_location] }, :location,
                                             product: :reporting_group)
       scope = scope.where(customer_orders: { customer_id: filters[:customer_id] }) if filters[:customer_id]

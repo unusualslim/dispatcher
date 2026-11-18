@@ -88,8 +88,16 @@ class OperationsReportsTest < ActionDispatch::IntegrationTest # rubocop:disable 
     open_order_po.production_order_components.create!(product: @urea, quantity: 40, description: 'Urea')
     LocationProduct.create!(location: @warehouse, product: @urea, quantity: 15)
 
+    liquor = Product.create!(id: 'OR-LIQ', name: 'Urea liquor')
+    LocationProduct.create!(location: @warehouse, product: liquor, quantity: 60)
+    post product_product_substitutes_path(@urea), params: { substitute_id: liquor.id, ratio: '2' }
+    assert_equal [liquor.id], @urea.product_substitutes.pluck(:substitute_id)
+    get product_path(@urea)
+    assert_select 'td a', text: /OR-LIQ/
+
     short = Reports::ProductionShortages.new({}).rows.first
     assert_equal [40, 15, 25], [short[:needed], short[:available], short[:short]].map(&:to_i)
+    assert_equal 'OR-LIQ: 60', short[:substitutes]
 
     @urea.update!(standard_cost: 2)
     done = ProductionOrder.create!(number: 'PO-V1', product: @made, location: @warehouse, status: 'completed',

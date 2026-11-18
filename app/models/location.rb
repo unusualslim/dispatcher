@@ -1,4 +1,8 @@
 class Location < ApplicationRecord
+  include Audited
+
+  audited
+
   has_rich_text :dispatch_notes
   has_rich_text :location_notes
 

@@ -1,4 +1,8 @@
 class ProductionOrderComponent < ApplicationRecord
+  include Audited
+
+  audited
+
   belongs_to :production_order
   belongs_to :product, optional: true
 

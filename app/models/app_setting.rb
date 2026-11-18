@@ -1,4 +1,8 @@
 class AppSetting < ApplicationRecord
+  include Audited
+
+  audited
+
   DEFAULTS = {
     'labor_rate' => '25.00',
     'mrp_purchase_lead_days' => '7',

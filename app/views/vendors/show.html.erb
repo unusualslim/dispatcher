@@ -91,3 +91,7 @@
 
   <%= link_to "Back to Vendors", vendors_path, class: "btn btn-secondary mt-3" %>
 </div>
+
+<div class="container-fluid">
+  <%= render 'shared/history', record: @vendor, children: {} %>
+</div>

@@ -1,0 +1,53 @@
+<% scraps = production_order.production_order_scraps.includes(:scrap_reason, :product, :recorded_by) %>
+<div class="card shadow-sm mt-3">
+  <div class="card-body">
+    <h5 class="mb-3">Scrap</h5>
+    <% if scraps.any? %>
+      <table class="table table-sm align-middle">
+        <thead class="table-light"><tr><th>Item</th><th class="text-end">Qty</th><th>Reason</th><th>Notes</th><th>By</th><th></th></tr></thead>
+        <tbody>
+          <% scraps.each do |scrap| %>
+            <tr>
+              <td><%= scrap.product ? "#{scrap.product_id} #{scrap.product.name}" : 'Finished product' %></td>
+              <td class="text-end"><%= number_with_precision(scrap.quantity, precision: 3, strip_insignificant_zeros: true, delimiter: ',') %></td>
+              <td><%= scrap.scrap_reason.name %></td>
+              <td class="small"><%= scrap.notes %></td>
+              <td class="small text-muted"><%= scrap.recorded_by&.email %> <%= scrap.created_at.strftime('%m/%d') %></td>
+              <td class="text-end">
+                <% if can?(:production, :edit) && !production_order.voided? %>
+                  <%= button_to 'Remove', production_order_production_order_scrap_path(production_order, scrap), method: :delete,
+                                class: 'btn btn-link btn-sm p-0 text-danger', form: { data: { turbo_confirm: 'Remove this scrap entry?' } } %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p class="text-muted small">No scrap recorded.</p>
+    <% end %>
+    <% if can?(:production, :edit) && !production_order.voided? %>
+      <%= form_with model: ProductionOrderScrap.new, url: production_order_production_order_scraps_path(production_order), class: 'row g-2 align-items-end' do |f| %>
+        <div class="col-md-3">
+          <%= f.label :product_id, 'Item', class: 'form-label small mb-0' %>
+          <%= f.select :product_id, [['Finished product', '']] + production_order.production_order_components.select(&:product).map { |c| ["#{c.product_id} #{c.product.name}", c.product_id] },
+                       {}, class: 'form-select form-select-sm' %>
+        </div>
+        <div class="col-md-2">
+          <%= f.label :quantity, 'Qty', class: 'form-label small mb-0' %>
+          <%= f.number_field :quantity, step: 'any', min: 0, required: true, class: 'form-control form-control-sm' %>
+        </div>
+        <div class="col-md-3">
+          <%= f.label :scrap_reason_id, 'Reason', class: 'form-label small mb-0' %>
+          <%= f.collection_select :scrap_reason_id, ScrapReason.active.ordered, :id, :name, {}, class: 'form-select form-select-sm' %>
+        </div>
+        <div class="col-md-3">
+          <%= f.label :notes, class: 'form-label small mb-0' %>
+          <%= f.text_field :notes, class: 'form-control form-control-sm' %>
+        </div>
+        <div class="col-md-1"><%= f.submit 'Record', class: 'btn btn-sm btn-outline-danger w-100' %></div>
+      <% end %>
+      <div class="form-text"><%= link_to 'Manage scrap reasons', scrap_reasons_path %></div>
+    <% end %>
+  </div>
+</div>

@@ -60,7 +60,8 @@ module ApplicationHelper
 
   # Quote margin review status (see QuoteMarginReview::Line#status).
   def margin_status_badge(status)
-    label, css = { reprice: %w[Re-price bg-danger], watch: ['Watch', 'bg-warning text-dark'],
+    label, css = { reprice: %w[Re-price bg-danger], increase: ['Price increase', 'bg-primary'],
+                   watch: ['Watch', 'bg-warning text-dark'],
                    ok: %w[OK bg-success], unknown: ['No cost', 'bg-secondary'] }[status]
     content_tag(:span, label, class: "badge #{css}")
   end

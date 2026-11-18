@@ -114,3 +114,6 @@ group :test do
   gem 'capybara'
   gem 'selenium-webdriver'
 end
+
+# Audit trail: who changed what, when (kept 5 years, pruned by AuditTrailPruneJob)
+gem 'paper_trail', '~> 17.0'

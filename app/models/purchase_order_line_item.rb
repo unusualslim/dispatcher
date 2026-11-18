@@ -1,4 +1,8 @@
 class PurchaseOrderLineItem < ApplicationRecord
+  include Audited
+
+  audited
+
   belongs_to :purchase_order
   belongs_to :product, optional: true
   # Expense PO lines: a description (product_name), the GL expense account, the equipment it's for and the

@@ -90,7 +90,27 @@ class PricingRulesController < ApplicationController
     render json: json
   end
 
+  # Bulk increase: preview the rules that price the chosen products and their new values.
+  def bulk_increase
+    @increase = PricingRuleIncrease.new(**increase_params)
+  rescue ArgumentError
+    @increase = PricingRuleIncrease.new
+    flash.now[:alert] = t('.bad_number')
+  end
+
+  def apply_increase
+    increase = PricingRuleIncrease.new(**increase_params)
+    return redirect_to(bulk_increase_pricing_rules_path, alert: t('.incomplete')) unless increase.valid?
+
+    count = increase.apply!.size
+    redirect_to quote_margin_review_path(status: 'increase'), notice: t('.applied', count: count)
+  end
+
   private
+
+  def increase_params
+    params.permit(:component_id, :category, :percent, :amount).to_h.symbolize_keys
+  end
 
   def specific_rule_result(rule, product)
     return nil unless rule && product

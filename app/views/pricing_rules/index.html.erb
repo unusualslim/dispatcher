@@ -1,6 +1,9 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
   <h1 class="mb-0">Pricing Rules</h1>
-  <%= link_to 'New Rule', new_pricing_rule_path, class: 'btn btn-primary btn-sm' %>
+  <div class="d-flex gap-2">
+    <%= link_to 'Bulk increase', bulk_increase_pricing_rules_path, class: 'btn btn-outline-secondary btn-sm' %>
+    <%= link_to 'New Rule', new_pricing_rule_path, class: 'btn btn-primary btn-sm' %>
+  </div>
 </div>
 
 <% if notice.present? %>

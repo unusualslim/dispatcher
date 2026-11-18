@@ -309,3 +309,7 @@
   <% end %>
 
 </div>
+
+<div class="container-fluid">
+  <%= render 'shared/history', record: @purchase_order, children: { 'PurchaseOrderLineItem' => 'purchase_order_id' } %>
+</div>

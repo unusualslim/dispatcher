@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_17_123000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_17_133000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -75,6 +75,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_123000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.datetime "last_triggered_at"
+  end
+
+  create_table "bom_versions", force: :cascade do |t|
+    t.string "product_id", null: false
+    t.integer "number", null: false
+    t.date "effective_on", null: false
+    t.jsonb "components", default: [], null: false
+    t.jsonb "cost_lines", default: [], null: false
+    t.string "source"
+    t.bigint "created_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_bom_versions_on_created_by_id"
+    t.index ["product_id", "number"], name: "index_bom_versions_on_product_id_and_number", unique: true
+    t.index ["product_id"], name: "index_bom_versions_on_product_id"
   end
 
   create_table "comments", force: :cascade do |t|
@@ -725,6 +740,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_123000) do
     t.index ["product_id"], name: "index_product_documents_on_product_id"
   end
 
+  create_table "product_substitutes", force: :cascade do |t|
+    t.string "product_id", null: false
+    t.string "substitute_id", null: false
+    t.integer "priority", default: 1, null: false
+    t.decimal "ratio", precision: 12, scale: 4, default: "1.0", null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_id", "substitute_id"], name: "index_product_substitutes_on_product_id_and_substitute_id", unique: true
+    t.index ["product_id"], name: "index_product_substitutes_on_product_id"
+    t.index ["substitute_id"], name: "index_product_substitutes_on_substitute_id"
+  end
+
   create_table "product_vendors", force: :cascade do |t|
     t.string "product_id", null: false
     t.string "vendor_id", null: false
@@ -768,6 +796,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_123000) do
     t.index ["production_order_id"], name: "index_production_order_components_on_production_order_id"
   end
 
+  create_table "production_order_scraps", force: :cascade do |t|
+    t.bigint "production_order_id", null: false
+    t.bigint "scrap_reason_id", null: false
+    t.string "product_id"
+    t.decimal "quantity", precision: 14, scale: 3, null: false
+    t.text "notes"
+    t.bigint "recorded_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_id"], name: "index_production_order_scraps_on_product_id"
+    t.index ["production_order_id"], name: "index_production_order_scraps_on_production_order_id"
+    t.index ["recorded_by_id"], name: "index_production_order_scraps_on_recorded_by_id"
+    t.index ["scrap_reason_id"], name: "index_production_order_scraps_on_scrap_reason_id"
+  end
+
   create_table "production_orders", force: :cascade do |t|
     t.string "number"
     t.string "status"
@@ -795,6 +838,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_123000) do
     t.bigint "voided_by_id"
     t.text "void_reason"
     t.string "lot_number"
+    t.bigint "bom_version_id"
+    t.index ["bom_version_id"], name: "index_production_orders_on_bom_version_id"
     t.index ["customer_id"], name: "index_production_orders_on_customer_id"
     t.index ["location_id"], name: "index_production_orders_on_location_id"
     t.index ["lot_number"], name: "index_production_orders_on_lot_number", unique: true
@@ -1026,6 +1071,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_123000) do
     t.index "lower((name)::text)", name: "index_roles_on_lower_name", unique: true
   end
 
+  create_table "scrap_reasons", force: :cascade do |t|
+    t.string "name", null: false
+    t.boolean "active", default: true, null: false
+    t.integer "position"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_scrap_reasons_on_name", unique: true
+  end
+
   create_table "standard_cost_histories", force: :cascade do |t|
     t.string "product_id"
     t.decimal "amount", precision: 12, scale: 4
@@ -1174,6 +1228,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_123000) do
     t.string "freight_terms"
   end
 
+  create_table "versions", force: :cascade do |t|
+    t.string "item_type", null: false
+    t.string "item_id", null: false
+    t.string "event", null: false
+    t.string "whodunnit"
+    t.jsonb "object"
+    t.jsonb "object_changes"
+    t.datetime "created_at"
+    t.index ["created_at"], name: "index_versions_on_created_at"
+    t.index ["item_type", "item_id"], name: "index_versions_on_item_type_and_item_id"
+  end
+
   create_table "work_orders", force: :cascade do |t|
     t.string "subject"
     t.integer "assigned_to"
@@ -1190,6 +1256,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_123000) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "bom_versions", "products", on_delete: :cascade
+  add_foreign_key "bom_versions", "users", column: "created_by_id"
   add_foreign_key "comments", "users"
   add_foreign_key "comments", "work_orders"
   add_foreign_key "cost_items", "reporting_groups"
@@ -1257,11 +1325,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_123000) do
   add_foreign_key "product_cost_lines", "cost_items"
   add_foreign_key "product_cost_lines", "reporting_groups"
   add_foreign_key "product_documents", "products", on_delete: :cascade
+  add_foreign_key "product_substitutes", "products", column: "substitute_id", on_delete: :cascade
+  add_foreign_key "product_substitutes", "products", on_delete: :cascade
   add_foreign_key "product_vendors", "products"
   add_foreign_key "product_vendors", "vendors"
   add_foreign_key "production_order_batches", "production_orders"
   add_foreign_key "production_order_components", "production_orders"
   add_foreign_key "production_order_components", "products"
+  add_foreign_key "production_order_scraps", "production_orders", on_delete: :cascade
+  add_foreign_key "production_order_scraps", "products"
+  add_foreign_key "production_order_scraps", "scrap_reasons"
+  add_foreign_key "production_order_scraps", "users", column: "recorded_by_id"
+  add_foreign_key "production_orders", "bom_versions", on_delete: :nullify
   add_foreign_key "production_orders", "customers"
   add_foreign_key "production_orders", "locations"
   add_foreign_key "production_orders", "products"

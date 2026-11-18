@@ -40,11 +40,20 @@ class QuoteMarginReview
       quoted_below_target? ? margin_pct_then : target_margin_pct
     end
 
+    # The rule was raised after the quote (its value is above the one the line was priced at) and now prices above
+    # the locked price: a bulk increase or a rule raised by hand.
+    def rule_raised?
+      rule = quote_product.pricing_rule
+      quoted = quote_product.rule_value
+      rule && quoted && rule.value.to_d > quoted.to_d && price_gap && price_gap > BigDecimal('0.00005')
+    end
+
     def quoted_below_target?
       target_margin_pct && margin_pct_then && margin_pct_then < target_margin_pct - BigDecimal('0.05')
     end
 
     # :reprice — margin more than REPRICE_ALLOWANCE_PCT points below the floor (or negative)
+    # :increase — the pricing rule now prices above the locked price (a bulk increase, or a rule raised by hand)
     # :watch   — cost has risen but margin is still within the allowance
     # :ok      — cost flat or down
     # :unknown — no cost to compare against
@@ -52,13 +61,14 @@ class QuoteMarginReview
       return :unknown if margin_pct_now.nil?
       return :reprice if margin_now.negative?
       return :reprice if margin_floor_pct && margin_pct_now < margin_floor_pct - REPRICE_ALLOWANCE_PCT
-      return :watch   if cost_change && cost_change > BigDecimal('0.00005')
+      return :increase if rule_raised?
+      return :watch if cost_change && cost_change > BigDecimal('0.00005')
 
       :ok
     end
   end
 
-  STATUS_ORDER = { reprice: 0, watch: 1, unknown: 2, ok: 3 }.freeze
+  STATUS_ORDER = { reprice: 0, increase: 1, watch: 2, unknown: 3, ok: 4 }.freeze
 
   # Lines on accepted quotes whose lock is active or scheduled, worst first.
   def self.open_locks(customer_id: nil)

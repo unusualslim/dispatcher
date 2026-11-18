@@ -1,4 +1,8 @@
 class ReportingGroup < ApplicationRecord
+  include Audited
+
+  audited
+
   ACCOUNT_FORMAT = /\A[A-Za-z0-9]{1,10}-[A-Za-z0-9]{1,10}\z/ # Major-Sub; the site is prefixed per location
 
   # Same item types as PDI. Fuel and warehouse groups are PDI product categories; non-inventory

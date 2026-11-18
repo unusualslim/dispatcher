@@ -1,4 +1,8 @@
 class QuoteProduct < ApplicationRecord
+  include Audited
+
+  audited
+
   belongs_to :quote
   belongs_to :product, primary_key: :id, optional: true
   belongs_to :pricing_rule, optional: true

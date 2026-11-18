@@ -2,6 +2,10 @@
 # carrier, or what we charge the customer), charge type, origin, freight class, carrier and customer on this date.
 # Blank selectors match anything; the most specific matching rule wins (FreightRule.best).
 class FreightRule < ApplicationRecord
+  include Audited
+
+  audited
+
   SIDES = { 'purchase' => 'Purchase (carrier cost)', 'sale' => 'Sale (charge customer)' }.freeze
   CHARGE_TYPES = { 'freight' => 'Freight', 'fuel_surcharge' => 'Fuel surcharge', 'extra_stop' => 'Additional stop',
                    'pump_off' => 'Pump off' }.freeze

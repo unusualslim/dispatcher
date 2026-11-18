@@ -1,4 +1,8 @@
 class ProductionOrder < ApplicationRecord
+  include Audited
+
+  audited
+
   include ProductionOrderWorkflow
 
   # created: planned, nothing done yet · in_progress: a crew has clocked in · quality_check: waiting
@@ -13,6 +17,7 @@ class ProductionOrder < ApplicationRecord
   belongs_to :voided_by, class_name: 'User', optional: true
 
   has_many :production_order_components, -> { order(:position, :id) }, dependent: :destroy
+  has_many :production_order_scraps, -> { order(:created_at) }, dependent: :destroy, inverse_of: :production_order
   accepts_nested_attributes_for :production_order_components, allow_destroy: true, reject_if: :all_blank
 
   has_many :production_order_batches, dependent: :destroy
@@ -30,9 +35,12 @@ class ProductionOrder < ApplicationRecord
 
   validates :location_id, presence: { message: :warehouse_required }, if: :require_warehouse
 
+  belongs_to :bom_version, optional: true
+
   before_validation :set_default_status, on: :create
   before_validation :generate_number, on: :create
   before_validation :sync_customer_location_names
+  before_create :record_bom_version
 
   scope :search, lambda { |term|
     return all if term.blank?
@@ -118,5 +126,10 @@ class ProductionOrder < ApplicationRecord
     ]
 
     Array.new(6) { charset.sample }.join
+  end
+
+  # The BOM version this order is made with (saving a new version first if the BOM changed since the last one).
+  def record_bom_version
+    self.bom_version ||= BomVersion.capture!(product, source: 'production order') if product
   end
 end

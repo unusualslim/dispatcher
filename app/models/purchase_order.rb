@@ -1,4 +1,8 @@
 class PurchaseOrder < ApplicationRecord
+  include Audited
+
+  audited
+
   include LineWeight
 
   # voided: cancelled by an admin (PurchaseOrderVoid), posted receipts reversed, kept read-only

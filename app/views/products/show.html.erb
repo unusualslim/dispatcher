@@ -145,6 +145,71 @@
     </div>
   </div>
 
+  <%# BOM versions %>
+  <% versions = @product.bom_versions.newest_first.includes(:created_by).to_a %>
+  <% if versions.any? %>
+    <div class="card shadow-sm mb-3">
+      <div class="card-header fw-semibold">BOM Versions</div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0 align-middle">
+          <thead class="table-light"><tr><th>Version</th><th>Effective</th><th>Components</th><th>What changed</th><th>By</th><th class="text-end">Orders</th></tr></thead>
+          <tbody>
+            <% order_counts = ProductionOrder.where(bom_version_id: versions.map(&:id)).group(:bom_version_id).count %>
+            <% versions.each_with_index do |version, i| %>
+              <tr>
+                <td>v<%= version.number %><%= ' (current)' if i.zero? %></td>
+                <td><%= version.effective_on.strftime('%m/%d/%Y') %></td>
+                <td class="small"><%= version.components.map { |c| "#{c['component_product_id']} × #{c['quantity_per_unit'].to_s.sub(/\.0+\z/, '')}" }.join(', ') %></td>
+                <td class="small"><%= version.changes_from(versions[i + 1]).join('; ') %></td>
+                <td class="small text-muted"><%= version.created_by&.email || version.source %></td>
+                <td class="text-end"><%= order_counts.fetch(version.id, 0) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% end %>
+
+  <%# Approved substitutes %>
+  <div class="card shadow-sm mb-3">
+    <div class="card-header fw-semibold">Approved Substitutes</div>
+    <div class="card-body">
+      <% subs = @product.product_substitutes.includes(:substitute) %>
+      <% if subs.any? %>
+        <table class="table table-sm mb-2">
+          <thead><tr><th>#</th><th>Substitute</th><th class="text-end">Units per 1</th><th>Notes</th><th></th></tr></thead>
+          <tbody>
+            <% subs.each_with_index do |sub, i| %>
+              <tr>
+                <td><%= i + 1 %></td>
+                <td><%= link_to "#{sub.substitute_id} #{sub.substitute.name}", product_path(sub.substitute), class: 'text-decoration-none' %></td>
+                <td class="text-end"><%= number_with_precision(sub.ratio, precision: 4, strip_insignificant_zeros: true) %></td>
+                <td class="small"><%= sub.notes %></td>
+                <td class="text-end">
+                  <% if can?(:inventory, :edit) %>
+                    <%= button_to 'Remove', product_product_substitute_path(@product, sub), method: :delete, class: 'btn btn-link btn-sm p-0 text-danger',
+                                  form: { data: { turbo_confirm: 'Remove this substitute?' } } %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p class="text-muted small mb-2">No approved substitutes. Production shortages show substitutes' stock when one is short.</p>
+      <% end %>
+      <% if can?(:inventory, :edit) %>
+        <%= form_with url: product_product_substitutes_path(@product), method: :post, class: 'd-flex flex-wrap gap-1' do %>
+          <%= text_field_tag :substitute_id, nil, required: true, placeholder: 'Substitute item #', class: 'form-control form-control-sm', style: 'width: 160px' %>
+          <%= number_field_tag :ratio, 1, step: 'any', min: 0, class: 'form-control form-control-sm', style: 'width: 90px', title: 'Substitute units used per 1 of this item' %>
+          <%= text_field_tag :notes, nil, placeholder: 'Notes (when allowed)', class: 'form-control form-control-sm', style: 'min-width: 200px' %>
+          <%= submit_tag 'Add substitute', class: 'btn btn-sm btn-outline-primary' %>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+
   <%# Safety data sheet %>
   <div class="card shadow-sm mb-3">
     <div class="card-header fw-semibold">Safety Data Sheet</div>
@@ -652,3 +717,7 @@ document.addEventListener("turbo:load", function () {
   });
 });
 </script>
+
+<div class="container-fluid">
+  <%= render 'shared/history', record: @product, children: { 'ProductComponent' => 'product_id', 'ProductCostLine' => 'product_id', 'ProductVendor' => 'product_id', 'ProductSubstitute' => 'product_id' } %>
+</div>

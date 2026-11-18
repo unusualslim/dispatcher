@@ -311,3 +311,7 @@
     .main-content { margin-left: 0 !important; }
   }
 </style>
+
+<div class="container-fluid">
+  <%= render 'shared/history', record: @quote, children: { 'QuoteProduct' => 'quote_id' } %>
+</div>

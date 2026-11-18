@@ -15,7 +15,7 @@ module Reports
        column(:quantity, 'Qty to make', :decimal), column(:component, 'Component'),
        column(:description, 'Description'), column(:warehouse, 'Warehouse'), column(:needed, 'Needed', :decimal),
        column(:available, 'Available', :decimal), column(:short, 'Short', :decimal, total: true),
-       column(:on_order, 'On open POs', :decimal)]
+       column(:on_order, 'On open POs', :decimal), column(:substitutes, 'Substitutes on hand')]
     end
 
     def rows
@@ -32,7 +32,8 @@ module Reports
     private
 
     def orders
-      scope = ProductionOrder.where(status: OPEN).includes(:product, :location, production_order_components: :product)
+      components = { production_order_components: { product: :product_substitutes } }
+      scope = ProductionOrder.where(status: OPEN).includes(:product, :location, components)
       scope = scope.where(location_id: filters[:location_id]) if filters[:location_id]
       scope = scope.joins(:product).where(products: { category: filters[:category] }) if filters[:category]
       scope.sort_by { |o| [o.due_date || Date.new(2100), o.id] }
@@ -53,7 +54,16 @@ module Reports
         quantity: order.qty_to_make&.to_d, component: component.product_id,
         description: component.product&.name || component.description,
         warehouse: order.location&.pdi_site_code.presence || order.location&.company_name, needed: needed,
-        available: available, short: needed - available, on_order: on_order.fetch(component.product_id, 0).to_d }
+        available: available, short: needed - available, on_order: on_order.fetch(component.product_id, 0).to_d,
+        substitutes: substitutes_on_hand(component.product, order.location_id) }
+    end
+
+    # "9001: 40 (×1)" for each approved substitute with stock at the order's warehouse.
+    def substitutes_on_hand(product, location_id)
+      product.product_substitutes.filter_map do |sub|
+        qty = stock.fetch([sub.substitute_id, location_id], 0.to_d)
+        "#{sub.substitute_id}: #{qty.round(3).to_s('F').delete_suffix('.0')}" if qty.positive?
+      end.join(', ').presence
     end
 
     # { [product_id, location_id] => quantity on hand }

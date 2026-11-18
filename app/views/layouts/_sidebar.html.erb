@@ -125,6 +125,7 @@
           <%= nav_item 'Line Production',      line_path,                        'bi-stopwatch',             active: current == 'jobs', keywords: 'clock in jobs' %>
           <%= nav_item 'Warehouse Board',      warehouse_kanban_path,            'bi-tv',                    active: current == 'warehouse' %>
           <%= nav_item 'Work Orders',          work_orders_path,                 'bi-wrench-adjustable',     active: current == 'work_orders', keywords: 'shop' %>
+          <%= nav_item 'Scrap Reasons',        scrap_reasons_path,               'bi-trash3',                active: current == 'scrap_reasons', keywords: 'scrap waste yield loss' %>
           <%= nav_item 'Quality Exceptions',   quality_exceptions_path,          'bi-clipboard-x',           active: current == 'quality_exceptions', keywords: 'qc quality ph viscosity review' %>
         <% end %>
         <% end %>

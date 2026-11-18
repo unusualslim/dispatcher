@@ -1,6 +1,10 @@
 # A custom role built by admins (Admin → Roles): area levels, feature rights, data flags and the assistant
 # level. Users can have any number; access adds up (UserPermissions).
 class Role < ApplicationRecord
+  include Audited
+
+  audited
+
   has_many :role_assignments, dependent: :delete_all
   has_many :users, through: :role_assignments
 

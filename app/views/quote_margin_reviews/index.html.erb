@@ -12,7 +12,7 @@
 </div>
 
 <ul class="nav nav-tabs mb-3">
-  <% [[nil, 'All'], ['reprice', 'Re-price'], ['watch', 'Watch'], ['ok', 'OK'], ['unknown', 'No cost']].each do |key, label| %>
+  <% [[nil, 'All'], ['reprice', 'Re-price'], ['increase', 'Price increase'], ['watch', 'Watch'], ['ok', 'OK'], ['unknown', 'No cost']].each do |key, label| %>
     <% count = key ? @counts[key.to_sym].to_i : @counts.values.sum %>
     <li class="nav-item">
       <%= link_to quote_margin_review_path(status: key, customer_id: params[:customer_id]), class: "nav-link #{'active' if @filter == key}" do %>
@@ -26,11 +26,28 @@
 <% if @lines.empty? %>
   <div class="text-center text-muted py-5">No locked quote lines<%= ' with this status' if @filter %>.</div>
 <% else %>
+  <% if can?(:sales, :edit) %>
+    <%= form_with url: accept_increases_quote_margin_review_path, method: :post, id: 'accept-increases',
+                  class: 'card card-body shadow-sm mb-3 d-flex flex-row flex-wrap gap-2 align-items-end' do %>
+      <div>
+        <label class="form-label small mb-0" for="effective_on">New prices effective</label>
+        <%= date_field_tag :effective_on, Date.current, class: 'form-control form-control-sm', required: true %>
+      </div>
+      <div class="form-check mb-1">
+        <%= check_box_tag :email, '1', true, class: 'form-check-input' %>
+        <label class="form-check-label small" for="email">Email the new quotes to the customers</label>
+      </div>
+      <%= submit_tag 'Accept price increases on selected quotes', class: 'btn btn-sm btn-primary',
+                     data: { turbo_confirm: 'Re-quote the selected quotes at today\'s rule prices from that date and accept them?' } %>
+      <div class="small text-muted w-100">Tick the quotes below. Each is re-quoted at today's rule prices, valid from that date for the same length, and accepted; the old lock ends the day before.</div>
+    <% end %>
+  <% end %>
   <div class="card shadow-sm">
     <div class="table-responsive">
       <table class="table table-sm table-hover align-middle mb-0" style="font-size:.88rem;">
         <thead class="table-light">
           <tr>
+            <% if can?(:sales, :edit) %><th><input type="checkbox" class="form-check-input" title="Select all" onclick="document.querySelectorAll('.quote-pick').forEach(b => b.checked = this.checked)"></th><% end %>
             <th>Status</th>
             <th>Customer / Quote</th>
             <th>Product</th>
@@ -47,6 +64,9 @@
           <% @lines.each do |l| %>
             <% quote = l.quote %>
             <tr>
+              <% if can?(:sales, :edit) %>
+                <td><%= check_box_tag 'quote_ids[]', quote.id, false, id: nil, form: 'accept-increases', class: 'form-check-input quote-pick' %></td>
+              <% end %>
               <td><%= margin_status_badge(l.status) %></td>
               <td>
                 <%= link_to quote.customer.name, quote_margin_review_path(customer_id: quote.customer_id, status: params[:status]), class: 'text-decoration-none' %>
