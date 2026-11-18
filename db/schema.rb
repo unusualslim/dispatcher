@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_18_121000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_18_122000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -211,11 +211,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_18_121000) do
     t.text "pdi_push_response"
     t.text "pdi_push_error"
     t.string "release_number", limit: 30
+    t.string "pdi_order_number", limit: 15
     t.index ["customer_id"], name: "index_customer_orders_on_customer_id"
     t.index ["external_order_no"], name: "index_customer_orders_on_external_order_no"
     t.index ["freight_origin_location_id"], name: "index_customer_orders_on_freight_origin_location_id"
     t.index ["location_id"], name: "index_customer_orders_on_location_id"
     t.index ["pdi_carrier_id"], name: "index_customer_orders_on_pdi_carrier_id"
+    t.index ["pdi_order_number"], name: "index_customer_orders_on_pdi_order_number", unique: true
     t.index ["pdi_vehicle_id"], name: "index_customer_orders_on_pdi_vehicle_id"
     t.index ["ship_from_location_id"], name: "index_customer_orders_on_ship_from_location_id"
   end

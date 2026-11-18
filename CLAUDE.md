@@ -233,8 +233,10 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
 - **Send to PDI** (fuel orders entered in the app, 2026-11-18; `PdiOrders::FuelOrderPush` + `FuelOrderXml`, button on the order's
   PDI card): `AddFuelOrder` (target status 1 Open) with the main information only: DestinationType 1, CustomerID /
   CustomerLocationID (ship-to must be linked), `customer_po_number` (required when `customers.po_required`), DeliveryDateTime
-  (`required_delivery_date` + `delivery_time`), BusinessDate, CarrierID (else 1514), AlternateReferenceNo `APP<id>`, FuelDetail
-  per line (product = ordered and purchased, gallons, prices 0 / overridden 0); then `RecalculateOrder` so PDI prices it
+  (`required_delivery_date` + `delivery_time`), BusinessDate, CarrierID (else 1514), OrderNo **OD-09xxxx-YY** (`PdiOrders::OrderNumbers`:
+  next free in the year, advisory lock, kept in `pdi_order_number`), AlternateReferenceNo `APP<id>`, FuelDetail
+  per line (product = ordered and purchased, gallons, prices 0 / overridden 0, plus the LoadDetail PDI requires: planned from
+  the ship-from site else plant 2, OriginType 1, nothing lifted); then `RecalculateOrder` so PDI prices it
   (freight, taxes). Lines must be fuel-group products (901). Orders also have `release_number` (app only, not sent to PDI yet). Sent once; tanks, driver, load details are filled in PDI and come
   back with the sync. PDI's reply is stored (`pdi_push_response`); an order number links at once, a request ID → `queued`
   (Check PDI = `GetResponses`), and `OrderWriter#find_record` links a synced order by `APP<id>`. Staging has no PDI keys.

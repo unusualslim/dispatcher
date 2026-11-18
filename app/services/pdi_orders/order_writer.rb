@@ -20,10 +20,16 @@ module PdiOrders
 
     private
 
-    # By PDI order number; else an app order sent with Send to PDI, found by our reference (APP123) and linked.
+    def sent_from_app
+      CustomerOrder.find_by(pdi_order_number: @order.order_no, external_order_no: nil) ||
+        FuelOrderPush.order_for_reference(@order.alternate_reference)
+    end
+
+    # By PDI order number; else an app order sent with Send to PDI (by the number it was sent under, or our
+    # reference APP123), linked.
     def find_record
       CustomerOrder.find_by(external_order_no: @order.order_no) ||
-        FuelOrderPush.order_for_reference(@order.alternate_reference)&.tap do |order|
+        sent_from_app&.tap do |order|
           order.assign_attributes(external_order_no: @order.order_no, pdi_push_status: 'sent')
         end ||
         CustomerOrder.new(external_order_no: @order.order_no)

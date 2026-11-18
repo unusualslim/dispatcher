@@ -1,6 +1,7 @@
 module PdiOrders
   # The <PDIFuelOrders xmlns=""> document for Send to PDI (PDIFuelOrders.xsd), elements in the schema's order:
-  # the main information only, prices as 0 "not overridden" so PDI prices the order.
+  # the main information only, prices as 0 "not overridden" so PDI prices the order. PDI requires us to number the
+  # order (OrderNumbers: OD-09xxxx-YY); our reference (APP + app order id) goes as AlternateReferenceNo.
   class FuelOrderXml
     DESTINATION_CUSTOMER = 1
     DEFAULT_CARRIER = '1514'.freeze # Five Points Logistics: our own trucks
@@ -8,8 +9,9 @@ module PdiOrders
     ZERO_PRICES = { 'DeliveredGrossQuantity' => 0, 'DeliveredNetQuantity' => 0, 'UnitPrice' => 0,
                     'UnitPriceOverridden' => 0, 'FreightUnitPrice' => 0, 'FreightUnitPriceOverridden' => 0 }.freeze
 
-    def initialize(order, lines:, ship_to_id:, reference:)
+    def initialize(order, lines:, ship_to_id:, reference:, order_no:)
       @order = order
+      @order_no = order_no
       @lines = lines
       @ship_to_id = ship_to_id
       @reference = reference
@@ -41,8 +43,9 @@ module PdiOrders
 
     # [element, value] in schema order; nil entries are left out.
     def header
-      [['DestinationType', DESTINATION_CUSTOMER], ['CustomerID', @order.customer.pdi_customer_id],
-       ['CustomerLocationID', @ship_to_id], (['PurchaseOrderNo', @order.customer_po_number] if po?),
+      [['OrderNo', @order_no], ['DestinationType', DESTINATION_CUSTOMER],
+       ['CustomerID', @order.customer.pdi_customer_id], ['CustomerLocationID', @ship_to_id],
+       (['PurchaseOrderNo', @order.customer_po_number] if po?),
        ['AlternateReferenceNo', @reference], ['DeliveryDateTime', delivery_time],
        ['BusinessDate', (@order.order_date || Date.current).to_date.iso8601],
        ['CarrierID', @order.pdi_carrier_id.presence || DEFAULT_CARRIER], notes]

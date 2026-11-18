@@ -5,7 +5,7 @@ module PdiOrders
   # 0 "not overridden" and PDI then recalculates the order (RecalculateOrder), so PDI prices it, adds freight and taxes.
   # Tanks, driver, truck and load details are filled in PDI later; the 15-minute order sync brings them back, and
   # finds this order by its PDI order number or by our reference (OrderWriter).
-  class FuelOrderPush
+  class FuelOrderPush # rubocop:disable Metrics/ClassLength
     TARGET_STATUS = 1 # PDI "Open Order"
     REFERENCE_PREFIX = 'APP'.freeze
     GUID = /\h{8}-\h{4}-\h{4}-\h{4}-\h{12}/
@@ -43,8 +43,10 @@ module PdiOrders
       order.customer_order_products.reject(&:marked_for_destruction?).sort_by(&:id)
     end
 
-    def xml
-      FuelOrderXml.new(order, lines: lines, ship_to_id: ship_to_id, reference: self.class.reference(order)).to_xml
+    # order_no: the PDI order number to send (the order's own once it has one, else the next free one).
+    def xml(order_no = order.pdi_order_number || OrderNumbers.next_for)
+      FuelOrderXml.new(order, lines: lines, ship_to_id: ship_to_id, reference: self.class.reference(order),
+                              order_no: order_no).to_xml
     end
 
     # Sends the order. Records PDI's reply, its order number when the reply has one (else its request ID, to be
@@ -52,11 +54,10 @@ module PdiOrders
     def push!(user:, service: PdiWebService.new)
       raise ArgumentError, problems.to_sentence unless ready?
 
-      reply = service.add_fuel_order(xml, target_status: TARGET_STATUS)
-      record_reply(reply, user)
+      send_numbered(service, user)
       recalculate(service)
       order
-    rescue *PdiWebService::FAILURES => e
+    rescue OrderNumbers::RangeFull, *PdiWebService::FAILURES => e
       order.update_columns(pdi_push_status: 'failed', pdi_push_error: e.message, updated_at: Time.current) # rubocop:disable Rails/SkipsModelValidations
       raise
     end
@@ -113,9 +114,19 @@ module PdiOrders
       product.reporting_group&.item_type == 'fuel'
     end
 
-    def record_reply(reply, user)
-      order_no = order_number(reply)
-      order.update!(pdi_push_status: order_no ? 'sent' : 'queued', pdi_pushed_at: Time.current,
+    # Numbers the order (under the numbering lock) and sends it.
+    def send_numbered(service, user)
+      OrderNumbers.with_lock do
+        number = order.pdi_order_number || OrderNumbers.next_for
+        record_reply(service.add_fuel_order(xml(number), target_status: TARGET_STATUS), user, number)
+      end
+    end
+
+    # PDI took the order under our number unless its reply names another (or only queued it: a request ID).
+    def record_reply(reply, user, number)
+      order_no = order_number(reply) || (number unless reply.to_s[GUID])
+      order.update!(pdi_order_number: number, pdi_push_status: order_no ? 'sent' : 'queued',
+                    pdi_pushed_at: Time.current,
                     pdi_pushed_by_id: user&.id, pdi_request_id: reply.to_s[GUID], pdi_push_error: nil,
                     pdi_push_response: reply.to_s.truncate(20_000), order_status: :open_order)
       link!(order_no) if order_no

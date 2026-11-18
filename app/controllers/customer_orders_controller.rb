@@ -196,7 +196,7 @@ class CustomerOrdersController < ApplicationController
     order = CustomerOrder.find(params[:id])
     PdiOrders::FuelOrderPush.new(order).push!(user: current_user)
     redirect_to order, notice: pdi_push_notice(order)
-  rescue ArgumentError, *PdiWebService::FAILURES => e
+  rescue ArgumentError, PdiOrders::OrderNumbers::RangeFull, *PdiWebService::FAILURES => e
     redirect_to order, alert: t('.failed', error: e.message)
   end
 

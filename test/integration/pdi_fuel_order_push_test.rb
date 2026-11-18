@@ -52,6 +52,7 @@ class PdiFuelOrderPushTest < ActionDispatch::IntegrationTest
     assert_equal(%w[1 901 901 2500.0 0 0], %w[OrderLineItemNo OrderedProductID PurchasedProductID OrderedQuantity
                                               UnitPrice UnitPriceOverridden].map { |n| line.at(n).text })
     assert_nil xml.at('DestinationTankID')
+    assert_equal "OD-090001-#{Time.zone.today.strftime('%y')}", xml.at('PDIFuelOrder > OrderNo').text
     load = xml.at('FuelDetail > LoadDetail')
     assert_equal(%w[901 2500.0 0 1 2 0], %w[LoadProductID LoadQuantity LiftNetQuantity OriginType OriginSiteID
                                             UnitCost].map { |n| load.at(n).text })
@@ -70,6 +71,19 @@ class PdiFuelOrderPushTest < ActionDispatch::IntegrationTest
     assert_equal ['OD-123-26'], fake.recalculated
     assert_equal 1, fake.sent.last
     assert_includes PdiOrders::FuelOrderPush.new(@order).problems, 'Already sent to PDI'
+  end
+
+  test 'a plain success reply means PDI took the order under our number; numbers run on per year' do
+    year = Time.zone.today.strftime('%y')
+    CustomerOrder.create!(customer: @customer, location: @site, pdi_order_number: "OD-090041-#{year}")
+    CustomerOrder.create!(customer: @customer, location: @site, pdi_order_number: 'OD-099999-25')
+    @order.update!(customer_po_number: 'P6153')
+    fake = FakePdi.new('<Result>Success</Result>')
+    PdiOrders::FuelOrderPush.new(@order).push!(user: @user, service: fake)
+    assert_equal ["OD-090042-#{year}", "OD-090042-#{year}", 'sent'],
+                 [@order.pdi_order_number, @order.external_order_no, @order.pdi_push_status]
+    assert_equal ["OD-090042-#{year}"], fake.recalculated
+    assert_equal 'OD-090001-27', PdiOrders::OrderNumbers.next_for(Date.new(2027, 1, 2))
   end
 
   test 'a queued push is checked later, or linked by the order sync through our reference' do
