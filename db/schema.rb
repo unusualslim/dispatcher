@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_17_133000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_18_121000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -202,6 +202,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_133000) do
     t.decimal "pdi_gallons", precision: 14, scale: 2
     t.jsonb "pdi_freight_items", default: [], null: false
     t.string "freight_terms"
+    t.string "customer_po_number", limit: 20
+    t.time "delivery_time"
+    t.string "pdi_push_status"
+    t.datetime "pdi_pushed_at"
+    t.bigint "pdi_pushed_by_id"
+    t.string "pdi_request_id"
+    t.text "pdi_push_response"
+    t.text "pdi_push_error"
+    t.string "release_number", limit: 30
     t.index ["customer_id"], name: "index_customer_orders_on_customer_id"
     t.index ["external_order_no"], name: "index_customer_orders_on_external_order_no"
     t.index ["freight_origin_location_id"], name: "index_customer_orders_on_freight_origin_location_id"
@@ -232,6 +241,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_133000) do
     t.decimal "pdi_available_credit", precision: 12, scale: 2
     t.datetime "pdi_credit_updated_at"
     t.integer "lead_time_days"
+    t.boolean "po_required", default: false, null: false
     t.index ["pdi_customer_id"], name: "index_customers_on_pdi_customer_id", unique: true
   end
 

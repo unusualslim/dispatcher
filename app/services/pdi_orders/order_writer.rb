@@ -9,7 +9,7 @@ module PdiOrders
     # :created, :updated or :unchanged
     def save!
       CustomerOrder.transaction do
-        record = CustomerOrder.find_or_initialize_by(external_order_no: @order.order_no)
+        record = find_record
         action = record.new_record? ? :created : :updated
         changed = save_order(record)
         lines_changed = sync_lines(record)
@@ -19,6 +19,15 @@ module PdiOrders
     end
 
     private
+
+    # By PDI order number; else an app order sent with Send to PDI, found by our reference (APP123) and linked.
+    def find_record
+      CustomerOrder.find_by(external_order_no: @order.order_no) ||
+        FuelOrderPush.order_for_reference(@order.alternate_reference)&.tap do |order|
+          order.assign_attributes(external_order_no: @order.order_no, pdi_push_status: 'sent')
+        end ||
+        CustomerOrder.new(external_order_no: @order.order_no)
+    end
 
     # True when the order itself changed.
     def save_order(record)

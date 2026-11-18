@@ -20,6 +20,7 @@ module PdiOrders
     def ship_to_id = text('CustomerLocationID')
     def site_id = text('SiteID')
     def carrier_id = text('CarrierID')
+    def alternate_reference = text('AlternateReferenceNo')
 
     # DestinationType 0 = one of our own sites (tank wagon plant, bulk plant): no customer.
     def site? = text('DestinationType') == '0'

@@ -65,6 +65,21 @@
           </div>
 
           <div>
+            <%= form.label :delivery_time, "Delivery Time", class: "form-label fw-semibold mb-1" %>
+            <%= form.time_field :delivery_time, value: customer_order.delivery_time&.strftime('%H:%M'), class: "form-control" %>
+          </div>
+
+          <div>
+            <%= form.label :customer_po_number, "Customer PO #", class: "form-label fw-semibold mb-1" %>
+            <%= form.text_field :customer_po_number, maxlength: 20, class: "form-control" %>
+          </div>
+
+          <div>
+            <%= form.label :release_number, "Release #", class: "form-label fw-semibold mb-1" %>
+            <%= form.text_field :release_number, maxlength: 30, class: "form-control" %>
+          </div>
+
+          <div>
             <%= form.label :freight_terms, "Freight Terms", class: "form-label fw-semibold mb-1" %>
             <%= form.select :freight_terms, CustomerOrder::FREIGHT_TERMS, { include_blank: '—' }, class: "form-select" %>
           </div>

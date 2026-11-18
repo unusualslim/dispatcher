@@ -230,6 +230,14 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
   location page): one location into another, moving every reference, combining stock and carrying PDI links;
   refuses two different PDI ship-tos of one customer.
 - The FTP order import prefers these IDs ("2362 - Name" / "12 - Name" prefixes) before matching by name.
+- **Send to PDI** (fuel orders entered in the app, 2026-11-18; `PdiOrders::FuelOrderPush` + `FuelOrderXml`, button on the order's
+  PDI card): `AddFuelOrder` (target status 1 Open) with the main information only: DestinationType 1, CustomerID /
+  CustomerLocationID (ship-to must be linked), `customer_po_number` (required when `customers.po_required`), DeliveryDateTime
+  (`required_delivery_date` + `delivery_time`), BusinessDate, CarrierID (else 1514), AlternateReferenceNo `APP<id>`, FuelDetail
+  per line (product = ordered and purchased, gallons, prices 0 / overridden 0); then `RecalculateOrder` so PDI prices it
+  (freight, taxes). Lines must be fuel-group products (901). Orders also have `release_number` (app only, not sent to PDI yet). Sent once; tanks, driver, load details are filled in PDI and come
+  back with the sync. PDI's reply is stored (`pdi_push_response`); an order number links at once, a request ID → `queued`
+  (Check PDI = `GetResponses`), and `OrderWriter#find_record` links a synced order by `APP<id>`. Staging has no PDI keys.
 - Customer and open-order pages lazy-load PDI credit (`/customers/:id/pdi_credit`, Turbo Frame).
 
 ---

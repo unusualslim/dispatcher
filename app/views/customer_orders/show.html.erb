@@ -111,6 +111,20 @@
           <div class="fw-semibold"><%= @customer_order.required_delivery_date&.strftime("%B %-d, %Y") || "Not set" %></div>
         </div>
 
+        <% if @customer_order.customer_po_number.present? %>
+          <div>
+            <div class="text-muted small text-uppercase fw-semibold mb-1">Customer PO #</div>
+            <div class="fw-semibold"><%= @customer_order.customer_po_number %></div>
+          </div>
+        <% end %>
+
+        <% if @customer_order.release_number.present? %>
+          <div>
+            <div class="text-muted small text-uppercase fw-semibold mb-1">Release #</div>
+            <div class="fw-semibold"><%= @customer_order.release_number %></div>
+          </div>
+        <% end %>
+
         <% if @customer_order.freight_terms.present? %>
           <div>
             <div class="text-muted small text-uppercase fw-semibold mb-1">Freight Terms</div>
@@ -341,6 +355,8 @@
   </div>
 
   <%= render 'freight' %>
+
+  <%= render 'pdi_push', order: @customer_order %>
 
   <% if sees?(:costs) && @customer_order.customer_order_products.any? %>
     <% om = OrderMargin.new(@customer_order) %>

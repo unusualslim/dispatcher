@@ -111,6 +111,8 @@ Rails.application.routes.draw do
 
   resources :customer_orders do
     post 'create_dispatch', on: :member
+    post :send_to_pdi, on: :member
+    post :check_pdi, on: :member
     resources :customer_order_products, only: %i[create update destroy]
     resource :freight, only: :update, controller: 'order_freights' do
       post :calculate

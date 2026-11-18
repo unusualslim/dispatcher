@@ -191,6 +191,24 @@ class CustomerOrdersController < ApplicationController
     end
   end
 
+  # Send to PDI: the order goes to PDI as a fuel order (PdiOrders::FuelOrderPush), once.
+  def send_to_pdi
+    order = CustomerOrder.find(params[:id])
+    PdiOrders::FuelOrderPush.new(order).push!(user: current_user)
+    redirect_to order, notice: pdi_push_notice(order)
+  rescue ArgumentError, *PdiWebService::FAILURES => e
+    redirect_to order, alert: t('.failed', error: e.message)
+  end
+
+  # A push PDI queued: ask PDI for its answer.
+  def check_pdi
+    order = CustomerOrder.find(params[:id])
+    PdiOrders::FuelOrderPush.new(order).check!
+    redirect_to order, notice: pdi_push_notice(order)
+  rescue *PdiWebService::FAILURES => e
+    redirect_to order, alert: t('.failed', error: e.message)
+  end
+
   def bulk_close
     ids = Array(params[:order_ids]).map(&:to_i).select(&:positive?)
     return redirect_to dashboard_production_orders_path, alert: 'No orders selected.' if ids.empty?
@@ -242,6 +260,15 @@ class CustomerOrdersController < ApplicationController
 
   def customer_order_params
     params.require(:customer_order).permit(:required_delivery_date, :product, :freight_only, :customer_id,
-                                           :location_id, :ship_from_location_id, :approximate_product_amount, :notes, :order_status, :freight_terms, customer_order_products_attributes: %i[id product_id quantity price quote_product_id pricing_rule_id _destroy], thing_ids: [])
+                                           :location_id, :ship_from_location_id, :approximate_product_amount, :notes, :order_status, :freight_terms,
+                                           :customer_po_number, :release_number, :delivery_time, customer_order_products_attributes: %i[id product_id quantity price quote_product_id pricing_rule_id _destroy], thing_ids: [])
+  end
+
+  def pdi_push_notice(order)
+    if order.external_order_no.present?
+      t('customer_orders.send_to_pdi.sent', number: order.external_order_no)
+    else
+      t('customer_orders.send_to_pdi.queued')
+    end
   end
 end

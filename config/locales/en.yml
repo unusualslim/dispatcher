@@ -298,6 +298,13 @@ en:
       none: "Select at least one quote."
       done: "Accepted %{count} re-quotes effective %{date}%{emailed}."
       emailed: ", %{count} emailed to the customer"
+  customer_orders:
+    send_to_pdi:
+      sent: "Sent to PDI as order %{number}. PDI prices it; tank and load details are filled in PDI."
+      queued: "Sent to PDI. PDI hasn't returned the order number yet: use Check PDI, or the next order sync links it."
+      failed: "Not sent to PDI: %{error}"
+    check_pdi:
+      failed: "Couldn't check PDI: %{error}"
   product_merges:
     create:
       merged: "Merged %{source} into %{target} (%{summary}). %{source} is now inactive."

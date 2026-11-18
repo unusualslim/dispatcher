@@ -4,7 +4,7 @@ require 'net/http'
 # Every call authenticates with a UserCredentials header (web partner ID + password).
 # Results come back as XML inside <OperationResult>; PDI reports its own errors as a
 # PDIExceptionMessage there (HTTP 200), and crashes as a SOAP fault (HTTP 500).
-class PdiWebService
+class PdiWebService # rubocop:disable Metrics/ClassLength
   class Error < StandardError; end
   class NotConfigured < Error; end
 
@@ -78,19 +78,48 @@ class PdiWebService
   # its <PDIFuelOrder>s). See LoadFilter; PDI filters loads by delivery date, not business date.
   def fuel_loads(**filter) = call('GetFuelLoads', LoadFilter.xml(**filter))
 
+  # Adds fuel orders (Send to PDI) at the given PDI status (1 = Open Order). orders_xml is the
+  # <PDIFuelOrders xmlns=""> document (PDIFuelOrders.xsd). Returns PDI's reply as text: it may carry the new order
+  # number, or a request ID to look up with #responses.
+  def add_fuel_order(orders_xml, target_status: 1)
+    call_raw('AddFuelOrder', "<TargetOrderStatus>#{Integer(target_status)}</TargetOrderStatus>" \
+                             "<PDIFuelOrders>#{orders_xml}</PDIFuelOrders>")
+  end
+
+  # PDI's answers to earlier requests (by request ID), as text.
+  def responses(request_ids)
+    ids = Array(request_ids).map { |id| "<RequestId>#{escape(id)}</RequestId>" }.join
+    call_raw('GetResponses', '<PDIGetResponses><PDIGetResponsesInput xmlns="">' \
+                             "<ResponsesToInclude>#{ids}</ResponsesToInclude></PDIGetResponsesInput></PDIGetResponses>")
+  end
+
+  # Has PDI re-price an order (its pricing, freight and taxes).
+  def recalculate_order(order_no)
+    call_raw('RecalculateOrder',
+             "<PDIOrder><PDIOrder xmlns=\"\"><OrderNo>#{escape(order_no)}</OrderNo></PDIOrder></PDIOrder>")
+  end
+
+  # Like #call but returns the result as text (XML or plain), still raising on SOAP faults and PDI exceptions.
+  def call_raw(operation, body_xml)
+    raw_result(operation, post(operation, body_xml))
+  end
+
   # Posts one SOAP operation and returns the result's root element (namespaces removed).
   def call(operation, body_xml)
-    request = Net::HTTP::Post.new(@uri, 'Content-Type' => 'text/xml; charset=utf-8',
-                                        'SOAPAction' => %("#{NAMESPACE}/#{operation}"))
-    request.body = envelope(operation, body_xml)
-    response = Net::HTTP.start(@uri.host, @uri.port, use_ssl: @uri.scheme == 'https',
-                                                     open_timeout: 15, read_timeout: @read_timeout) do |http|
-      http.request(request)
-    end
-    parse(operation, response)
+    parse(operation, post(operation, body_xml))
   end
 
   private
+
+  def post(operation, body_xml)
+    request = Net::HTTP::Post.new(@uri, 'Content-Type' => 'text/xml; charset=utf-8',
+                                        'SOAPAction' => %("#{NAMESPACE}/#{operation}"))
+    request.body = envelope(operation, body_xml)
+    Net::HTTP.start(@uri.host, @uri.port, use_ssl: @uri.scheme == 'https',
+                                          open_timeout: 15, read_timeout: @read_timeout) do |http|
+      http.request(request)
+    end
+  end
 
   def envelope(operation, body_xml)
     <<~XML
@@ -121,6 +150,24 @@ class PdiWebService
     raise Error, "#{operation}: #{exception.at('Description')&.text}" if exception
 
     root
+  end
+
+  def raw_result(operation, response)
+    doc = Nokogiri::XML(response.body)
+    doc.remove_namespaces!
+    check_response!(operation, doc, response)
+    text = result_text(doc.at("#{operation}Result"))
+    exception = Nokogiri::XML(text).tap(&:remove_namespaces!).at('PDIExceptionMessage')
+    raise Error, "#{operation}: #{exception.at('Description')&.text || exception.text}" if exception
+
+    text
+  end
+
+  # A result's child elements as XML, else its text (an escaped XML string or a plain value).
+  def result_text(result)
+    return '' unless result
+
+    result.element_children.any? ? result.inner_html : result.text
   end
 
   def check_response!(operation, doc, response)

@@ -1,0 +1,38 @@
+<%# Send to PDI (fuel orders entered in the app). PDI's own orders already have a PDI order number. %>
+<% pushed = order.pdi_push_status.present? %>
+<% if order.external_order_no.blank? || pushed %>
+  <% push = PdiOrders::FuelOrderPush.new(order) %>
+  <div class="card shadow-sm mb-4">
+    <div class="card-header fw-semibold d-flex justify-content-between">
+      <span>PDI</span>
+      <% if order.external_order_no.present? %><span class="badge bg-success">PDI order <%= order.external_order_no %></span><% end %>
+    </div>
+    <div class="card-body">
+      <% case order.pdi_push_status %>
+      <% when 'sent' %>
+        <p class="mb-1">Sent <%= order.pdi_pushed_at&.in_time_zone('America/New_York')&.strftime('%m/%d/%Y %-I:%M %p') %>. PDI prices it; tank, driver and load details are filled in PDI and come back with the order sync.</p>
+      <% when 'queued' %>
+        <p class="mb-2">Sent <%= order.pdi_pushed_at&.in_time_zone('America/New_York')&.strftime('%m/%d/%Y %-I:%M %p') %>; PDI hasn't returned its order number yet. The next order sync links it, or ask now:</p>
+        <%= button_to 'Check PDI', check_pdi_customer_order_path(order), class: 'btn btn-sm btn-outline-primary' if can?(:sales, :edit) %>
+      <% else %>
+        <% if order.pdi_push_status == 'failed' %>
+          <div class="alert alert-danger py-2 small">Last try failed: <%= order.pdi_push_error %></div>
+        <% end %>
+        <% problems = push.problems %>
+        <% if problems.any? %>
+          <p class="small mb-1">Before this order can go to PDI as a fuel order:</p>
+          <ul class="small mb-0"><% problems.each do |problem| %><li><%= problem %></li><% end %></ul>
+        <% elsif !PdiWebService.configured? %>
+          <p class="small text-muted mb-0">Ready, but PDI isn't connected here (no web service credentials).</p>
+        <% elsif can?(:sales, :edit) %>
+          <p class="small mb-2">Sends the customer, ship-to, delivery date and time, PO #, and each product with its gallons. PDI prices it and adds freight and taxes. Sent once; later changes are made in PDI.</p>
+          <%= button_to 'Send to PDI', send_to_pdi_customer_order_path(order), class: 'btn btn-primary btn-sm',
+                        form: { data: { turbo_confirm: 'Send this order to PDI as a fuel order?' } } %>
+        <% end %>
+      <% end %>
+      <% if order.pdi_push_error.present? && order.pdi_push_status == 'sent' %>
+        <div class="small text-warning-emphasis mt-1"><%= order.pdi_push_error %></div>
+      <% end %>
+    </div>
+  </div>
+<% end %>
