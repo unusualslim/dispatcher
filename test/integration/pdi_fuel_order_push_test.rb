@@ -52,6 +52,9 @@ class PdiFuelOrderPushTest < ActionDispatch::IntegrationTest
     assert_equal(%w[1 901 901 2500.0 0 0], %w[OrderLineItemNo OrderedProductID PurchasedProductID OrderedQuantity
                                               UnitPrice UnitPriceOverridden].map { |n| line.at(n).text })
     assert_nil xml.at('DestinationTankID')
+    load = xml.at('FuelDetail > LoadDetail')
+    assert_equal(%w[901 2500.0 0 1 2 0], %w[LoadProductID LoadQuantity LiftNetQuantity OriginType OriginSiteID
+                                            UnitCost].map { |n| load.at(n).text })
   end
 
   test 'Send to PDI links the order number PDI returns and has PDI price it' do
@@ -97,7 +100,11 @@ class PdiFuelOrderPushTest < ActionDispatch::IntegrationTest
     @order.update!(customer_po_number: nil)
     get customer_order_path(@order)
     assert_select 'div', text: 'R-4410'
+    assert_select 'select.add-product-select option', text: 'Bulk DEF (901)'
     assert_select '.card-body li', text: 'This customer requires a PO number'
+
+    get new_customer_order_path
+    assert_includes response.body, 'Bulk DEF (901)'
 
     pdi_order = CustomerOrder.create!(customer: @customer, location: @site, external_order_no: 'OD-9-26')
     get customer_order_path(pdi_order)
