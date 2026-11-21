@@ -2,19 +2,32 @@
 <% action  = action_name %>
 
 <%# ── Active-section detection ──────────────────────────────────────────── %>
-<% sales_active      = %w[customer_orders quotes customers pricing_rules price_exceptions quote_margin_reviews freight_rules freight_tables freight_classes].include?(current) ||
-                       (current == 'locations' && action != 'map') %>
-<% dispatch_active   = %w[dispatches calendar dispatch_messages tanks feed_tanks].include?(current) ||
-                       (current == 'locations' && action == 'map') %>
-<% production_active = %w[production_orders jobs warehouse work_orders quality_exceptions].include?(current) %>
-<% purchasing_active = %w[purchase_orders purchasing_report mrp vendors freight_payables].include?(current) %>
-<% inventory_active  = %w[inventory_intelligence products inventory_adjustments inventory_transactions inventory_valuations].include?(current) %>
-<% imports_active    = %w[imports customer_order_imports inventory_imports pdi_inventory_imports pdi_invoice_date_imports warehouse_transaction_imports
-                          bom_imports min_max_imports vendor_freight_term_imports pdi_product_imports
-                          repack_batch_imports pdi_purchase_order_imports purchase_order_imports].include?(current) ||
-                       (current == 'customer_order_products' && request.path == product_code_links_path) %>
-<% accounting_active = %w[financial_dashboards ledger_entries reporting_groups cost_items expense_accounts costing_settings].include?(current) %>
-<% admin_active      = imports_active || %w[users customer_merges location_merges product_merges things warehouse_locations automated_processes samsara_settings company_settings announcements].include?(current) %>
+<% current_report = Reports::Registry::REPORTS.find { |r| r.key.to_s == params[:id].to_s } if current == 'reports' && action == 'show' %>
+<% report_area    = current_report&.area.to_s %>
+<% sales_review_active  = %w[price_exceptions quote_margin_reviews].include?(current) %>
+<% sales_setup_active   = %w[customers pricing_rules freight_rules freight_tables freight_classes].include?(current) ||
+                          (current == 'locations' && action != 'map') %>
+<% sales_active         = report_area == 'sales' || sales_review_active || sales_setup_active || %w[customer_orders quotes].include?(current) %>
+<% dispatch_setup_active = %w[feed_tanks samsara_settings things].include?(current) %>
+<% dispatch_active      = report_area == 'dispatch' || dispatch_setup_active || %w[dispatches calendar dispatch_messages tanks].include?(current) ||
+                          (current == 'locations' && action == 'map') %>
+<% production_review_active = current == 'quality_exceptions' %>
+<% production_setup_active  = %w[scrap_reasons warehouse_locations things].include?(current) %>
+<% production_active    = report_area == 'production' || production_review_active || production_setup_active ||
+                          %w[production_orders jobs warehouse work_orders].include?(current) %>
+<% purchasing_setup_active = current == 'vendors' %>
+<% purchasing_active    = report_area == 'purchasing' || purchasing_setup_active || %w[purchase_orders purchasing_report mrp freight_payables].include?(current) %>
+<% inventory_setup_active = current == 'products' %>
+<% inventory_active     = report_area == 'inventory' || inventory_setup_active || %w[inventory_intelligence inventory_adjustments inventory_transactions inventory_valuations].include?(current) %>
+<% imports_active       = %w[imports customer_order_imports inventory_imports pdi_inventory_imports pdi_invoice_date_imports warehouse_transaction_imports
+                             bom_imports min_max_imports vendor_freight_term_imports pdi_product_imports
+                             repack_batch_imports pdi_purchase_order_imports purchase_order_imports].include?(current) ||
+                          (current == 'customer_order_products' && request.path == product_code_links_path) %>
+<% accounting_setup_active = %w[reporting_groups cost_items expense_accounts costing_settings].include?(current) %>
+<% accounting_active    = report_area == 'accounting' || accounting_setup_active || %w[financial_dashboards ledger_entries].include?(current) %>
+<% admin_data_active    = imports_active || %w[customer_merges location_merges product_merges].include?(current) %>
+<% admin_system_active  = %w[company_settings automated_processes].include?(current) %>
+<% admin_active         = admin_data_active || admin_system_active || %w[users roles announcements].include?(current) %>
 
 <nav id="sidebar" class="sidebar d-flex flex-column">
   <!-- Brand -->
@@ -81,11 +94,7 @@
         <div id="sidebarAccordion">
 
         <ul class="sidebar-nav mb-1">
-          <%= nav_item 'Reports', reports_path, 'bi-file-earmark-bar-graph', active: current == 'reports', keywords: 'report export csv print' %>
-          <% Reports::Registry::REPORTS.each do |report| %>
-            <% next unless can_see?(report.area, report.flag) %>
-            <%= nav_search_item "Report: #{report.title}", report_path(report.key), 'bi-table', keywords: report.description %>
-          <% end %>
+          <%= nav_item 'Reports', reports_path, 'bi-file-earmark-bar-graph', active: current == 'reports' && action == 'index', keywords: 'report export csv print hub' %>
         </ul>
 
         <% if can?(:sales) %>
@@ -94,12 +103,17 @@
           <%= nav_item 'Order Dashboard',     dashboard_customer_orders_path, 'bi-speedometer2',        active: current == 'customer_orders' && action == 'dashboard' %>
           <%= nav_item 'Customer Orders',     customer_orders_path,           'bi-cart3',               active: current == 'customer_orders' && action != 'dashboard', keywords: 'sales orders pdi' %>
           <%= nav_item 'Quotes',              quotes_path,                    'bi-file-earmark-text',   active: current == 'quotes' if sees?(:customer_pricing) %>
-          <%= nav_item 'Customers',           customers_path,                 'bi-people',              active: current == 'customers' %>
-          <%= nav_item 'Locations',           locations_path,                 'bi-geo-alt',             active: current == 'locations' && action != 'map' %>
-          <%= nav_item 'Pricing Rules',       pricing_rules_path,             'bi-tag',                 active: current == 'pricing_rules', keywords: 'prices' if sees?(:customer_pricing) %>
-          <%= nav_item 'Freight Rules',       freight_rules_path,             'bi-truck-flatbed',       active: %w[freight_rules freight_tables freight_classes].include?(current), keywords: 'freight class table mileage point to point surcharge pump off stop lane' %>
-          <%= nav_item 'Price Exceptions',    price_exceptions_path,          'bi-exclamation-diamond', active: current == 'price_exceptions', keywords: 'price check mismatch' if sees?(:customer_pricing) %>
-          <%= nav_item 'Quote Margin Review', quote_margin_review_path,       'bi-graph-down-arrow',    active: current == 'quote_margin_reviews', keywords: 're-price requote' if sees?(:costs) %>
+          <%= render 'layouts/sidebar_reports', area: :sales, current_report: current_report %>
+          <%= render 'layouts/sidebar_subgroup', label: 'Review', id: 'salesReviewCollapse', active: sales_review_active do %>
+            <%= nav_item 'Price Exceptions',    price_exceptions_path,    'bi-exclamation-diamond', active: current == 'price_exceptions', keywords: 'price check mismatch' if sees?(:customer_pricing) %>
+            <%= nav_item 'Quote Margin Review', quote_margin_review_path, 'bi-graph-down-arrow',    active: current == 'quote_margin_reviews', keywords: 're-price requote' if sees?(:costs) %>
+          <% end %>
+          <%= render 'layouts/sidebar_subgroup', label: 'Setup', id: 'salesSetupCollapse', active: sales_setup_active do %>
+            <%= nav_item 'Customers',     customers_path,     'bi-people',         active: current == 'customers' %>
+            <%= nav_item 'Locations',     locations_path,     'bi-geo-alt',        active: current == 'locations' && action != 'map' %>
+            <%= nav_item 'Pricing Rules', pricing_rules_path, 'bi-tag',            active: current == 'pricing_rules', keywords: 'prices' if sees?(:customer_pricing) %>
+            <%= nav_item 'Freight Rules', freight_rules_path, 'bi-truck-flatbed',  active: %w[freight_rules freight_tables freight_classes].include?(current), keywords: 'freight class table mileage point to point surcharge pump off stop lane' %>
+          <% end %>
         <% end %>
         <% end %>
 
@@ -111,8 +125,13 @@
           <%= nav_item 'Calendar',        calendar_path,          'bi-calendar3', active: current == 'calendar' %>
           <%= nav_item 'Map',             locations_map_path,     'bi-map',       active: current == 'locations' && action == 'map', keywords: 'gps trucks samsara routes' %>
           <%= nav_item 'Tanks',           tanks_path,             'bi-fuel-pump', active: current == 'tanks', keywords: 'tank levels kii smartank readings ullage def' %>
-          <%= nav_item 'Tank Feeds',      feed_tanks_path,        'bi-broadcast', active: current == 'feed_tanks', keywords: 'kii smartank sensor monitor setup' %>
           <%= nav_item 'Driver Messages', dispatch_messages_path, 'bi-chat-dots', active: current == 'dispatch_messages', keywords: 'sms twilio' %>
+          <%= render 'layouts/sidebar_reports', area: :dispatch, current_report: current_report %>
+          <%= render 'layouts/sidebar_subgroup', label: 'Setup', id: 'dispatchSetupCollapse', active: dispatch_setup_active do %>
+            <%= nav_item 'Tank Feeds',         feed_tanks_path,            'bi-broadcast', active: current == 'feed_tanks', keywords: 'kii smartank sensor monitor setup' %>
+            <%= nav_item 'Samsara',            edit_samsara_settings_path, 'bi-truck',     active: current == 'samsara_settings', keywords: 'routes drivers gps home base' if admin? %>
+            <%= nav_item 'Equipment & Assets', things_path,                'bi-tools',     active: current == 'things', keywords: 'things trucks trailers fleet' if admin? %>
+          <% end %>
         <% end %>
         <% end %>
 
@@ -125,8 +144,15 @@
           <%= nav_item 'Line Production',      line_path,                        'bi-stopwatch',             active: current == 'jobs', keywords: 'clock in jobs' %>
           <%= nav_item 'Warehouse Board',      warehouse_kanban_path,            'bi-tv',                    active: current == 'warehouse' %>
           <%= nav_item 'Work Orders',          work_orders_path,                 'bi-wrench-adjustable',     active: current == 'work_orders', keywords: 'shop' %>
-          <%= nav_item 'Scrap Reasons',        scrap_reasons_path,               'bi-trash3',                active: current == 'scrap_reasons', keywords: 'scrap waste yield loss' %>
-          <%= nav_item 'Quality Exceptions',   quality_exceptions_path,          'bi-clipboard-x',           active: current == 'quality_exceptions', keywords: 'qc quality ph viscosity review' %>
+          <%= render 'layouts/sidebar_reports', area: :production, current_report: current_report %>
+          <%= render 'layouts/sidebar_subgroup', label: 'Review', id: 'productionReviewCollapse', active: production_review_active do %>
+            <%= nav_item 'Quality Exceptions', quality_exceptions_path, 'bi-clipboard-x', active: current == 'quality_exceptions', keywords: 'qc quality ph viscosity review' %>
+          <% end %>
+          <%= render 'layouts/sidebar_subgroup', label: 'Setup', id: 'productionSetupCollapse', active: production_setup_active do %>
+            <%= nav_item 'Scrap Reasons',       scrap_reasons_path,            'bi-trash3',        active: current == 'scrap_reasons', keywords: 'scrap waste yield loss' %>
+            <%= nav_item 'Warehouse Locations', edit_warehouse_locations_path, 'bi-building-gear', active: current == 'warehouse_locations' if admin? %>
+            <%= nav_item 'Equipment & Assets',  things_path,                   'bi-tools',         active: current == 'things', keywords: 'things machines plant equipment' if admin? %>
+          <% end %>
         <% end %>
         <% end %>
 
@@ -137,19 +163,25 @@
           <%= nav_item 'Purchase Orders',   purchase_orders_path,           'bi-bag-check',       active: current == 'purchase_orders' && action != 'dashboard' %>
           <%= nav_item 'Purchasing Report', purchasing_report_path,         'bi-cart-check',      active: current == 'purchasing_report', keywords: 'buy reorder' %>
           <%= nav_item 'MRP',               mrp_path,                       'bi-graph-up-arrow',  active: current == 'mrp', keywords: 'requirements raw materials' %>
-          <%= nav_item 'Vendors',           vendors_path,                   'bi-building',        active: current == 'vendors' %>
           <%= nav_item 'Freight Payables',  freight_payables_path,          'bi-receipt',         active: current == 'freight_payables', keywords: 'carrier invoice accrual bol freight ap' %>
+          <%= render 'layouts/sidebar_reports', area: :purchasing, current_report: current_report %>
+          <%= render 'layouts/sidebar_subgroup', label: 'Setup', id: 'purchasingSetupCollapse', active: purchasing_setup_active do %>
+            <%= nav_item 'Vendors', vendors_path, 'bi-building', active: current == 'vendors' %>
+          <% end %>
         <% end %>
         <% end %>
 
         <% if can?(:inventory) %>
         <!-- INVENTORY -->
         <%= render 'layouts/sidebar_section', label: 'Inventory', icon: 'bi-box-seam', id: 'inventoryCollapse', active: inventory_active do %>
-          <%= nav_item 'Inventory Insights', inventory_intelligence_path,  'bi-lightbulb',     active: current == 'inventory_intelligence', keywords: 'intelligence report' %>
-          <%= nav_item 'Products',           products_path,                'bi-box-seam',      active: current == 'products' %>
-          <%= nav_item 'Adjust Inventory',   new_inventory_adjustment_path, 'bi-sliders',      active: current == 'inventory_adjustments', keywords: 'adjustment stock count' %>
-          <%= nav_item 'Inventory History',  inventory_transactions_path,  'bi-clock-history', active: current == 'inventory_transactions', keywords: 'transactions' %>
-          <%= nav_item 'Inventory Valuation', inventory_valuation_path,    'bi-cash-stack',    active: current == 'inventory_valuations', keywords: 'value cost fifo standard weighted average ppv variance' if sees?(:costs) %>
+          <%= nav_item 'Inventory Insights',  inventory_intelligence_path,   'bi-lightbulb',     active: current == 'inventory_intelligence', keywords: 'intelligence report' %>
+          <%= nav_item 'Adjust Inventory',    new_inventory_adjustment_path, 'bi-sliders',       active: current == 'inventory_adjustments', keywords: 'adjustment stock count' %>
+          <%= nav_item 'Inventory History',   inventory_transactions_path,   'bi-clock-history', active: current == 'inventory_transactions', keywords: 'transactions' %>
+          <%= nav_item 'Inventory Valuation', inventory_valuation_path,      'bi-cash-stack',    active: current == 'inventory_valuations', keywords: 'value cost fifo standard weighted average ppv variance' if sees?(:costs) %>
+          <%= render 'layouts/sidebar_reports', area: :inventory, current_report: current_report %>
+          <%= render 'layouts/sidebar_subgroup', label: 'Setup', id: 'inventorySetupCollapse', active: inventory_setup_active do %>
+            <%= nav_item 'Products', products_path, 'bi-box-seam', active: current == 'products', keywords: 'items bom' %>
+          <% end %>
         <% end %>
         <% end %>
 
@@ -157,32 +189,36 @@
         <!-- ACCOUNTING -->
         <%= render 'layouts/sidebar_section', label: 'Accounting', icon: 'bi-journal-text', id: 'accountingCollapse', active: accounting_active do %>
           <%= nav_item 'Financial Dashboard', financial_dashboard_path, 'bi-speedometer2', active: current == 'financial_dashboards', keywords: 'sales mtd month to date kpi margin delivery' if sees?(:financial_dashboard) %>
-          <%= nav_item 'GL Ledger',        ledger_entries_path,        'bi-journal-text', active: current == 'ledger_entries', keywords: 'journal fpst gl export posting' if sees?(:gl) %>
-          <%= nav_item 'Reporting Groups', reporting_groups_path,      'bi-diagram-2',    active: current == 'reporting_groups', keywords: 'gl account posting cost' if sees?(:costs) %>
-          <%= nav_item 'Cost Items',       cost_items_path,            'bi-tags',         active: current == 'cost_items', keywords: 'non-inventory pallet film tape label labor overhead consumables price' if sees?(:costs) %>
-          <%= nav_item 'Expense Accounts', expense_accounts_path,      'bi-journal-minus', active: current == 'expense_accounts', keywords: 'gl expense po repairs maintenance parts' if sees?(:gl) %>
-          <%= nav_item 'Costing Settings', edit_costing_settings_path, 'bi-calculator',   active: current == 'costing_settings', keywords: 'labor rate cost gl start date' if sees?(:costs) %>
+          <%= nav_item 'GL Ledger',           ledger_entries_path,      'bi-journal-text', active: current == 'ledger_entries', keywords: 'journal fpst gl export posting' if sees?(:gl) %>
+          <%= render 'layouts/sidebar_reports', area: :accounting, current_report: current_report %>
+          <%= render 'layouts/sidebar_subgroup', label: 'Setup', id: 'accountingSetupCollapse', active: accounting_setup_active do %>
+            <%= nav_item 'Reporting Groups', reporting_groups_path,      'bi-diagram-2',     active: current == 'reporting_groups', keywords: 'gl account posting cost' if sees?(:costs) %>
+            <%= nav_item 'Cost Items',       cost_items_path,            'bi-tags',          active: current == 'cost_items', keywords: 'non-inventory pallet film tape label labor overhead consumables price' if sees?(:costs) %>
+            <%= nav_item 'Expense Accounts', expense_accounts_path,      'bi-journal-minus', active: current == 'expense_accounts', keywords: 'gl expense po repairs maintenance parts' if sees?(:gl) %>
+            <%= nav_item 'Costing Settings', edit_costing_settings_path, 'bi-calculator',    active: current == 'costing_settings', keywords: 'labor rate cost gl start date' if sees?(:costs) %>
+          <% end %>
         <% end %>
         <% end %>
 
         <% if admin? %>
         <!-- ADMIN -->
         <%= render 'layouts/sidebar_section', label: 'Admin', icon: 'bi-gear-wide-connected', id: 'adminCollapse', active: admin_active do %>
-          <%= nav_item 'Data Imports',        imports_path,             'bi-file-earmark-arrow-up', active: imports_active, keywords: 'upload file' %>
-          <% ImportsController::IMPORTS.each do |imp| %>
-            <%= nav_search_item "Import: #{imp[:title]}", send(imp[:path]), imp[:icon], keywords: imp[:description] %>
+          <%= nav_item 'Users',         users_path,         'bi-person-badge', active: current == 'users' %>
+          <%= nav_item 'Roles',         roles_path,         'bi-shield-lock',  active: current == 'roles', keywords: 'permissions access security' %>
+          <%= nav_item 'Announcements', announcements_path, 'bi-megaphone',    active: current == 'announcements' %>
+          <%= render 'layouts/sidebar_subgroup', label: 'Data', id: 'adminDataCollapse', active: admin_data_active do %>
+            <%= nav_item 'Data Imports',    imports_path,           'bi-file-earmark-arrow-up', active: imports_active, keywords: 'upload file' %>
+            <% ImportsController::IMPORTS.each do |imp| %>
+              <%= nav_search_item "Import: #{imp[:title]}", send(imp[:path]), imp[:icon], keywords: imp[:description] %>
+            <% end %>
+            <%= nav_item 'Merge Customers', customer_merges_path,   'bi-intersect', active: current == 'customer_merges', keywords: 'duplicate pdi link combine' %>
+            <%= nav_item 'Merge Locations', location_merges_path,   'bi-geo-alt',   active: current == 'location_merges', keywords: 'duplicate ship-to site combine' %>
+            <%= nav_item 'Merge Products',  new_product_merge_path, 'bi-box-seam',  active: current == 'product_merges', keywords: 'obsolete duplicate item combine' %>
           <% end %>
-          <%= nav_item 'Users',               users_path,               'bi-person-badge', active: current == 'users' %>
-          <%= nav_item 'Roles',               roles_path,               'bi-shield-lock',  active: current == 'roles', keywords: 'permissions access security' %>
-          <%= nav_item 'Merge Customers',     customer_merges_path,     'bi-intersect',    active: current == 'customer_merges', keywords: 'duplicate pdi link combine' %>
-          <%= nav_item 'Merge Locations',     location_merges_path,     'bi-geo-alt',      active: current == 'location_merges', keywords: 'duplicate ship-to site combine' %>
-          <%= nav_item 'Merge Products',      new_product_merge_path,   'bi-box-seam',     active: current == 'product_merges', keywords: 'obsolete duplicate item combine' %>
-          <%= nav_item 'Equipment & Assets',  things_path,              'bi-tools',        active: current == 'things', keywords: 'things' %>
-          <%= nav_item 'Warehouse Locations', edit_warehouse_locations_path, 'bi-building-gear', active: current == 'warehouse_locations' %>
-          <%= nav_item 'Company Info',        edit_company_settings_path, 'bi-building',   active: current == 'company_settings', keywords: 'address phone logo quote terms letterhead' %>
-          <%= nav_item 'Samsara',             edit_samsara_settings_path, 'bi-truck',      active: current == 'samsara_settings', keywords: 'routes drivers gps home base' %>
-          <%= nav_item 'Automated Processes', automated_processes_path, 'bi-arrow-repeat', active: current == 'automated_processes', keywords: 'pdi sync schedule cron ftp' %>
-          <%= nav_item 'Announcements',       announcements_path,       'bi-megaphone',    active: current == 'announcements' %>
+          <%= render 'layouts/sidebar_subgroup', label: 'System', id: 'adminSystemCollapse', active: admin_system_active do %>
+            <%= nav_item 'Company Info',        edit_company_settings_path, 'bi-building',     active: current == 'company_settings', keywords: 'address phone logo quote terms letterhead' %>
+            <%= nav_item 'Automated Processes', automated_processes_path,   'bi-arrow-repeat', active: current == 'automated_processes', keywords: 'pdi sync schedule cron ftp' %>
+          <% end %>
         <% end %>
         <% end %>
 
@@ -224,7 +260,7 @@
             var input = document.getElementById('sidebarSearch');
             var acc   = document.getElementById('sidebarAccordion');
             var favs  = document.getElementById('favoritesSidebarList');
-            var items = Array.from(acc.querySelectorAll('.sidebar-nav li'));
+            var items = Array.from(acc.querySelectorAll('.sidebar-nav li:not(.sidebar-subgroup)'));
             if (favs) items = items.concat(Array.from(favs.querySelectorAll('li')));
             var wasOpen = null;
             var matches = [];
@@ -263,11 +299,15 @@
               });
               matches = byName.concat(byKeyword);
 
+              // Subgroups (Setup, Review, …) open while searching and hide when none of their links match.
+              acc.querySelectorAll('.sidebar-subgroup').forEach(function(sub) {
+                var any = sub.querySelector('li:not(.d-none)');
+                sub.classList.toggle('d-none', searching && !any);
+              });
               acc.querySelectorAll('.sidebar-section').forEach(function(section) {
-                var collapse = section.querySelector('.sidebar-collapse');
-                var any = section.querySelector('.sidebar-nav li:not(.d-none)');
+                var any = section.querySelector('.sidebar-nav li:not(.d-none):not(.sidebar-subgroup)');
                 section.classList.toggle('d-none', searching && !any);
-                if (searching) collapse.classList.add('show');
+                if (searching) section.querySelectorAll('.sidebar-collapse').forEach(function(c) { c.classList.add('show'); });
               });
 
               if (!searching && wasOpen) {

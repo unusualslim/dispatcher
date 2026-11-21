@@ -1,0 +1,7 @@
+<%# The area's reports from Reports::Registry, as a Reports subgroup inside that area's sidebar group (the hub stays at /reports). %>
+<%= render 'layouts/sidebar_subgroup', label: 'Reports', id: "#{area}ReportsCollapse", active: current_report&.area.to_s == area.to_s do %>
+  <% Reports::Registry::REPORTS.each do |report| %>
+    <% next unless report.area.to_s == area.to_s && can_see?(report.area, report.flag) %>
+    <%= nav_item report.title, report_path(report.key), 'bi-table', active: current_report == report, keywords: "report #{report.description}" %>
+  <% end %>
+<% end %>

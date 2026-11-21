@@ -1,0 +1,21 @@
+<%# A collapsible subgroup (Setup, Review, …) inside a main sidebar group. Opens when it holds the current page;
+    left out entirely when the user can see none of its links. %>
+<% links = yield.to_s %>
+<% if links.strip.present? %>
+<li class="sidebar-subgroup">
+  <button type="button"
+          class="sidebar-subgroup-toggle<%= ' has-active' if active %>"
+          data-bs-toggle="collapse"
+          data-bs-target="#<%= id %>"
+          aria-expanded="<%= active ? 'true' : 'false' %>"
+          aria-controls="<%= id %>">
+    <span><%= label %></span>
+    <i class="bi bi-chevron-down sidebar-collapse-chevron"></i>
+  </button>
+  <div class="collapse sidebar-collapse <%= 'show' if active %>" id="<%= id %>">
+    <ul class="sidebar-nav">
+      <%= links %>
+    </ul>
+  </div>
+</li>
+<% end %>

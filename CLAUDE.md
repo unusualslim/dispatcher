@@ -53,6 +53,12 @@ Primary contact: John (admin@perrybrothersoil.com)
 - `app/views/layouts/_sidebar.html.erb`: collapsible groups Sales / Dispatch / Production /
   Purchasing / Inventory / Accounting / Admin (staff see the areas they can view; Admin group is admin-only) (each group's dashboard is its first link); drivers and line workers
   get short navs. Open/closed state is remembered per browser (localStorage).
+- Inside each group: daily pages first, then folding subgroups (`layouts/_sidebar_subgroup`, closed unless they hold
+  the current page; left out when the user sees none of their links): **Reports** (the area's reports from
+  `Reports::Registry`, `layouts/_sidebar_reports`; the hub stays at the top), **Review** (exception queues), **Setup**
+  (master data / settings; admin-only pages like Samsara, Warehouse Locations, Equipment & Assets are gated `if admin?`),
+  and in Admin **Data** (imports, merges) / **System**. Equipment & Assets is listed in both Dispatch and Production setup.
+  New pages: add the link to the right group/subgroup and its controller to that group's `*_active` flags at the top.
 - Links use the `nav_item(label, path, icon, active:, keywords:)` helper; `keywords` feed the quick-jump
   search box (press `/`). `nav_search_item` adds search-only entries (used for each importer).
 - **Home page per user** (`users.home_page`, a path; blank = role default from `default_home_path`): `/` (HomeController),

@@ -448,3 +448,48 @@ html, body {
                   background: repeating-linear-gradient(45deg, #b45309, #b45309 12px, #92400e 12px, #92400e 24px);
                   color: #fff; font-weight: 700; text-align: center; padding: 4px 8px; font-size: 13px; letter-spacing: .02em; }
 .staging-banner-close { background: none; border: 0; color: #fff; font-size: 18px; line-height: 1; padding: 0 4px; cursor: pointer; }
+
+/* Subgroups inside a main group (Reports, Review, Setup, …): a small quiet header that folds its links away */
+.sidebar-subgroup-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 4px;
+  padding: 5px 12px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sidebar-subtext);
+  opacity: 0.85;
+  transition: background 0.15s, color 0.15s;
+}
+
+.sidebar-subgroup-toggle:hover {
+  background-color: var(--sidebar-hover);
+  color: #ffffff;
+  opacity: 1;
+}
+
+.sidebar-subgroup-toggle[aria-expanded="true"] {
+  color: var(--sidebar-heading);
+  opacity: 1;
+}
+
+/* The subgroup holding the current page keeps the accent, even when folded */
+.sidebar-subgroup-toggle.has-active {
+  color: var(--sidebar-accent);
+  opacity: 1;
+}
+
+.sidebar-subgroup-toggle[aria-expanded="true"] .sidebar-collapse-chevron {
+  transform: rotate(180deg);
+}
+
+.sidebar-collapse .sidebar-subgroup .sidebar-nav {
+  margin: 0 0 4px 12px;
+}
