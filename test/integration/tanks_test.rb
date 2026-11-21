@@ -42,6 +42,19 @@ class TanksTest < ActionDispatch::IntegrationTest # rubocop:disable Metrics/Clas
     assert_select 'td', text: /Smartank: JET THOMSON DEF/
   end
 
+  test 'a tank can be saved without a product; the product picker shows IDs' do
+    sign_in @admin
+
+    get new_tank_path(feed_tank_id: @thomson.id)
+    assert_select 'select.tank-product-select option[value=?]', @def.id, text: 'Bulk DEF (TT-DEF)'
+
+    post tanks_path, params: { feed_tank_id: @thomson.id, return_to: 'feeds',
+                               tank: { name: 'T-8', location_id: @site.id, product_id: '', ownership: 'ours',
+                                       capacity_gallons: 500_000, active: '1' } }
+    assert_redirected_to feed_tanks_path
+    assert_nil Tank.find_by!(name: 'T-8').product_id
+  end
+
   test 'feed tanks are linked to an existing tank or ignored' do
     sign_in staff_user('tanks-link@example.com', { 'dispatch' => 'edit' })
     tank = Tank.create!(location: @site, name: 'DEF', capacity_gallons: 2198)

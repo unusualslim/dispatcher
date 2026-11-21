@@ -12,6 +12,9 @@ class Tank < ApplicationRecord
 
   belongs_to :location
   belongs_to :product, optional: true
+
+  # Product IDs are text, so a blank picker sends "" (not NULL), which the products foreign key refuses.
+  normalizes :product_id, with: ->(id) { id.presence }
   has_many :feed_tanks, dependent: :nullify
 
   validates :name, presence: true

@@ -23,7 +23,8 @@
     </div>
     <div class="col-md-6">
       <%= f.label :product_id, 'Product', class: 'form-label' %>
-      <%= f.collection_select :product_id, Product.selectable(tank.product_id).order(:name), :id, :name, { include_blank: true }, class: 'form-select' %>
+      <%= f.collection_select :product_id, Product.selectable(tank.product_id).order(:name), :id, :picker_label, { include_blank: true }, class: 'form-select tank-product-select' %>
+      <div class="form-text">Type a name or product ID (e.g. 901).</div>
     </div>
     <div class="col-md-6">
       <%= f.label :ownership, 'Ownership', class: 'form-label' %>
@@ -65,5 +66,6 @@
       theme: 'bootstrap-5', width: '100%', placeholder: 'Search locations', minimumInputLength: 1,
       ajax: { url: '<%= locations_tanks_path %>', dataType: 'json', delay: 200, data: function(p) { return { q: p.term }; } }
     });
+    $('.tank-product-select').select2({ theme: 'bootstrap-5', width: '100%', placeholder: 'Search products by name or ID', allowClear: true });
   });
 </script>
