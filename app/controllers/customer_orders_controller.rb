@@ -1,4 +1,6 @@
 class CustomerOrdersController < ApplicationController
+  include RemembersListFilters
+
   permission_area :sales, lookups: %i[search]
 
   def dashboard
@@ -28,93 +30,14 @@ class CustomerOrdersController < ApplicationController
   end
 
   def index
-    @view = params[:view] || 'card' # Default to card view
+    return if redirected_old_list_link? || restore_list_filters('customer_orders', CustomerOrderListQuery::KEYS)
 
-    # Load collections for the selects
-    @customers = Customer.order(:name)
-    @products  = Product.order(:name)
-    @locations = Location.order(:city)
-
-    # Start your query with the necessary includes
-    @customer_orders = CustomerOrder
-                       .includes(:location, :customer, customer_order_products: :product)
-
-    # Text search: order no, invoice no, customer name, location name
-    if params[:q].present?
-      q = "%#{params[:q]}%"
-      @customer_orders = @customer_orders
-                         .left_joins(:customer, :location)
-                         .where(
-                           'customer_orders.external_order_no ILIKE ? OR
-                            customer_orders.invoice_no ILIKE ? OR
-                            customers.name ILIKE ? OR
-                            locations.company_name ILIKE ?',
-                           q, q, q, q
-                         )
-                         .references(:customer, :location)
-    end
-
-    # filter by customer
-    @customer_orders = @customer_orders.where(customer_id: params[:customer_id]) if params[:customer_id].present?
-
-    # filter by product name (via join to products)
-    if params[:product].present?
-      @customer_orders = @customer_orders
-                         .joins(customer_order_products: :product)
-                         .where('products.name ILIKE ?', "%#{params[:product]}%")
-    end
-
-    # filter by location (ID or city name)
-    if params[:location].present?
-      @customer_orders = if params[:location].to_i.to_s == params[:location]
-                           @customer_orders.where(location_id: params[:location])
-                         else
-                           @customer_orders
-                             .joins(:location)
-                             .where('locations.city ILIKE ?', "%#{params[:location]}%")
-                         end
-    end
-
-    # freight-only flag
-    @customer_orders = @customer_orders.where(freight_only: true) if params[:freight_only].present?
-
-    # filter by order_status (supports multiple selections or a named preset)
-    today = Date.today
-    case params[:status_preset]
-    when 'active'
-      @customer_orders = @customer_orders.where(order_status: CustomerOrder::ACTIVE_STATUSES)
-    when 'due_this_week'
-      @customer_orders = @customer_orders
-                         .where(order_status: CustomerOrder::ACTIVE_STATUSES)
-                         .where(required_delivery_date: today..today + 7)
-    when 'overdue'
-      @customer_orders = @customer_orders
-                         .where(order_status: CustomerOrder::ACTIVE_STATUSES)
-                         .where('required_delivery_date < ?', today)
-    when 'billed_this_month'
-      @customer_orders = @customer_orders
-                         .where(order_status: 'Billed')
-                         .where('created_at >= ?', today.beginning_of_month)
-    when 'needs_billing'
-      @customer_orders = @customer_orders.where(order_status: ['Shipped', 'Released for Billing', 'Delivered'])
-    else
-      statuses = Array(params[:order_statuses]).reject(&:blank?)
-      @customer_orders = @customer_orders.where(order_status: statuses) if statuses.any?
-    end
-
-    # Apply sorting
-    @customer_orders = case params[:sort_by]
-                       when 'newest'
-                         @customer_orders.order(created_at: :desc)
-                       when 'oldest'
-                         @customer_orders.order(created_at: :asc)
-                       when 'required_delivery_date'
-                         @customer_orders.order(required_delivery_date: :asc)
-                       else
-                         @customer_orders.order(required_delivery_date: :asc)
-                       end
-
-    @customer_orders = @customer_orders.paginate(page: params[:page], per_page: 25)
+    @query = CustomerOrderListQuery.new(params, show_prices: helpers.sees?(:customer_pricing))
+    @customer_orders = @query.relation
+                             .includes(:customer, :location, :ship_from_location, :dispatches,
+                                       customer_order_products: %i[product location])
+                             .paginate(page: params[:page], per_page: @query.per_page)
+    load_list_filter_options
   end
 
   def show
@@ -228,6 +151,31 @@ class CustomerOrdersController < ApplicationController
   end
 
   private
+
+  # Older links (dashboard tiles, the dispatch page) use status_preset / order_statuses / order_status / sort_by:
+  # send them to the same list in today's params. True when it redirected.
+  def redirected_old_list_link?
+    legacy = request.query_parameters.slice('status_preset', 'order_statuses', 'order_status', 'sort_by')
+    return false if legacy.empty?
+
+    preset = legacy['status_preset'] == 'active' ? 'open' : legacy['status_preset'].presence
+    quick = preset || { 'unassigned' => 'unassigned', 'On Hold' => 'on_hold' }[legacy['order_status']]
+    sort = { 'required_delivery_date' => 'delivery_asc', 'oldest' => 'order_date_asc' }[legacy['sort_by']]
+    redirect_to customer_orders_path(request.query_parameters.except(*legacy.keys)
+                                            .merge('quick' => quick, 'statuses' => legacy['order_statuses'],
+                                                   'sort' => sort, 'filtered' => '1').compact_blank)
+    true
+  end
+
+  def load_list_filter_options
+    @customers = Customer.where(id: CustomerOrder.select(:customer_id)).order(:name)
+    @ship_tos = Location.where(id: CustomerOrder.select(:location_id)).order(:company_name)
+    @warehouses = Location.where(show_in_warehouse_dropdown: true).order(:company_name)
+    @products = Product.where(id: CustomerOrderProduct.select(:product_id)).order(:name)
+    @categories = Product.where.not(category: [nil, '']).distinct.order(:category).pluck(:category)
+    @salespeople = CustomerOrder.where.not(salesperson: [nil, '']).distinct.order(:salesperson).pluck(:salesperson)
+    @carriers = CustomerOrder.where.not(carrier: [nil, '']).distinct.order(:carrier).pluck(:carrier)
+  end
 
   def production_shortfalls
     cops = CustomerOrderProduct

@@ -424,6 +424,11 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
   orders without one are flagged, not guessed), price × shipped qty, split by reporting group item type; taxes from PDI's
   per-line `tax_per_unit` (`price_includes_taxes` → taken out of product sales). Delivery = order date → invoice date.
 - Products, Customers, Vendors, Locations all support CSV export → import_csv → process_import → confirm_import
+- **Customer Orders list** (/customer_orders): table by default (card view via `view=card`), filters and every-column
+  sorts in `CustomerOrderListQuery` (`SORTS` = one SQL expression per column; columns/headers in
+  `CustomerOrdersHelper::ORDER_LIST_COLUMNS`, viewers hide/show columns, remembered in localStorage; Total needs the
+  customer_pricing flag). Filters remembered per user like Products/Customers. Old links (`status_preset`, `order_status`,
+  `order_statuses`, `sort_by`) redirect to the new params (`quick`, `statuses`, `sort`).
 - Products and Customers lists: filters/sorts live in `ProductListQuery` / `CustomerListQuery`; `sort_header` helper
   makes sortable column headers; `RemembersListFilters` keeps each user's last filters in `users.list_filters`
   (bare visit restores, the form sends `filtered=1`, Clear sends `reset=1`)

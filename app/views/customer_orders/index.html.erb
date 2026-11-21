@@ -1,157 +1,215 @@
-<head>
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-</head>
+<% columns = order_list_columns %>
+<% cards = params[:view] == 'card' %>
 
-<div class="content">
-  <p style="color: green"><%= notice %></p>
-  <h1>Customer Orders</h1>
-  <% unless driver? %>
-    <%= link_to "New Order", new_customer_order_path, class: "btn btn-primary mb-3" %>
-  <% end %>
-
-  <!-- Search and Sorting Form -->
-  <div class="mb-4">
-    <%= form_with url: customer_orders_path, method: :get, local: true,
-          data: { turbo_frame: "orders-results" }, id: "orders-filter-form" do |f| %>
-      <div class="row mb-3">
-        <!-- Text search -->
-        <div class="col-md-6">
-          <%= f.label :q, 'Search' %>
-          <%= f.text_field :q, value: params[:q], placeholder: 'Order no, invoice, customer, or location…',
-                class: 'form-control', id: 'order-search', autocomplete: 'off' %>
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+  <h1 class="mb-0">Customer Orders</h1>
+  <div class="d-flex gap-2 align-items-center flex-wrap">
+    <div class="btn-group btn-group-sm" role="group" aria-label="View">
+      <%= link_to 'Table', customer_orders_path(request.query_parameters.merge('view' => nil, 'filtered' => '1').compact_blank),
+                  class: "btn #{cards ? 'btn-outline-secondary' : 'btn-secondary'}" %>
+      <%= link_to 'Cards', customer_orders_path(request.query_parameters.merge('view' => 'card', 'filtered' => '1')),
+                  class: "btn #{cards ? 'btn-secondary' : 'btn-outline-secondary'}" %>
+    </div>
+    <% unless cards %>
+      <div class="dropdown">
+        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                data-bs-auto-close="outside" aria-expanded="false">
+          <i class="bi bi-layout-three-columns"></i> Columns
+        </button>
+        <div class="dropdown-menu dropdown-menu-end p-2 small" id="order-column-menu" style="min-width: 200px;">
+          <% columns.each do |key, label, shown| %>
+            <div class="form-check">
+              <input class="form-check-input order-col-toggle" type="checkbox" id="col-<%= key %>" value="<%= key %>"
+                     data-default="<%= shown %>">
+              <label class="form-check-label" for="col-<%= key %>"><%= label %></label>
+            </div>
+          <% end %>
+          <hr class="my-2">
+          <button type="button" class="btn btn-link btn-sm p-0" id="order-columns-reset">Reset columns</button>
         </div>
+      </div>
+    <% end %>
+    <% unless driver? %>
+      <%= link_to 'New Order', new_customer_order_path, class: 'btn btn-primary btn-sm' %>
+    <% end %>
+  </div>
+</div>
 
-        <!-- Order Status -->
-        <div class="col-md-3">
-          <%= f.label :order_statuses, 'Status' %>
-          <%= f.select :order_statuses,
-                options_for_select(
-                  CustomerOrder.order_statuses.map { |k, v| [v, v] },
-                  params[:order_statuses]
-                ),
-                { include_blank: false },
-                class: 'form-control status-select', multiple: true %>
+<%# Filters (each user's last choice is remembered; Clear forgets it) %>
+<div class="card shadow-sm mb-3">
+  <div class="card-body py-2">
+    <%= form_with url: customer_orders_path, method: :get, local: true, id: 'orders-filter-form' do %>
+      <%= hidden_field_tag :filtered, '1' %>
+      <%= hidden_field_tag :sort, params[:sort] %>
+      <%= hidden_field_tag :view, params[:view] if cards %>
+      <div class="d-flex gap-2 flex-wrap align-items-end">
+        <div style="min-width: 240px; flex: 1 1 240px;">
+          <label class="form-label small mb-0" for="order-search">Search</label>
+          <%= search_field_tag :search, params[:search], id: 'order-search', autocomplete: 'off',
+                placeholder: 'Order #, invoice, PO, release, customer, site…', class: 'form-control form-control-sm' %>
+        </div>
+        <div>
+          <label class="form-label small mb-0" for="quick">Show</label>
+          <%= select_tag :quick, options_for_select([['All orders', '']] + CustomerOrderListQuery::QUICK.map { |k, l| [l, k] }, params[:quick]),
+                class: 'form-select form-select-sm auto-submit' %>
+        </div>
+        <div style="min-width: 220px; flex: 1 1 220px;">
+          <label class="form-label small mb-0" for="statuses">Status</label>
+          <%= select_tag 'statuses[]', options_for_select(CustomerOrder.order_statuses.values, params[:statuses]),
+                multiple: true, id: 'statuses', class: 'form-select form-select-sm order-status-select' %>
+        </div>
+        <div>
+          <label class="form-label small mb-0" for="date_field">Date</label>
+          <div class="input-group input-group-sm">
+            <%= select_tag :date_field, options_for_select(CustomerOrderListQuery::DATE_FIELDS.invert, params[:date_field]),
+                  class: 'form-select form-select-sm', style: 'max-width: 130px;' %>
+            <%= date_field_tag :from, params[:from], class: 'form-control form-control-sm', 'aria-label': 'From' %>
+            <%= date_field_tag :to, params[:to], class: 'form-control form-control-sm', 'aria-label': 'To' %>
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse"
+                  data-bs-target="#order-more-filters" aria-expanded="<%= @query.active_count.positive? %>">
+            More filters<% if @query.active_count.positive? %> <span class="badge bg-primary"><%= @query.active_count %></span><% end %>
+          </button>
+          <%= submit_tag 'Search', class: 'btn btn-primary btn-sm', name: nil %>
+          <%= link_to 'Clear', customer_orders_path(reset: 1), class: 'btn btn-outline-secondary btn-sm' %>
         </div>
       </div>
 
-      <div class="row mb-3">
-        <!-- Customer Select (NEW) -->
-        <div class="col-md-3">
-          <%= f.label :customer_id, 'Customer' %>
-          <%= f.select :customer_id,
-                options_from_collection_for_select(
-                  @customers, :id, :name, params[:customer_id]
-                ),
-                { include_blank: 'All Customers' },
-                class: 'form-control customer-select' %>
-        </div>
-
-        <!-- Product Select -->
-        <div class="col-md-3">
-          <%= f.label :product, 'Product' %>
-          <%= f.select :product,
-                options_from_collection_for_select(@products, :name, :name, params[:product]),
-                { include_blank: 'Select a Product' },
-                class: 'form-control' %>
-        </div>
-
-        <!-- Location Select -->
-        <div class="col-md-3">
-          <%= f.label :location, 'Location' %>
-          <%= f.select :location,
-                options_from_collection_for_select(
-                  @locations,
-                  :id,
-                  ->(loc) { "#{loc.address}, #{loc.city}, #{loc.state} #{loc.zip}" },
-                  params[:location]
-                ),
-                { include_blank: 'Select Location' },
-                class: 'form-control location-select' %>
-        </div>
-
-        <!-- Freight Only Checkbox -->
-        <div class="col-md-3" style="padding-top: 25px;">
-          <%= f.label :freight_only, 'Freight Only' %>
-          <%= f.check_box :freight_only,
-                { checked: params[:freight_only].present? },
-                true, false %>
-        </div>
-      </div>
-
-      <div class="row mb-3">
-        <!-- Sort By Dropdown -->
-        <div class="col-md-3">
-          <%= f.label :sort_by, 'Sort By' %>
-          <%= f.select :sort_by,
-                options_for_select([
-                  ['Newest', 'newest'],
-                  ['Oldest', 'oldest'],
-                  ['Required Delivery Date', 'required_delivery_date']
-                ], params[:sort_by]),
-                { include_blank: 'Select Sorting' },
-                class: 'form-control' %>
-        </div>
-
-        <!-- Hidden View Field -->
-        <%= f.hidden_field :view, value: params[:view] || 'card' %>
-
-        <!-- Submit and Reset Buttons -->
-        <div class="col-md-2">
-          <%= f.submit 'Apply Filters', class: 'btn btn-primary w-100' %>
-        </div>
-        <div class="col-md-2">
-          <%= link_to 'Reset', customer_orders_path, class: 'btn btn-secondary w-100' %>
+      <div class="collapse <%= 'show' if @query.active_count.positive? %>" id="order-more-filters">
+        <div class="row g-2 mt-1">
+          <div class="col-md-3">
+            <label class="form-label small mb-0" for="customer_id">Customer</label>
+            <%= select_tag :customer_id, options_from_collection_for_select(@customers, :id, :name, params[:customer_id]),
+                  include_blank: true, class: 'form-select form-select-sm order-select2', data: { placeholder: 'Any customer' } %>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small mb-0" for="location_id">Ship-to</label>
+            <%= select_tag :location_id, options_from_collection_for_select(@ship_tos, :id, :picker_label, params[:location_id]),
+                  include_blank: true, class: 'form-select form-select-sm order-select2', data: { placeholder: 'Any site' } %>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small mb-0" for="ship_from_id">Ship from</label>
+            <%= select_tag :ship_from_id, options_from_collection_for_select(@warehouses, :id, :picker_label, params[:ship_from_id]),
+                  include_blank: true, class: 'form-select form-select-sm order-select2', data: { placeholder: 'Any warehouse' } %>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small mb-0" for="product_id">Product</label>
+            <%= select_tag :product_id, options_from_collection_for_select(@products, :id, :picker_label, params[:product_id]),
+                  include_blank: true, class: 'form-select form-select-sm order-select2', data: { placeholder: 'Name or product ID' } %>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small mb-0" for="category">Product group</label>
+            <%= select_tag :category, options_for_select(@categories, params[:category]), include_blank: 'Any group',
+                  class: 'form-select form-select-sm auto-submit' %>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small mb-0" for="salesperson">Salesperson</label>
+            <%= select_tag :salesperson, options_for_select(@salespeople, params[:salesperson]), include_blank: 'Anyone',
+                  class: 'form-select form-select-sm auto-submit' %>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small mb-0" for="carrier">Carrier</label>
+            <%= select_tag :carrier, options_for_select(@carriers, params[:carrier]), include_blank: 'Any carrier',
+                  class: 'form-select form-select-sm auto-submit' %>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small mb-0" for="source">Source</label>
+            <%= select_tag :source, options_for_select(CustomerOrderListQuery::SOURCES.invert, params[:source]),
+                  include_blank: 'PDI or app', class: 'form-select form-select-sm auto-submit' %>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small mb-0" for="dispatch">Dispatch</label>
+            <%= select_tag :dispatch, options_for_select([['On a dispatch', 'assigned'], ['Not on a dispatch', 'unassigned']], params[:dispatch]),
+                  include_blank: 'Any', class: 'form-select form-select-sm auto-submit' %>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small mb-0" for="per">Rows per page</label>
+            <%= select_tag :per, options_for_select(CustomerOrderListQuery::PER_PAGE, @query.per_page),
+                  class: 'form-select form-select-sm auto-submit' %>
+          </div>
+          <div class="col-md-6 d-flex align-items-end gap-3 pb-1">
+            <% if sees?(:customer_pricing) %>
+              <div class="form-check mb-0">
+                <%= check_box_tag :price_check, 'problems', params[:price_check] == 'problems', class: 'form-check-input auto-submit' %>
+                <%= label_tag :price_check, 'Price check problems', class: 'form-check-label small' %>
+              </div>
+            <% end %>
+            <div class="form-check mb-0">
+              <%= check_box_tag :freight_only, '1', params[:freight_only] == '1', class: 'form-check-input auto-submit' %>
+              <%= label_tag :freight_only, 'Freight only', class: 'form-check-label small' %>
+            </div>
+          </div>
         </div>
       </div>
     <% end %>
   </div>
+</div>
 
-  <%= turbo_frame_tag "orders-results", target: "_top" do %>
-    <!-- Toggle View Buttons -->
-    <div class="mb-4">
-      <%= link_to "Card View",
-                  customer_orders_path(view: "card", sort_by: params[:sort_by], customer_id: params[:customer_id]),
-                  class: "btn btn-secondary me-2" %>
-      <%= link_to "Table View",
-                  customer_orders_path(view: "table", sort_by: params[:sort_by], customer_id: params[:customer_id]),
-                  class: "btn btn-secondary" %>
-    </div>
-
-    <!-- Display Content -->
-    <% if params[:view] == "table" %>
-      <%= render partial: "customer_orders_table", locals: { customer_orders: @customer_orders } %>
-    <% else %>
-      <%= render partial: "customer_orders_cards", locals: { customer_orders: @customer_orders } %>
-    <% end %>
-
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-4 mb-2">
-      <div class="text-muted small">
-        Showing <%= @customer_orders.offset + 1 %>–<%= [@customer_orders.offset + @customer_orders.length, @customer_orders.total_entries].min %>
-        of <%= @customer_orders.total_entries %> orders
-      </div>
-      <nav aria-label="Orders pagination">
-        <%= will_paginate @customer_orders, renderer: BootstrapPaginationRenderer %>
-      </nav>
-    </div>
+<div class="text-muted small mb-2">
+  <% if @customer_orders.total_entries.zero? %>
+    No orders match.
+  <% else %>
+    Showing <%= number_with_delimiter(@customer_orders.offset + 1) %>–<%= number_with_delimiter(@customer_orders.offset + @customer_orders.length) %>
+    of <%= number_with_delimiter(@customer_orders.total_entries) %> orders
   <% end %>
 </div>
 
-<script>
-  $(document).ready(function() {
-    $('.customer-select').select2({ placeholder: 'Filter by customer', allowClear: true });
-    $('.location-select').select2({ placeholder: 'Search for a location', allowClear: true });
-    $('.status-select').select2({ placeholder: 'All Statuses', allowClear: true });
+<% if cards %>
+  <%= render 'customer_orders_cards', customer_orders: @customer_orders %>
+<% else %>
+  <%= render 'customer_orders_table', customer_orders: @customer_orders, columns: columns %>
+<% end %>
 
-    // Live search — debounce 500ms, use requestSubmit() so Turbo intercepts it
-    let searchTimer;
-    $('#order-search').on('input', function() {
-      clearTimeout(searchTimer);
-      var form = document.getElementById('orders-filter-form');
-      searchTimer = setTimeout(function() {
-        form.requestSubmit();
-      }, 500);
+<nav class="mt-3" aria-label="Orders pagination">
+  <%= will_paginate @customer_orders, renderer: BootstrapPaginationRenderer %>
+</nav>
+
+<script>
+  $(function() {
+    var form = document.getElementById('orders-filter-form');
+    var submit = function() { form.requestSubmit(); };
+
+    $('.order-status-select').select2({ theme: 'bootstrap-5', width: '100%', placeholder: 'Any status', closeOnSelect: false })
+      .on('select2:close', submit);
+    $('.order-select2').each(function() {
+      $(this).select2({ theme: 'bootstrap-5', width: '100%', allowClear: true, placeholder: $(this).data('placeholder') })
+        .on('change', submit);
     });
+    $(form).on('change', '.auto-submit, #from, #to, #date_field', submit);
+
+    var timer;
+    $('#order-search').on('input', function() { clearTimeout(timer); timer = setTimeout(submit, 500); });
   });
+
+  // Column chooser: hidden columns are remembered per browser.
+  (function() {
+    var KEY = 'orderListHiddenColumns';
+    var toggles = Array.from(document.querySelectorAll('.order-col-toggle'));
+    if (!toggles.length) return;
+    var hidden = null;
+    try { hidden = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+    if (!Array.isArray(hidden)) hidden = toggles.filter(function(t) { return t.dataset.default !== 'true'; }).map(function(t) { return t.value; });
+
+    function apply() {
+      toggles.forEach(function(t) {
+        t.checked = !hidden.includes(t.value);
+        document.querySelectorAll('[data-col="' + t.value + '"]').forEach(function(el) { el.classList.toggle('d-none', !t.checked); });
+      });
+    }
+    toggles.forEach(function(t) {
+      t.addEventListener('change', function() {
+        hidden = toggles.filter(function(x) { return !x.checked; }).map(function(x) { return x.value; });
+        try { localStorage.setItem(KEY, JSON.stringify(hidden)); } catch (e) {}
+        apply();
+      });
+    });
+    document.getElementById('order-columns-reset').addEventListener('click', function() {
+      try { localStorage.removeItem(KEY); } catch (e) {}
+      hidden = toggles.filter(function(t) { return t.dataset.default !== 'true'; }).map(function(t) { return t.value; });
+      apply();
+    });
+    apply();
+  })();
 </script>

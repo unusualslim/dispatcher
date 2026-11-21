@@ -17,7 +17,7 @@
         <div class="small text-muted">Open Orders</div>
       </div>
       <div class="card-footer p-1">
-        <%= link_to "View", customer_orders_path(status_preset: 'active'), class: "small text-decoration-none" %>
+        <%= link_to "View", customer_orders_path(quick: 'open', filtered: 1), class: "small text-decoration-none" %>
       </div>
     </div>
   </div>
@@ -30,7 +30,7 @@
         <div class="small text-muted">Due This Week</div>
       </div>
       <div class="card-footer p-1">
-        <%= link_to "View", customer_orders_path(status_preset: 'due_this_week', sort_by: 'required_delivery_date'), class: "small text-decoration-none" %>
+        <%= link_to "View", customer_orders_path(quick: 'due_this_week', sort: 'delivery_asc', filtered: 1), class: "small text-decoration-none" %>
       </div>
     </div>
   </div>
@@ -43,7 +43,7 @@
         <div class="small text-muted">Overdue</div>
       </div>
       <div class="card-footer p-1">
-        <%= link_to "View", customer_orders_path(status_preset: 'overdue'), class: "small text-decoration-none" %>
+        <%= link_to "View", customer_orders_path(quick: 'overdue', filtered: 1), class: "small text-decoration-none" %>
       </div>
     </div>
   </div>
@@ -54,7 +54,7 @@
         <div class="small text-muted">Completed This Month</div>
       </div>
       <div class="card-footer p-1">
-        <%= link_to "View", customer_orders_path(status_preset: 'billed_this_month'), class: "small text-decoration-none" %>
+        <%= link_to "View", customer_orders_path(quick: 'billed_this_month', filtered: 1), class: "small text-decoration-none" %>
       </div>
     </div>
   </div>
@@ -67,7 +67,7 @@
         <div class="small text-muted">Needs Billing</div>
       </div>
       <div class="card-footer p-1">
-        <%= link_to "View", customer_orders_path(status_preset: 'needs_billing'), class: "small text-decoration-none" %>
+        <%= link_to "View", customer_orders_path(quick: 'needs_billing', filtered: 1), class: "small text-decoration-none" %>
       </div>
     </div>
   </div>

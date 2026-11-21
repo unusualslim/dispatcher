@@ -57,7 +57,7 @@
       <% end %>
     </div>
     <div class="col-6 col-md-3">
-      <%= link_to customer_orders_path(order_status: "unassigned"), class: 'stat-card' do %>
+      <%= link_to customer_orders_path(quick: "unassigned", filtered: 1), class: 'stat-card' do %>
         <div class="card shadow-sm h-100 border-0" style="border-left:4px solid #dc3545 !important;">
           <div class="card-body py-3">
             <div class="text-muted mb-1" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;">Unassigned Orders</div>
@@ -68,7 +68,7 @@
       <% end %>
     </div>
     <div class="col-6 col-md-3">
-      <%= link_to customer_orders_path(order_status: "On Hold"), class: 'stat-card' do %>
+      <%= link_to customer_orders_path(quick: "on_hold", filtered: 1), class: 'stat-card' do %>
         <div class="card shadow-sm h-100 border-0" style="border-left:4px solid #ffc107 !important;">
           <div class="card-body py-3">
             <div class="text-muted mb-1" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;">On Hold</div>
@@ -134,10 +134,10 @@
     <div class="col-lg-5">
       <div class="card shadow-sm h-100">
         <div class="card-header d-flex align-items-center justify-content-between py-2">
-          <%= link_to "Unassigned Orders", customer_orders_path(order_status: "unassigned"), class: 'section-card-link' %>
+          <%= link_to "Unassigned Orders", customer_orders_path(quick: "unassigned", filtered: 1), class: 'section-card-link' %>
           <div class="d-flex gap-2 align-items-center">
             <span class="badge bg-danger"><%= @stat_unassigned %></span>
-            <%= link_to "View All →", customer_orders_path(order_status: "unassigned"), class: 'btn btn-sm btn-outline-danger', style: 'font-size:.75rem;padding:.15rem .5rem;' %>
+            <%= link_to "View All →", customer_orders_path(quick: "unassigned", filtered: 1), class: 'btn btn-sm btn-outline-danger', style: 'font-size:.75rem;padding:.15rem .5rem;' %>
           </div>
         </div>
         <% if @unassigned_orders.empty? %>
@@ -233,10 +233,10 @@
   <% if @on_hold_orders.any? %>
     <div class="card shadow-sm mb-3">
       <div class="card-header d-flex align-items-center justify-content-between py-2">
-        <%= link_to "On Hold Orders", customer_orders_path(order_status: "On Hold"), class: 'section-card-link' %>
+        <%= link_to "On Hold Orders", customer_orders_path(quick: "on_hold", filtered: 1), class: 'section-card-link' %>
         <div class="d-flex align-items-center gap-2">
           <span class="badge bg-warning text-dark"><%= @on_hold_orders.count %></span>
-          <%= link_to "View All →", customer_orders_path(order_status: "On Hold"), class: 'btn btn-sm btn-outline-warning', style: 'font-size:.75rem;padding:.15rem .5rem;' %>
+          <%= link_to "View All →", customer_orders_path(quick: "on_hold", filtered: 1), class: 'btn btn-sm btn-outline-warning', style: 'font-size:.75rem;padding:.15rem .5rem;' %>
         </div>
       </div>
       <div class="table-responsive">

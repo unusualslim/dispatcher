@@ -5,7 +5,7 @@
         <div class="card" style="background-color: <%= customer_order.card_color %>;">
           <div class="card-body">
             <h5 class="card-title">
-              <%= Location.find(customer_order.location_id).company_name %>
+              <%= customer_order.location.company_name %>
               <% if customer_order.freight_only %>
                 <span class="badge bg-warning text-dark">Freight Only</span>
               <% end %>
@@ -27,7 +27,7 @@
               <%= customer_order.order_status.presence || "Unknown" %>
             </span>
 
-            <p><%= Location.find(customer_order.location_id).full_address %></p>
+            <p><%= customer_order.location.full_address %></p>
             
             <% if customer_order.required_delivery_date? %>
               <p class="card-text">Required by: <%= customer_order.required_delivery_date %></p>

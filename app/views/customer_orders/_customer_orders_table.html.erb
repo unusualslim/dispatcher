@@ -1,58 +1,46 @@
-<table class="table table-striped table-bordered">
-  <thead>
-    <tr>
-      <th>Order ID</th>
-      <th>ODOR Order No</th>
-      <th>Status</th>
-      <th>Address</th>
-      <th>Product</th>
-      <th>Amount</th>
-      <th>Delivery Date</th>
-      <th>Created On</th>
-      <th>Freight Only</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% customer_orders.each do |customer_order| %>
+<%# columns: [[key, header, shown by default], …] from order_list_columns; every header sorts (CustomerOrderListQuery::SORTS). %>
+<% hidden = columns.reject { |_, _, shown| shown }.map(&:first) %>
+<div class="table-responsive">
+  <table class="table table-hover table-bordered table-sm align-middle small order-list-table">
+    <thead class="table-light">
       <tr>
-        <td><%= link_to customer_order.id, customer_order_path(customer_order) %></td>
-        <td><%= customer_order.external_order_no %></td>
-        <td>
-          <% tbl_status_class = case customer_order.order_status
-            when *CustomerOrder::ACTIVE_STATUSES then "bg-primary"
-            when "Billed", "Delivered", "Accepted by Site" then "bg-success"
-            when "Expired", "Rejected by Site" then "bg-warning text-dark"
-            when "Cancelled as Order", "Cancelled as Quote" then "bg-danger"
-            else "bg-secondary"
-          end %>
-          <span class="badge <%= tbl_status_class %>">
-            <%= customer_order.order_status %>
-          </span>
-        </td>
-        <td>
-          <%= Location.find(customer_order.location_id).address %>, 
-          <%= Location.find(customer_order.location_id).city %>, 
-          <%= Location.find(customer_order.location_id).state %> 
-          <%= Location.find(customer_order.location_id).zip %>
-        </td>
-        <td><%= customer_order.product %></td>
-        <td>
-          <%= customer_order.approximate_product_amount.present? ? "#{customer_order.approximate_product_amount} gallons" : "" %>
-        </td>
-        <td>
-          <%= customer_order.required_delivery_date? ? customer_order.required_delivery_date : 'No delivery date' %>
-        </td>
-        <td>
-          <%= customer_order.created_at.in_time_zone('Eastern Time (US & Canada)').strftime('%Y-%m-%d') %>
-        </td>
-        <td>
-          <% if customer_order.freight_only %>
-            <span class="badge bg-warning text-dark">Yes</span>
-          <% else %>
-            No
-          <% end %>
-        </td>
+        <% columns.each do |key, label, _| %>
+          <th data-col="<%= key %>" class="<%= 'd-none' if hidden.include?(key) %> <%= 'text-end' if %w[qty total].include?(key) %>">
+            <%= sort_header label, key %>
+          </th>
+        <% end %>
       </tr>
-    <% end %>
-  </tbody>
-</table>
+    </thead>
+    <tbody>
+      <% customer_orders.each do |order| %>
+        <% cells = {
+             'order' => link_to(order_list_number(order), customer_order_path(order), class: 'fw-semibold text-decoration-none text-nowrap'),
+             'status' => tag.span(order.order_status, class: "badge #{order_status_badge_class(order.order_status)}"),
+             'customer' => (order.customer ? link_to(order.customer.name, customer_path(order.customer), class: 'text-decoration-none') : ''),
+             'ship_to' => safe_join([order.location&.company_name,
+                                     (tag.div(order.location.city, class: 'text-muted') if order.location&.city.present?)].compact),
+             'ship_from' => order_list_ship_from(order),
+             'products' => safe_join([order_list_products(order),
+                                      (tag.span('Freight only', class: 'badge bg-warning text-dark ms-1') if order.freight_only)].compact),
+             'qty' => order_list_qty(order),
+             'total' => order_list_total(order),
+             'order_date' => (order.order_date || order.created_at)&.in_time_zone('Eastern Time (US & Canada)')&.strftime('%m/%d/%Y'),
+             'delivery' => safe_join([order.required_delivery_date&.strftime('%m/%d/%Y'),
+                                      (tag.span(order.delivery_time.strftime('%-l:%M %p'), class: 'text-muted ms-1') if order.delivery_time)].compact),
+             'po' => order.customer_po_number,
+             'invoice' => order.invoice_no,
+             'invoice_date' => order.invoice_date&.strftime('%m/%d/%Y'),
+             'salesperson' => order.salesperson,
+             'carrier' => order.carrier,
+             'driver' => order.pdi_driver,
+             'dispatch' => safe_join(order.dispatches.map { |d| link_to("##{d.id}", dispatch_path(d), class: 'text-decoration-none') }, ', ')
+           } %>
+        <tr>
+          <% columns.each do |key, _, _| %>
+            <td data-col="<%= key %>" class="<%= 'd-none' if hidden.include?(key) %> <%= 'text-end text-nowrap' if %w[qty total].include?(key) %> <%= 'text-nowrap' if %w[order_date delivery invoice_date].include?(key) %>"><%= cells[key] %></td>
+          <% end %>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
