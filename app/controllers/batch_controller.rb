@@ -1,10 +1,7 @@
 # Batch QR Label Controller
 #
-# SETUP — two values must be configured:
-#   Rails credentials:  batch_qr:
-#                         password: "your-crew-password"
-#                         secret:   "long-random-string-for-encryption"
-#   Or set ENV["BATCH_QR_PASSWORD"] and ENV["BATCH_QR_SECRET"].
+# SETUP — set ENV["BATCH_QR_PASSWORD"] (the crew password) and
+# ENV["BATCH_QR_SECRET"] (a long random string used for encryption).
 #
 # Inherits from ActionController::Base (not ApplicationController) so Devise's
 # authenticate_user! does not apply. The session gate is independent.
@@ -21,8 +18,7 @@ class BatchController < ActionController::Base
   end
 
   def authenticate
-    password = Rails.application.credentials.dig(:batch_qr, :password) ||
-               ENV.fetch('BATCH_QR_PASSWORD', nil)
+    password = ENV.fetch('BATCH_QR_PASSWORD', nil)
     if password.present? &&
        ActiveSupport::SecurityUtils.secure_compare(params[:password].to_s, password)
       session[:batch_gate_ok] = true
@@ -76,8 +72,7 @@ class BatchController < ActionController::Base
   end
 
   def encryptor
-    secret = Rails.application.credentials.dig(:batch_qr, :secret) ||
-             ENV.fetch('BATCH_QR_SECRET', nil)
+    secret = ENV.fetch('BATCH_QR_SECRET', nil)
     raise ArgumentError, 'BATCH_QR_SECRET is not configured' if secret.blank?
 
     key = ActiveSupport::KeyGenerator.new(secret).generate_key('batch_qr_labels', 32)

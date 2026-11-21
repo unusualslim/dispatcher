@@ -58,7 +58,7 @@
               <%= form.password_field :password_confirmation, class: "form-control", placeholder: "Confirm password", required: true %>
             </div>
 
-            <% turnstile_site_key = Rails.application.credentials.dig(:turnstile, :site_key) || ENV['TURNSTILE_SITE_KEY'] %>
+            <% turnstile_site_key = ENV['TURNSTILE_SITE_KEY'] %>
             <div class="mb-4">
               <% if turnstile_site_key.blank? %>
                 <div class="alert alert-warning small mb-0">Turnstile isn't configured (no site key), so new users can't be created.</div>

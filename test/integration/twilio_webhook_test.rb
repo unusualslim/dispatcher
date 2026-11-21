@@ -1,5 +1,4 @@
 require 'test_helper'
-require 'minitest/mock'
 
 # The SMS reply webhook is public; it must only act on requests signed by Twilio.
 class TwilioWebhookTest < ActionDispatch::IntegrationTest
@@ -12,8 +11,12 @@ class TwilioWebhookTest < ActionDispatch::IntegrationTest
     Twilio::Security::RequestValidator.new(TOKEN).build_signature_for(url, params)
   end
 
-  def with_twilio_token(&)
-    Rails.application.credentials.stub(:twilio_token, TOKEN, &)
+  def with_twilio_token
+    previous = ENV.fetch('TWILIO_TOKEN', nil)
+    ENV['TWILIO_TOKEN'] = TOKEN
+    yield
+  ensure
+    ENV['TWILIO_TOKEN'] = previous
   end
 
   test 'rejects requests without a Twilio signature' do

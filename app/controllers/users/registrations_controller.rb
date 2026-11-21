@@ -102,8 +102,7 @@ class Users::RegistrationsController < Devise::RegistrationsController
     token = params['cf-turnstile-response'].to_s
     return false if token.blank?
 
-    secret = Rails.application.credentials.dig(:turnstile, :secret_key) ||
-             ENV.fetch('TURNSTILE_SECRET_KEY', nil)
+    secret = ENV.fetch('TURNSTILE_SECRET_KEY', nil)
     return false if secret.blank?
 
     uri      = URI('https://challenges.cloudflare.com/turnstile/v0/siteverify')

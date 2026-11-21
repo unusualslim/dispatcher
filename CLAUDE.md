@@ -532,14 +532,15 @@ Plan doc: https://claude.ai/artifact/XHN7g5K59XsoHWpMk7saER (board/forecast/aler
 ---
 
 ## Environment variables
-- `DATABASE_URL`, `RAILS_MASTER_KEY`
+- `DATABASE_URL`, `SECRET_KEY_BASE`. All config comes from env vars; the app does not read Rails encrypted credentials
+  (`config/credentials.yml.enc` is legacy and there is no master key; don't add `Rails.application.credentials` reads)
 - `SAMSARA_API_KEY` — live truck tracking
-- `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` — registration captcha (also readable from credentials)
+- `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` — registration captcha
 - `PDI_API_PARTNER_ID`, `PDI_API_PASSWORD` (+ optional `PDI_API_URL`) — PDI Enterprise Web Service
 - `PDI_FTP_HOST`, `PDI_FTP_USER`, `PDI_FTP_PASSWORD` (+ optional `PDI_FTP_ORDER_DIR`,
   `PDI_FTP_VENDOR_DIR`, `PDI_FTP_PRODUCT_DIR`, `PDI_FTP_PO_DIR`, `PDI_FTP_FUEL_DIR`, `PDI_FTP_GL_DIR`, `PDI_FTP_SQL_EXPORT_DIR`, `PDI_FTP_PATH`)
 - `SENDGRID_USERNAME`, `SENDGRID_PASSWORD`
-- `TWILIO_SID`, `TWILIO_TOKEN`, `TWILIO_NUMBER` (MessagesController reads Twilio creds from Rails credentials)
+- `TWILIO_SID`, `TWILIO_TOKEN`, `TWILIO_NUMBER` — dispatch SMS and the inbound reply webhook (`TWILIO_TOKEN` verifies Twilio's signature)
 - `BATCH_QR_PASSWORD`, `BATCH_QR_SECRET` — batch label/QR gate (/gate, /labels, /l)
 - `DO_SPACES_KEY`, `DO_SPACES_SECRET` — Active Storage on the DigitalOcean Space (key needs read/write/delete)
 - `HOSTNAME=team.fivepointsservice.com` — host for links in emails. Keep it set explicitly (Linux may set its own HOSTNAME)

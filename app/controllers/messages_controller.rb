@@ -12,7 +12,7 @@ class MessagesController < ApplicationController
     return unless user&.sms_opt_in # Check if the user has opted in for SMS
 
     sms = @client.messages.create(
-      from: Rails.application.credentials.twilio_number,
+      from: ENV.fetch('TWILIO_NUMBER', nil),
       to: from_number,
       body: "Hello there, thanks for texting me. Your number is #{from_number}."
     )
@@ -33,12 +33,12 @@ class MessagesController < ApplicationController
   private
 
   def boot_twilio
-    account_sid = Rails.application.credentials.twilio_sid
+    account_sid = ENV.fetch('TWILIO_SID', nil)
     @client = Twilio::REST::Client.new(account_sid, twilio_auth_token)
   end
 
   def twilio_auth_token
-    Rails.application.credentials.twilio_token
+    ENV.fetch('TWILIO_TOKEN', nil)
   end
 
   def verify_twilio_signature
