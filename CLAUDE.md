@@ -87,7 +87,7 @@ Orders, dispatches (show + edit) and the dispatch kanban warn about hazmat produ
 **CustomerOrder** = `order_status` enum mirrors **PDI order statuses** (Open Order, Quote, Pending,
 Released for Dispatch, Dispatched, Released for Picking, Picking in Progress, Shipped,
 Released for Billing, Billed, Delivered, Accepted/Rejected by Site, Expired, Expired Quote,
-Cancelled as Order/Quote, Quarantine, Credited, Staged, Loaded — key `truck_loaded`). "Open" work = `CustomerOrder::ACTIVE_STATUSES`.
+Cancelled as Order/Quote, Quarantine, Credited, Staged, Loaded — key `truck_loaded`). "Open" work = `CustomerOrder::ACTIVE_STATUSES` (also `STATUS_GROUPS['Open']`), everywhere.
 Orders mostly arrive via the PDI order sync.
 **Quotes** = price agreements (draft → sent → accepted/rejected). Lines are priced from pricing
 rules and store a snapshot (rule, basis, basis_cost, method, value, price_overridden). An accepted
@@ -428,7 +428,8 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
   sorts in `CustomerOrderListQuery` (`SORTS` = one SQL expression per column; columns/headers in
   `CustomerOrdersHelper::ORDER_LIST_COLUMNS`, viewers hide/show columns, remembered in localStorage; Total needs the
   customer_pricing flag). Filters remembered per user like Products/Customers. Old links (`status_preset`, `order_status`,
-  `order_statuses`, `sort_by`) redirect to the new params (`quick`, `statuses`, `sort`).
+  `order_statuses`, `sort_by`) redirect to the new params (`quick`, `statuses`, `sort`). Status filter is a checklist
+  grouped by `CustomerOrder::STATUS_GROUPS` (a group box checks all its statuses); every status must be in one group (tested).
 - Products and Customers lists: filters/sorts live in `ProductListQuery` / `CustomerListQuery`; `sort_header` helper
   makes sortable column headers; `RemembersListFilters` keeps each user's last filters in `users.list_filters`
   (bare visit restores, the form sends `filtered=1`, Clear sends `reset=1`)

@@ -53,10 +53,38 @@
           <%= select_tag :quick, options_for_select([['All orders', '']] + CustomerOrderListQuery::QUICK.map { |k, l| [l, k] }, params[:quick]),
                 class: 'form-select form-select-sm auto-submit' %>
         </div>
-        <div style="min-width: 220px; flex: 1 1 220px;">
-          <label class="form-label small mb-0" for="statuses">Status</label>
-          <%= select_tag 'statuses[]', options_for_select(CustomerOrder.order_statuses.values, params[:statuses]),
-                multiple: true, id: 'statuses', class: 'form-select form-select-sm order-status-select' %>
+        <% chosen = Array(params[:statuses]).compact_blank %>
+        <div>
+          <span class="form-label small mb-0 d-block">Status</span>
+          <div class="dropdown" id="order-status-dropdown">
+            <button class="btn btn-outline-secondary btn-sm dropdown-toggle bg-body text-body text-start" type="button"
+                    data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" style="min-width: 200px;">
+              <%= order_status_summary(chosen) %>
+            </button>
+            <div class="dropdown-menu p-2 small order-status-menu" style="min-width: 260px; max-height: 70vh; overflow-y: auto;">
+              <% CustomerOrder::STATUS_GROUPS.each_with_index do |(group, statuses), i| %>
+                <div class="<%= 'mt-2' if i.positive? %>">
+                  <div class="form-check fw-semibold">
+                    <input class="form-check-input status-group-toggle" type="checkbox" id="status-group-<%= i %>"
+                           data-group="<%= i %>">
+                    <label class="form-check-label" for="status-group-<%= i %>"><%= group %></label>
+                  </div>
+                  <% statuses.each do |status| %>
+                    <div class="form-check ms-3">
+                      <%= check_box_tag 'statuses[]', status, chosen.include?(status), id: "status-#{status.parameterize}",
+                            class: 'form-check-input status-option', data: { group: i } %>
+                      <%= label_tag "status-#{status.parameterize}", status, class: 'form-check-label' %>
+                    </div>
+                  <% end %>
+                </div>
+              <% end %>
+              <hr class="my-2">
+              <div class="d-flex justify-content-between">
+                <button type="button" class="btn btn-link btn-sm p-0" id="status-clear">Any status</button>
+                <button type="button" class="btn btn-primary btn-sm" id="status-apply">Apply</button>
+              </div>
+            </div>
+          </div>
         </div>
         <div>
           <label class="form-label small mb-0" for="date_field">Date</label>
@@ -171,8 +199,25 @@
     var form = document.getElementById('orders-filter-form');
     var submit = function() { form.requestSubmit(); };
 
-    $('.order-status-select').select2({ theme: 'bootstrap-5', width: '100%', placeholder: 'Any status', closeOnSelect: false })
-      .on('select2:close', submit);
+    // Status checklist: a group's box checks or clears all its statuses; the list reloads when the menu closes.
+    var statusBoxes = $('.status-option'), statusChanged = false;
+    function syncGroups() {
+      $('.status-group-toggle').each(function() {
+        var members = statusBoxes.filter('[data-group="' + $(this).data('group') + '"]');
+        var on = members.filter(':checked').length;
+        this.checked = on === members.length;
+        this.indeterminate = on > 0 && on < members.length;
+      });
+    }
+    $('.status-group-toggle').on('change', function() {
+      statusBoxes.filter('[data-group="' + $(this).data('group') + '"]').prop('checked', this.checked);
+      statusChanged = true; syncGroups();
+    });
+    statusBoxes.on('change', function() { statusChanged = true; syncGroups(); });
+    $('#status-clear').on('click', function() { statusBoxes.prop('checked', false); statusChanged = true; syncGroups(); });
+    $('#status-apply').on('click', submit);
+    $('#order-status-dropdown').on('hidden.bs.dropdown', function() { if (statusChanged) submit(); });
+    syncGroups();
     $('.order-select2').each(function() {
       $(this).select2({ theme: 'bootstrap-5', width: '100%', allowClear: true, placeholder: $(this).data('placeholder') })
         .on('change', submit);

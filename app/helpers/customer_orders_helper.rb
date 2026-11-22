@@ -14,6 +14,16 @@ module CustomerOrdersHelper
     sees?(:customer_pricing) ? ORDER_LIST_COLUMNS : ORDER_LIST_COLUMNS.reject { |key, *| key == 'total' }
   end
 
+  # Button text for the status checklist: "Any status", a whole group's name ("Open"), one status, or a count.
+  def order_status_summary(chosen)
+    return 'Any status' if chosen.empty?
+
+    groups = CustomerOrder::STATUS_GROUPS.select { |_, statuses| (statuses - chosen).empty? }
+    loose = chosen - groups.values.flatten
+    parts = groups.keys + loose
+    parts.size <= 2 ? parts.join(', ') : "#{chosen.size} statuses"
+  end
+
   def order_status_badge_class(status)
     case status
     when *CustomerOrder::ACTIVE_STATUSES then 'bg-primary'

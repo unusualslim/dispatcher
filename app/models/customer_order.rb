@@ -1,4 +1,4 @@
-class CustomerOrder < ApplicationRecord
+class CustomerOrder < ApplicationRecord # rubocop:disable Metrics/ClassLength -- status lists and scopes
   include Audited
 
   audited
@@ -85,6 +85,16 @@ class CustomerOrder < ApplicationRecord
     'Open Order', 'Quote', 'Pending', 'Released for Dispatch', 'Dispatched',
     'Released for Picking', 'Picking in Progress', 'Released for Billing', 'Staged', 'Loaded'
   ].freeze
+
+  # Status groups for the Customer Orders filter (checking a group checks all its statuses). "Open" is the same
+  # ACTIVE_STATUSES the rest of the app uses. Every status is in exactly one group.
+  STATUS_GROUPS = {
+    'Open' => ACTIVE_STATUSES,
+    'Shipped / delivered' => ['Shipped', 'Delivered', 'Accepted by Site'],
+    'Billed' => %w[Billed Credited],
+    'Problem' => ['Rejected by Site', 'Expired', 'Quarantine'],
+    'Cancelled' => ['Cancelled as Order', 'Cancelled as Quote', 'Expired Quote']
+  }.freeze
 
   PRODUCTS = ['DEF', 'Regular', 'Plus', 'Super', 'Eth-Regular', 'Eth-Plus', 'Eth-Super', 'Reg-E10', 'Plus-E10',
               'Super-E10', 'ULS', 'Dyed ULS']
