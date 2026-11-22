@@ -29,10 +29,15 @@ class ReportsController < ApplicationController
   def load_filter_options
     filters = @report.filters
     @customers = Customer.order(:name).pluck(:name, :id) if filters.offers?(:customer_id)
-    @products = Product.order(:name).pluck(:name, :id) if filters.offers?(:product_id)
+    @products = products if filters.offers?(:product_id)
     @locations = warehouses if filters.offers?(:location_id)
     @vendors = vendors if filters.offers?(:vendor_id)
     @carriers = carriers if filters.offers?(:carrier_id)
+  end
+
+  # "Name (ID)", so the picker finds a product by its ID too.
+  def products
+    Product.order(:name).pluck(:name, :id).map { |name, id| ["#{name} (#{id})", id] }
   end
 
   def vendors

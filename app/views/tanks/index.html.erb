@@ -22,9 +22,9 @@
       <%= label_tag :ownership, 'Ownership', class: 'form-label small mb-0' %>
       <%= select_tag :ownership, options_for_select([['All', '']] + Tank::OWNERSHIPS.invert.to_a, params[:ownership]), class: 'form-select form-select-sm' %>
     </div>
-    <div class="col-auto">
+    <div class="col-auto" style="width: 280px;">
       <%= label_tag :product_id, 'Product', class: 'form-label small mb-0' %>
-      <%= select_tag :product_id, options_from_collection_for_select(@products, :id, :name, params[:product_id]), include_blank: 'All', class: 'form-select form-select-sm' %>
+      <%= select_tag :product_id, options_from_collection_for_select(@products, :id, :picker_label, params[:product_id]), include_blank: 'All', class: 'form-select form-select-sm js-select2' %>
     </div>
     <div class="col-auto form-check ms-2 mb-1">
       <%= check_box_tag :inactive, '1', params[:inactive] == '1', class: 'form-check-input' %>
@@ -66,3 +66,4 @@
   </div>
   <p class="small text-muted">Level = the sum of each linked feed tank's last reading. Grayed out when the last reading is over <%= FeedTank.stale_hours %> hours old.</p>
 </div>
+<%= render 'shared/select2_init' %>

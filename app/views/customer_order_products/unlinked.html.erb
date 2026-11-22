@@ -36,7 +36,7 @@
                   <td class="text-muted"><%= item[:count] %></td>
                   <td style="max-width: 420px;">
                     <%= select_tag "mappings[#{item[:code]}]",
-                          options_from_collection_for_select(@products, :id, :name),
+                          options_from_collection_for_select(@products, :id, :picker_label),
                           include_blank: "— Skip for now —",
                           class: "form-select form-select-sm product-link-select" %>
                   </td>

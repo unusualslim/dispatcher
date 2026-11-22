@@ -277,7 +277,7 @@
                       <% else %>
                         <%= f.collection_select :product_id, Product.selectable(cop.product_id).order(:name), :id, :picker_label,
                               { selected: cop.product_id, include_blank: "— Select —" },
-                              class: "form-select form-select-sm" %>
+                              class: "form-select form-select-sm line-product-select" %>
                       <% end %>
                       <%= hazmat_badge(cop.product) %>
                     </td>
@@ -468,10 +468,11 @@
 </style>
 
 <script>
-  // The Add Product box: search by name or item ID.
+  // The Add Product box and the order's line pickers: search by name or item ID.
   $(function() {
     $('.add-product-select').select2({ theme: 'bootstrap-5', width: '100%', placeholder: '— Select a product —',
                                        dropdownParent: $('#addProductModal') });
+    $('.line-product-select').select2({ theme: 'bootstrap-5', width: '100%', placeholder: '— Select —' });
   });
 </script>
 

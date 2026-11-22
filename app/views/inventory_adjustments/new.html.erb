@@ -24,12 +24,12 @@
 
         <div class="col-12">
           <label class="form-label fw-semibold">Product</label>
-          <select name="product_id" class="form-select" required>
+          <select name="product_id" class="form-select js-select2" required>
             <option value="">Select product...</option>
             <% @products.each do |p| %>
               <option value="<%= p.id %>"
                 <%= 'selected' if @selected_product&.id == p.id %>>
-                <%= p.name %> (<%= number_with_precision(warehouse_stock_for(p), precision: 1) %> <%= p.unit_of_measurement %> on hand)
+                <%= p.picker_label %> — <%= number_with_precision(warehouse_stock_for(p), precision: 1) %> <%= p.unit_of_measurement %> on hand
               </option>
             <% end %>
           </select>
@@ -80,3 +80,4 @@
     </div>
   <% end %>
 </div>
+<%= render 'shared/select2_init' %>

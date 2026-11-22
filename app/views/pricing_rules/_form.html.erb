@@ -37,7 +37,7 @@
               data-bom-cost="<%= p.bom_standard_cost %>"
               data-bom-missing="<%= p.bom_components_missing_standard_cost.map { |c| { name: c.name, url: product_path(c) } }.to_json %>"
               <%= 'selected' if rule.products.map(&:id).include?(p.id) %>>
-              <%= p.name %>
+              <%= p.picker_label %>
             </option>
           <% end %>
         </select>

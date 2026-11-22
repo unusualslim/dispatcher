@@ -16,12 +16,14 @@
 <div class="card shadow-sm mb-3">
   <div class="card-body py-2">
     <%= form_with url: inventory_transactions_path, method: :get, local: true, class: 'd-flex gap-2 align-items-center flex-wrap' do |f| %>
-      <select name="product_id" class="form-select form-select-sm" style="max-width: 250px;" onchange="this.form.submit()">
-        <option value="">All Products</option>
-        <% @products.each do |p| %>
-          <option value="<%= p.id %>" <%= 'selected' if @product&.id == p.id %>><%= p.name %></option>
-        <% end %>
-      </select>
+      <div style="width: 280px;">
+        <select name="product_id" class="form-select form-select-sm js-select2" onchange="this.form.submit()">
+          <option value="">All Products</option>
+          <% @products.each do |p| %>
+            <option value="<%= p.id %>" <%= 'selected' if @product&.id == p.id %>><%= p.picker_label %></option>
+          <% end %>
+        </select>
+      </div>
       <select name="movement_type" class="form-select form-select-sm" style="max-width: 200px;" onchange="this.form.submit()">
         <option value="">All movements</option>
         <% InventoryTransaction::MOVEMENT_TYPES.each do |type, label| %>
@@ -93,3 +95,4 @@
   </table>
   <div class="text-muted small text-end">Showing most recent 200 transactions</div>
 <% end %>
+<%= render 'shared/select2_init' %>

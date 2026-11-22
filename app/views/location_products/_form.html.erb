@@ -4,7 +4,7 @@
     <%= form_with(model: [@location, @location_product], local: true) do |f| %>
     <div class="field form_field">
         <%= f.label :product_id %>
-        <%= f.collection_select :product_id, @products, :id, :name, include_blank: true %>
+        <%= f.collection_select :product_id, @products, :id, :picker_label, { include_blank: true }, class: 'form-select js-select2' %>
     </div>
 
     <div class="field form_field">
@@ -27,3 +27,4 @@
     </div>
     <% end %>
 </div>
+<%= render 'shared/select2_init' %>

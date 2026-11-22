@@ -169,11 +169,16 @@
       searchableAccounts(document);
     }
 
-    // The GL account pickers are long (the whole expense chart), so make them searchable.
+    // The GL account and product pickers are long, so make them searchable (products by name or ID).
     function searchableAccounts(root) {
       $(root).find('select.account-select').each(function() {
         if (!$(this).hasClass('select2-hidden-accessible')) {
           $(this).select2({ placeholder: 'Select account...', width: '100%', dropdownAutoWidth: true });
+        }
+      });
+      $(root).find('select.po-product-select').each(function() {
+        if (!$(this).hasClass('select2-hidden-accessible')) {
+          $(this).select2({ theme: 'bootstrap-5', placeholder: 'Select product...', width: '100%', dropdownAutoWidth: true });
         }
       });
     }
