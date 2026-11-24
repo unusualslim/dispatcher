@@ -377,6 +377,27 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
   Lead times: product → primary vendor → AppSetting `mrp_purchase_lead_days` (7); `products.production_days` →
   `mrp_production_days` (1); `mrp_transfer_days` (1); undated customer orders = order date +
   `customers.lead_time_days` → `mrp_customer_lead_days` (3). Defaults are editable on the MRP page. Lot-for-lot.
+- **Planning assistants** (2026-11-24; suggestions only, a person ticks and creates; the user wants no auto-ordering):
+  `MinMaxPlanner` (Purchasing → Min/Max, /min_max): safety / min / max from 12 months' usage (shipped sales +
+  completed production components) and a turns target (AppSetting `min_max_turns` 8, `min_max_turns_high` 12 for
+  class A = first 80% of usage value at standard, `min_max_safety_pct` 50); min = safety + lead-time usage, max = min +
+  an order sized so safety + half an order hits the turns. `SuggestedPurchases` (Purchasing → Suggested POs): MRP
+  shortages (at least one max − min order) + items at or below min → draft POs per vendor and warehouse (trigger
+  `mrp_shortage`; price = vendor price break, else last price paid). `SuggestedProduction` (Production → Suggested
+  Production): MRP planned production runs → production orders (Created, BOM components, production date = start).
+  Shared `TickedRows` concern reads the ticked rows.
+- **Production Calendar** = the old production kanban (/production_orders/kanban, app layout now): days by
+  `production_date`, plus Behind schedule and Unscheduled columns, header warehouse selector, readiness dots,
+  Schedule / Reschedule (`PATCH /production_orders/:id/schedule`, production edit).
+- **Exception-based management** (the user's preference: small staff, review only problems): `ExceptionReview`
+  (kind, subject_key, fingerprint, resolution) is the generic review store; a fingerprint holds the reviewed numbers
+  so state-based exceptions come back when they change. First user: `StandardCostExceptions` (Accounting → Review →
+  Standard Cost Exceptions, costs flag; accounting approve reviews): receipt PPV and production variance over
+  `std_exception_pct` (5) and `std_exception_min_amount` ($25), standards more than `std_drift_pct` (10) off the last
+  receipt / BOM cost, standard-costed items (standard groups + anything in a BOM) with no standard.
+- **Blind shipments** (`customer_orders.blind_shipment` + `blind_ship_from` text): the BOL and packing list name our
+  customer as shipper, drop the FPS logo/company and show the customer's item number. Packing lists (no prices):
+  `/customer_orders/:id/packing_list` and `/dispatches/:id/packing_list` (`packing_lists/show`).
 - `MaterialReadiness` — green/yellow/red dots for open production orders' components (and the order list) from
   the same events at the order's warehouse: in stock / depends on incoming supply / short.
 - `BomPopulatorService` — auto-populates production order components from product BOM

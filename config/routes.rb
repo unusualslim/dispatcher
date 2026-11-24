@@ -55,6 +55,7 @@ Rails.application.routes.draw do
       post :upload_files
       get :print
       get :bol
+      get :packing_list
       post :send_to_samsara
     end
     collection do
@@ -113,6 +114,7 @@ Rails.application.routes.draw do
     post 'create_dispatch', on: :member
     post :send_to_pdi, on: :member
     post :check_pdi, on: :member
+    get :packing_list, on: :member
     resources :customer_order_products, only: %i[create update destroy]
     resource :freight, only: :update, controller: 'order_freights' do
       post :calculate
@@ -152,11 +154,19 @@ Rails.application.routes.draw do
       get   :quality_certificate
       get   :batch_labels
       get   :batch_ticket
+      patch :schedule
     end
     collection do
       get :kanban
       get :dashboard
       get :bom_cost_report
+    end
+  end
+
+  resources :standard_cost_exceptions, only: :index do
+    collection do
+      patch :review
+      patch :settings, action: :update_settings
     end
   end
 
@@ -183,6 +193,11 @@ Rails.application.routes.draw do
   get 'mrp/products/:product_id', to: 'mrp#product', as: :mrp_product, constraints: { product_id: %r{[^/]+} },
                                   format: false
   patch 'mrp/settings', to: 'mrp#update_settings', as: :mrp_settings
+  resources :suggested_purchases, only: %i[index create]
+  resources :suggested_productions, only: %i[index create], path: 'suggested_production'
+  get 'min_max', to: 'min_max#index', as: :min_max
+  post 'min_max/apply', to: 'min_max#apply', as: :apply_min_max
+  patch 'min_max/settings', to: 'min_max#update_settings', as: :min_max_settings
   get 'purchasing_report', to: 'purchasing_report#index', as: :purchasing_report
   resource :inventory_intelligence, only: [:show], controller: 'inventory_intelligence', as: :inventory_intelligence do
     post :send_test, on: :member

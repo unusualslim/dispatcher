@@ -17,7 +17,7 @@ module HomePage
     ['Quotes', :quotes_path, 'sales'],
     ['Customers', :customers_path, 'sales'],
     ['Production Dashboard', :dashboard_production_orders_path, 'production'],
-    ['Production Kanban', :kanban_production_orders_path, 'production'],
+    ['Production Calendar', :kanban_production_orders_path, 'production'],
     ['Production Orders', :production_orders_path, 'production'],
     ['Line Production', :line_path, 'production'],
     ['Warehouse Board', :warehouse_kanban_path, 'production'],

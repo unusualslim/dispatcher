@@ -3,9 +3,9 @@ class ProductionOrdersController < ApplicationController
   before_action :authenticate_user!
   before_action :set_production_order,
                 only: %i[show edit update destroy void record_quality quality_certificate batch_labels
-                         batch_ticket]
+                         batch_ticket schedule]
   before_action :require_admin!, only: :void
-  before_action :keep_voided_read_only, only: %i[edit update]
+  before_action :keep_voided_read_only, only: %i[edit update schedule]
   before_action :drop_placeholder_ids, only: %i[create update]
 
   # GET /production_orders
@@ -170,29 +170,32 @@ class ProductionOrdersController < ApplicationController
 
   # GET /production_orders/kanban
   def kanban
-    @search_term     = params[:search]
-    @selected_status = params[:status]
-    @location        = params[:location]
-    @due_from        = params[:due_from]
-    @due_to          = params[:due_to]
-    @group           = params[:group].presence
+    @search_term = params[:search].presence
+    @group       = params[:group].presence
+    @start_date, @end_date = kanban_range
+    orders = ProductionOrder.includes(:product, :location).where.not(status: 'voided')
+                            .search(@search_term).in_group(@group)
+    orders = orders.where(location_id: current_warehouse.id) if current_warehouse
+    @by_day = orders.where(production_date: @start_date..@end_date).order(:priority, :id).group_by(&:production_date)
+    open_orders = orders.where(status: ProductionOrder::OPEN_STATUSES)
+    @behind = open_orders.where(production_date: ...@start_date).order(:production_date, :id).to_a
+    @unscheduled = open_orders.where(production_date: nil).order(:due_date, :id).to_a
+    @readiness = MaterialReadiness.new(@by_day.values.flatten + @behind + @unscheduled)
+  end
 
-    @production_orders =
-      ProductionOrder
-      .includes(:product)
-      .search(@search_term)
-      .by_status(@selected_status)
-      .by_location(@location)
-      .in_group(@group)
-      .due_between(@due_from, @due_to)
-      .ordered_default
-
-    # Use the filter dates to drive the columns (fallback to your default range)
-    @start_date = safe_date(@due_from) || Date.yesterday
-    @end_date   = safe_date(@due_to)   || (Date.today + 6.days)
-
-    # Safety: don’t allow inverted ranges
-    @start_date, @end_date = @end_date, @start_date if @start_date > @end_date
+  # PATCH /production_orders/:id/schedule — set (or clear) the production date from the calendar.
+  def schedule
+    date = safe_date(params[:production_date])
+    if @production_order.update(production_date: date)
+      notice = if date
+                 t('.scheduled', number: @production_order.number, date: date.strftime('%a %-m/%-d'))
+               else
+                 t('.unscheduled', number: @production_order.number)
+               end
+      redirect_back_or_to kanban_production_orders_path, notice: notice
+    else
+      redirect_back_or_to kanban_production_orders_path, alert: @production_order.errors.full_messages.to_sentence
+    end
   end
 
   # GET /production_orders/new
@@ -371,6 +374,14 @@ class ProductionOrdersController < ApplicationController
     end
 
     result.values.sort_by { |r| r[:order].required_delivery_date || Date.new(9999) }
+  end
+
+  # The calendar's days: from / to (older links send due_from / due_to), else yesterday through the next six days.
+  def kanban_range
+    from = safe_date(params[:from] || params[:due_from]) || Date.yesterday
+    to = safe_date(params[:to] || params[:due_to]) || (from + 7)
+    from, to = to, from if from > to
+    [from, [to, from + 30].min]
   end
 
   def safe_date(str)

@@ -93,19 +93,31 @@
           <div class="sub">Straight Bill of Lading — Not Negotiable</div>
           <h1>Bill of Lading</h1>
         </div>
-        <%= render 'shared/print_company', location: shipper %>
+        <% if order.blind_shipment %>
+          <div class="company"><% order.blind_shipper_lines.each_with_index do |line, i| %><%= i.zero? ? tag.strong(line) : tag.div(line) %><% end %></div>
+        <% else %>
+          <%= render 'shared/print_company', location: shipper %>
+        <% end %>
       </header>
 
       <div class="refs">
         <div><span class="label">BOL Number</span><span class="value"><%= dispatch.id %>-<%= order.id %></span></div>
         <div><span class="label">Ship Date</span><span class="value"><%= fmt_date.(dispatch.dispatch_date) %></span></div>
-        <div><span class="label">Order</span><span class="value"><%= order.external_order_no.presence || "##{order.id}" %></span></div>
+        <% if order.blind_shipment %>
+          <div><span class="label">Customer PO</span><span class="value"><%= order.customer_po_number %></span></div>
+        <% else %>
+          <div><span class="label">Order</span><span class="value"><%= order.external_order_no.presence || "##{order.id}" %></span></div>
+        <% end %>
         <div><span class="label">Dispatch</span><span class="value">#<%= dispatch.id %></span></div>
       </div>
 
       <div class="parties">
         <div class="box">
           <span class="label">Ship From (Shipper)</span>
+          <% if order.blind_shipment %>
+            <div class="name"><%= order.blind_shipper_lines.first %></div>
+            <% order.blind_shipper_lines.drop(1).each do |line| %><div><%= line %></div><% end %>
+          <% else %>
           <div class="name">Five Points Service, Inc.</div>
           <% if shipper %>
             <div><%= shipper.company_name %></div>
@@ -114,6 +126,7 @@
             <% if shipper.phone_number.present? %><div><%= shipper.phone_number %></div><% end %>
           <% elsif dispatch.origin.present? %>
             <div><%= dispatch.origin %></div>
+          <% end %>
           <% end %>
         </div>
         <div class="box">
@@ -173,8 +186,10 @@
                 <% if line.product&.hazmat %>
                   <div class="hazmat-desc"><%= line.product.hazmat_description.presence || 'HAZARDOUS MATERIAL: DOT description missing' %></div>
                 <% end %>
-                <%= [line.product_id, line.product&.name || line.product_name].compact_blank.join(' – ').presence || 'Unknown' %>
-                <% if (theirs = CustomerItemNumber.map_for(order.customer_id)[line.product_id]) %>(Customer # <%= theirs %>)<% end %>
+                <% theirs = CustomerItemNumber.map_for(order.customer_id)[line.product_id] %>
+                <%# Blind: the customer's own item number stands in for ours. %>
+                <%= [(order.blind_shipment && theirs) || line.product_id, line.product&.name || line.product_name].compact_blank.join(' – ').presence || 'Unknown' %>
+                <% if theirs && !order.blind_shipment %>(Customer # <%= theirs %>)<% end %>
               </td>
               <td class="num"><%= number_with_delimiter(weight.round) if weight %></td>
             </tr>

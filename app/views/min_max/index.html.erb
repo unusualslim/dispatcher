@@ -1,0 +1,84 @@
+<% settings = MinMaxPlanner::SETTINGS.keys.index_with { |k| MinMaxPlanner.setting(k).to_i } %>
+<% num = ->(v) { v.nil? ? '—' : number_with_precision(v, precision: v.to_d.abs < 10 ? 1 : 0, delimiter: ',', strip_insignificant_zeros: true) } %>
+<div class="container-fluid mt-4">
+  <%= render layout: 'shared/page_header', locals: { title: 'Min/Max',
+        subtitle: "Safety stock, min and max from the last 12 months' usage. Target #{settings['min_max_turns']} turns a year, #{settings['min_max_turns_high']} for high movers (A)." } do %>
+    <%= link_to 'Suggested POs', suggested_purchases_path, class: 'btn btn-outline-secondary btn-sm' %>
+    <%= link_to 'MRP', mrp_path, class: 'btn btn-outline-secondary btn-sm' %>
+  <% end %>
+  <% if notice.present? %><div class="alert alert-success py-2"><%= notice %></div><% end %>
+
+  <details class="mb-3">
+    <summary class="small text-muted">How it's worked out · targets</summary>
+    <div class="card card-body small mt-2">
+      <p class="mb-2">Usage = shipped sales + components used by completed production, last 365 days. High movers (A) are the items making up the first 80% of usage value at standard cost.</p>
+      <ul class="mb-2">
+        <li><b>Safety stock</b> = daily usage × lead days × safety %</li>
+        <li><b>Min</b> (reorder point) = safety stock + daily usage × lead days. Order when on hand + on order falls to it.</li>
+        <li><b>Max</b> = min + one order, sized so average stock (safety + half an order) turns the target number of times. Order up to it, counting what's on order. Never less than a week's usage.</li>
+      </ul>
+      <% if can_feature?(:inventory_pos) %>
+        <%= form_with url: min_max_settings_path, method: :patch, class: 'd-flex flex-wrap gap-2 align-items-end' do %>
+          <div><label class="form-label small mb-0" for="min_max_turns">Target turns</label><%= number_field_tag 'min_max_turns', settings['min_max_turns'], min: 1, max: 100, class: 'form-control form-control-sm', style: 'width:90px' %></div>
+          <div><label class="form-label small mb-0" for="min_max_turns_high">High movers (A)</label><%= number_field_tag 'min_max_turns_high', settings['min_max_turns_high'], min: 1, max: 100, class: 'form-control form-control-sm', style: 'width:90px' %></div>
+          <div><label class="form-label small mb-0" for="min_max_safety_pct">Safety % of lead time</label><%= number_field_tag 'min_max_safety_pct', settings['min_max_safety_pct'], min: 1, max: 100, class: 'form-control form-control-sm', style: 'width:90px' %></div>
+          <%= submit_tag 'Save', class: 'btn btn-sm btn-outline-primary', name: nil %>
+        <% end %>
+      <% end %>
+    </div>
+  </details>
+
+  <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+    <ul class="nav nav-pills">
+      <% MinMaxController::SHOWS.each do |key, label| %>
+        <li class="nav-item"><%= link_to "#{label} (#{@counts[key]})", min_max_path(show: key, group: @group), class: "nav-link py-1 #{'active' if @show == key}" %></li>
+      <% end %>
+    </ul>
+    <%= form_with url: min_max_path, method: :get, class: 'd-flex gap-2' do %>
+      <%= hidden_field_tag :show, @show %>
+      <%= select_tag :group, options_for_select([['All groups', '']] + ReportingGroup.order(:name).pluck(:name), @group), class: 'form-select form-select-sm', onchange: 'this.form.submit()', 'aria-label': 'Product group' %>
+    <% end %>
+  </div>
+
+  <%= form_with url: apply_min_max_path, method: :post do %>
+    <%= hidden_field_tag :show, @show %><%= hidden_field_tag :group, @group %>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle small">
+        <thead class="table-light">
+          <tr>
+            <th><input type="checkbox" class="form-check-input" aria-label="Tick all" onclick="document.querySelectorAll('.mm-pick').forEach(c => c.checked = this.checked)"></th>
+            <th>Item</th><th>Class</th><th class="text-end">12-mo usage</th><th class="text-end">Per day</th><th class="text-end">Lead days</th>
+            <th class="text-end">On hand</th><th class="text-end">Turns now</th>
+            <th class="text-end">Safety<br><span class="text-muted fw-normal">now → new</span></th>
+            <th class="text-end">Min<br><span class="text-muted fw-normal">now → new</span></th>
+            <th class="text-end">Max<br><span class="text-muted fw-normal">now → new</span></th>
+            <th class="text-end">Target turns</th><th>Note</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @rows.each do |r| %>
+            <tr>
+              <td><% if r.safety %><%= check_box_tag 'product_ids[]', r.product.id, false, class: 'form-check-input mm-pick', id: nil, 'aria-label': "Apply #{r.product.id}" %><% end %></td>
+              <td><%= link_to r.product.id, product_path(r.product), class: 'fw-semibold text-decoration-none' %><br><span class="text-muted"><%= r.product.name %></span></td>
+              <td><%= r.abc || '—' %></td>
+              <td class="text-end"><%= num.(r.usage) %> <span class="text-muted"><%= r.product.unit_of_measurement %></span></td>
+              <td class="text-end"><%= num.(r.daily) %></td>
+              <td class="text-end"><%= r.lead_days %></td>
+              <td class="text-end"><%= num.(r.on_hand) %></td>
+              <td class="text-end <%= 'text-danger' if r.turns_now && r.turns_now < r.turns / 2 %>"><%= r.turns_now || '—' %></td>
+              <% r.current.zip(r.suggested).each do |now, new| %>
+                <td class="text-end text-nowrap"><span class="text-muted"><%= num.(now) %></span> → <strong><%= num.(new) %></strong></td>
+              <% end %>
+              <td class="text-end"><%= r.turns.to_i %></td>
+              <td class="text-muted"><%= r.note %></td>
+            </tr>
+          <% end %>
+          <% if @rows.empty? %><tr><td colspan="13" class="text-center text-muted py-4">Nothing here.</td></tr><% end %>
+        </tbody>
+      </table>
+    </div>
+    <% if can_feature?(:inventory_pos) && @rows.any?(&:safety) %>
+      <%= submit_tag 'Apply ticked suggestions', class: 'btn btn-primary btn-sm', data: { turbo_confirm: 'Set safety stock, min and max on the ticked items?' } %>
+    <% end %>
+  <% end %>
+</div>

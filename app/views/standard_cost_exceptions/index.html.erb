@@ -1,0 +1,72 @@
+<% settings = StandardCostExceptions::SETTINGS.keys.index_with { |k| StandardCostExceptions.setting(k) } %>
+<% plain = ->(v) { number_with_precision(v, precision: 2, strip_insignificant_zeros: true) } %>
+<div class="container-fluid px-4 py-4">
+  <%= render layout: 'shared/page_header', locals: { title: 'Standard Cost Exceptions',
+        subtitle: "Standard-cost problems to look at: variances over #{plain.(settings['std_exception_pct'])}% (and #{number_to_currency(settings['std_exception_min_amount'], precision: 0)}), standards more than #{plain.(settings['std_drift_pct'])}% off current cost, and items with no standard. Record what was done to clear each one." } do %>
+    <%= link_to 'Production variance report', report_path(Reports::ProductionVariance.key), class: 'btn btn-outline-secondary btn-sm' %>
+  <% end %>
+  <% if notice.present? %><div class="alert alert-success py-2"><%= notice %></div><% end %>
+  <% if alert.present? %><div class="alert alert-warning py-2"><%= alert %></div><% end %>
+
+  <ul class="nav nav-pills mb-2 small">
+    <li class="nav-item"><%= link_to "Needs review (#{@open_count})", standard_cost_exceptions_path, class: "nav-link #{'active' if !@show_reviewed && !@kind}" %></li>
+    <% StandardCostExceptions::KINDS.each do |key, label| %>
+      <li class="nav-item"><%= link_to "#{label} (#{@counts.fetch(key, 0)})", standard_cost_exceptions_path(kind: key), class: "nav-link #{'active' if !@show_reviewed && @kind == key}" %></li>
+    <% end %>
+    <li class="nav-item"><%= link_to 'Reviewed', standard_cost_exceptions_path(reviewed: 1), class: "nav-link #{'active' if @show_reviewed}" %></li>
+  </ul>
+
+  <% if can_feature?(:costing_setup) %>
+    <details class="mb-3">
+      <summary class="small text-muted">Tolerances</summary>
+      <%= form_with url: settings_standard_cost_exceptions_path, method: :patch, class: 'd-flex flex-wrap gap-2 align-items-end mt-2' do %>
+        <div><label class="form-label small mb-0" for="std_exception_pct">Variance tolerance %</label><%= number_field_tag 'std_exception_pct', plain.(settings['std_exception_pct']), step: 'any', min: 0, class: 'form-control form-control-sm', style: 'width:110px' %></div>
+        <div><label class="form-label small mb-0" for="std_exception_min_amount">Ignore variances under $</label><%= number_field_tag 'std_exception_min_amount', plain.(settings['std_exception_min_amount']), step: 'any', min: 0, class: 'form-control form-control-sm', style: 'width:110px' %></div>
+        <div><label class="form-label small mb-0" for="std_drift_pct">Standard out of date %</label><%= number_field_tag 'std_drift_pct', plain.(settings['std_drift_pct']), step: 'any', min: 0, class: 'form-control form-control-sm', style: 'width:110px' %></div>
+        <%= submit_tag 'Save', class: 'btn btn-sm btn-outline-primary', name: nil %>
+      <% end %>
+    </details>
+  <% end %>
+
+  <div class="card shadow-sm">
+    <div class="table-responsive">
+      <table class="table align-middle mb-0 small">
+        <thead class="table-light">
+          <tr><th>Type</th><th>Item</th><th>Detail</th><th class="text-end">Variance</th><th class="text-end">%</th><th>Date</th><th style="min-width: 300px;"><%= @show_reviewed ? 'Resolution' : 'Review' %></th></tr>
+        </thead>
+        <tbody>
+          <% if @items.empty? %>
+            <tr><td colspan="7" class="text-center text-muted py-4"><%= @show_reviewed ? 'Nothing reviewed yet.' : 'No exceptions waiting for review.' %></td></tr>
+          <% end %>
+          <% @items.each do |item| %>
+            <tr>
+              <td class="text-nowrap"><%= item.kind_label %></td>
+              <td><%= item.path ? link_to(item.title, item.path) : item.title %></td>
+              <td class="text-muted"><%= item.detail %></td>
+              <td class="text-end text-nowrap <%= 'text-danger' if item.amount.to_d.negative? %>"><%= number_to_currency(item.amount) if item.amount %></td>
+              <td class="text-end"><%= number_to_percentage(item.pct * 100, precision: 1) if item.pct %></td>
+              <td class="text-nowrap"><%= item.date&.strftime('%m/%d/%Y') %></td>
+              <td>
+                <% if item.reviewed? %>
+                  <div><%= item.review.resolution %></div>
+                  <div class="text-muted"><%= item.review.reviewed_by&.full_name %> · <%= item.review.reviewed_at.strftime('%m/%d/%Y') %></div>
+                <% elsif can?(:accounting, :approve) %>
+                  <%= form_with url: review_standard_cost_exceptions_path, method: :patch, class: 'd-flex gap-2' do %>
+                    <%= hidden_field_tag :kind_key, item.kind, id: nil %>
+                    <%= hidden_field_tag :subject_key, item.subject_key, id: nil %>
+                    <%= hidden_field_tag :fingerprint, item.fingerprint, id: nil %>
+                    <%= hidden_field_tag :kind, @kind, id: nil %>
+                    <%= text_field_tag :resolution, nil, id: nil, class: 'form-control form-control-sm', placeholder: 'What was done (required)', required: true, 'aria-label': 'Resolution' %>
+                    <%= submit_tag 'Reviewed', class: 'btn btn-sm btn-outline-primary', name: nil %>
+                  <% end %>
+                <% else %>
+                  <span class="text-muted">Waiting for review</span>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

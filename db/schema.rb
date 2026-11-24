@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_24_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_24_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -212,6 +212,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_24_120000) do
     t.text "pdi_push_error"
     t.string "release_number", limit: 30
     t.string "pdi_order_number", limit: 15
+    t.boolean "blind_shipment", default: false, null: false
+    t.text "blind_ship_from"
     t.index ["customer_id"], name: "index_customer_orders_on_customer_id"
     t.index ["external_order_no"], name: "index_customer_orders_on_external_order_no"
     t.index ["freight_origin_location_id"], name: "index_customer_orders_on_freight_origin_location_id"
@@ -300,6 +302,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_24_120000) do
     t.bigint "thing_id", null: false
     t.index ["dispatch_id"], name: "index_dispatches_things_on_dispatch_id"
     t.index ["thing_id"], name: "index_dispatches_things_on_thing_id"
+  end
+
+  create_table "exception_reviews", force: :cascade do |t|
+    t.string "kind", null: false
+    t.string "subject_key", null: false
+    t.string "fingerprint", default: "", null: false
+    t.text "resolution", null: false
+    t.bigint "reviewed_by_id"
+    t.datetime "reviewed_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["kind", "subject_key", "fingerprint"], name: "idx_on_kind_subject_key_fingerprint_469b27b825", unique: true
+    t.index ["reviewed_by_id"], name: "index_exception_reviews_on_reviewed_by_id"
   end
 
   create_table "expense_accounts", force: :cascade do |t|
@@ -1293,6 +1308,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_24_120000) do
   add_foreign_key "dispatches", "locations", column: "origin_location_id"
   add_foreign_key "dispatches", "things", column: "asset_id"
   add_foreign_key "dispatches", "vendors"
+  add_foreign_key "exception_reviews", "users", column: "reviewed_by_id"
   add_foreign_key "feed_tanks", "tanks"
   add_foreign_key "freight_lanes", "locations", column: "destination_location_id"
   add_foreign_key "freight_lanes", "locations", column: "origin_location_id"

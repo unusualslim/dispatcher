@@ -1,296 +1,59 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Production Orders – Kanban</title>
-  <%= csrf_meta_tags %>
-  <%= csp_meta_tag %>
-
-  <%= stylesheet_link_tag 'application', media: 'all' %>
-  <%= javascript_include_tag 'application', 'data-turbo-track': 'reload', defer: true %>
-
-  <style>
-    body {
-      font-family: 'Roboto', sans-serif;
-      background-color: #f4f4f9;
-      margin: 0;
-      padding: 0;
-    }
-
-    /* ===== Top Bar ===== */
-    .kanban-topbar {
-      max-width: 1200px;
-      margin: 1rem auto 0.25rem auto;
-      padding: 0 0.25rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .kanban-title h1 {
-      font-size: 1.1rem;
-      font-weight: 600;
-      margin: 0;
-      color: #222;
-    }
-
-    .kanban-actions {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    /* ===== Status Legend ===== */
-    .status-legend {
-      max-width: 1200px;
-      margin: 0 auto 0.75rem auto;
-      padding: 0 0.25rem;
-      display: flex;
-      gap: 1rem;
-      font-size: 0.8rem;
-      color: #555;
-    }
-
-    .status-dot {
-      display: inline-block;
-      width: 10px;
-      height: 10px;
-      border-radius: 3px;
-      margin-right: 4px;
-      vertical-align: middle;
-    }
-
-    /* Status colors */
-    .status-created     { background: #6c757d; } /* gray */
-    .status-in_progress { background: #ffc107; } /* amber */
-    .status-quality_check { background: #0d6efd; } /* blue */
-    .status-completed   { background: #28a745; } /* green */
-    .status-voided      { background: #212529; } /* dark */
-
-
-    /* ===== Filters ===== */
-    .kanban-controls {
-      max-width: 1200px;
-      margin: 0 auto 0.75rem auto;
-      padding: 0.75rem;
-      background-color: #ffffff;
-      border-radius: 6px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-    }
-
-    .filters-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-    }
-
-    .form-group {
-      flex: 1 1 160px;
-      min-width: 140px;
-    }
-
-    .form-control {
-      width: 100%;
-      padding: 0.45rem 0.5rem;
-      border: 1px solid #ced4da;
-      border-radius: 4px;
-      font-size: 0.85rem;
-    }
-
-    /* ===== Kanban Board ===== */
-    .kanban-board {
-      display: flex;
-      padding: 0.75rem;
-      gap: 0.75rem;
-      overflow-x: auto;
-    }
-
-    .kanban-column {
-      background-color: #f8f9fa;
-      border: 1px solid #dee2e6;
-      border-radius: 6px;
-      padding: 0.75rem;
-      min-width: 220px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-    }
-
-    .kanban-column h2 {
-      font-size: 0.95rem;
-      margin-bottom: 0.5rem;
-      color: #333;
-      display: flex;
-      justify-content: space-between;
-    }
-
-    .kanban-cards {
-      min-height: 150px;
-    }
-
-    .kanban-card {
-      background-color: #ffffff;
-      border: 1px solid #dee2e6;
-      border-radius: 6px;
-      padding: 0.6rem;
-      margin-bottom: 0.5rem;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
-      text-decoration: none;
-      color: inherit;
-      display: block;
-      position: relative;
-    }
-
-    .kanban-card:hover {
-      box-shadow: 0 3px 6px rgba(0,0,0,0.12);
-    }
-
-    .status-bar {
-      height: 4px;
-      width: 100%;
-      border-radius: 6px 6px 0 0;
-      position: absolute;
-      top: 0;
-      left: 0;
-    }
-
-    .kanban-card h4 {
-      font-size: 0.85rem;
-      margin: 0.35rem 0 0.25rem 0;
-      color: #007bff;
-    }
-
-    .kanban-card p {
-      font-size: 0.75rem;
-      margin: 0.15rem 0;
-      color: #555;
-    }
-
-    .kanban-card.overdue {
-      border-left: 5px solid #dc3545; /* red */
-      background-color: #fff5f5;
-    }
-
-    .kanban-card.overdue h4 {
-      color: #dc3545;
-    }
-
-    @media (max-width: 768px) {
-      .kanban-board {
-        padding: 0.5rem;
-      }
-    }
-  </style>
-</head>
-<body>
-
-  <!-- Top bar -->
-  <div class="kanban-topbar">
-    <div class="kanban-title">
-      <h1>Production Orders</h1>
+<%# Production calendar: open production orders by production date, plus orders behind schedule and orders not
+    scheduled yet. The header's warehouse selector narrows it to one plant. %>
+<% span = (@end_date - @start_date).to_i + 1 %>
+<% nav = ->(from) { kanban_production_orders_path(from: from, to: from + span - 1, search: @search_term, group: @group) } %>
+<div class="container-fluid mt-4">
+  <%= render layout: 'shared/page_header', locals: { title: 'Production Calendar',
+        subtitle: "#{@start_date.strftime('%a %b %-d')} – #{@end_date.strftime('%a %b %-d')} · #{current_warehouse&.company_name || 'All warehouses'}" } do %>
+    <div class="btn-group btn-group-sm">
+      <%= link_to nav.(@start_date - span), class: 'btn btn-outline-secondary', title: 'Earlier' do %><i class="bi bi-chevron-left"></i><% end %>
+      <%= link_to 'Today', kanban_production_orders_path(search: @search_term, group: @group), class: 'btn btn-outline-secondary' %>
+      <%= link_to nav.(@start_date + span), class: 'btn btn-outline-secondary', title: 'Later' do %><i class="bi bi-chevron-right"></i><% end %>
     </div>
-    <div class="kanban-actions">
-      <%= link_to "Table",
-            production_orders_path,
-            class: "btn btn-outline-secondary btn-sm",
-            data: { turbo: false } %>
+    <%= link_to 'Table', production_orders_path, class: 'btn btn-outline-secondary btn-sm' %>
+    <% if can?(:production, :edit) %><%= link_to 'New', new_production_order_path, class: 'btn btn-primary btn-sm' %><% end %>
+  <% end %>
 
-      <%= link_to "New",
-            new_production_order_path,
-            class: "btn btn-primary btn-sm",
-            data: { turbo: false } %>
-    </div>
-  </div>
+  <% if notice.present? %><div class="alert alert-success py-2"><%= notice %></div><% end %>
+  <% if alert.present? %><div class="alert alert-warning py-2"><%= alert %></div><% end %>
 
-  <!-- Status key -->
-  <div class="status-legend">
-    <span><span class="status-dot status-created"></span> Created</span>
-    <span><span class="status-dot status-in_progress"></span> In Progress</span>
-    <span><span class="status-dot status-quality_check"></span> Quality Check</span>
-    <span><span class="status-dot status-completed"></span> Completed</span>
-    <span><span class="status-dot status-voided"></span> Voided</span>
-  </div>
+  <%= form_with url: kanban_production_orders_path, method: :get, class: 'd-flex flex-wrap gap-2 align-items-end mb-3' do %>
+    <div><label class="form-label small mb-0" for="search">Search</label>
+      <%= text_field_tag :search, @search_term, class: 'form-control form-control-sm', placeholder: 'Order #, item, customer' %></div>
+    <div><label class="form-label small mb-0" for="group">Product group</label>
+      <%= select_tag :group, options_for_select([['All', '']] + ReportingGroup.order(:name).pluck(:name), @group), class: 'form-select form-select-sm' %></div>
+    <div><label class="form-label small mb-0" for="from">From</label>
+      <%= date_field_tag :from, @start_date, class: 'form-control form-control-sm' %></div>
+    <div><label class="form-label small mb-0" for="to">To</label>
+      <%= date_field_tag :to, @end_date, class: 'form-control form-control-sm' %></div>
+    <%= submit_tag 'Apply', class: 'btn btn-sm btn-primary', name: nil %>
+    <%= link_to 'Reset', kanban_production_orders_path, class: 'btn btn-sm btn-outline-secondary' %>
+    <span class="small text-muted ms-auto">
+      <% { created: 'Created', in_progress: 'In progress', quality_check: 'Quality check', completed: 'Completed' }.each do |key, label| %>
+        <span class="d-inline-block rounded-1 align-middle production-status-<%= key %>" style="width:.7rem;height:.7rem"></span> <%= label %>
+      <% end %>
+      · dot = materials
+    </span>
+  <% end %>
 
-  <!-- Filters -->
-  <div class="kanban-controls">
-    <%= form_with url: kanban_production_orders_path, method: :get, local: true do %>
-      <div class="filters-row">
-        <div class="form-group">
-          <%= text_field_tag :search, @search_term, class: "form-control", placeholder: "Search order, customer, location" %>
-        </div>
-        <div class="form-group">
-          <%= text_field_tag :location, @location, class: "form-control", placeholder: "Location" %>
-        </div>
-        <div class="form-group">
-          <%= date_field_tag :due_from, @due_from, class: "form-control" %>
-        </div>
-        <div class="form-group">
-          <%= date_field_tag :due_to, @due_to, class: "form-control" %>
-        </div>
-        <div class="form-group">
-          <%= submit_tag "Apply", class: "btn btn-primary btn-sm" %>
-          <%= link_to "Reset", kanban_production_orders_path, class: "btn btn-secondary btn-sm ms-1" %>
-        </div>
-      </div>
+  <div class="production-board d-flex gap-2 pb-3">
+    <% if @behind.any? %>
+      <%= render 'kanban_column', title: 'Behind schedule', subtitle: 'Open, production date passed', orders: @behind, tone: 'danger' %>
     <% end %>
-  </div>
-
-  <!-- Kanban board -->
-  <div class="kanban-board">
-    <% start_date = (@due_from.present? ? (Date.parse(@due_from) rescue nil) : nil) || Date.yesterday %>
-    <% end_date   = (@due_to.present?   ? (Date.parse(@due_to)   rescue nil) : nil) || (Date.today + 6.days) %>
-    <% if start_date > end_date %>
-      <% start_date, end_date = end_date, start_date %>
+    <% (@start_date..@end_date).each do |date| %>
+      <%= render 'kanban_column', title: date.strftime('%a %-m/%-d'), date: date, orders: @by_day[date] || [],
+                                  tone: (date == Date.current ? 'primary' : nil), subtitle: (date == Date.current ? 'Today' : nil) %>
     <% end %>
-
-    <% (start_date..end_date).each do |date| %>
-      <% orders_for_day = (@production_orders || ProductionOrder.none).where(production_date: date) %>
-
-      <div class="kanban-column">
-        <h2>
-          <span><%= date.strftime("%a %m/%d") %></span>
-          <span><%= orders_for_day.count %></span>
-        </h2>
-
-      <div class="kanban-cards">
-        <% orders_for_day.each do |order| %>
-          <% overdue = order.due_date.present? && order.due_date < Date.today %>
-          <%= link_to production_order_path(order),
-                class: "kanban-card #{'overdue' if overdue}" do %>
-            <div class="status-bar status-<%= order.status %>"></div>
-
-            <h4>Order #<%= order.number.presence || order.id %></h4>
-
-            <p><strong>Customer:</strong> <%= order.customer_name || "—" %></p>
-            <p><strong>Location:</strong> <%= order.location_name || "—" %></p>
-
-            <p><strong>Item:</strong>
-              <%= order.item.presence || (order.respond_to?(:product) ? order.product&.name : "—") || "—" %>
-            </p>
-
-            <p><strong>Qty:</strong>
-              <%= order.qty_to_make.present? ? sprintf("%.3f", order.qty_to_make) : "—" %>
-            </p>
-
-            <% if order.due_date.present? %>
-              <% days_until_due = (order.due_date - Date.current).to_i %>
-              <p>
-                <strong>Due:</strong> <%= order.due_date.strftime("%m/%d") %>
-                &nbsp;•&nbsp;
-                <%= days_until_due >= 0 ? "#{days_until_due} days until due" : "#{days_until_due.abs} days past due" %>
-              </p>
-            <% else %>
-              <p><strong>Due:</strong> —</p>
-            <% end %>
-
-            <p><strong>Status:</strong> <%= order.status.titleize %></p>
-
-            <% if order.priority.present? %>
-              <p><strong>Priority:</strong> P<%= order.priority %></p>
-            <% end %>
-          <% end %>
-        <% end %>
-      </div>
-
-      </div>
-    <% end %>
+    <%= render 'kanban_column', title: 'Unscheduled', subtitle: 'Open, no production date', orders: @unscheduled, tone: 'secondary' %>
   </div>
+</div>
 
-</body>
-</html>
+<style>
+  .production-board { overflow-x: auto; align-items: flex-start; }
+  .production-col { flex: 0 0 230px; background: var(--bs-tertiary-bg, #f8f9fa); border: 1px solid var(--bs-border-color); border-radius: 6px; }
+  .production-card { border-left: 4px solid #6c757d; }
+  .production-status-created { background: #6c757d; } .production-card.production-status-created { border-left-color: #6c757d; background: var(--bs-body-bg); }
+  .production-status-in_progress { background: #ffc107; } .production-card.production-status-in_progress { border-left-color: #ffc107; background: var(--bs-body-bg); }
+  .production-status-quality_check { background: #0d6efd; } .production-card.production-status-quality_check { border-left-color: #0d6efd; background: var(--bs-body-bg); }
+  .production-status-completed { background: #198754; } .production-card.production-status-completed { border-left-color: #198754; background: var(--bs-body-bg); opacity: .75; }
+</style>

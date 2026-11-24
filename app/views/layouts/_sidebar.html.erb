@@ -14,9 +14,9 @@
 <% production_review_active = current == 'quality_exceptions' %>
 <% production_setup_active  = %w[scrap_reasons warehouse_locations things].include?(current) %>
 <% production_active    = report_area == 'production' || production_review_active || production_setup_active ||
-                          %w[production_orders jobs warehouse work_orders].include?(current) %>
+                          %w[production_orders suggested_productions jobs warehouse work_orders].include?(current) %>
 <% purchasing_setup_active = current == 'vendors' %>
-<% purchasing_active    = report_area == 'purchasing' || purchasing_setup_active || %w[purchase_orders purchasing_report mrp freight_payables].include?(current) %>
+<% purchasing_active    = report_area == 'purchasing' || purchasing_setup_active || %w[purchase_orders purchasing_report mrp min_max suggested_purchases freight_payables].include?(current) %>
 <% inventory_setup_active = current == 'products' %>
 <% inventory_active     = report_area == 'inventory' || inventory_setup_active || %w[inventory_intelligence inventory_adjustments inventory_transactions inventory_valuations].include?(current) %>
 <% imports_active       = %w[imports customer_order_imports inventory_imports pdi_inventory_imports pdi_invoice_date_imports warehouse_transaction_imports
@@ -24,7 +24,8 @@
                              repack_batch_imports pdi_purchase_order_imports purchase_order_imports].include?(current) ||
                           (current == 'customer_order_products' && request.path == product_code_links_path) %>
 <% accounting_setup_active = %w[reporting_groups cost_items expense_accounts costing_settings].include?(current) %>
-<% accounting_active    = report_area == 'accounting' || accounting_setup_active || %w[financial_dashboards ledger_entries].include?(current) %>
+<% accounting_review_active = current == 'standard_cost_exceptions' %>
+<% accounting_active    = report_area == 'accounting' || accounting_setup_active || accounting_review_active || %w[financial_dashboards ledger_entries].include?(current) %>
 <% admin_data_active    = imports_active || %w[customer_merges location_merges product_merges].include?(current) %>
 <% admin_system_active  = %w[company_settings automated_processes].include?(current) %>
 <% admin_active         = admin_data_active || admin_system_active || %w[users roles announcements].include?(current) %>
@@ -139,7 +140,8 @@
         <!-- PRODUCTION -->
         <%= render 'layouts/sidebar_section', label: 'Production', icon: 'bi-gear', id: 'productionCollapse', active: production_active do %>
           <%= nav_item 'Production Dashboard', dashboard_production_orders_path, 'bi-speedometer2',          active: current == 'production_orders' && action == 'dashboard' %>
-          <%= nav_item 'Production Kanban',    kanban_production_orders_path,    'bi-layout-three-columns',  active: current == 'production_orders' && action == 'kanban', keywords: 'board' %>
+          <%= nav_item 'Production Calendar',  kanban_production_orders_path,    'bi-calendar-week',  active: current == 'production_orders' && action == 'kanban', keywords: 'board kanban schedule' %>
+          <%= nav_item 'Suggested Production', suggested_productions_path,       'bi-lightbulb',             active: current == 'suggested_productions', keywords: 'mrp plan assistant make' %>
           <%= nav_item 'Production Orders',    production_orders_path,           'bi-table',                 active: current == 'production_orders' && !%w[dashboard kanban].include?(action), keywords: 'def manufacturing bom cost' %>
           <%= nav_item 'Line Production',      line_path,                        'bi-stopwatch',             active: current == 'jobs', keywords: 'clock in jobs' %>
           <%= nav_item 'Warehouse Board',      warehouse_kanban_path,            'bi-tv',                    active: current == 'warehouse' %>
@@ -163,6 +165,8 @@
           <%= nav_item 'Purchase Orders',   purchase_orders_path,           'bi-bag-check',       active: current == 'purchase_orders' && action != 'dashboard' %>
           <%= nav_item 'Purchasing Report', purchasing_report_path,         'bi-cart-check',      active: current == 'purchasing_report', keywords: 'buy reorder' %>
           <%= nav_item 'MRP',               mrp_path,                       'bi-graph-up-arrow',  active: current == 'mrp', keywords: 'requirements raw materials' %>
+          <%= nav_item 'Suggested POs',     suggested_purchases_path,       'bi-lightbulb',       active: current == 'suggested_purchases', keywords: 'reorder buy shortage assistant' %>
+          <%= nav_item 'Min/Max',           min_max_path,                   'bi-arrows-collapse', active: current == 'min_max', keywords: 'reorder point safety stock turns' %>
           <%= nav_item 'Freight Payables',  freight_payables_path,          'bi-receipt',         active: current == 'freight_payables', keywords: 'carrier invoice accrual bol freight ap' %>
           <%= render 'layouts/sidebar_reports', area: :purchasing, current_report: current_report %>
           <%= render 'layouts/sidebar_subgroup', label: 'Setup', id: 'purchasingSetupCollapse', active: purchasing_setup_active do %>
@@ -191,6 +195,11 @@
           <%= nav_item 'Financial Dashboard', financial_dashboard_path, 'bi-speedometer2', active: current == 'financial_dashboards', keywords: 'sales mtd month to date kpi margin delivery' if sees?(:financial_dashboard) %>
           <%= nav_item 'GL Ledger',           ledger_entries_path,      'bi-journal-text', active: current == 'ledger_entries', keywords: 'journal fpst gl export posting' if sees?(:gl) %>
           <%= render 'layouts/sidebar_reports', area: :accounting, current_report: current_report %>
+          <% if sees?(:costs) %>
+          <%= render 'layouts/sidebar_subgroup', label: 'Review', id: 'accountingReviewCollapse', active: accounting_review_active do %>
+            <%= nav_item 'Standard Cost Exceptions', standard_cost_exceptions_path, 'bi-exclamation-diamond', active: current == 'standard_cost_exceptions', keywords: 'ppv variance standard cost review drift' %>
+          <% end %>
+          <% end %>
           <%= render 'layouts/sidebar_subgroup', label: 'Setup', id: 'accountingSetupCollapse', active: accounting_setup_active do %>
             <%= nav_item 'Reporting Groups', reporting_groups_path,      'bi-diagram-2',     active: current == 'reporting_groups', keywords: 'gl account posting cost' if sees?(:costs) %>
             <%= nav_item 'Cost Items',       cost_items_path,            'bi-tags',          active: current == 'cost_items', keywords: 'non-inventory pallet film tape label labor overhead consumables price' if sees?(:costs) %>

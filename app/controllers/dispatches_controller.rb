@@ -3,11 +3,11 @@ require 'net/http'
 
 class DispatchesController < ApplicationController
   before_action :set_dispatch,
-                only: %i[show print bol edit update destroy mark_as_complete mark_as_billed send_notification upload_files
+                only: %i[show print bol packing_list edit update destroy mark_as_complete mark_as_billed send_notification upload_files
                          send_to_samsara]
   # Drivers only see and upload to their own dispatches (checked in those actions); everything else is the
   # Dispatch area.
-  DRIVER_ACTIONS = %w[index show print bol upload_files].freeze
+  DRIVER_ACTIONS = %w[index show print bol packing_list upload_files].freeze
   permission_area :dispatch, approve: %i[mark_as_billed],
                              unless: -> { driver? && DRIVER_ACTIONS.include?(action_name) }
 
@@ -110,6 +110,16 @@ class DispatchesController < ApplicationController
   def bol
     load_printable_orders
     render layout: false unless performed?
+  end
+
+  # GET /dispatches/1/packing_list — one packing list per order on the load, no prices
+  def packing_list
+    load_printable_orders
+    return if performed?
+
+    @packing_orders = @customer_orders
+    @packing_title = "Dispatch ##{@dispatch.id} Packing Lists"
+    render 'packing_lists/show', layout: false
   end
 
   # POST /dispatches/1/upload_files

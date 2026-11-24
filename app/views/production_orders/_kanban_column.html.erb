@@ -1,0 +1,45 @@
+<%# One calendar column. Locals: title, orders, subtitle, tone (bootstrap colour), date (a production day). %>
+<% qty = orders.sum { |o| o.qty_to_make.to_d } %>
+<div class="production-col p-2">
+  <div class="d-flex justify-content-between align-items-baseline mb-1 <%= "text-#{tone}" if local_assigns[:tone] %>">
+    <strong><%= title %></strong>
+    <span class="small"><%= orders.size %></span>
+  </div>
+  <div class="small text-muted mb-2">
+    <%= local_assigns[:subtitle] %><%= ' · ' if local_assigns[:subtitle].present? && orders.any? %><%= "#{number_with_delimiter(qty.round)} to make" if orders.any? %>
+  </div>
+  <% orders.each do |order| %>
+    <% overdue = order.due_date && order.due_date < Date.current && ProductionOrder::OPEN_STATUSES.include?(order.status) %>
+    <div class="card production-card production-status-<%= order.status %> mb-2 shadow-sm">
+      <div class="card-body p-2 small">
+        <div class="d-flex justify-content-between align-items-center">
+          <%= link_to order.number.presence || "##{order.id}", production_order_path(order), class: 'fw-semibold text-decoration-none' %>
+          <span>
+            <% if order.priority.present? %><span class="badge text-bg-light border">P<%= order.priority %></span><% end %>
+            <%= readiness_dot(@readiness.order(order)) if MaterialReadiness::OPEN_STATUSES.include?(order.status) %>
+          </span>
+        </div>
+        <div><%= order.product&.name || order.item.presence || '—' %></div>
+        <div class="text-muted">
+          <%= order.qty_to_make ? number_with_delimiter(order.qty_to_make.to_d.round(3).to_s('F').delete_suffix('.0')) : '—' %>
+          <%= order.product&.unit_of_measurement %>
+          <% if order.location %>· <%= order.location.company_name %><% end %>
+        </div>
+        <% if order.customer_name.present? %><div class="text-muted text-truncate"><%= order.customer_name %></div><% end %>
+        <div class="<%= overdue ? 'text-danger fw-semibold' : 'text-muted' %>">
+          Due <%= order.due_date ? order.due_date.strftime('%-m/%-d') : '—' %><%= ' · past due' if overdue %>
+          <% if local_assigns[:date].nil? && order.production_date %>· planned <%= order.production_date.strftime('%-m/%-d') %><% end %>
+        </div>
+        <% if can?(:production, :edit) && ProductionOrder::OPEN_STATUSES.include?(order.status) %>
+          <details class="mt-1">
+            <summary class="text-muted"><%= order.production_date ? 'Reschedule' : 'Schedule' %></summary>
+            <%= form_with url: schedule_production_order_path(order), method: :patch, class: 'd-flex gap-1 mt-1' do %>
+              <%= date_field_tag :production_date, order.production_date || Date.current, class: 'form-control form-control-sm', 'aria-label': 'Production date' %>
+              <%= submit_tag 'Set', class: 'btn btn-sm btn-outline-primary', name: nil %>
+            <% end %>
+          </details>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</div>

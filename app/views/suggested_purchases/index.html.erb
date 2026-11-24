@@ -1,0 +1,72 @@
+<% num = ->(v) { v.nil? ? '' : number_with_precision(v, precision: 3, strip_insignificant_zeros: true) } %>
+<% editable = can_feature?(:inventory_pos) %>
+<div class="container-fluid mt-4">
+  <%= render layout: 'shared/page_header', locals: { title: 'Suggested POs',
+        subtitle: "What to buy, by vendor: MRP shortages and items at or below min#{" · #{current_warehouse.company_name}" if current_warehouse}. Tick lines to create draft POs; they still go through approval." } do %>
+    <%= link_to 'Min/Max', min_max_path, class: 'btn btn-outline-secondary btn-sm' %>
+    <%= link_to 'MRP', mrp_path, class: 'btn btn-outline-secondary btn-sm' %>
+  <% end %>
+  <% if alert.present? %><div class="alert alert-warning py-2"><%= alert %></div><% end %>
+
+  <% if @lines.empty? %>
+    <div class="alert alert-light border">Nothing to buy right now: no MRP shortages in the next 60 days and nothing at or below its min.</div>
+  <% else %>
+    <%= form_with url: suggested_purchases_path, method: :post do %>
+      <% i = 0 %>
+      <% @lines.group_by(&:vendor).each do |vendor, lines| %>
+        <div class="card mb-3 shadow-sm">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <strong><%= vendor ? vendor.label : 'No vendor on file' %></strong>
+            <span class="small text-muted"><%= pluralize(lines.size, 'line') %><% if vendor && sees?(:costs) %> · <%= number_to_currency(lines.sum { |l| l.quantity.to_d * l.unit_cost.to_d }) %><% end %></span>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle small mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th style="width:2rem"><input type="checkbox" class="form-check-input" aria-label="Tick all for this vendor" onclick="this.closest('table').querySelectorAll('.sp-pick').forEach(c => c.checked = this.checked)"></th>
+                  <th>Item</th><th>Warehouse</th><th>Why</th><th>Order by</th><th>Needed</th>
+                  <th class="text-end" style="width:7rem">Quantity</th>
+                  <% if sees?(:costs) %><th class="text-end">Unit cost</th><% end %>
+                  <% unless vendor %><th>Vendor</th><% end %>
+                </tr>
+              </thead>
+              <tbody>
+                <% lines.each do |line| %>
+                  <% prefix = "lines[#{i}]" %>
+                  <tr class="<%= 'table-danger' if line.late? %>">
+                    <td>
+                      <% if editable %><%= check_box_tag "#{prefix}[pick]", '1', false, class: 'form-check-input sp-pick', id: nil, 'aria-label': "Order #{line.product.id}" %><% end %>
+                      <%= hidden_field_tag "#{prefix}[product_id]", line.product.id, id: nil %>
+                      <%= hidden_field_tag "#{prefix}[location_id]", line.location&.id, id: nil %>
+                      <%= hidden_field_tag "#{prefix}[need_date]", line.need_date, id: nil %>
+                      <%= hidden_field_tag "#{prefix}[unit_cost]", line.unit_cost, id: nil %>
+                      <%= hidden_field_tag "#{prefix}[vendor_part_number]", line.vendor_part_number, id: nil %>
+                      <% if vendor %><%= hidden_field_tag "#{prefix}[vendor_id]", vendor.id, id: nil %><% end %>
+                    </td>
+                    <td><%= link_to line.product.id, mrp_product_path(line.product.id), class: 'fw-semibold text-decoration-none' %> <span class="text-muted"><%= line.product.name %></span>
+                      <% if line.vendor_part_number.present? %><div class="text-muted">Vendor # <%= line.vendor_part_number %></div><% end %></td>
+                    <td><%= line.location&.company_name || '—' %></td>
+                    <td class="text-muted"><%= line.reason %></td>
+                    <td class="<%= 'text-danger fw-semibold' if line.late? %>"><%= line.act_by.strftime('%b %-d') %><%= ' (late)' if line.late? %></td>
+                    <td><%= line.need_date.strftime('%b %-d') %></td>
+                    <td class="text-end"><%= number_field_tag "#{prefix}[quantity]", num.(line.quantity), min: 0, step: 'any', id: nil, class: 'form-control form-control-sm text-end', 'aria-label': "Quantity of #{line.product.id}", disabled: !editable %>
+                      <span class="text-muted"><%= line.product.unit_of_measurement %></span></td>
+                    <% if sees?(:costs) %><td class="text-end"><%= number_to_currency(line.unit_cost, precision: 4) if line.unit_cost %></td><% end %>
+                    <% unless vendor %>
+                      <td><%= select_tag "#{prefix}[vendor_id]", options_for_select(@vendors.map { |v| [v.label, v.id] }), include_blank: 'Pick vendor', id: nil, class: 'form-select form-select-sm', 'aria-label': 'Vendor' %></td>
+                    <% end %>
+                  </tr>
+                  <% i += 1 %>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      <% end %>
+      <% if editable %>
+        <%= submit_tag 'Create draft POs from ticked lines', class: 'btn btn-primary btn-sm', name: nil %>
+        <span class="small text-muted ms-2">One draft PO per vendor and warehouse.</span>
+      <% end %>
+    <% end %>
+  <% end %>
+</div>

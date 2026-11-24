@@ -199,8 +199,37 @@ en:
       updated: "Saved %{name}."
     destroy:
       deleted: "Deleted %{name}."
+  exception_reviews:
+    resolution_required: "Say what was done about it."
+  standard_cost_exceptions:
+    review:
+      reviewed: "Marked reviewed."
+    update_settings:
+      saved: "Tolerances saved."
+  suggested_productions:
+    create:
+      created:
+        one: "Production order %{numbers} created."
+        other: "%{count} production orders created: %{numbers}."
+      nothing: "Tick at least one run with a warehouse and a quantity."
+  suggested_purchases:
+    create:
+      created:
+        one: "Draft PO created (#%{numbers}). Review and send it for approval."
+        other: "%{count} draft POs created (#%{numbers}). Review and send them for approval."
+      nothing: "Tick at least one line that has a vendor and a quantity."
+  min_max:
+    apply:
+      applied:
+        one: "Min/max applied to 1 item."
+        other: "Min/max applied to %{count} items."
+    update_settings:
+      saved: "Min/max targets saved."
   production_orders:
     voided_read_only: "This production order is voided and can't be changed."
+    schedule:
+      scheduled: "%{number} scheduled for %{date}."
+      unscheduled: "%{number} moved to Unscheduled."
     record_quality:
       not_in_qc: "Quality checks are recorded while the order is in Quality Check."
       recorded:

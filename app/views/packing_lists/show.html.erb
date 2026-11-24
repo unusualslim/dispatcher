@@ -1,0 +1,165 @@
+<%# Packing lists: one letter page per order, no prices. Rendered layout-less by CustomerOrdersController#packing_list
+    (one order) and DispatchesController#packing_list (every order on the load). Blind shipments name our customer as
+    the shipper and leave Five Points Service off. %>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title><%= @packing_title %></title>
+  <style>
+    :root { --ink: #1c1917; --muted: #57534e; --rule: #a8a29e; --accent: #f26722; }
+    * { box-sizing: border-box; }
+    body { font: 11px/1.35 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: var(--ink); background: #e7e5e4;
+           margin: 0; padding: 16px; }
+    .toolbar { display: flex; justify-content: flex-end; gap: 12px; max-width: 8.5in; margin: 0 auto 12px; font-size: 13px; }
+    .toolbar button { font: inherit; padding: 6px 14px; border: 1px solid var(--rule); background: #fff; border-radius: 4px; cursor: pointer; }
+    .empty { max-width: 8.5in; margin: 0 auto; background: #fff; padding: 24px; font-size: 14px; }
+    .page { width: 8.5in; min-height: 11in; margin: 0 auto 16px; background: #fff; padding: 0.4in 0.45in;
+            display: flex; flex-direction: column; }
+    header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid var(--accent);
+             padding-bottom: 6px; margin-bottom: 10px; }
+    header.blind { border-bottom-color: var(--ink); }
+    header h1 { font-size: 22px; margin: 0; letter-spacing: .02em; }
+    header .company { text-align: right; color: var(--muted); font-size: 10px; }
+    header .company strong { color: var(--ink); font-size: 12px; display: block; }
+    .refs { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--ink); margin-bottom: 10px; }
+    .refs div { padding: 4px 6px; border-left: 1px solid var(--rule); }
+    .refs div:first-child { border-left: none; }
+    .label { font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); display: block; }
+    .refs .value { font-size: 13px; font-weight: 700; }
+    .parties { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+    .box { border: 1px solid var(--ink); padding: 5px 8px; min-height: 0.95in; }
+    .box .name { font-weight: 700; font-size: 12px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+    th { font-size: 8.5px; text-transform: uppercase; letter-spacing: .04em; text-align: left; background: #f5f5f4;
+         border: 1px solid var(--ink); padding: 4px; }
+    td { border: 1px solid var(--rule); padding: 8px 4px; vertical-align: top; }
+    tfoot td { border-top: 1px solid var(--ink); font-weight: 700; }
+    .num { text-align: right; white-space: nowrap; }
+    .notes { border: 1px solid var(--ink); padding: 5px 8px; margin-bottom: 10px; white-space: pre-line; min-height: 0.55in; }
+    .sign { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: auto; }
+    .sign > div { border: 1px solid var(--ink); padding: 5px 8px; }
+    .sign .line { border-bottom: 1px solid var(--ink); height: 0.38in; margin-bottom: 2px; }
+    .sign .small { font-size: 8px; color: var(--muted); }
+    @page { size: letter portrait; margin: 0; }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .toolbar { display: none; }
+      .page { margin: 0; height: 11in; break-after: page; }
+      .page:last-child { break-after: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar"><button type="button" onclick="window.print()">Print</button></div>
+
+  <% if @packing_orders.empty? %>
+    <div class="empty">No customer orders to pack.</div>
+  <% end %>
+
+  <% fmt_date = ->(d) { d&.strftime('%m/%d/%Y') || '' } %>
+  <% city_line = ->(loc) { [loc.city, [loc.state, loc.zip].compact_blank.join(' ')].compact_blank.join(', ') } %>
+  <% @packing_orders.each do |order| %>
+    <%
+      blind   = order.blind_shipment
+      lines   = order.customer_order_products.sort_by(&:id)
+      theirs  = CustomerItemNumber.map_for(order.customer_id)
+      ship_to = order.location
+      shipper = order.ship_from_location || lines.filter_map(&:location).first || @dispatch&.origin_location
+      weights = lines.map { |l| l.product&.weight && (l.shipped_quantity || l.quantity || 0) * l.product.weight }
+    %>
+    <section class="page">
+      <header class="<%= 'blind' if blind %>">
+        <h1>Packing List</h1>
+        <% if blind %>
+          <div class="company"><% order.blind_shipper_lines.each_with_index do |line, i| %><%= i.zero? ? tag.strong(line) : tag.div(line) %><% end %></div>
+        <% else %>
+          <%= render 'shared/print_company', location: shipper %>
+        <% end %>
+      </header>
+
+      <div class="refs">
+        <div><span class="label">Ship Date</span><span class="value"><%= fmt_date.(@dispatch&.dispatch_date || order.required_delivery_date) %></span></div>
+        <div><span class="label">Customer PO</span><span class="value"><%= order.customer_po_number %></span></div>
+        <% if blind %>
+          <div><span class="label">Release</span><span class="value"><%= order.release_number %></span></div>
+          <div><span class="label">Packages</span><span class="value"></span></div>
+        <% else %>
+          <div><span class="label">Order</span><span class="value"><%= order.external_order_no.presence || "##{order.id}" %></span></div>
+          <div><span class="label"><%= @dispatch ? 'BOL Number' : 'Release' %></span><span class="value"><%= @dispatch ? "#{@dispatch.id}-#{order.id}" : order.release_number %></span></div>
+        <% end %>
+      </div>
+
+      <div class="parties">
+        <div class="box">
+          <span class="label">Ship From</span>
+          <% if blind %>
+            <div class="name"><%= order.blind_shipper_lines.first %></div>
+            <% order.blind_shipper_lines.drop(1).each do |line| %><div><%= line %></div><% end %>
+          <% else %>
+            <div class="name"><%= AppSetting.company['name'] %></div>
+            <% if shipper %>
+              <div><%= shipper.company_name %></div>
+              <div><%= shipper.address %></div>
+              <div><%= city_line.(shipper) %></div>
+            <% end %>
+          <% end %>
+        </div>
+        <div class="box">
+          <span class="label">Ship To</span>
+          <% if ship_to %>
+            <div class="name"><%= blind ? ship_to.company_name : (order.customer&.name || ship_to.company_name) %></div>
+            <% if !blind && order.customer && order.customer.name != ship_to.company_name %><div><%= ship_to.company_name %></div><% end %>
+            <div><%= ship_to.address %></div>
+            <div><%= city_line.(ship_to) %></div>
+          <% end %>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width:1.2in">Item</th>
+            <th>Description</th>
+            <% unless blind %><th style="width:1in">Customer #</th><% end %>
+            <th class="num" style="width:.7in">Ordered</th>
+            <th class="num" style="width:.7in">Shipped</th>
+            <th style="width:.5in">Unit</th>
+            <th class="num" style="width:.8in">Weight (lbs)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if lines.empty? %>
+            <tr><td colspan="<%= blind ? 6 : 7 %>">No products on this order.</td></tr>
+          <% end %>
+          <% lines.zip(weights).each do |line, weight| %>
+            <tr>
+              <td><%= blind ? (theirs[line.product_id] || line.product_id) : line.product_id %></td>
+              <td><%= line.product&.name || line.product_name %></td>
+              <% unless blind %><td><%= theirs[line.product_id] %></td><% end %>
+              <td class="num"><%= number_with_delimiter(line.quantity) %></td>
+              <td class="num"><%= number_with_delimiter(line.shipped_quantity.to_d.to_s('F').delete_suffix('.0')) if line.shipped_quantity %></td>
+              <td><%= line.product&.unit_of_measurement %></td>
+              <td class="num"><%= number_with_delimiter(weight.round) if weight %></td>
+            </tr>
+          <% end %>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="<%= blind ? 5 : 6 %>" class="num">Total weight<%= ' (incomplete: some products have no weight)' if weights.any?(&:nil?) && weights.any? %></td>
+            <td class="num"><%= number_with_delimiter(weights.compact.sum.round) if weights.compact.any? %></td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <div class="notes"><span class="label">Notes</span><%= order.notes %></div>
+
+      <div class="sign">
+        <div><span class="label">Packed by</span><div class="line"></div><div class="small">Name / Date</div></div>
+        <div><span class="label">Received by</span><div class="line"></div><div class="small">Signature / Date · Received in good order</div></div>
+      </div>
+    </section>
+  <% end %>
+</body>
+</html>

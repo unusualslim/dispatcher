@@ -1,0 +1,60 @@
+<% editable = can?(:production, :edit) %>
+<div class="container-fluid mt-4">
+  <%= render layout: 'shared/page_header', locals: { title: 'Suggested Production',
+        subtitle: "Production runs MRP says are needed to cover open orders and safety stock in the next 60 days#{" · #{current_warehouse.company_name}" if current_warehouse}. Tick runs to create production orders." } do %>
+    <%= link_to 'Production Calendar', kanban_production_orders_path, class: 'btn btn-outline-secondary btn-sm' %>
+    <%= link_to 'MRP', mrp_path, class: 'btn btn-outline-secondary btn-sm' %>
+  <% end %>
+  <% if alert.present? %><div class="alert alert-warning py-2"><%= alert %></div><% end %>
+
+  <% if @runs.empty? %>
+    <div class="alert alert-light border">No production needed: open orders and safety stock are covered for the next 60 days.</div>
+  <% else %>
+    <%= form_with url: suggested_productions_path, method: :post do %>
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle small">
+          <thead class="table-light">
+            <tr>
+              <th style="width:2rem"><input type="checkbox" class="form-check-input" aria-label="Tick all" onclick="document.querySelectorAll('.sprod-pick').forEach(c => c.checked = this.checked)"></th>
+              <th>Product</th><th>Warehouse</th><th style="width:10rem">Start</th><th>Needed</th>
+              <th class="text-end" style="width:8rem">Quantity</th><th>Why (first orders that need it)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @runs.each_with_index do |run, i| %>
+              <% prefix = "runs[#{i}]" %>
+              <tr class="<%= 'table-danger' if run.late? %>">
+                <td>
+                  <% if editable && run.location %><%= check_box_tag "#{prefix}[pick]", '1', false, class: 'form-check-input sprod-pick', id: nil, 'aria-label': "Make #{run.product.id}" %><% end %>
+                  <%= hidden_field_tag "#{prefix}[product_id]", run.product.id, id: nil %>
+                  <%= hidden_field_tag "#{prefix}[location_id]", run.location&.id, id: nil %>
+                  <%= hidden_field_tag "#{prefix}[need_date]", run.need_date, id: nil %>
+                </td>
+                <td><%= link_to run.product.id, mrp_product_path(run.product.id), class: 'fw-semibold text-decoration-none' %> <span class="text-muted"><%= run.product.name %></span></td>
+                <td><%= run.location&.company_name || '—' %></td>
+                <td>
+                  <%= date_field_tag "#{prefix}[start_on]", [run.start_on, Date.current].max, id: nil, class: 'form-control form-control-sm', 'aria-label': 'Start date', disabled: !editable %>
+                  <% if run.late? %><div class="text-danger">Should have started <%= run.start_on.strftime('%b %-d') %></div><% end %>
+                </td>
+                <td><%= run.need_date.strftime('%b %-d') %></td>
+                <td class="text-end"><%= number_field_tag "#{prefix}[quantity]", run.quantity, min: 0, step: 'any', id: nil, class: 'form-control form-control-sm text-end', 'aria-label': "Quantity of #{run.product.id}", disabled: !editable %>
+                  <span class="text-muted"><%= run.product.unit_of_measurement %></span></td>
+                <td class="text-muted">
+                  <% if run.causes.any? %>
+                    <% run.causes.each do |event| %><div><%= event.path ? link_to(event.label, event.path) : event.label %> · <%= event.date.strftime('%b %-d') %></div><% end %>
+                  <% else %>
+                    Safety stock
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      <% if editable %>
+        <%= submit_tag 'Create production orders from ticked runs', class: 'btn btn-primary btn-sm', name: nil %>
+        <span class="small text-muted ms-2">Status Created, components from the BOM, scheduled on the start date.</span>
+      <% end %>
+    <% end %>
+  <% end %>
+</div>

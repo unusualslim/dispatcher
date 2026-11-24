@@ -134,6 +134,13 @@ class CustomerOrder < ApplicationRecord # rubocop:disable Metrics/ClassLength --
     customer_order_products.filter_map(&:product).select(&:hazmat).uniq
   end
 
+  # Who the BOL and packing list name as shipper on a blind shipment: the typed "ship from as" lines, else just our
+  # customer's name (customers carry no address in the app).
+  def blind_shipper_lines
+    lines = blind_ship_from.to_s.lines.map(&:strip).compact_blank
+    lines.presence || [customer&.name].compact
+  end
+
   private
 
   def keep_if_sent_to_pdi

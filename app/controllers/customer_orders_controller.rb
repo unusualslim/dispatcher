@@ -150,6 +150,15 @@ class CustomerOrdersController < ApplicationController
     end
   end
 
+  # Printable packing list (no prices); blind shipments name our customer as the shipper.
+  def packing_list
+    order = CustomerOrder.includes(:customer, :ship_from_location, :location,
+                                   customer_order_products: %i[product location]).find(params[:id])
+    @packing_orders = [order]
+    @packing_title = "Order #{order.external_order_no.presence || "##{order.id}"} Packing List"
+    render 'packing_lists/show', layout: false
+  end
+
   private
 
   # Older links (dashboard tiles, the dispatch page) use status_preset / order_statuses / order_status / sort_by:
@@ -212,7 +221,7 @@ class CustomerOrdersController < ApplicationController
   def customer_order_params
     params.require(:customer_order).permit(:required_delivery_date, :product, :freight_only, :customer_id,
                                            :location_id, :ship_from_location_id, :approximate_product_amount, :notes, :order_status, :freight_terms,
-                                           :customer_po_number, :release_number, :delivery_time, customer_order_products_attributes: %i[id product_id quantity price quote_product_id pricing_rule_id _destroy], thing_ids: [])
+                                           :customer_po_number, :release_number, :delivery_time, :blind_shipment, :blind_ship_from, customer_order_products_attributes: %i[id product_id quantity price quote_product_id pricing_rule_id _destroy], thing_ids: [])
   end
 
   def pdi_push_notice(order)

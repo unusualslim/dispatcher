@@ -1,7 +1,7 @@
 require 'test_helper'
 
 # The printable dispatch order: one landscape sheet per order with two identical halves to cut apart.
-class DispatchPrintTest < ActionDispatch::IntegrationTest
+class DispatchPrintTest < ActionDispatch::IntegrationTest # rubocop:disable Metrics/ClassLength
   include Devise::Test::IntegrationHelpers
 
   setup do
@@ -76,6 +76,46 @@ class DispatchPrintTest < ActionDispatch::IntegrationTest
     assert_select 'td.hm', text: 'X', count: 1
     assert_select '.hazmat-desc', text: 'UN1202, Diesel Fuel, 3, PG III'
     assert_select '.emergency', text: /CHEMTREC 800-424-9300/
+  end
+
+  test 'a blind shipment names our customer as the shipper on the BOL and packing list, without Five Points' do
+    sign_in User.create!(email: 'admin-blind@example.com', password: 'password123', role: 'admin')
+    customer = Customer.create!(name: 'Acme Lubes')
+    CustomerItemNumber.create!(customer: customer, product_id: 'PRINT1', part_number: 'AC-77')
+    @order.update!(customer: customer, customer_po_number: 'PO-55', blind_shipment: true,
+                   blind_ship_from: "Acme Lubes\n12 Elm St\nMacon, GA 31201")
+
+    get bol_dispatch_path(@dispatch)
+    assert_select 'header .company', text: /Acme Lubes.*12 Elm St/m
+    assert_select 'header .company', text: /Five Points/, count: 0
+    assert_select '.box', text: /Ship From.*Acme Lubes.*Macon, GA 31201/m
+    assert_select '.box', text: /Five Points/, count: 0
+    assert_select '.refs', text: /PO-55/
+    assert_select '.refs', text: /OD-1001/, count: 0
+    assert_select 'td', text: /AC-77 – Clear Diesel/
+
+    get packing_list_dispatch_path(@dispatch)
+    assert_response :success
+    assert_select 'body', text: /Five Points/, count: 0
+    assert_select '.box', text: /Ship To.*Cordele Shop/m
+    assert_select 'td', text: 'AC-77'
+    assert_select 'td', text: '$3.4567', count: 0
+  end
+
+  test 'a normal packing list carries our company, both item numbers and no prices' do
+    sign_in User.create!(email: 'admin-pack@example.com', password: 'password123', role: 'admin')
+    customer = Customer.create!(name: 'Acme Lubes')
+    CustomerItemNumber.create!(customer: customer, product_id: 'PRINT1', part_number: 'AC-77')
+    @order.update!(customer: customer)
+
+    get packing_list_customer_order_path(@order)
+    assert_response :success
+    assert_select '.page', 1
+    assert_select 'header .company', text: /Five Points Service/
+    assert_select 'td', text: 'PRINT1'
+    assert_select 'td', text: 'AC-77'
+    assert_select 'td', text: '7,500'
+    assert_select 'body', text: /3\.4567/, count: 0
   end
 
   test 'drivers can print only their own dispatches' do

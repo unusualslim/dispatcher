@@ -48,6 +48,9 @@
             method: :patch,
             class: "btn btn-outline-secondary btn-sm" %>
     <% end %>
+    <%= link_to packing_list_customer_order_path(@customer_order), class: "btn btn-outline-secondary btn-sm", target: "_blank", rel: "noopener" do %>
+      <i class="bi bi-box-seam"></i> Packing List
+    <% end %>
     <%= link_to "Edit", edit_customer_order_path(@customer_order),
           class: "btn btn-outline-secondary btn-sm", data: { turbo: false } %>
     <%= link_to "All Orders", customer_orders_path,
@@ -125,6 +128,12 @@
           </div>
         <% end %>
 
+        <% if @customer_order.blind_shipment %>
+          <div>
+            <span class="badge bg-dark">Blind shipment</span>
+            <span class="small text-muted">Ships as: <%= @customer_order.blind_shipper_lines.join(', ') %></span>
+          </div>
+        <% end %>
         <% if @customer_order.freight_terms.present? %>
           <div>
             <div class="text-muted small text-uppercase fw-semibold mb-1">Freight Terms</div>
