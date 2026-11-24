@@ -50,12 +50,12 @@ class PlanningAssistantsTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select '.card-header', text: /PA Supply/
     assert_select 'td', text: /At or below min/
-    assert_equal 0, PurchaseOrder.count
+    assert_not PurchaseOrder.exists?(vendor_id: 'V-PA')
 
     post suggested_purchases_path, params: { lines: { '0' => { pick: '1', product_id: 'PA-RAW', location_id: @main.id,
                                                                vendor_id: 'V-PA', quantity: '300', unit_cost: '2' } } }
-    po = PurchaseOrder.last
-    assert_equal ['draft', 'V-PA', @main.id], [po.status, po.vendor_id, po.location_id]
+    po = PurchaseOrder.find_by!(vendor_id: 'V-PA')
+    assert_equal ['draft', @main.id], [po.status, po.location_id]
     assert_equal([['PA-RAW', 300]], po.line_items.map { |l| [l.product_id, l.quantity.to_i] })
   end
 
@@ -72,7 +72,7 @@ class PlanningAssistantsTest < ActionDispatch::IntegrationTest
     post suggested_productions_path, params: { runs: { '0' => { pick: '1', product_id: 'PA-FG', location_id: @main.id,
                                                                 quantity: '20', start_on: Date.current.iso8601,
                                                                 need_date: (Date.current + 5).iso8601 } } }
-    order = ProductionOrder.last
+    order = ProductionOrder.find_by!(product_id: 'PA-FG')
     assert_redirected_to kanban_production_orders_path
     assert_equal ['created', 20, @main, Date.current],
                  [order.status, order.qty_to_make.to_i, order.location, order.production_date]
