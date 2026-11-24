@@ -42,3 +42,7 @@
 # rails-erd output
 /erd.svg
 /erd.pdf
+
+# Ignore key files for decrypting credentials and more.
+/config/*.key
+
