@@ -102,6 +102,16 @@ class DispatchPrintTest < ActionDispatch::IntegrationTest # rubocop:disable Metr
     assert_select 'td', text: '$3.4567', count: 0
   end
 
+  test 'a blind shipment with no typed shipper uses the customer name and bill-to address' do
+    sign_in User.create!(email: 'admin-blind2@example.com', password: 'password123', role: 'admin')
+    customer = Customer.create!(name: 'Acme Lubes', bill_address1: 'PO Box 5', bill_city: 'Macon', bill_state: 'GA',
+                                bill_zip: '31201')
+    @order.update!(customer: customer, blind_shipment: true)
+
+    get packing_list_customer_order_path(@order)
+    assert_select '.box', text: /Ship From.*Acme Lubes.*PO Box 5.*Macon, GA 31201/m
+  end
+
   test 'a normal packing list carries our company, both item numbers and no prices' do
     sign_in User.create!(email: 'admin-pack@example.com', password: 'password123', role: 'admin')
     customer = Customer.create!(name: 'Acme Lubes')

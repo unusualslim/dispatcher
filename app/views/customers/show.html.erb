@@ -30,6 +30,16 @@
             </div>
           <% end %>
 
+          <div class="mb-3">
+            <strong>Bill to:</strong>
+            <% if @customer.bill_to_lines.any? %>
+              <div class="ms-2"><%= safe_join(@customer.bill_to_lines, tag.br) %></div>
+              <% if @customer.pdi_customer_id.present? %><div class="small text-muted ms-2">From PDI (the master address on its invoices and statements).</div><% end %>
+            <% else %>
+              <span class="text-muted">No bill-to address<%= ' yet: the next PDI master data sync fills it' if @customer.pdi_customer_id.present? %>.</span>
+            <% end %>
+          </div>
+
           <!-- Associated Locations Section -->
           <h4>Locations</h4>
           <% if @customer.locations.any? %>
@@ -117,6 +127,62 @@
         <% end %>
       </div>
       <% end %>
+
+      <div class="mt-5" id="contacts">
+        <h4 class="text-center mb-3">Contacts</h4>
+        <% contacts = @customer.customer_contacts.to_a %>
+        <% editable = can?(:sales, :edit) && can_feature?(:customers) %>
+        <div class="card shadow-sm">
+          <% if contacts.any? %>
+            <table class="table table-sm align-middle mb-0">
+              <thead class="table-light"><tr><th>Name</th><th>Email</th><th>Phone</th><th class="text-center">Invoices &amp; statements</th><th></th></tr></thead>
+              <tbody>
+                <% contacts.each do |contact| %>
+                  <tr class="<%= 'text-muted' unless contact.active %>">
+                    <td><%= contact.name.presence || '—' %><% unless contact.active %> <span class="badge bg-secondary">No longer in PDI</span><% end %></td>
+                    <td><%= contact.email.present? ? mail_to(contact.email) : '—' %></td>
+                    <td><%= contact.phone %></td>
+                    <td class="text-center">
+                      <% if editable && contact.email.present? && contact.active %>
+                        <%= form_with url: customer_customer_contact_path(@customer, contact), method: :patch do %>
+                          <%= hidden_field_tag :invoice_recipient, '0', id: nil %>
+                          <%= check_box_tag :invoice_recipient, '1', contact.invoice_recipient, id: nil, class: 'form-check-input',
+                                            onchange: 'this.form.requestSubmit()', 'aria-label': "Send invoices to #{contact.label}" %>
+                        <% end %>
+                      <% elsif contact.invoice_recipient %>
+                        <i class="bi bi-check-lg" aria-label="Gets invoices"></i>
+                      <% end %>
+                    </td>
+                    <td class="text-end small">
+                      <% if contact.source == 'pdi' %>
+                        <span class="text-muted">PDI</span>
+                      <% elsif admin? %>
+                        <%= button_to 'Remove', customer_customer_contact_path(@customer, contact), method: :delete,
+                                      class: 'btn btn-link btn-sm p-0 text-danger', form: { data: { turbo_confirm: 'Remove this contact?' } } %>
+                      <% end %>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          <% else %>
+            <p class="text-muted text-center my-3">No contacts<%= ' yet: PDI master data brings in the contacts kept in PDI' if @customer.pdi_customer_id.present? %>.</p>
+          <% end %>
+          <% if editable %>
+            <div class="card-footer">
+              <div class="small text-muted mb-2">Tick who gets invoices and statements. PDI contacts update with each master data sync; the tick stays.</div>
+              <%= form_with url: customer_customer_contacts_path(@customer), method: :post, class: 'd-flex flex-wrap gap-2 align-items-center' do %>
+                <%= text_field_tag :first_name, nil, placeholder: 'First name', class: 'form-control form-control-sm', style: 'width: 130px', 'aria-label': 'First name' %>
+                <%= text_field_tag :last_name, nil, placeholder: 'Last name', class: 'form-control form-control-sm', style: 'width: 130px', 'aria-label': 'Last name' %>
+                <%= email_field_tag :email, nil, placeholder: 'Email', class: 'form-control form-control-sm', style: 'width: 200px', 'aria-label': 'Email' %>
+                <%= text_field_tag :phone, nil, placeholder: 'Phone', class: 'form-control form-control-sm', style: 'width: 130px', 'aria-label': 'Phone' %>
+                <div class="form-check small mb-0"><%= check_box_tag :invoice_recipient, '1', false, class: 'form-check-input', id: 'new_contact_invoice' %><label class="form-check-label" for="new_contact_invoice">Invoices</label></div>
+                <%= submit_tag 'Add contact', class: 'btn btn-sm btn-outline-primary' %>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
 
       <div class="mt-5">
         <h4 class="text-center mb-3">Customer Part Numbers</h4>

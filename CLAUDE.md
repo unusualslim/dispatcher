@@ -224,7 +224,7 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
   `item_type` comes from `Product#order_item_type`: fuel / non-inventory groups, groups ticked **Buy** on Reporting
   Groups (HYDRAULICS) and raw materials are "buy".
 - **PDI Master Data** (`PdiMasterDataImportService` + `app/services/pdi_master_data/*_sync.rb`; Data Imports page and
-  `PdiMasterDataSyncJob`, schedule Off until set): customers → `customers.pdi_customer_id`; ship-tos (per customer in
+  `PdiMasterDataSyncJob`, schedule Off until set): customers → `customers.pdi_customer_id` (+ the master address = bill-to on PDI's invoices/statements → `bill_address1/2, bill_city/state/zip/county`, and `<Contact>`s → `customer_contacts` source pdi via `ContactSync`: matched by email else name, missing ones go inactive, the app's `invoice_recipient` tick survives; app-added contacts untouched); ship-tos (per customer in
   PDI) → `customer_locations.pdi_location_id`, so one app location can serve many customers' ship-tos; terminals →
   `locations.pdi_terminal_id` (link only); fuel + warehouse products by ID. Existing locations are never renamed.
   PDI's Active / AccountStatus sets `products.active` / `customers.active` (an inactive record only gets the flag;

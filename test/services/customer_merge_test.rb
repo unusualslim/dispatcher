@@ -26,7 +26,7 @@ class CustomerMergeTest < ActiveSupport::TestCase
   test 'moves history onto the PDI customer and folds the duplicate ship-to into the app location' do
     merge = CustomerMerge.new(@app, @pdi)
     assert_equal({ 'Orders' => 1, 'Quotes' => 1, 'Pricing rules' => 1, 'Production orders' => 0,
-                   'Phone numbers' => 1, 'Locations' => 2 }, merge.counts)
+                   'Contacts' => 0, 'Phone numbers' => 1, 'Locations' => 2 }, merge.counts)
     assert_equal([[@ftp_yard, @pdi_yard]], merge.locations.pairs.map { |p| [p.old_location, p.new_location] })
 
     merge.merge!

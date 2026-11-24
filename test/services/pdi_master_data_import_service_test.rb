@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class PdiMasterDataImportServiceTest < ActiveSupport::TestCase
+class PdiMasterDataImportServiceTest < ActiveSupport::TestCase # rubocop:disable Metrics/ClassLength
   def master_xml
     file_fixture('pdi_master_data.xml').read
   end
@@ -123,5 +123,25 @@ class PdiMasterDataImportServiceTest < ActiveSupport::TestCase
                                                    '<AccountStatus>Active</AccountStatus>'))
     assert gone.reload.active
     assert CustomerLocation.exists?(customer: gone, pdi_location_id: '1')
+  end
+
+  test 'takes the customer master (bill-to) address and contacts, keeping the invoice tick across syncs' do
+    PdiMasterDataImportService.call(master_xml)
+    spc = Customer.find_by!(pdi_customer_id: '2362')
+    assert_equal ['PO Box 88', 'Atlanta, GA 30301'], spc.bill_to_lines
+    assert_equal 'Fulton', spc.bill_county
+    assert spc.po_required # Warehouse Products requires a PO in PDI
+    assert_not Customer.find_by!(pdi_customer_id: '1935').po_required # no SalesInformation: left as it was
+    assert_equal ['Pat Payables · ap@spc.example', 'Sam Buyer'], spc.customer_contacts.map(&:label)
+
+    pat = spc.customer_contacts.find_by!(email: 'ap@spc.example')
+    pat.update!(invoice_recipient: true)
+    app_contact = spc.customer_contacts.create!(first_name: 'Office', email: 'office@spc.example')
+    PdiMasterDataImportService.call(master_xml.sub(%r{<Contact><FirstName>Sam.*?</Contact>}m, ''))
+
+    assert pat.reload.invoice_recipient
+    assert_not spc.customer_contacts.find_by!(first_name: 'Sam').active
+    assert app_contact.reload.active
+    assert_equal [pat], spc.customer_contacts.invoice_recipients.to_a
   end
 end

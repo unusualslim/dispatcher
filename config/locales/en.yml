@@ -289,6 +289,14 @@ en:
       merged: "Merged %{source} into %{target} (%{summary})."
       nothing_moved: "nothing to move"
       failed: "Merge failed: %{error}"
+  customer_contacts:
+    create:
+      added: "Added %{name}."
+    update:
+      invoice_on: "%{name} now gets invoices and statements."
+      invoice_off: "%{name} no longer gets invoices and statements."
+    destroy:
+      removed: "Removed the contact."
   customer_item_numbers:
     create:
       no_product: "No product %{id}."

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_24_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_24_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -115,6 +115,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_24_140000) do
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_cost_items_on_name", unique: true
     t.index ["reporting_group_id"], name: "index_cost_items_on_reporting_group_id"
+  end
+
+  create_table "customer_contacts", force: :cascade do |t|
+    t.bigint "customer_id", null: false
+    t.string "first_name"
+    t.string "last_name"
+    t.string "email"
+    t.string "phone"
+    t.boolean "active", default: true, null: false
+    t.boolean "invoice_recipient", default: false, null: false
+    t.string "source", default: "app", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["customer_id"], name: "index_customer_contacts_on_customer_id"
   end
 
   create_table "customer_item_numbers", force: :cascade do |t|
@@ -246,6 +260,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_24_140000) do
     t.datetime "pdi_credit_updated_at"
     t.integer "lead_time_days"
     t.boolean "po_required", default: false, null: false
+    t.string "bill_address1"
+    t.string "bill_address2"
+    t.string "bill_city"
+    t.string "bill_state"
+    t.string "bill_zip"
+    t.string "bill_county"
     t.index ["pdi_customer_id"], name: "index_customers_on_pdi_customer_id", unique: true
   end
 
@@ -1288,6 +1308,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_24_140000) do
   add_foreign_key "comments", "users"
   add_foreign_key "comments", "work_orders"
   add_foreign_key "cost_items", "reporting_groups"
+  add_foreign_key "customer_contacts", "customers"
   add_foreign_key "customer_item_numbers", "customers", on_delete: :cascade
   add_foreign_key "customer_item_numbers", "products", on_delete: :cascade
   add_foreign_key "customer_locations", "customers"

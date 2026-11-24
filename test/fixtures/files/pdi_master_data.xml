@@ -15,8 +15,14 @@
   <Destinations>
     <Customers>
       <Customer>
-        <ID>2362</ID><Description>Southern Performance Chemical</Description><Phone>(678) 354-7167</Phone>
+        <ID>2362</ID><Description>Southern Performance Chemical</Description><Address1>PO Box 88</Address1>
+        <City>Atlanta</City><StateProvinceID>GA</StateProvinceID><PostalCode>30301     </PostalCode><County>Fulton</County>
+        <Phone>(678) 354-7167</Phone>
         <AccountStatus>Active</AccountStatus>
+        <SalesInformation><Type>Bulk Fuel</Type><PONumberRequired>No</PONumberRequired></SalesInformation>
+        <SalesInformation><Type>Warehouse Products</Type><PONumberRequired>Yes</PONumberRequired></SalesInformation>
+        <Contact><FirstName>Pat</FirstName><LastName>Payables</LastName><Email>ap@spc.example</Email><Active>-1</Active></Contact>
+        <Contact><FirstName>Sam</FirstName><LastName>Buyer</LastName><Phone>555-0100</Phone><Active>-1</Active></Contact>
         <CustomerLocation>
           <ID>12</ID><Description>Southern Performance Chemical</Description><Address1>1605 Lake Street</Address1>
           <City>Fort Valley</City><StateProvinceID>GA</StateProvinceID><PostalCode>32901     </PostalCode><Active>-1</Active>

@@ -95,6 +95,7 @@ Rails.application.routes.draw do
       get :pdi_credit
     end
     resources :customer_item_numbers, only: %i[create destroy]
+    resources :customer_contacts, only: %i[create update destroy]
   end
 
   resources :quotes do

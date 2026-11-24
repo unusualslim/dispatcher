@@ -108,8 +108,9 @@ class CustomersController < ApplicationController
 
   def customer_params
     params.require(:customer).permit(:name, :email, :phone, :preferred_contact_method, :active, :lead_time_days,
-                                     :po_required, location_ids: [],
-                                                   phone_numbers_attributes: %i[id number _destroy])
+                                     :po_required, :bill_address1, :bill_address2, :bill_city, :bill_state,
+                                     :bill_zip, :bill_county, location_ids: [],
+                                                              phone_numbers_attributes: %i[id number _destroy])
   end
 
   def csv_resource

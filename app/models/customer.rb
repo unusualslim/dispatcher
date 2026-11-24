@@ -10,6 +10,7 @@ class Customer < ApplicationRecord
   has_many :pricing_rules, dependent: :destroy
   has_many :quotes
   has_many :customer_item_numbers, dependent: :delete_all
+  has_many :customer_contacts, -> { order(:first_name, :last_name, :id) }, dependent: :destroy, inverse_of: :customer
   has_many :locations, through: :customer_locations
 
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP, allow_blank: true }
@@ -18,6 +19,12 @@ class Customer < ApplicationRecord
 
   # Inactive customers (set by hand or from PDI's AccountStatus) stay on their history but leave pickers.
   scope :active, -> { where(active: true) }
+
+  # The master (bill-to) address from PDI, printed on its invoices and statements: street lines, then city line.
+  def bill_to_lines
+    city = [bill_city, [bill_state, bill_zip].compact_blank.join(' ')].compact_blank.join(', ')
+    [bill_address1, bill_address2, city].compact_blank
+  end
 
   # PDI's credit snapshot, refreshed from every imported order (and the live credit check):
   # pdi_credit_status "Good" / "Credit Hold", pdi_available_credit = limit minus balance.

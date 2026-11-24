@@ -6,7 +6,7 @@
 class CustomerMerge
   # Records that move by customer_id, as they're labelled on the preview.
   MOVES = { 'Orders' => CustomerOrder, 'Quotes' => Quote, 'Pricing rules' => PricingRule,
-            'Production orders' => ProductionOrder }.freeze
+            'Production orders' => ProductionOrder, 'Contacts' => CustomerContact }.freeze
 
   attr_reader :source, :target
 
