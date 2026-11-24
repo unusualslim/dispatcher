@@ -13,7 +13,7 @@
   <div class="row g-3">
     <div class="col-md-6">
       <%= f.label :location_id, 'Location', class: 'form-label' %>
-      <%= f.select :location_id, (tank.location ? [[tank.location.picker_label, tank.location_id]] : []), { include_blank: true },
+      <%= f.select :location_id, (tank.location ? [[tank.location.detailed_picker_label, tank.location_id]] : []), { include_blank: true },
                    class: 'form-select tank-location-select', required: true %>
       <div class="form-text">Customer site, warehouse or plant. Type to search.</div>
     </div>

@@ -60,7 +60,8 @@ class TanksController < ApplicationController
   def locations
     term = "%#{Location.sanitize_sql_like(params[:q].to_s.strip)}%"
     scope = Location.where('company_name ILIKE :t OR city ILIKE :t OR pdi_site_code ILIKE :t', t: term)
-    render json: { results: scope.order(:company_name).limit(25).map { |l| { id: l.id, text: l.picker_label } } }
+    locations = scope.includes(:location_category).order(:company_name, :id).limit(25)
+    render json: { results: locations.map { |l| { id: l.id, text: l.detailed_picker_label } } }
   end
 
   private

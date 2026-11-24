@@ -34,6 +34,13 @@ class Location < ApplicationRecord
   # "Chambers (Milledgeville)": names repeat across towns, so pickers show the city.
   def picker_label = city.present? ? "#{company_name} (#{city})" : company_name.to_s
 
+  # "Five Points South (Americus) · #408 Origin · site 0110": tells same-named records apart where the number
+  # matters (the tank location selector, whose number is keyed into the monitors).
+  def detailed_picker_label
+    [picker_label, ["##{id}", location_category&.name].compact.join(' '),
+     ("site #{pdi_site_code}" if pdi_site_code)].compact.join(' · ')
+  end
+
   def full_address_with_company
     "#{company_name} - #{address} #{city}, #{state} #{zip}"
   end

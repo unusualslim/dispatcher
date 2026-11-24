@@ -67,7 +67,7 @@
                     <% location = setup.monitor_location %>
                     <%= form_with url: setup_feed_tank_path(ft), method: :post, class: 'd-flex gap-1' do %>
                       <select name="location_id" class="form-select form-select-sm feed-location-select" style="min-width: 220px" aria-label="Location">
-                        <% if location %><option value="<%= location.id %>" selected><%= location.picker_label %></option><% end %>
+                        <% if location %><option value="<%= location.id %>" selected><%= location.detailed_picker_label %></option><% end %>
                       </select>
                       <%= text_field_tag :product_id, setup.suggested_product_id, class: 'form-control form-control-sm', style: 'width: 90px', placeholder: 'Product ID', 'aria-label': 'Product ID' %>
                       <%= submit_tag 'Set up', class: 'btn btn-sm btn-primary' %>

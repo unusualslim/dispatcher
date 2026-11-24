@@ -153,4 +153,17 @@ class TanksTest < ActionDispatch::IntegrationTest # rubocop:disable Metrics/Clas
     assert_redirected_to product_path(@def)
     assert_equal @def, Tank.find_by!(name: 'Old').product
   end
+
+  test 'the location picker tells same-named locations apart by number, type and PDI site' do
+    sign_in @admin
+    LocationCategory.find_or_create_by!(id: 1) { |c| c.name = 'Origin' }
+    plant = Location.create!(company_name: 'Twin Site', city: 'Americus', location_category_id: 1,
+                             pdi_site_code: '0110')
+    stop = Location.create!(company_name: 'Twin Site', city: 'Americus', location_category_id: 2)
+
+    get locations_tanks_path(q: 'Twin')
+    labels = response.parsed_body['results'].pluck('text')
+    assert_equal ["Twin Site (Americus) · ##{plant.id} Origin · site 0110",
+                  "Twin Site (Americus) · ##{stop.id} Destination"], labels
+  end
 end
