@@ -13,14 +13,16 @@
 # The order is never less than a week's usage; when the lead time is too long for the target, that floor wins and
 # the row says so. Lead days: production days for items with a BOM, else the product / vendor / default purchase
 # lead time, as MRP uses. Suggestions only: nothing changes until someone applies them.
-class MinMaxPlanner
+class MinMaxPlanner # rubocop:disable Metrics/ClassLength -- levels plus the assumptions behind them
   HISTORY_DAYS = 365
   A_SHARE = 0.8
   MIN_ORDER_DAYS = 7
   SETTINGS = { 'min_max_turns' => 8, 'min_max_turns_high' => 12, 'min_max_safety_pct' => 50 }.freeze
+  NO_STANDARD = Planning::Assumption.new(:no_standard, 'No standard cost',
+                                         'Without a standard cost the item is never ranked a high mover (12 turns).')
 
   Row = Struct.new(:product, :abc, :usage, :daily, :lead_days, :turns, :on_hand, :safety, :min_qty, :max_qty,
-                   :turns_now, :note, keyword_init: true) do
+                   :turns_now, :note, :assumptions, keyword_init: true) do
     def current = [product.safety_stock, product.reorder_point, product.max_stock]
     def suggested = [safety, min_qty, max_qty]
 
@@ -69,9 +71,44 @@ class MinMaxPlanner
   end
 
   def basics(product, abc)
-    { product: product, abc: abc, usage: usage.fetch(product.id, 0).to_d, lead_days: lead_days(product),
+    lead = Planning::LeadTime.for(product, made: bom_parents.include?(product.id))
+    { product: product, abc: abc, usage: usage.fetch(product.id, 0).to_d, lead_days: lead.days,
       turns: self.class.setting(abc == 'A' ? 'min_max_turns_high' : 'min_max_turns'),
-      on_hand: on_hand.fetch(product.id, 0).to_d }
+      on_hand: on_hand.fetch(product.id, 0).to_d, assumptions: assumptions(product, lead) }
+  end
+
+  # What the suggestion rests on that isn't recorded: a default lead time, less than a year of history (usage looks
+  # low), or no standard cost (the item can't be ranked as a high mover).
+  def assumptions(product, lead)
+    [lead.assumption(made: bom_parents.include?(product.id)), history_assumption(product),
+     (NO_STANDARD unless product.standard_cost.to_d.positive?)].compact
+  end
+
+  def history_assumption(product)
+    first = first_used[product.id]
+    return unless first && first > since
+
+    months = ((@today - first) / 30).floor
+    span = months.zero? ? 'under a month' : "#{months} month#{'s' unless months == 1}"
+    Planning::Assumption.new(:short_history, "Only #{span} of history",
+                             'Usage counts a full year; an item first used recently looks slower than it is.')
+  end
+
+  # When each product was first sold or used in production, any time.
+  def first_used
+    @first_used ||= first_sold.merge(first_produced_use) { |_, a, b| [a, b].compact.min }
+                              .transform_values { |d| d&.to_date }
+  end
+
+  def first_sold
+    CustomerOrderProduct.joins(:customer_order)
+                        .where(customer_orders: { order_status: InventorySales::SHIPPED_STATUSES })
+                        .group(:product_id).minimum(Arel.sql(Reports::ItemActivity::SOLD_ON))
+  end
+
+  def first_produced_use
+    ProductionOrderComponent.joins(:production_order).where(production_orders: { status: 'completed' })
+                            .where.not(product_id: nil).group(:product_id).minimum('production_orders.date_completed')
   end
 
   def turns_now(annual, stock) = ((annual / stock).round(1) if stock.positive?)
@@ -127,14 +164,6 @@ class MinMaxPlanner
 
   def on_hand
     @on_hand ||= LocationProduct.group(:product_id).sum(:quantity)
-  end
-
-  def lead_days(product)
-    if bom_parents.include?(product.id)
-      product.production_days || AppSetting.mrp_days('mrp_production_days')
-    else
-      product.lead_time_days || product.primary_vendor&.lead_time_days || AppSetting.mrp_days('mrp_purchase_lead_days')
-    end
   end
 
   def bom_parents = @bom_parents ||= ProductComponent.distinct.pluck(:product_id).to_set

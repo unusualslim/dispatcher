@@ -8,6 +8,7 @@
   <% end %>
   <% if alert.present? %><div class="alert alert-warning py-2"><%= alert %></div><% end %>
 
+  <%= assumption_summary(@lines) %>
   <% if @lines.empty? %>
     <div class="alert alert-light border">Nothing to buy right now: no MRP shortages in the next 60 days and nothing at or below its min.</div>
   <% else %>
@@ -46,7 +47,7 @@
                     <td><%= link_to line.product.id, mrp_product_path(line.product.id), class: 'fw-semibold text-decoration-none' %> <span class="text-muted"><%= line.product.name %></span>
                       <% if line.vendor_part_number.present? %><div class="text-muted">Vendor # <%= line.vendor_part_number %></div><% end %></td>
                     <td><%= line.location&.company_name || '—' %></td>
-                    <td class="text-muted"><%= line.reason %></td>
+                    <td class="text-muted"><%= line.reason %><div><%= assumption_tags(line.assumptions) %></div></td>
                     <td class="<%= 'text-danger fw-semibold' if line.late? %>"><%= line.act_by.strftime('%b %-d') %><%= ' (late)' if line.late? %></td>
                     <td><%= line.need_date.strftime('%b %-d') %></td>
                     <td class="text-end"><%= number_field_tag "#{prefix}[quantity]", num.(line.quantity), min: 0, step: 'any', id: nil, class: 'form-control form-control-sm text-end', 'aria-label': "Quantity of #{line.product.id}", disabled: !editable %>

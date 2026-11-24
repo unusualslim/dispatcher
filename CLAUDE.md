@@ -386,6 +386,13 @@ UserCredentials header). Results are XML; PDI errors arrive as `PDIExceptionMess
   `mrp_shortage`; price = vendor price break, else last price paid). `SuggestedProduction` (Production → Suggested
   Production): MRP planned production runs → production orders (Created, BOM components, production date = start).
   Shared `TickedRows` concern reads the ticked rows.
+- **Assumption tags** (2026-11-24, the user's metrics principle: show what a number rests on): `Planning::Assumption`
+  (key, label, detail) on MRP plans (`ProductPlan#assumptions`: default lead/production time via `Planning::LeadTime`,
+  customer orders dated by assumption = event flag `:assumed_date`), Suggested POs (+ vendor from last PO, price = cost
+  on file), Suggested Production and Min/Max (+ short history, no standard cost). Views: `assumption_tags`,
+  `assumption_summary` (AssumptionsHelper). Purchasing → **Planning Assumptions** (`Planning::AssumptionReport`) lists
+  the gaps grouped so one fix clears many (vendor lead times, production days, undated orders, missing standards).
+  New planning numbers should carry their assumptions the same way.
 - **Production Calendar** = the old production kanban (/production_orders/kanban, app layout now): days by
   `production_date`, plus Behind schedule and Unscheduled columns, header warehouse selector, readiness dots,
   Schedule / Reschedule (`PATCH /production_orders/:id/schedule`, production edit).

@@ -96,15 +96,11 @@ module Mrp
 
     def new_plan(product, location_id, events)
       bom = @boms[product.id] || []
-      setup = ProductPlan::Setup.new(bom: bom, lead_days: lead_days(product, bom),
+      setup = ProductPlan::Setup.new(bom: bom, lead: Planning::LeadTime.for(product, made: bom.any?),
                                      on_hand: @stock.dig(product.id, location_id) || 0,
                                      safety: location_id == home(product) ? product.safety_stock : 0,
                                      location: @warehouses[location_id])
       ProductPlan.new(product, events, setup, today: @today)
-    end
-
-    def lead_days(product, bom)
-      bom.any? ? production_days(product) : purchase_lead_days(product)
     end
 
     def record(plan)
@@ -119,15 +115,6 @@ module Mrp
 
     def main_warehouse_id
       @main_warehouse_id ||= Location.find_by(pdi_site_code: MAIN_SITE)&.id
-    end
-
-    def purchase_lead_days(product)
-      product.lead_time_days || product.primary_vendor&.lead_time_days ||
-        AppSetting.mrp_days('mrp_purchase_lead_days')
-    end
-
-    def production_days(product)
-      product.production_days || AppSetting.mrp_days('mrp_production_days')
     end
   end
 end

@@ -1,0 +1,75 @@
+<% defaults = { lead: AppSetting.mrp_days('mrp_purchase_lead_days'), production: AppSetting.mrp_days('mrp_production_days'),
+                customer: AppSetting.mrp_days('mrp_customer_lead_days') } %>
+<% ids = ->(products) { safe_join(products.first(12).map { |p| link_to(p.id, edit_product_path(p), title: p.name) }, ', ') + (products.size > 12 ? " and #{products.size - 12} more" : '') } %>
+<div class="container-fluid mt-4" style="max-width: 1100px;">
+  <%= render layout: 'shared/page_header', locals: { title: 'Planning Assumptions',
+        subtitle: "Where MRP, Suggested POs, Suggested Production and Min/Max use a default or a guess instead of a recorded fact. Fill these in and the plans get more accurate. #{@report.total.zero? ? 'Nothing left to fix.' : "#{@report.total} gaps."}" } do %>
+    <%= link_to 'MRP', mrp_path, class: 'btn btn-outline-secondary btn-sm' %>
+    <%= link_to 'Suggested POs', suggested_purchases_path, class: 'btn btn-outline-secondary btn-sm' %>
+  <% end %>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-header d-flex justify-content-between">
+      <strong>Bought items on the default <%= defaults[:lead] %>-day lead time</strong>
+      <span class="small text-muted"><%= pluralize(@report.default_lead_by_vendor.sum { |g| g.products.size }, 'item') %> · set it on the vendor to fix all its items, or on one item</span>
+    </div>
+    <% if @report.default_lead_by_vendor.empty? %>
+      <div class="card-body text-muted">Every bought item has a lead time from its product or vendor.</div>
+    <% else %>
+      <table class="table table-sm align-middle mb-0 small">
+        <thead class="table-light"><tr><th>Vendor</th><th class="text-end">Items</th><th>Items</th><th></th></tr></thead>
+        <tbody>
+          <% @report.default_lead_by_vendor.each do |gap| %>
+            <tr>
+              <td><%= gap.vendor ? gap.vendor.label : tag.span('No vendor on the item', class: 'text-danger') %></td>
+              <td class="text-end"><%= gap.products.size %></td>
+              <td><%= ids.(gap.products) %></td>
+              <td class="text-end"><%= link_to 'Set vendor lead time', edit_vendor_path(gap.vendor), class: 'btn btn-sm btn-outline-primary' if gap.vendor %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  </div>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-header d-flex justify-content-between">
+      <strong>Made items on the default <%= defaults[:production] %>-day production time</strong>
+      <span class="small text-muted"><%= pluralize(@report.default_production.size, 'item') %> · set production days on the item</span>
+    </div>
+    <div class="card-body small"><%= @report.default_production.any? ? ids.(@report.default_production) : tag.span('Every made item has its production days.', class: 'text-muted') %></div>
+  </div>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-header d-flex justify-content-between">
+      <strong>Open orders with no delivery date</strong>
+      <span class="small text-muted"><%= pluralize(@report.undated_orders.sum { |g| g.orders.size }, 'order') %> · MRP dates them order date + the customer's lead time</span>
+    </div>
+    <% if @report.undated_orders.empty? %>
+      <div class="card-body text-muted">Every open order has a delivery date.</div>
+    <% else %>
+      <table class="table table-sm align-middle mb-0 small">
+        <thead class="table-light"><tr><th>Customer</th><th class="text-end">Orders</th><th>Dated by</th><th>Orders</th><th></th></tr></thead>
+        <tbody>
+          <% @report.undated_orders.each do |gap| %>
+            <tr>
+              <td><%= gap.customer&.name || 'No customer' %></td>
+              <td class="text-end"><%= gap.orders.size %></td>
+              <td><%= gap.customer&.lead_time_days ? "customer's #{gap.customer.lead_time_days} days" : tag.span("default #{defaults[:customer]} days", class: 'text-warning-emphasis') %></td>
+              <td><%= safe_join(gap.orders.first(8).map { |o| link_to(o.external_order_no.presence || "##{o.id}", customer_order_path(o)) }, ', ') %><%= " and #{gap.orders.size - 8} more" if gap.orders.size > 8 %></td>
+              <td class="text-end"><%= link_to 'Set customer lead time', edit_customer_path(gap.customer), class: 'btn btn-sm btn-outline-primary' if gap.customer && gap.customer.lead_time_days.nil? %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  </div>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-header d-flex justify-content-between">
+      <strong>Planned items with no standard cost</strong>
+      <span class="small text-muted"><%= pluralize(@report.no_standard.size, 'item') %> · Min/Max can't rank them as high movers</span>
+    </div>
+    <div class="card-body small"><%= @report.no_standard.any? ? ids.(@report.no_standard) : tag.span('Every planned item has a standard cost.', class: 'text-muted') %></div>
+  </div>
+</div>

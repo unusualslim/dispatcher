@@ -81,8 +81,11 @@ module Mrp
     def order_event(line)
       order = line.customer_order
       date = delivery_date(order)
+      flags = []
+      flags << :overdue if date < @today
+      flags << :assumed_date unless order.required_delivery_date
       { date: date, qty: -line.quantity.to_d, kind: :order, label: order_label(order),
-        path: customer_order_path(order), flags: date < @today ? [:overdue] : [],
+        path: customer_order_path(order), flags: flags,
         location_id: line.location_id || order.ship_from_location_id }
     end
 

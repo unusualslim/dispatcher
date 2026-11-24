@@ -28,6 +28,7 @@
     </div>
   </details>
 
+  <%= assumption_summary(@rows, noun: 'item') %>
   <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
     <ul class="nav nav-pills">
       <% MinMaxController::SHOWS.each do |key, label| %>
@@ -70,7 +71,7 @@
                 <td class="text-end text-nowrap"><span class="text-muted"><%= num.(now) %></span> → <strong><%= num.(new) %></strong></td>
               <% end %>
               <td class="text-end"><%= r.turns.to_i %></td>
-              <td class="text-muted"><%= r.note %></td>
+              <td class="text-muted"><%= r.note %><div><%= assumption_tags(r.assumptions) %></div></td>
             </tr>
           <% end %>
           <% if @rows.empty? %><tr><td colspan="13" class="text-center text-muted py-4">Nothing here.</td></tr><% end %>

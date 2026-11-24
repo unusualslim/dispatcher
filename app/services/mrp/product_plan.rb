@@ -10,9 +10,9 @@ module Mrp
       def late?(today) = act_by < today
       def production? = kind == :planned_production
     end
-    # bom: [[component ID, qty per unit]]; lead_days: production days with a BOM, else the purchase
-    # lead time; on_hand: stock at this warehouse; safety: safety stock held here.
-    Setup = Struct.new(:bom, :lead_days, :on_hand, :safety, :location, keyword_init: true)
+    # bom: [[component ID, qty per unit]]; lead: Planning::LeadTime (production days with a BOM, else the purchase
+    # lead time, and where it came from); on_hand: stock at this warehouse; safety: safety stock held here.
+    Setup = Struct.new(:bom, :lead, :on_hand, :safety, :location, keyword_init: true)
 
     attr_reader :product, :rows, :suggestions, :runs_out_on, :below_safety_on, :today
 
@@ -25,7 +25,22 @@ module Mrp
 
     def on_hand = @setup.on_hand.to_d
     def safety = @setup.safety.to_d
-    def lead_days = @setup.lead_days
+    def lead_days = @setup.lead.days
+
+    # What this plan's dates rest on that isn't recorded: a default lead time, customer orders with no delivery date.
+    def assumptions
+      [@setup.lead.assumption(made: manufactured?), assumed_dates].compact
+    end
+
+    def assumed_dates
+      count = @events.count { |e| e.flags.include?(:assumed_date) }
+      return if count.zero?
+
+      Planning::Assumption.new(:assumed_date, "#{count} order date#{'s' unless count == 1} assumed",
+                               'Customer orders with no delivery date are dated order date + the customer\'s lead ' \
+                               'time, else the default.')
+    end
+
     def location = @setup.location
     def location_id = location&.id
     def manufactured? = @setup.bom.any?

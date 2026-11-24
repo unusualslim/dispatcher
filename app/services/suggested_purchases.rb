@@ -11,9 +11,13 @@
 class SuggestedPurchases # rubocop:disable Metrics/ClassLength -- two sources plus vendor and price lookup
   OPEN_PO = %w[draft pending_approval approved submitted].freeze
   EPOCH = Date.new(1900)
+  VENDOR_GUESS = Planning::Assumption.new(:vendor_guess, 'Vendor from last PO',
+                                          'No primary vendor on the product; the vendor of its last PO is used.')
+  COST_ON_FILE = Planning::Assumption.new(:cost_on_file, 'Price = cost on file',
+                                          'No vendor price and nothing bought from this vendor before.')
 
   Line = Struct.new(:product, :location, :vendor, :quantity, :unit_cost, :vendor_part_number, :act_by,
-                    :need_date, :reason, keyword_init: true) do
+                    :need_date, :reason, :assumptions, keyword_init: true) do
     def late?(today = Date.current) = act_by < today
   end
 
@@ -75,7 +79,8 @@ class SuggestedPurchases # rubocop:disable Metrics/ClassLength -- two sources pl
 
     product = product_plan.product
     line(product, product_plan.location, [first.qty, min_max_order(product)].compact.max,
-         act_by: first.act_by, need_date: first.need_date, reason: "Short #{first.need_date.strftime('%b %-d')} (MRP)")
+         act_by: first.act_by, need_date: first.need_date, reason: "Short #{first.need_date.strftime('%b %-d')} (MRP)",
+         assumptions: product_plan.assumptions)
   end
 
   def below_min_lines(covered)
@@ -90,8 +95,10 @@ class SuggestedPurchases # rubocop:disable Metrics/ClassLength -- two sources pl
     qty = (product.max_stock.presence || product.reorder_point).to_d - position
     return unless position <= product.reorder_point && qty.positive?
 
-    line(product, home(product), qty, act_by: @today, need_date: @today + lead_days(product),
-                                      reason: below_min_reason(product, position))
+    lead = Planning::LeadTime.purchase(product)
+    line(product, home(product), qty, act_by: @today, need_date: @today + lead.days,
+                                      reason: below_min_reason(product, position),
+                                      assumptions: [lead.assumption(made: false)].compact)
   end
 
   def position(product) = on_hand.fetch(product.id, 0).to_d + on_order.fetch(product.id, 0).to_d
@@ -100,12 +107,27 @@ class SuggestedPurchases # rubocop:disable Metrics/ClassLength -- two sources pl
     "At or below min (#{fmt(position)} on hand + on order, min #{fmt(product.reorder_point)})"
   end
 
-  def line(product, location, quantity, **dates_and_reason)
-    vendor = product.primary_vendor || last_vendor(product)
+  def line(product, location, quantity, assumptions:, **dates_and_reason)
+    vendor, vendor_note = pick_vendor(product)
     price = vendor_price(product, vendor, quantity)
-    Line.new(product: product, location: location, vendor: vendor, quantity: quantity.ceil,
-             unit_cost: price&.unit_cost || last_cost(product, vendor) || product.cost_per_unit,
-             vendor_part_number: price&.vendor_part_number, **dates_and_reason)
+    cost, cost_note = unit_cost(product, vendor, price)
+    Line.new(product: product, location: location, vendor: vendor, quantity: quantity.ceil, unit_cost: cost,
+             vendor_part_number: price&.vendor_part_number, **dates_and_reason,
+             assumptions: [*assumptions, vendor_note, cost_note].compact)
+  end
+
+  def pick_vendor(product)
+    return [product.primary_vendor, nil] if product.primary_vendor
+
+    vendor = last_vendor(product)
+    [vendor, (VENDOR_GUESS if vendor)]
+  end
+
+  def unit_cost(product, vendor, price)
+    return [price.unit_cost, nil] if price
+
+    last = last_cost(product, vendor)
+    last ? [last, nil] : [product.cost_per_unit, COST_ON_FILE]
   end
 
   def min_max_order(product)
@@ -148,10 +170,6 @@ class SuggestedPurchases # rubocop:disable Metrics/ClassLength -- two sources pl
   def home(product)
     id = LocationProduct.where(product_id: product.id).where('quantity > 0').order(quantity: :desc).pick(:location_id)
     Location.find_by(id: id) || Location.find_by(pdi_site_code: Mrp::Plan::MAIN_SITE)
-  end
-
-  def lead_days(product)
-    product.lead_time_days || product.primary_vendor&.lead_time_days || AppSetting.mrp_days('mrp_purchase_lead_days')
   end
 
   def fmt(qty) = qty.to_d.round(1).to_s('F').delete_suffix('.0')

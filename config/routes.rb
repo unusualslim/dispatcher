@@ -195,6 +195,7 @@ Rails.application.routes.draw do
                                   format: false
   patch 'mrp/settings', to: 'mrp#update_settings', as: :mrp_settings
   resources :suggested_purchases, only: %i[index create]
+  get 'planning_assumptions', to: 'planning_assumptions#index', as: :planning_assumptions
   resources :suggested_productions, only: %i[index create], path: 'suggested_production'
   get 'min_max', to: 'min_max#index', as: :min_max
   post 'min_max/apply', to: 'min_max#apply', as: :apply_min_max

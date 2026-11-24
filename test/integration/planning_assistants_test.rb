@@ -78,4 +78,28 @@ class PlanningAssistantsTest < ActionDispatch::IntegrationTest
                  [order.status, order.qty_to_make.to_i, order.location, order.production_date]
     assert_equal([['PA-RAW', 40]], order.production_order_components.map { |c| [c.product_id, c.quantity.to_i] })
   end
+
+  test 'suggestions show what they assume, and Planning Assumptions lists what to fix' do
+    sale(@raw, 3650, status: 'billed', on: Date.current - 30)
+    sale(@fg, 25, status: 'open_order', on: Date.current) # no delivery date: MRP assumes one
+    loose = Product.create!(id: 'PA-LOOSE', name: 'Cap', is_raw_material: true)
+    loose.product_vendors.create!(vendor: Vendor.create!(id: 'V-NOLEAD', name: 'No Lead Co'), priority: 1)
+
+    run = SuggestedProduction.new.runs.find { |r| r.product == @fg }
+    assert_equal %i[default_production assumed_date], run.assumptions.map(&:key)
+    raw = MinMaxPlanner.new.rows.find { |r| r.product == @raw }
+    assert_equal [:short_history], raw.assumptions.map(&:key) # vendor has a lead time; standard cost set
+    assert_equal 'Only 1 month of history', raw.assumptions.first.label
+
+    sign_in @admin
+    get suggested_productions_path
+    assert_select '.alert-warning', text: /1 of 1 run rest on assumptions/
+    assert_select '[data-assumption=default_production]', text: /Default 1-day production time/
+
+    get planning_assumptions_path
+    assert_response :success
+    assert_select 'td', text: 'No Lead Co (V-NOLEAD)'
+    assert_select 'a', text: 'PA-LOOSE'
+    assert_select 'td', text: 'PA Customer'
+  end
 end

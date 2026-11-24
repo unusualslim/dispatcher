@@ -3,7 +3,8 @@
 # behind each. A planner ticks runs, adjusts quantity or start date, and creates production orders (status
 # Created, BOM components filled in). Created orders are firm supply in MRP, so their suggestions drop off.
 class SuggestedProduction
-  Run = Struct.new(:product, :location, :quantity, :start_on, :need_date, :causes, keyword_init: true) do
+  Run = Struct.new(:product, :location, :quantity, :start_on, :need_date, :causes, :assumptions,
+                   keyword_init: true) do
     def late?(today = Date.current) = start_on < today
   end
 
@@ -47,9 +48,10 @@ class SuggestedProduction
 
   def runs_for(product_plan)
     causes = product_plan.causes
+    assumptions = product_plan.assumptions
     product_plan.suggestions.select(&:production?).map do |s|
       Run.new(product: product_plan.product, location: product_plan.location, quantity: s.qty.ceil,
-              start_on: s.act_by, need_date: s.need_date, causes: causes)
+              start_on: s.act_by, need_date: s.need_date, causes: causes, assumptions: assumptions)
     end
   end
 

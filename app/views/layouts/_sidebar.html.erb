@@ -16,7 +16,7 @@
 <% production_active    = report_area == 'production' || production_review_active || production_setup_active ||
                           %w[production_orders suggested_productions jobs warehouse work_orders].include?(current) %>
 <% purchasing_setup_active = current == 'vendors' %>
-<% purchasing_active    = report_area == 'purchasing' || purchasing_setup_active || %w[purchase_orders purchasing_report mrp min_max suggested_purchases freight_payables].include?(current) %>
+<% purchasing_active    = report_area == 'purchasing' || purchasing_setup_active || %w[purchase_orders purchasing_report mrp min_max suggested_purchases planning_assumptions freight_payables].include?(current) %>
 <% inventory_setup_active = current == 'products' %>
 <% inventory_active     = report_area == 'inventory' || inventory_setup_active || %w[inventory_intelligence inventory_adjustments inventory_transactions inventory_valuations].include?(current) %>
 <% imports_active       = %w[imports customer_order_imports inventory_imports pdi_inventory_imports pdi_invoice_date_imports warehouse_transaction_imports
@@ -166,6 +166,7 @@
           <%= nav_item 'Purchasing Report', purchasing_report_path,         'bi-cart-check',      active: current == 'purchasing_report', keywords: 'buy reorder' %>
           <%= nav_item 'MRP',               mrp_path,                       'bi-graph-up-arrow',  active: current == 'mrp', keywords: 'requirements raw materials' %>
           <%= nav_item 'Suggested POs',     suggested_purchases_path,       'bi-lightbulb',       active: current == 'suggested_purchases', keywords: 'reorder buy shortage assistant' %>
+          <%= nav_item 'Planning Assumptions', planning_assumptions_path,  'bi-patch-question',  active: current == 'planning_assumptions', keywords: 'defaults lead time data gaps refine' %>
           <%= nav_item 'Min/Max',           min_max_path,                   'bi-arrows-collapse', active: current == 'min_max', keywords: 'reorder point safety stock turns' %>
           <%= nav_item 'Freight Payables',  freight_payables_path,          'bi-receipt',         active: current == 'freight_payables', keywords: 'carrier invoice accrual bol freight ap' %>
           <%= render 'layouts/sidebar_reports', area: :purchasing, current_report: current_report %>

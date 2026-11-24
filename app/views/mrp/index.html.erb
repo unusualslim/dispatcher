@@ -41,6 +41,7 @@
 <%# ── Action needed ─────────────────────────────────────────────────────────── %>
 <% actions = @result.actions(@warehouse_id) %>
 <% actions = actions.select { |plan| plan.product.category == @group } if @group %>
+<%= assumption_summary(actions, noun: 'product') %>
 <div class="card shadow-sm mb-4">
   <div class="card-header fw-semibold d-flex justify-content-between">
     <span>Action needed</span>
@@ -89,6 +90,9 @@
                       <%= first.production? ? "#{plan.lead_days}-day production" : [product.primary_vendor&.name, "#{plan.lead_days}-day lead time"].compact.join(' · ') %>
                       <% if plan.suggestions.size > 1 %> · <%= pluralize(plan.suggestions.size, 'shortage') %> in the horizon<% end %>
                     </div>
+                  <% end %>
+                  <% if plan.assumptions.any? %>
+                    <div class="mt-1"><%= assumption_tags(plan.assumptions) %></div>
                   <% end %>
                 </td>
                 <td class="small">

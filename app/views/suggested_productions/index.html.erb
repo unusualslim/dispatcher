@@ -7,6 +7,7 @@
   <% end %>
   <% if alert.present? %><div class="alert alert-warning py-2"><%= alert %></div><% end %>
 
+  <%= assumption_summary(@runs, noun: 'run') %>
   <% if @runs.empty? %>
     <div class="alert alert-light border">No production needed: open orders and safety stock are covered for the next 60 days.</div>
   <% else %>
@@ -31,7 +32,7 @@
                   <%= hidden_field_tag "#{prefix}[need_date]", run.need_date, id: nil %>
                 </td>
                 <td><%= link_to run.product.id, mrp_product_path(run.product.id), class: 'fw-semibold text-decoration-none' %> <span class="text-muted"><%= run.product.name %></span></td>
-                <td><%= run.location&.company_name || '—' %></td>
+                <td><%= run.location&.company_name || '—' %><div><%= assumption_tags(run.assumptions) %></div></td>
                 <td>
                   <%= date_field_tag "#{prefix}[start_on]", [run.start_on, Date.current].max, id: nil, class: 'form-control form-control-sm', 'aria-label': 'Start date', disabled: !editable %>
                   <% if run.late? %><div class="text-danger">Should have started <%= run.start_on.strftime('%b %-d') %></div><% end %>

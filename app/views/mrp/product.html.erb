@@ -14,6 +14,7 @@
         · safety <%= qty.(plan.safety) %>
         · <%= plan.manufactured? ? 'production' : 'lead' %> time <%= plan.lead_days %> days
         · runs out <%= plan.runs_out_on&.strftime('%b %-d') || (plan.below_safety_on ? "below safety #{plan.below_safety_on.strftime('%b %-d')}" : '—') %>
+        <%= assumption_tags(plan.assumptions) %>
       </span>
     </div>
     <div class="card-body p-0">
@@ -31,7 +32,11 @@
               <td>
                 <%= event.path ? link_to(event.label, event.path, class: 'text-decoration-none') : event.label %>
                 <% event.flags.each do |flag| %>
-                  <span class="badge <%= flag == :draft ? 'bg-secondary' : 'bg-danger' %>"><%= flag %><%= " (#{event.original_date.strftime('%b %-d')})" if event.original_date %></span>
+                  <% if flag == :assumed_date %>
+                    <%= assumption_tags([Planning::Assumption.new(:assumed_date, 'date assumed', 'No delivery date on the order: dated order date + the customer\'s lead time, else the default.')]) %>
+                  <% else %>
+                    <span class="badge <%= flag == :draft ? 'bg-secondary' : 'bg-danger' %>"><%= flag %><%= " (#{event.original_date.strftime('%b %-d')})" if event.original_date %></span>
+                  <% end %>
                 <% end %>
               </td>
               <td class="text-end <%= event.supply? ? 'text-success' : 'text-danger' %>"><%= event.supply? ? '+' : '' %><%= qty.(event.qty) %></td>
